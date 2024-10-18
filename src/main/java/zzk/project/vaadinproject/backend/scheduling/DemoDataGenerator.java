@@ -37,7 +37,7 @@ public class DemoDataGenerator {
     );
 
     @Resource
-    PackagingScheduleRepository repository;
+    PackagingScheduleHolder repository;
 
     int lineCount;
 

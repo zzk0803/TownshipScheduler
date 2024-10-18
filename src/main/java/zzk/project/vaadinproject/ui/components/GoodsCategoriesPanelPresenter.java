@@ -112,4 +112,9 @@ class GoodsCategoriesPanelPresenter {
         );
     }
 
+    public void reset() {
+        this.currentCategory = null;
+        this.listDataProvider.clearFilters();
+    }
+
 }

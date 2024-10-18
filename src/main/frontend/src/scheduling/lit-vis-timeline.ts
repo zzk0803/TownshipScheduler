@@ -2,7 +2,7 @@ import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query} from 'lit/decorators.js';
 import {DataGroup, DataItem, Timeline, TimelineOptions} from "vis-timeline";
 // import {DataGroup, DataItem, Timeline, TimelineOptions} from "vis-timeline/standalone";
-import {visStyles} from "./timeline-styles";
+import {bootstrapStyles,visStyles} from "./external-styles";
 
 @customElement('lit-vis-timeline')
 export class LitVisTimeline
@@ -30,21 +30,7 @@ export class LitVisTimeline
 
     static styles = [
         visStyles,
-        css`
-            :host {
-                display: flex;
-                flex-direction: column;
-            }
-
-            #vis-container {
-                flex: 1 1 auto;
-            }
-
-            .vis-time-axis .vis-grid.vis-saturday,
-            .vis-time-axis .vis-grid.vis-sunday {
-                background: #D3D7CFFF;
-            }
-        `
+        bootstrapStyles
     ]
 
 

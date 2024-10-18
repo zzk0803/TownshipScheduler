@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component
-public class PackagingScheduleRepository {
+public class PackagingScheduleHolder {
 
     private final AtomicReference<PackagingSchedule> solutionReference = new AtomicReference<>();
 

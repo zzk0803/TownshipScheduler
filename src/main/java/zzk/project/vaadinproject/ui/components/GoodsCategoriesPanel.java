@@ -156,6 +156,7 @@ public class GoodsCategoriesPanel
     protected void onAttach(AttachEvent attachEvent) {
         super.onAttach(attachEvent);
 
+        getPresenter().reset();
         getPresenter().queryAndCacheGoods();
         getPresenter().setupGridItems(getGoodsGrid());
         getPresenter().setupCategoriesItems(getCategoryListBox());
