@@ -30,7 +30,22 @@ export class LitVisTimeline
 
     static styles = [
         visStyles,
-        bootstrapStyles
+        bootstrapStyles,
+        css`
+            :host {
+                display: flex;
+                flex-direction: column;
+            }
+
+            #vis-container {
+                flex: 1 1 auto;
+            }
+
+            .vis-time-axis .vis-grid.vis-saturday,
+            .vis-time-axis .vis-grid.vis-sunday {
+                background: #D3D7CFFF;
+            }
+        `
     ]
 
 
@@ -64,9 +79,7 @@ export class LitVisTimeline
                 this.timeline.setGroups(this.groups);
             }
 
-            if (_changedProperties.has("options")) {
-                this.timeline.setOptions(this.options);
-            }
+            this.timeline.setOptions(this.options);
         }
     }
 
