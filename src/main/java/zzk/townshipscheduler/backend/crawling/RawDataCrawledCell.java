@@ -41,11 +41,11 @@ public final class RawDataCrawledCell
         }
         if (!anchorList.isEmpty()) {
             return "%s".formatted(anchorList.getFirst()
-                                          .getTitle());
+                    .getTitle());
         }
         if (!imgList.isEmpty()) {
             return "%s".formatted(imgList.getFirst()
-                                          .getAlt());
+                    .getAlt());
         }
         return html;
     }
@@ -56,11 +56,11 @@ public final class RawDataCrawledCell
         }
         if (!imgList.isEmpty()) {
             return "%s".formatted(imgList.getFirst()
-                                          .getAlt());
+                    .getAlt());
         }
         if (!anchorList.isEmpty()) {
             return "%s".formatted(anchorList.getFirst()
-                                          .getTitle());
+                    .getTitle());
         }
         return html;
     }
@@ -71,9 +71,9 @@ public final class RawDataCrawledCell
         }
 
         return Optional.of(imgList.stream()
-                                   .map(Img::getSrc)
-                                   .toList()
-                                   .getFirst());
+                .map(Img::getSrc)
+                .toList()
+                .getFirst());
     }
 
     @Override
@@ -185,7 +185,7 @@ public final class RawDataCrawledCell
 
         private static boolean textHasComma(String text) {
             return Arrays.stream(text.split(","))
-                    .count() > 1;
+                           .count() > 1;
         }
 
         private static boolean textSplitSpaceMoreThan3(String text) {

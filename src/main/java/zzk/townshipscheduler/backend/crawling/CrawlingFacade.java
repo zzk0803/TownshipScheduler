@@ -49,21 +49,21 @@ public class CrawlingFacade {
     public CompletableFuture<Void> process() {
         return crawlingProcessor.process()
                 .thenApplyAsync(crawledResult ->
-                                {
-                                    setCrawledResult(crawledResult);
-                                    persistProcessor.process(crawledResult);
-                                    return parsingProcessor.process(crawledResult);
-                                }, townshipExecutorService)
+                {
+                    setCrawledResult(crawledResult);
+                    persistProcessor.process(crawledResult);
+                    return parsingProcessor.process(crawledResult);
+                }, townshipExecutorService)
                 .thenApplyAsync(parsedResult ->
-                                {
-                                    setParsedResult(parsedResult);
-                                    return this.transferProcessor.process(parsedResult);
-                                }, townshipExecutorService)
+                {
+                    setParsedResult(parsedResult);
+                    return this.transferProcessor.process(parsedResult);
+                }, townshipExecutorService)
                 .thenAcceptAsync(transferResult ->
-                                 {
-                                     setTransferResult(transferResult);
-                                     this.persistProcessor.process(transferResult);
-                                 }, townshipExecutorService);
+                {
+                    setTransferResult(transferResult);
+                    this.persistProcessor.process(transferResult);
+                }, townshipExecutorService);
     }
 
     public CompletableFuture<byte[]> downloadImage(String url) {

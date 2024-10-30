@@ -60,24 +60,6 @@ class TownshipDataCrawlingProcessor {
         this.imageToDownload = new LinkedHashSet<>();
     }
 
-    private static String findTableZoneString(Element currentTable) {
-        Optional<String> tableZone = currentTable.parents()
-                .stream()
-                .filter(element -> element.hasClass("mw-collapsible-content"))
-                .findFirst()
-                .map(element -> {
-                    Element mwHeadlineElement = element.previousElementSibling();
-                    return Objects.isNull(mwHeadlineElement)
-                            ? ""
-                            : mwHeadlineElement.select("span.mw-headline").first().text();
-                });
-        return tableZone.orElse("");
-    }
-
-    private static boolean checkAbandonZone(String tableZoneString) {
-        return Arrays.stream(ABANDON_ZONE).anyMatch(tableZoneString::equalsIgnoreCase);
-    }
-
     public CompletableFuture<CrawledResult> process() {
         Document document = loadDocument(false);
         Elements articleTableElements = document.getElementsByClass("article-table");
@@ -103,6 +85,24 @@ class TownshipDataCrawlingProcessor {
         );
     }
 
+    private static String findTableZoneString(Element currentTable) {
+        Optional<String> tableZone = currentTable.parents()
+                .stream()
+                .filter(element -> element.hasClass("mw-collapsible-content"))
+                .findFirst()
+                .map(element -> {
+                    Element mwHeadlineElement = element.previousElementSibling();
+                    return Objects.isNull(mwHeadlineElement)
+                            ? ""
+                            : mwHeadlineElement.select("span.mw-headline").first().text();
+                });
+        return tableZone.orElse("");
+    }
+
+    private static boolean checkAbandonZone(String tableZoneString) {
+        return Arrays.stream(ABANDON_ZONE).anyMatch(tableZoneString::equalsIgnoreCase);
+    }
+
     private Document loadDocument(boolean mandatory) {
         Document document = null;
         if (mandatory) {
@@ -123,6 +123,23 @@ class TownshipDataCrawlingProcessor {
             }
         }
         return document;
+    }
+
+    private Document fetchDocument() {
+        logger.info("fetch random wiki...");
+        try {
+            return Jsoup.connect(TOWNSHIP_FANDOM_GOODS).get();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private TownshipCrawled persistDocument(Document document) {
+        TownshipCrawled townshipCrawled = new TownshipCrawled();
+        townshipCrawled.setType(TownshipCrawled.Type.HTML);
+        townshipCrawled.setHtml(document.html());
+        logger.info("persist document");
+        return townshipCrawledRepository.save(townshipCrawled);
     }
 
     private void doTableParse(
@@ -175,52 +192,6 @@ class TownshipDataCrawlingProcessor {
         }
     }
 
-    private void fireImageDownloadAsync() {
-        CompletableFuture.runAsync(() -> {
-            List<CompletableFuture<TownshipCrawled>> completableFutures = imageToDownload.stream()
-                    .distinct()
-                    .filter(img -> !townshipCrawledRepository.existsByHtml(img.getSrc()))
-                    .map(img -> this.downloadImage(img)
-                            .thenApplyAsync((bytes) -> {
-                                final TownshipCrawled townshipCrawled = new TownshipCrawled();
-                                townshipCrawled.setImageBytes(bytes);
-                                townshipCrawled.setHtml(img.getSrc());
-                                townshipCrawled.setText(img.getAlt());
-                                try {
-                                    return transactionTemplate.execute(
-                                            ts -> townshipCrawledRepository.save(townshipCrawled)
-                                    );
-                                } catch (TransactionException e) {
-                                    e.printStackTrace();
-                                    throw new RuntimeException(e);
-                                }
-                            }, townshipExecutorService)
-                    )
-                    .toList();
-            CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
-                    .whenComplete((result, exception) -> {
-                        logger.info("all picture download completed...");
-                    });
-        }, townshipExecutorService);
-    }
-
-    private Document fetchDocument() {
-        logger.info("fetch random wiki...");
-        try {
-            return Jsoup.connect(TOWNSHIP_FANDOM_GOODS).get();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private TownshipCrawled persistDocument(Document document) {
-        TownshipCrawled townshipCrawled = new TownshipCrawled();
-        townshipCrawled.setType(TownshipCrawled.Type.HTML);
-        townshipCrawled.setHtml(document.html());
-        logger.info("persist document");
-        return townshipCrawledRepository.save(townshipCrawled);
-    }
-
     private String doParseUnitIntoHtml(Element currentThOrTd) {
         return currentThOrTd.html();
     }
@@ -269,14 +240,6 @@ class TownshipDataCrawlingProcessor {
         }
     }
 
-    private void putIntoMemory(RawDataCrawledCoord currentCoord, RawDataCrawledCell currentCell) {
-        townshipGameDataInMemoryPool.putForSave(currentCoord, currentCell);
-    }
-
-    CompletableFuture<byte[]> downloadImage(RawDataCrawledCell.Img img) {
-        return downloadImage(img.getSrc());
-    }
-
     private void registerRowSpanFix(int rowSpan, RawDataCrawledCell currentCell, RawDataCrawledCoord currentCoord) {
         if (rowSpan > RawDataCrawledCell.CellSpan.NA_EFFECT) {
             RawDataCrawledCell.CellSpan fixedSpan = new RawDataCrawledCell.CellSpan(
@@ -296,6 +259,10 @@ class TownshipDataCrawlingProcessor {
         }
     }
 
+    private void hintIntoMemory(RawDataCrawledCoord mendedCoord, RawDataCrawledCell fixCell) {
+        townshipGameDataInMemoryPool.putForMend(mendedCoord, fixCell);
+    }
+
     private void registerColSpanFix(int colSpan, RawDataCrawledCell currentCell, RawDataCrawledCoord currentCoord) {
         if (colSpan > RawDataCrawledCell.CellSpan.NA_EFFECT) {
             RawDataCrawledCell.CellSpan fixedSpan = new RawDataCrawledCell.CellSpan(
@@ -313,6 +280,43 @@ class TownshipDataCrawlingProcessor {
                 hintIntoMemory(mendedCoord, fixCellToSave);
             }
         }
+    }
+
+    private void putIntoMemory(RawDataCrawledCoord currentCoord, RawDataCrawledCell currentCell) {
+        townshipGameDataInMemoryPool.putForSave(currentCoord, currentCell);
+    }
+
+    private void fireImageDownloadAsync() {
+        CompletableFuture.runAsync(() -> {
+            List<CompletableFuture<TownshipCrawled>> completableFutures = imageToDownload.stream()
+                    .distinct()
+                    .filter(img -> !townshipCrawledRepository.existsByHtml(img.getSrc()))
+                    .map(img -> this.downloadImage(img)
+                            .thenApplyAsync((bytes) -> {
+                                final TownshipCrawled townshipCrawled = new TownshipCrawled();
+                                townshipCrawled.setImageBytes(bytes);
+                                townshipCrawled.setHtml(img.getSrc());
+                                townshipCrawled.setText(img.getAlt());
+                                try {
+                                    return transactionTemplate.execute(
+                                            ts -> townshipCrawledRepository.save(townshipCrawled)
+                                    );
+                                } catch (TransactionException e) {
+                                    e.printStackTrace();
+                                    throw new RuntimeException(e);
+                                }
+                            }, townshipExecutorService)
+                    )
+                    .toList();
+            CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
+                    .whenComplete((result, exception) -> {
+                        logger.info("all picture download completed...");
+                    });
+        }, townshipExecutorService);
+    }
+
+    CompletableFuture<byte[]> downloadImage(RawDataCrawledCell.Img img) {
+        return downloadImage(img.getSrc());
     }
 
     CompletableFuture<byte[]> downloadImage(String url) {
@@ -344,10 +348,6 @@ class TownshipDataCrawlingProcessor {
             return bytes;
         }, townshipExecutorService);
 
-    }
-
-    private void hintIntoMemory(RawDataCrawledCoord mendedCoord, RawDataCrawledCell fixCell) {
-        townshipGameDataInMemoryPool.putForMend(mendedCoord, fixCell);
     }
 
 }

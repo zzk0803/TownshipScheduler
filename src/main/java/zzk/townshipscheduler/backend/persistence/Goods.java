@@ -71,16 +71,16 @@ public class Goods {
     @Override
     public String toString() {
         return "Goods{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", category='" + category + '\'' +
-                ", level='" + level + '\'' +
-                ", cost='" + cost + '\'' +
-                ", sellPrice='" + sellPrice + '\'' +
-                ", xp='" + xp + '\'' +
-                ", dealerValue='" + dealerValue + '\'' +
-                ", helpValue='" + helpValue + '\'' +
-                '}';
+               "id=" + id +
+               ", name='" + name + '\'' +
+               ", category='" + category + '\'' +
+               ", level='" + level + '\'' +
+               ", cost='" + cost + '\'' +
+               ", sellPrice='" + sellPrice + '\'' +
+               ", xp='" + xp + '\'' +
+               ", dealerValue='" + dealerValue + '\'' +
+               ", helpValue='" + helpValue + '\'' +
+               '}';
     }
 
 }

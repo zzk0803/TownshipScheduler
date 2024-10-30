@@ -30,12 +30,12 @@ import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import zzk.townshipscheduler.backend.persistence.Bill;
-import zzk.townshipscheduler.backend.persistence.BillType;
 import zzk.townshipscheduler.backend.persistence.Goods;
+import zzk.townshipscheduler.backend.persistence.Order;
+import zzk.townshipscheduler.backend.persistence.OrderType;
+import zzk.townshipscheduler.port.form.BillItem;
 import zzk.townshipscheduler.ui.BillDurationField;
 import zzk.townshipscheduler.ui.GoodsCategoriesPanel;
-import zzk.townshipscheduler.adopting.form.BillItem;
 
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
@@ -69,17 +69,6 @@ public class BillFormView
         add(assembleFooterPanel());
     }
 
-    private static void settingDeadlineFieldGroupAvailableStatus(
-            boolean boolOpen,
-            BillDurationField durationCountdownField,
-            DateTimePicker deadlinePicker
-    ) {
-        durationCountdownField.setEnabled(boolOpen);
-        deadlinePicker.setEnabled(boolOpen);
-        durationCountdownField.setVisible(boolOpen);
-        deadlinePicker.setVisible(boolOpen);
-    }
-
     private void setupView() {
         addClassName("bill-form");
         setDefaultHorizontalComponentAlignment(Alignment.CENTER);
@@ -105,9 +94,9 @@ public class BillFormView
 
         deadLineFieldLayout.add(boolDeadlineCheckbox, durationCountdownField, deadlinePicker);
 
-        RadioButtonGroup<BillType> billTypeGroup = new RadioButtonGroup<>();
-        billTypeGroup.setItems(BillType.values());
-        billTypeGroup.setValue(BillType.HELICOPTER);
+        RadioButtonGroup<OrderType> billTypeGroup = new RadioButtonGroup<>();
+        billTypeGroup.setItems(OrderType.values());
+        billTypeGroup.setValue(OrderType.HELICOPTER);
 
         settingBinder(billTypeGroup, boolDeadlineCheckbox, deadlinePicker, durationCountdownField);
 
@@ -116,80 +105,15 @@ public class BillFormView
         return formLayout;
     }
 
-    private Grid<BillItem> assembleBillItemGrid() {
-        Grid<BillItem> grid = new Grid<>(BillItem.class, false);
-        grid.addThemeVariants(
-                GridVariant.LUMO_NO_ROW_BORDERS,
-                GridVariant.LUMO_NO_ROW_BORDERS
-        );
-
-        grid.addColumn(BillItem::getSerial)
-                .setAutoWidth(true)
-                .setFlexGrow(0);
-        grid.addColumn(buildItemCard())
-                .setAutoWidth(false)
-                .setFlexGrow(1);
-        grid.addComponentColumn(buildItemAmountField())
-                .setAutoWidth(true)
-                .setFlexGrow(0);
-        grid.setSelectionMode(Grid.SelectionMode.NONE);
-
-        this.billItemGrid = grid;
-        return grid;
-    }
-
-    private Button assembleItemAppendBtn() {
-        Button addItemButton = new Button(VaadinIcon.PLUS.create());
-        addItemButton.addThemeVariants(
-                ButtonVariant.LUMO_PRIMARY,
-                ButtonVariant.LUMO_LARGE
-        );
-        addItemButton.addClickListener(click -> {
-            Dialog dialog = new Dialog("Select Goods...");
-            dialog.setSizeFull();
-            dialog.addComponentAsFirst(goodsCategoriesPanel);
-
-            Button button = new Button("OK");
-            button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
-            button.addClickListener(dialogCloseClick -> {
-                goodsCategoriesPanel.consumeSelected(goods -> {
-                    BillItem billItem = new BillItem(
-                            presenter.getGridBillItemsCounter().incrementAndGet(),
-                            goods,
-                            1
-                    );
-                    presenter.addBillItem(billItem);
-                });
-                dialog.close();
-                presenter.setupDataProviderForItems(billItemGrid);
-            });
-            dialog.getFooter().add(button);
-            dialog.open();
-        });
-
-        return addItemButton;
-    }
-
-    private Component assembleFooterPanel() {
-        HorizontalLayout footer = buildFooterComponent();
-
-        Button submit = new Button("Submit");
-        submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        submit.addClickListener(submitClick -> {
-            presenter.onSubmit();
-            UI.getCurrent().navigate(BillListView.class);
-        });
-
-        Button cancel = new Button("Cancel");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        cancel.addClickListener(cancelClick -> {
-            UI.getCurrent().navigate(BillListView.class);
-        });
-
-        footer.add(submit, cancel);
-        footer.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        footer.setAlignItems(Alignment.BASELINE);
-        return footer;
+    private static void settingDeadlineFieldGroupAvailableStatus(
+            boolean boolOpen,
+            BillDurationField durationCountdownField,
+            DateTimePicker deadlinePicker
+    ) {
+        durationCountdownField.setEnabled(boolOpen);
+        deadlinePicker.setEnabled(boolOpen);
+        durationCountdownField.setVisible(boolOpen);
+        deadlinePicker.setVisible(boolOpen);
     }
 
     private void associateResponseToPickerAndDuration(
@@ -213,18 +137,36 @@ public class BillFormView
         });
     }
 
+    private Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
+        return new Converter<Duration, LocalDateTime>() {
+
+            @Override
+            public Result<LocalDateTime> convertToModel(Duration duration, ValueContext valueContext) {
+                return Result.ok(LocalDateTime.now().plus(duration));
+            }
+
+            @Override
+            public Duration convertToPresentation(LocalDateTime localDateTime, ValueContext valueContext) {
+                if (localDateTime == null) {
+                    return Duration.ZERO;
+                }
+                return Duration.between(LocalDateTime.now(), localDateTime);
+            }
+        };
+    }
+
     private void settingBinder(
-            RadioButtonGroup<BillType> billTypeGroup,
+            RadioButtonGroup<OrderType> billTypeGroup,
             Checkbox boolDeadlineCheckbox,
             DateTimePicker deadlinePicker,
             BillDurationField durationCountdownField
     ) {
-        Binder<Bill> binder = presenter.prepareBillAndBinder();
+        Binder<Order> binder = presenter.prepareBillAndBinder();
         binder.forField(billTypeGroup)
                 .asRequired()
-                .bind(Bill::getBillType, Bill::setBillType);
+                .bind(Order::getOrderType, Order::setOrderType);
         binder.forField(boolDeadlineCheckbox)
-                .bind(Bill::isBoolDeadLine, Bill::setBoolDeadLine);
+                .bind(Order::isBoolDeadLine, Order::setBoolDeadLine);
         binder.forField(deadlinePicker)
                 .withValidator(new DateTimeRangeValidator(
                         "not pasted datetime",
@@ -232,15 +174,37 @@ public class BillFormView
                         LocalDateTime.MAX
                 ))
                 .bind(
-                        Bill::getDeadLine,
-                        Bill::setDeadLine
+                        Order::getDeadLine,
+                        Order::setDeadLine
                 );
         binder.forField(durationCountdownField)
                 .withConverter(getDurationLocalDateTimeConverter())
                 .bind(
-                        Bill::getDeadLine,
-                        Bill::setDeadLine
+                        Order::getDeadLine,
+                        Order::setDeadLine
                 );
+    }
+
+    private Grid<BillItem> assembleBillItemGrid() {
+        Grid<BillItem> grid = new Grid<>(BillItem.class, false);
+        grid.addThemeVariants(
+                GridVariant.LUMO_NO_ROW_BORDERS,
+                GridVariant.LUMO_NO_ROW_BORDERS
+        );
+
+        grid.addColumn(BillItem::getSerial)
+                .setAutoWidth(true)
+                .setFlexGrow(0);
+        grid.addColumn(buildItemCard())
+                .setAutoWidth(false)
+                .setFlexGrow(1);
+        grid.addComponentColumn(buildItemAmountField())
+                .setAutoWidth(true)
+                .setFlexGrow(0);
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+
+        this.billItemGrid = grid;
+        return grid;
     }
 
     private ComponentRenderer<Div, BillItem> buildItemCard() {
@@ -304,25 +268,62 @@ public class BillFormView
         };
     }
 
-    private HorizontalLayout buildFooterComponent() {
-        return new HorizontalLayout();
+    private Button assembleItemAppendBtn() {
+        Button addItemButton = new Button(VaadinIcon.PLUS.create());
+        addItemButton.addThemeVariants(
+                ButtonVariant.LUMO_PRIMARY,
+                ButtonVariant.LUMO_LARGE
+        );
+        addItemButton.addClickListener(click -> {
+            Dialog dialog = new Dialog("Select Goods...");
+            dialog.setSizeFull();
+            dialog.addComponentAsFirst(goodsCategoriesPanel);
+
+            Button button = new Button("OK");
+            button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+            button.addClickListener(dialogCloseClick -> {
+                goodsCategoriesPanel.consumeSelected(goods -> {
+                    BillItem billItem = new BillItem(
+                            presenter.getGridBillItemsCounter().incrementAndGet(),
+                            goods,
+                            1
+                    );
+                    presenter.addBillItem(billItem);
+                });
+                dialog.close();
+                presenter.setupDataProviderForItems(billItemGrid);
+            });
+            dialog.getFooter().add(button);
+            dialog.open();
+        });
+
+        return addItemButton;
     }
 
-    private Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
-        return new Converter<Duration, LocalDateTime>() {
-            @Override
-            public Result<LocalDateTime> convertToModel(Duration duration, ValueContext valueContext) {
-                return Result.ok(LocalDateTime.now().plus(duration));
-            }
+    private Component assembleFooterPanel() {
+        HorizontalLayout footer = buildFooterComponent();
 
-            @Override
-            public Duration convertToPresentation(LocalDateTime localDateTime, ValueContext valueContext) {
-                if (localDateTime == null) {
-                    return Duration.ZERO;
-                }
-                return Duration.between(LocalDateTime.now(), localDateTime);
-            }
-        };
+        Button submit = new Button("Submit");
+        submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        submit.addClickListener(submitClick -> {
+            presenter.onSubmit();
+            UI.getCurrent().navigate(BillListView.class);
+        });
+
+        Button cancel = new Button("Cancel");
+        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+        cancel.addClickListener(cancelClick -> {
+            UI.getCurrent().navigate(BillListView.class);
+        });
+
+        footer.add(submit, cancel);
+        footer.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        footer.setAlignItems(Alignment.BASELINE);
+        return footer;
+    }
+
+    private HorizontalLayout buildFooterComponent() {
+        return new HorizontalLayout();
     }
 
     @Override

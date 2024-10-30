@@ -17,8 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.TaskScheduler;
-import zzk.townshipscheduler.backend.tfdemo.PackagingSchedule;
-import zzk.townshipscheduler.backend.tfdemo.PackagingScheduleHolder;
+import zzk.townshipscheduler.backend.tfdemo.foodpacking.PackagingSchedule;
+import zzk.townshipscheduler.backend.tfdemo.foodpacking.PackagingScheduleHolder;
 
 import java.time.Duration;
 import java.time.Instant;

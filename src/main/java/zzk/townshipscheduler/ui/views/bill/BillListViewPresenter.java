@@ -3,10 +3,10 @@ package zzk.townshipscheduler.ui.views.bill;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import zzk.townshipscheduler.backend.persistence.Bill;
 import zzk.townshipscheduler.backend.persistence.BillRepository;
+import zzk.townshipscheduler.backend.persistence.Order;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
-import zzk.townshipscheduler.adopting.form.BillScheduleRequest;
+import zzk.townshipscheduler.port.form.BillScheduleRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +20,7 @@ class BillListViewPresenter {
 
     private BillListView view;
 
-    private GridListDataView<Bill> billDataView;
+    private GridListDataView<Order> billDataView;
 
 //    private SchedulingService schedulingService;
 
@@ -37,25 +37,22 @@ class BillListViewPresenter {
         this.view = view;
     }
 
-    void onBillDeleteClick(Bill bill) {
-        billRepository.delete(bill);
-        billDataView.removeItem(bill);
+    void onBillDeleteClick(Order order) {
+        billRepository.delete(order);
+        billDataView.removeItem(order);
         this.view.onBillDeleteDone();
     }
 
-    public void fillGrid(Grid<Bill> grid) {
+    public void fillGrid(Grid<Order> grid) {
         billDataView = grid.setItems(queryBillList());
     }
 
-    private List<Bill> queryBillList() {
-        return billRepository.findBy(Bill.class);
+    private List<Order> queryBillList() {
+        return billRepository.findBy(Order.class);
     }
 
     public UUID dealBillScheduleRequest(BillScheduleRequest billScheduleRequest) {
-        UUID uuid = schedulingService.prepareScheduling(billScheduleRequest);
-
-        //. . .
-        return null;
+        return schedulingService.prepareScheduling(billScheduleRequest);
     }
 
 }

@@ -14,13 +14,13 @@ public interface TownshipCrawledRepository
 
     TownshipCrawled findByText(String text);
 
-    @Query("from TownshipCrawled as tc where tc.type=zzk.project.townshipscheduler.backend.persistence.TownshipCrawled.Type.HTML order by tc.createdDateTime limit 1")
+    @Query("from TownshipCrawled as tc where tc.type=zzk.townshipscheduler.backend.persistence.TownshipCrawled.Type.HTML order by tc.createdDateTime limit 1")
     Optional<TownshipCrawled> orderByCreatedDateTimeDescLimit1();
 
-    @Query("select tc.id from TownshipCrawled as tc  where tc.type=zzk.project.townshipscheduler.backend.persistence.TownshipCrawled.Type.IMAGE and tc.html=:html")
+    @Query("select tc.id from TownshipCrawled as tc  where tc.type=zzk.townshipscheduler.backend.persistence.TownshipCrawled.Type.IMAGE and tc.html=:html")
     Long queryIdBearImageByHtml(String html);
 
-    @Query("select tc.imageBytes from TownshipCrawled as tc where tc.type=zzk.project.townshipscheduler.backend.persistence.TownshipCrawled.Type.IMAGE and tc.html=:html")
+    @Query("select tc.imageBytes from TownshipCrawled as tc where tc.type=zzk.townshipscheduler.backend.persistence.TownshipCrawled.Type.IMAGE and tc.html=:html")
     byte[] queryImageBytesByHtml(String html);
 
 }

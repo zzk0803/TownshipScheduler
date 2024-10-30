@@ -49,8 +49,8 @@ public class TownshipFandomView
             onActionState();
             presenter.asyncProcess()
                     .whenComplete((unused, throwable) -> {
-                                      currentUi.access(this::onActionDone);
-                                  }
+                                currentUi.access(this::onActionDone);
+                            }
                     );
         });
         container.add(actionButton);

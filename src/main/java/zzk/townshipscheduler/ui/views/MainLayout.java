@@ -41,16 +41,6 @@ public class MainLayout
         addToDrawer(header, scroller, createFooter());
     }
 
-    private void addHeaderContent() {
-        DrawerToggle toggle = new DrawerToggle();
-        toggle.setAriaLabel("Menu toggle");
-
-        viewTitle = new H1();
-        viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
-
-        addToNavbar(true, toggle, viewTitle);
-    }
-
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
 
@@ -67,9 +57,19 @@ public class MainLayout
     }
 
     private Footer createFooter() {
-        Footer layout = new Footer();
+        Footer footer = new Footer();
 
-        return layout;
+        return footer;
+    }
+
+    private void addHeaderContent() {
+        DrawerToggle toggle = new DrawerToggle();
+        toggle.setAriaLabel("Menu toggle");
+
+        viewTitle = new H1();
+        viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
+
+        addToNavbar(true, toggle, viewTitle);
     }
 
     @Override

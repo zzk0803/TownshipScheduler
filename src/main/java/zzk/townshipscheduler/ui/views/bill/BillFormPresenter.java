@@ -6,9 +6,9 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
-import zzk.townshipscheduler.backend.persistence.Bill;
 import zzk.townshipscheduler.backend.persistence.BillRepository;
-import zzk.townshipscheduler.adopting.form.BillItem;
+import zzk.townshipscheduler.backend.persistence.Order;
+import zzk.townshipscheduler.port.form.BillItem;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,9 +25,9 @@ class BillFormPresenter {
 
     private BillFormView billFormView;
 
-    private Bill bill;
+    private Order order;
 
-    private Binder<Bill> binder;
+    private Binder<Order> binder;
 
     private ListDataProvider<BillItem> billItemGridDataProvider;
 
@@ -62,18 +62,18 @@ class BillFormPresenter {
 
     void onSubmit() {
         getBinder().validate();
-        getBill().setCreatedDateTime(LocalDateTime.now());
+        getOrder().setCreatedDateTime(LocalDateTime.now());
 
         assert getBillItemGridDataProvider().getItems() == getGridBillItems();
         assert getBillItemGridDataProvider().getItems().equals(getGridBillItems());
-        getGridBillItems().forEach(billItem -> getBill().addItem(billItem.getGoods(), billItem.getAmount()));
+        getGridBillItems().forEach(billItem -> getOrder().addItem(billItem.getGoods(), billItem.getAmount()));
 
-        getBillRepository().saveAndFlush(getBill());
+        getBillRepository().saveAndFlush(getOrder());
     }
 
-    public Binder<Bill> prepareBillAndBinder() {
+    public Binder<Order> prepareBillAndBinder() {
         this.binder = new Binder<>();
-        this.binder.setBean(this.bill = new Bill());
+        this.binder.setBean(this.order = new Order());
         return getBinder();
     }
 
@@ -83,7 +83,7 @@ class BillFormPresenter {
     }
 
     public void clean() {
-        bill = null;
+        order = null;
         gridBillItems.clear();
         gridBillItemsCounter = new AtomicInteger();
     }

@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import zzk.townshipscheduler.backend.persistence.Goods;
-import zzk.townshipscheduler.backend.persistence.GoodsDtoForCalcHierarchies;
-import zzk.townshipscheduler.backend.persistence.GoodsHierarchy;
 import zzk.townshipscheduler.backend.persistence.GoodsRepository;
+import zzk.townshipscheduler.port.GoodsDtoForCalcHierarchies;
+import zzk.townshipscheduler.port.GoodsHierarchy;
 
 import java.time.Duration;
 import java.util.*;
@@ -22,7 +22,31 @@ public class GoodsService {
 
     private final GoodsRepository goodsRepository;
 
-    public Duration queryDuration(Goods goods) {
+    private transient Collection<GoodsHierarchy> cachedGoodHierarchies;
+
+    //<editor-fold desc="delegate repository methods">
+    public Set<String> queryCategories() {
+        return goodsRepository.queryCategories();
+    }
+
+    public Optional<Goods> findByName(String name) {
+        return goodsRepository.findByName(name);
+    }
+
+    public <T> T findById(Class<T> projectionClass, Long id) {
+        return goodsRepository.findById(projectionClass, id);
+    }
+
+    public <T> List<T> findBy(Class<T> projectionClass) {
+        return goodsRepository.findBy(projectionClass);
+    }
+
+    public <T> List<T> findBy(Class<T> projectionClass, Sort sort) {
+        return goodsRepository.findBy(projectionClass, sort);
+    }
+    //</editor-fold>
+
+    public Duration calcGoodsDuration(Goods goods) {
         String durationString = goods.getDurationString();
         if (Objects.isNull(durationString)) {
             return Duration.ZERO;
@@ -34,22 +58,33 @@ public class GoodsService {
         Duration goodProductDuration;
         String[] split = replacedSpaceChar.split(",");
         if (split.length > 1) {
-            goodProductDuration = Arrays.stream(split)
-                    .map(ds -> Duration.parse("PT" + ds.toUpperCase()))
-                    .min(Duration::compareTo)
-                    .get();
-        }
-        {
+            goodProductDuration = Arrays.stream(split).map(ds -> Duration.parse("PT" + ds.toUpperCase())).min(Duration::compareTo).get();
+        } else {
             goodProductDuration = Duration.parse("PT" + durationString.toUpperCase());
         }
 
         return goodProductDuration;
     }
 
+    public GoodsHierarchy calcGoodsHierarchies(Goods goods) {
+        if (Objects.isNull(cachedGoodHierarchies) || cachedGoodHierarchies.isEmpty()) {
+            calcGoodsHierarchies();
+        }
+
+        Collection<GoodsHierarchy> goodsHierarchies = cachedGoodHierarchies;
+        return goodsHierarchies.stream()
+                .filter(goodsHierarchy -> goodsHierarchy.getGoodId().equals(goods.getId()))
+                .findFirst()
+                .orElseThrow();
+    }
+
     public Collection<GoodsHierarchy> calcGoodsHierarchies() {
         GoodsHierarchyContext goodsHierarchyContext = new GoodsHierarchyContext();
 
-        List<GoodsDtoForCalcHierarchies> goodsDtoList = goodsRepository.findBy(GoodsDtoForCalcHierarchies.class, Sort.by("id"));
+        List<GoodsDtoForCalcHierarchies> goodsDtoList = goodsRepository.findBy(
+                GoodsDtoForCalcHierarchies.class,
+                Sort.by("id")
+        );
         if (goodsDtoList.isEmpty()) {
             throw new IllegalStateException("it's wired no goods here");
         }
@@ -68,11 +103,13 @@ public class GoodsService {
                 System.currentTimeMillis() - systemCurrentTimeMillis
         );
 
-        return goodsHierarchyContext.getIdGoodsMap().values();
+        return this.cachedGoodHierarchies = goodsHierarchyContext.getIdGoodsMap().values();
     }
 
     private void checkMaterialOfGoodsIntoHierarchy(
-            GoodsHierarchyContext goodsHierarchyContext, GoodsDtoForCalcHierarchies src, List<GoodsDtoForCalcHierarchies> keyList
+            GoodsHierarchyContext goodsHierarchyContext,
+            GoodsDtoForCalcHierarchies src,
+            List<GoodsDtoForCalcHierarchies> keyList
     ) {
         String bomString = src.getBomString();
         if (bomString == null || bomString.isEmpty()) {
@@ -87,9 +124,8 @@ public class GoodsService {
                 int quantity = Integer.parseInt(matcher.group(1));
                 String goodsName = matcher.group(2).trim();
 
-                GoodsDtoForCalcHierarchies goodsMaterialDto = keyList.stream()
-                        .filter(dto -> dto != src && dto.getName().equalsIgnoreCase(goodsName))
-                        .findFirst().orElseThrow();
+                GoodsDtoForCalcHierarchies goodsMaterialDto = keyList.stream().filter(dto -> dto != src && dto.getName().equalsIgnoreCase(
+                        goodsName)).findFirst().orElseThrow();
 
                 goodsHierarchyContext.getIdGoodsMap()
                         .computeIfAbsent(
@@ -100,8 +136,7 @@ public class GoodsService {
                                         .materials(new HashMap<>())
                                         .build()
                         )
-                        .getMaterials()
-                        .putIfAbsent(goodsMaterialDto.getId(), quantity);
+                        .getMaterials().putIfAbsent(goodsMaterialDto.getId(), quantity);
 
             } catch (RuntimeException e) {
                 //ignore and do nothing
@@ -110,7 +145,9 @@ public class GoodsService {
     }
 
     private void checkProductOfGoodsIntoHierarchy(
-            GoodsHierarchyContext goodsHierarchyContext, GoodsDtoForCalcHierarchies src, List<GoodsDtoForCalcHierarchies> keyList
+            GoodsHierarchyContext goodsHierarchyContext,
+            GoodsDtoForCalcHierarchies src,
+            List<GoodsDtoForCalcHierarchies> keyList
     ) {
         Map<Long, GoodsHierarchy> goodsHierarchyMap = goodsHierarchyContext.getIdGoodsMap();
 
@@ -119,10 +156,8 @@ public class GoodsService {
 
         ArrayList<Long> productIdList;
         if (goodsHierarchyMap.containsKey(goodId)) {
-            productIdList = goodsHierarchyMap.entrySet().stream()
-                    .filter(entry -> entry.getValue().getMaterials().containsKey(goodId))
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toCollection(ArrayList::new));
+            productIdList = goodsHierarchyMap.entrySet().stream().filter(entry -> entry.getValue().getMaterials().containsKey(
+                    goodId)).map(Map.Entry::getKey).collect(Collectors.toCollection(ArrayList::new));
             goodsHierarchyMap.get(goodId).getComposite().addAll(productIdList);
         } else {
 //            productIdList = keyList.stream()
@@ -141,12 +176,7 @@ public class GoodsService {
         }
     }
 
-    public GoodsHierarchy calcGoodsHierarchies(Goods goods) {
-//        todo
-        return null;
-    }
-
-    class GoodsHierarchyContext {
+    private class GoodsHierarchyContext {
 
         private final Map<Long, GoodsHierarchy> idGoodsMap;
 

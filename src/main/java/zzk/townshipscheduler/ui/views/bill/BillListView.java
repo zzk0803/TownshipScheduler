@@ -18,13 +18,15 @@ import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
-import zzk.townshipscheduler.backend.persistence.Bill;
 import zzk.townshipscheduler.backend.persistence.Goods;
-import zzk.townshipscheduler.adopting.form.BillScheduleRequest;
+import zzk.townshipscheduler.backend.persistence.Order;
+import zzk.townshipscheduler.port.form.BillScheduleRequest;
+import zzk.townshipscheduler.ui.views.schedule.ScheduleView;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 @Route
@@ -33,7 +35,7 @@ public class BillListView extends VerticalLayout implements AfterNavigationObser
 
     private final BillListViewPresenter billListViewPresenter;
 
-    private final Grid<Bill> grid = new Grid<>();
+    private final Grid<Order> grid = new Grid<>();
 
     public BillListView(
             BillListViewPresenter billListViewPresenter
@@ -50,9 +52,10 @@ public class BillListView extends VerticalLayout implements AfterNavigationObser
 
         Button schedulingButton = new Button();
         schedulingButton.addClickListener(click -> {
-            GridDataView<Bill> genericDataView = grid.getGenericDataView();
-            Stream<Bill> items = genericDataView.getItems();
-            billListViewPresenter.dealBillScheduleRequest(BillScheduleRequest.builder().bills(items.toList()).build());
+            GridDataView<Order> genericDataView = grid.getGenericDataView();
+            Stream<Order> items = genericDataView.getItems();
+            UUID uuid = billListViewPresenter.dealBillScheduleRequest(BillScheduleRequest.builder().orders(items.toList()).build());
+            UI.getCurrent().navigate(ScheduleView.class, uuid.toString());
         });
 
         Button addBillButton = new Button(VaadinIcon.PLUS.create());
@@ -67,27 +70,27 @@ public class BillListView extends VerticalLayout implements AfterNavigationObser
         setMargin(false);
     }
 
-    public Component buildBillCard(Bill bill) {
+    public Component buildBillCard(Order order) {
         HorizontalLayout card = new HorizontalLayout();
         card.setDefaultVerticalComponentAlignment(Alignment.CENTER);
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
-        boolean boolDeadLine = bill.isBoolDeadLine();
+        boolean boolDeadLine = order.isBoolDeadLine();
         if (boolDeadLine) {
-            LocalDateTime deadLine = bill.getDeadLine();
+            LocalDateTime deadLine = order.getDeadLine();
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
             dateTimePicker.setLabel("Dead Line");
             dateTimePicker.setReadOnly(true);
-            card.add(new VerticalLayout(strAsSpan(bill.getBillType().name()), dateTimePicker));
+            card.add(new VerticalLayout(strAsSpan(order.getOrderType().name()), dateTimePicker));
         } else {
-            card.add(new VerticalLayout(strAsSpan(bill.getBillType().name()), strAsSpan("No Deadline")));
+            card.add(new VerticalLayout(strAsSpan(order.getOrderType().name()), strAsSpan("No Deadline")));
         }
 
-        card.add(buildBillItemPairsComponent(bill));
+        card.add(buildBillItemPairsComponent(order));
 
         card.add(new Button(VaadinIcon.CLOSE.create(), click -> {
-            billListViewPresenter.onBillDeleteClick(bill);
+            billListViewPresenter.onBillDeleteClick(order);
         }));
 
         return card;
@@ -97,9 +100,9 @@ public class BillListView extends VerticalLayout implements AfterNavigationObser
         return new Span(content);
     }
 
-    private HorizontalLayout buildBillItemPairsComponent(Bill bill) {
+    private HorizontalLayout buildBillItemPairsComponent(Order order) {
         HorizontalLayout billItemLayout = new HorizontalLayout();
-        Map<Goods, Integer> productAmountPairs = bill.getProductAmountPairs();
+        Map<Goods, Integer> productAmountPairs = order.getProductAmountPairs();
         productAmountPairs.forEach((goods, integer) -> {
             Image image = new Image();
             image.setHeight("40px");
@@ -130,7 +133,7 @@ public class BillListView extends VerticalLayout implements AfterNavigationObser
         fillBillCards(grid);
     }
 
-    private void fillBillCards(Grid<Bill> grid) {
+    private void fillBillCards(Grid<Order> grid) {
         billListViewPresenter.fillGrid(grid);
     }
 

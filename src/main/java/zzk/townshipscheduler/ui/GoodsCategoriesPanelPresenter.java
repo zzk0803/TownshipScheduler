@@ -106,9 +106,9 @@ class GoodsCategoriesPanelPresenter {
             categoryListBox.setItems(categoriesData);
         }
         categoryListBox.setItems(this.listDataProvider.getItems().stream()
-                                         .collect(Collectors.groupingBy(Goods::getCategory))
-                                         .keySet()
-                                         .toArray(String[]::new)
+                .collect(Collectors.groupingBy(Goods::getCategory))
+                .keySet()
+                .toArray(String[]::new)
         );
     }
 
