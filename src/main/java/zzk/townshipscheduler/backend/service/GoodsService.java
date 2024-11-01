@@ -6,6 +6,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import zzk.townshipscheduler.backend.persistence.Goods;
 import zzk.townshipscheduler.backend.persistence.GoodsRepository;
+import zzk.townshipscheduler.port.GoodId;
 import zzk.townshipscheduler.port.GoodsDtoForCalcHierarchies;
 import zzk.townshipscheduler.port.GoodsHierarchy;
 
@@ -99,11 +100,11 @@ public class GoodsService {
         }
         log.info(
                 "calcGoodsHierarchies end...result in {} items,{} passed",
-                goodsHierarchyContext.getIdGoodsMap().size(),
+                goodsHierarchyContext.getIdHierarchyMap().size(),
                 System.currentTimeMillis() - systemCurrentTimeMillis
         );
 
-        return this.cachedGoodHierarchies = goodsHierarchyContext.getIdGoodsMap().values();
+        return this.cachedGoodHierarchies = goodsHierarchyContext.getIdHierarchyMap().values();
     }
 
     private void checkMaterialOfGoodsIntoHierarchy(
@@ -127,16 +128,16 @@ public class GoodsService {
                 GoodsDtoForCalcHierarchies goodsMaterialDto = keyList.stream().filter(dto -> dto != src && dto.getName().equalsIgnoreCase(
                         goodsName)).findFirst().orElseThrow();
 
-                goodsHierarchyContext.getIdGoodsMap()
+                goodsHierarchyContext.getIdHierarchyMap()
                         .computeIfAbsent(
                                 src.getId(),
                                 key -> GoodsHierarchy.builder()
-                                        .goodId(src.getId())
+                                        .goodId(GoodId.of(src.getId()))
                                         .composite(new ArrayList<>())
                                         .materials(new HashMap<>())
                                         .build()
                         )
-                        .getMaterials().putIfAbsent(goodsMaterialDto.getId(), quantity);
+                        .getMaterials().putIfAbsent(GoodId.of(goodsMaterialDto.getId()), quantity);
 
             } catch (RuntimeException e) {
                 //ignore and do nothing
@@ -146,46 +147,34 @@ public class GoodsService {
 
     private void checkProductOfGoodsIntoHierarchy(
             GoodsHierarchyContext goodsHierarchyContext,
-            GoodsDtoForCalcHierarchies src,
+            GoodsDtoForCalcHierarchies gdch,
             List<GoodsDtoForCalcHierarchies> keyList
     ) {
-        Map<Long, GoodsHierarchy> goodsHierarchyMap = goodsHierarchyContext.getIdGoodsMap();
+        Map<Long, GoodsHierarchy> goodsHierarchyMap = goodsHierarchyContext.getIdHierarchyMap();
 
-        Long goodId = src.getId();
-        String name = src.getName();
+        Long goodId = gdch.getId();
+        String name = gdch.getName();
 
-        ArrayList<Long> productIdList;
+        ArrayList<GoodId> productIdList;
         if (goodsHierarchyMap.containsKey(goodId)) {
-            productIdList = goodsHierarchyMap.entrySet().stream().filter(entry -> entry.getValue().getMaterials().containsKey(
-                    goodId)).map(Map.Entry::getKey).collect(Collectors.toCollection(ArrayList::new));
+            productIdList = goodsHierarchyMap.entrySet().stream()
+                    .filter(entry -> entry.getValue().getMaterials().containsKey(goodId))
+                    .map(idHierarchyEntry -> GoodId.of(idHierarchyEntry.getKey()))
+                    .collect(Collectors.toCollection(ArrayList::new));
             goodsHierarchyMap.get(goodId).getComposite().addAll(productIdList);
-        } else {
-//            productIdList = keyList.stream()
-//                    .filter(dto -> dto.getBomString().contains(name))
-//                    .map(GoodsForHierarchyDto::getId)
-//                    .collect(Collectors.toCollection(ArrayList::new));
-//            Objects.requireNonNull(goodsHierarchyMap.put(
-//                    goodId,
-//                    GoodsHierarchy.builder()
-//                            .goodId(goodId)
-//                            .name(name)
-//                            .advancedProductList(new ArrayList<>())
-//                            .consistMaterialMap(new HashMap<>())
-//                            .build()
-//            )).getAdvancedProductList().addAll(productIdList);
         }
     }
 
     private class GoodsHierarchyContext {
 
-        private final Map<Long, GoodsHierarchy> idGoodsMap;
+        private final Map<Long, GoodsHierarchy> idHierarchyMap;
 
         public GoodsHierarchyContext() {
-            idGoodsMap = new HashMap<>();
+            idHierarchyMap = new HashMap<>();
         }
 
-        public Map<Long, GoodsHierarchy> getIdGoodsMap() {
-            return idGoodsMap;
+        public Map<Long, GoodsHierarchy> getIdHierarchyMap() {
+            return idHierarchyMap;
         }
 
 

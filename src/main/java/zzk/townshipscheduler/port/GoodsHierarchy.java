@@ -2,6 +2,7 @@ package zzk.townshipscheduler.port;
 
 import lombok.Builder;
 import lombok.Data;
+import zzk.townshipscheduler.backend.persistence.Goods;
 
 import java.util.List;
 import java.util.Map;
@@ -10,11 +11,11 @@ import java.util.Map;
 @Builder
 public class GoodsHierarchy {
 
-    private Long goodId;
+    private GoodId goodId;
 
-    private List<Long> composite;
+    private List<GoodId> composite;
 
-    private Map<Long, Integer> materials;
+    private Map<GoodId, Integer> materials;
 
     public boolean boolAtomicGood() {
         return materials == null || materials.isEmpty();

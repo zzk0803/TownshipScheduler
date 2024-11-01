@@ -1,16 +1,16 @@
-package zzk.townshipscheduler.backend.scheduling.model.fact;
+package zzk.townshipscheduler.backend.scheduling.model;
 
 import lombok.Data;
-import zzk.townshipscheduler.port.GoodId;
 import zzk.townshipscheduler.backend.persistence.Goods;
-import zzk.townshipscheduler.backend.scheduling.model.WorkObject;
+import zzk.townshipscheduler.port.GoodId;
+import zzk.townshipscheduler.port.GoodsHierarchy;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 @Data
-public class SchedulingGoods implements WorkObject {
+public class SchedulingGoods {
 
     private GoodId goodId;
 
@@ -30,6 +30,18 @@ public class SchedulingGoods implements WorkObject {
 
     private Integer helpValue;
 
+    private boolean atomicGoods;
+
+    private String bomString;
+
+    private transient GoodsHierarchy goodsHierarchy;
+
+    private transient Map<SchedulingGoods, Integer> bom;
+
+    private String durationString;
+
+    private transient Duration producingDuration;
+
     public SchedulingGoods(Goods goods) {
         this.goodId = GoodId.of(goods.getId());
         this.name = goods.getName();
@@ -40,6 +52,8 @@ public class SchedulingGoods implements WorkObject {
         this.xp = goods.getXp();
         this.dealerValue = goods.getDealerValue();
         this.helpValue = goods.getHelpValue();
+        this.bomString = goods.getBomString();
+        this.durationString = goods.getDurationString();
     }
 
 }

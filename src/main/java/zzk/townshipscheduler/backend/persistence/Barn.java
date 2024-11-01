@@ -19,9 +19,6 @@ public class Barn {
     @OneToOne
     private Player player;
 
-    @ElementCollection
-    private Map<Goods, Integer> stock;
-
     private LocalDateTime lastStockCheck;
 
     private Long stockCheckCount;
