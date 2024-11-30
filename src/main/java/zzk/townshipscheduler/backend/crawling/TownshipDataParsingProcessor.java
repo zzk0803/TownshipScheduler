@@ -16,8 +16,8 @@ class TownshipDataParsingProcessor {
 
     public static final Logger logger = LoggerFactory.getLogger(TownshipDataParsingProcessor.class);
 
-    private static TreeMap<Integer, List<Map.Entry<RawDataCrawledCoord, RawDataCrawledCell>>> betweenTowHeaderAndGroupByRowNumber(
-            SortedMap<RawDataCrawledCoord, RawDataCrawledCell> betweenTwoHeaders
+    private static TreeMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> betweenTowHeaderAndGroupByRowNumber(
+            SortedMap<CrawledDataCoordinate, CrawledDataCell> betweenTwoHeaders
     ) {
         return betweenTwoHeaders.entrySet()
                 .stream()
@@ -31,16 +31,16 @@ class TownshipDataParsingProcessor {
     public ParsedResult process(CrawledResult crawledResult) {
         logger.info("ParsedResult working...");
         LinkedHashMap<String, ParsedResultSegment> result = new LinkedHashMap<>();
-        TreeMap<RawDataCrawledCoord, RawDataCrawledCell> crawledAsMap = crawledResult.get();
+        TreeMap<CrawledDataCoordinate, CrawledDataCell> crawledAsMap = crawledResult.get();
 
-        LinkedList<RawDataCrawledCoord> headRowCoordList = filterCoordTypeHeadAsList(crawledAsMap);
+        LinkedList<CrawledDataCoordinate> oneCoordRowAsHeadRowList = filterCoordTypeHeadAsList(crawledAsMap);
 
-        int headRowSize = headRowCoordList.size();
+        int headRowSize = oneCoordRowAsHeadRowList.size();
         Assert.isTrue(headRowSize >= 2, "should be more than 2");
 
-        Iterator<RawDataCrawledCoord> rowIterator = headRowCoordList.iterator();
-        RawDataCrawledCoord formerRowCoord = null;
-        RawDataCrawledCoord latterRowCoord = null;
+        Iterator<CrawledDataCoordinate> rowIterator = oneCoordRowAsHeadRowList.iterator();
+        CrawledDataCoordinate formerRowCoord = null;
+        CrawledDataCoordinate latterRowCoord = null;
         if (rowIterator.hasNext()) {
             formerRowCoord = rowIterator.next();
         }
@@ -53,14 +53,14 @@ class TownshipDataParsingProcessor {
 
         boolean rowIteratorBool = true;
         while (rowIteratorBool) {
-            SortedMap<RawDataCrawledCoord, RawDataCrawledCell> betweenTwoHeaders = crawledAsMap.subMap(
+            SortedMap<CrawledDataCoordinate, CrawledDataCell> betweenTwoHeadersAsSortedMap = crawledAsMap.subMap(
                     formerRowCoord,
                     false,
                     latterRowCoord,
                     false
             );
 
-            if (betweenTwoHeaders.isEmpty()) {
+            if (betweenTwoHeadersAsSortedMap.isEmpty()) {
                 formerRowCoord = latterRowCoord;
                 if (rowIterator.hasNext()) {
                     latterRowCoord = rowIterator.next();
@@ -70,21 +70,26 @@ class TownshipDataParsingProcessor {
                 continue;
             }
 
-            TreeMap<Integer, List<Map.Entry<RawDataCrawledCoord, RawDataCrawledCell>>> betweenTwoHeadersGroupByRow =
-                    betweenTowHeaderAndGroupByRowNumber(betweenTwoHeaders);
+            TreeMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> betweenTwoHeadersGroupByRowAsTreeMap =
+                    betweenTowHeaderAndGroupByRowNumber(betweenTwoHeadersAsSortedMap);
 
-            String categotyString = figureOutCategotyString(formerRowCoord, headRowCoordList, crawledAsMap);
-
-            Map.Entry<Integer, List<Map.Entry<RawDataCrawledCoord, RawDataCrawledCell>>> columnsNameRowAsMapEntry =
-                    betweenTwoHeadersGroupByRow.firstEntry();
-
-            SortedMap<Integer, List<Map.Entry<RawDataCrawledCoord, RawDataCrawledCell>>> dataAsMapEntries = betweenTwoHeadersGroupByRow.tailMap(
-                    columnsNameRowAsMapEntry.getKey(),
-                    false
+            String categotyString = figureOutCategotyString(
+                    formerRowCoord,
+                    oneCoordRowAsHeadRowList,
+                    crawledAsMap
             );
 
+            Map.Entry<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> columnsNameRowAsMapEntry =
+                    betweenTwoHeadersGroupByRowAsTreeMap.firstEntry();
+
+            SortedMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> dataAsMapEntries =
+                    betweenTwoHeadersGroupByRowAsTreeMap.tailMap(
+                            columnsNameRowAsMapEntry.getKey(),
+                            false
+                    );
+
             ParsedResultSegment parsedResultSegment = new ParsedResultSegment(categotyString);
-            for (Map.Entry<RawDataCrawledCoord, RawDataCrawledCell> columnEntry : columnsNameRowAsMapEntry.getValue()) {
+            for (Map.Entry<CrawledDataCoordinate, CrawledDataCell> columnEntry : columnsNameRowAsMapEntry.getValue()) {
                 AtomicInteger rowCounter = new AtomicInteger(0);
                 dataAsMapEntries.values().stream()
                         .flatMap(Collection::stream)
@@ -92,9 +97,9 @@ class TownshipDataParsingProcessor {
                         .filter(dataEntry -> dataEntry.getKey().getColumn() == columnEntry.getKey().getColumn())
                         .forEach(dataEntry -> {
                             String columnName = columnEntry.getValue().reasonableText();
-                            RawDataCrawledCell rawDataCrawledCell = dataEntry.getValue();
+                            CrawledDataCell crawledDataCell = dataEntry.getValue();
 //                            parsedResultSegment.add(columnName, rawDataCrawledCell);
-                            parsedResultSegment.add(rowCounter.incrementAndGet(), columnName, rawDataCrawledCell);
+                            parsedResultSegment.add(rowCounter.incrementAndGet(), columnName, crawledDataCell);
                         });
             }
             result.put(categotyString, parsedResultSegment);
@@ -111,21 +116,21 @@ class TownshipDataParsingProcessor {
         return new ParsedResult(result);
     }
 
-    private LinkedList<RawDataCrawledCoord> filterCoordTypeHeadAsList(TreeMap<RawDataCrawledCoord, RawDataCrawledCell> crawledAsMap) {
+    private LinkedList<CrawledDataCoordinate> filterCoordTypeHeadAsList(TreeMap<CrawledDataCoordinate, CrawledDataCell> crawledAsMap) {
         return crawledAsMap.entrySet().stream()
-                .filter(entry -> entry.getValue().getType() == RawDataCrawledCell.Type.HEAD)
+                .filter(entry -> entry.getValue().getType() == CrawledDataCell.Type.HEAD)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toCollection(LinkedList::new));
     }
 
     private String figureOutCategotyString(
-            RawDataCrawledCoord currentRowCoord,
-            LinkedList<RawDataCrawledCoord> headRowCoordList,
-            TreeMap<RawDataCrawledCoord, RawDataCrawledCell> fixedCellMap
+            CrawledDataCoordinate currentRowCoord,
+            LinkedList<CrawledDataCoordinate> headRowCoordList,
+            TreeMap<CrawledDataCoordinate, CrawledDataCell> fixedCellMap
     ) {
         String result = "n/a";
 
-        RawDataCrawledCell currentCell = fixedCellMap.get(currentRowCoord);
+        CrawledDataCell currentCell = fixedCellMap.get(currentRowCoord);
         String currentText = currentCell.getText();
 
         boolean cellCategoryJudge = currentCell.boolContentLooksLikeCategory();
@@ -138,7 +143,7 @@ class TownshipDataParsingProcessor {
             } else {
                 int currentIdx = headRowCoordList.indexOf(currentRowCoord);
                 if (currentIdx > 0) {
-                    RawDataCrawledCoord previousCoord = headRowCoordList.get(currentIdx - 1);
+                    CrawledDataCoordinate previousCoord = headRowCoordList.get(currentIdx - 1);
                     return figureOutCategotyString(previousCoord, headRowCoordList, fixedCellMap);
                 }
             }

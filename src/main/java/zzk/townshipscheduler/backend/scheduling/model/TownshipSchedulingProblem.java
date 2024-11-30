@@ -1,10 +1,16 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
+import ai.timefold.solver.core.api.domain.valuerange.CountableValueRange;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
+import ai.timefold.solver.core.api.solver.SolverStatus;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,21 +20,22 @@ public class TownshipSchedulingProblem {
 
     private UUID uuid;
 
-    private String playerName;
+    private LocalDateTime dateTime=LocalDateTime.now();
 
-    private Integer playerLevel;
-
-    @ProblemFactCollectionProperty
-    private List<SchedulingGoods> goods;
+    @ProblemFactProperty
+    private SchedulingGamePlayer schedulingGamePlayer;
 
     @ProblemFactCollectionProperty
-    private List<SchedulingOrder> orders;
+    private List<SchedulingProduct> schedulingProductList;
 
-    @PlanningEntityProperty
-    private SchedulingWarehouse warehouse;
+    @ProblemFactCollectionProperty
+    private List<SchedulingOrder> schedulingOrderList;
+
+    @ProblemFactCollectionProperty
+    private List<SchedulingFactory> schedulingFactoryList;
 
     @PlanningEntityCollectionProperty
-    private List<SchedulingPlantFieldSlot> plantSlots;
+    private List<SchedulingFactorySlot> schedulingFactorySlotList;
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider
@@ -36,5 +43,17 @@ public class TownshipSchedulingProblem {
 
     @PlanningScore
     private HardMediumSoftLongScore score;
+
+    private SolverStatus solverStatus;
+
+//    @ValueRangeProvider(id = "producingBeginDateTime")
+//    public CountableValueRange<LocalDateTime> producingBeginDateTime() {
+//        return ValueRangeFactory.createLocalDateTimeValueRange(
+//                LocalDateTime.now(),
+//                LocalDateTime.now().plusDays(1),
+//                5,
+//                ChronoUnit.MINUTES
+//        );
+//    }
 
 }

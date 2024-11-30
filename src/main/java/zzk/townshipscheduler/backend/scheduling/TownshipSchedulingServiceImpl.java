@@ -3,25 +3,25 @@ package zzk.townshipscheduler.backend.scheduling;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverManager;
+import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import zzk.townshipscheduler.backend.persistence.Goods;
-import zzk.townshipscheduler.backend.persistence.Order;
 import zzk.townshipscheduler.backend.scheduling.model.*;
-import zzk.townshipscheduler.backend.service.GoodsService;
-import zzk.townshipscheduler.backend.tfdemo.foodpacking.PackagingSchedule;
-import zzk.townshipscheduler.port.GoodId;
-import zzk.townshipscheduler.port.GoodsHierarchy;
-import zzk.townshipscheduler.port.form.BillScheduleRequest;
+import zzk.townshipscheduler.backend.service.ProductService;
+import zzk.townshipscheduler.pojo.form.BillScheduleRequest;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
-@Service(value = "schedulingService")
+@Slf4j
+@Service
 @RequiredArgsConstructor
 public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
 
-    private final GoodsService goodsService;
+    private final ProductService productService;
+
+    private final TownshipSchedulingProblemHolder problemHolder;
 
     private final SolverManager<TownshipSchedulingProblem, UUID> solverManager;
 
@@ -29,80 +29,151 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     @Override
     public UUID prepareScheduling(BillScheduleRequest billScheduleRequest) {
-        TownshipSchedulingProblem townshipSchedulingProblem = new TownshipSchedulingProblem();
+//        TownshipSchedulingProblem townshipSchedulingProblem = new TownshipSchedulingProblem();
+//        SchedulingGamePlayer schedulingGamePlayer = new SchedulingGamePlayer();
+//        schedulingGamePlayer.setPlayerName("TEST");
+//        schedulingGamePlayer.setPlayerLevel(72);
+//        townshipSchedulingProblem.setSchedulingGamePlayer(schedulingGamePlayer);
+//
+////        List<ProductEntity> productEntityList = goodsService.findBy(ProductEntity.class);
+//        List<ProductEntityForSchedulingDto> productEntityDtoList = goodsService.findBy(ProductEntityForSchedulingDto.class);
+//
+//        Map<ProductEntity, SchedulingProduct> tempContrastMapEntitySchedulingMap = new HashMap<>();
+//        Map<ProductId, SchedulingProduct> tempContrastMapGoodsIdSchedulingMap = new HashMap<>();
+//        List<SchedulingProduct> schedulingProductList = new ArrayList<>();
+//
+////        for (ProductEntity productEntity : productEntityList) {
+////            SchedulingProduct schedulingProduct = new SchedulingProduct(productEntity);
+////            schedulingProduct.setProducingDuration(goodsService.calcGoodsDuration(productEntity).get(0));
+////            schedulingProduct.setProductManufactureRelation(goodsService.calcGoodsHierarchies(productEntity).get(0));
+////            schedulingProductList.add(schedulingProduct);
+////            tempContrastMapEntitySchedulingMap.put(productEntity, schedulingProduct);
+////            tempContrastMapGoodsIdSchedulingMap.put(ProductId.of(schedulingProduct.getId()), schedulingProduct);
+////        }
+//        for (ProductEntityForSchedulingDto productEntityDto : productEntityDtoList) {
+//            SchedulingProduct schedulingProduct = new SchedulingProduct(productEntityDto);
+//            schedulingProduct.setProducingDuration(goodsService.calcGoodsDuration(productEntity).get(0));
+//            schedulingProduct.setProductManufactureRelation(goodsService.calcGoodsHierarchies(productEntity).get(0));
+//            schedulingProductList.add(schedulingProduct);
+//            tempContrastMapEntitySchedulingMap.put(productEntity, schedulingProduct);
+//            tempContrastMapGoodsIdSchedulingMap.put(ProductId.of(schedulingProduct.getId()), schedulingProduct);
+//        }
+//
+//        for (SchedulingProduct schedulingProduct : schedulingProductList) {
+//            Map<SchedulingProduct, Integer> bom = new LinkedHashMap<>();
+//            ProductManufactureRelation productManufactureRelation = schedulingProduct.getProductManufactureRelation();
+//            if (Objects.nonNull(productManufactureRelation)) {
+//                Map<ProductId, Integer> mapInHierarchy = productManufactureRelation.getMaterials();
+//                if (Objects.nonNull(mapInHierarchy) && !mapInHierarchy.isEmpty()) {
+//                    mapInHierarchy.forEach((goodId, amount) -> bom.put(
+//                            tempContrastMapGoodsIdSchedulingMap.get(goodId),
+//                            amount
+//                    ));
+//                    schedulingProduct.setMaterialAmountMap(bom);
+//                }
+//            }
+//        }
+//        townshipSchedulingProblem.setSchedulingProductList(schedulingProductList);
+//
+//        List<SchedulingFactory> schedulingFactoryList = new ArrayList<>();
+//        Map<String, List<SchedulingProduct>> categorySchedulingProductsMap = productEntityList.stream()
+//                .map(tempContrastMapEntitySchedulingMap::get)
+//                .collect(Collectors.groupingBy(SchedulingProduct::getCategory));
+//        categorySchedulingProductsMap.forEach(
+//                (category, portfolios) -> {
+//                    int slotAmount = 6;
+//                    SchedulingFactory schedulingFactory = new SchedulingFactory(
+//                            category,
+//                            portfolios,
+//                            slotAmount
+//                    );
+//                    List<SchedulingFactorySlot> schedulingFactorySlotList = new ArrayList<>();
+//                    for (int i = 0; i < slotAmount; i++) {
+//                        SchedulingFactorySlot schedulingFactorySlot = new SchedulingFactorySlot();
+//                        schedulingFactorySlot.setId(schedulingFactory.getCategory() + "-" + (1 + i));
+//                        schedulingFactorySlot.setSchedulingFactory(schedulingFactory);
+//                        schedulingFactorySlot.setPlayer(schedulingGamePlayer);
+//                        schedulingFactorySlotList.add(schedulingFactorySlot);
+//                    }
+//                    schedulingFactory.setFactorySlotList(schedulingFactorySlotList);
+//                    schedulingFactoryList.add(schedulingFactory);
+//                }
+//        );
+//        townshipSchedulingProblem.setSchedulingFactoryList(schedulingFactoryList);
+//
+//        List<OrderEntity> orderEntities = billScheduleRequest.getOrderEntities();
+//        List<SchedulingOrder> schedulingOrders = orderEntities.stream()
+//                .map(order -> {
+//                    Map<ProductEntity, Integer> productAmountPairs = order.getProductAmountPairs();
+//                    Map<SchedulingProduct, Integer> billInOrder = new LinkedHashMap<>();
+//                    productAmountPairs.forEach((goods, amount) -> billInOrder.put(tempContrastMapEntitySchedulingMap.get(
+//                            goods), amount));
+//                    return new SchedulingOrder(
+//                            order.getId(),
+//                            order.getOrderType().name(),
+//                            billInOrder,
+//                            order.getDeadLine()
+//                    );
+//                }).toList();
+//        townshipSchedulingProblem.setSchedulingOrderList(schedulingOrders);
+//
+//        List<SchedulingFactorySlot> schedulingFactorySlotList = schedulingFactoryList.stream()
+//                .flatMap(schedulingFactory -> schedulingFactory.getFactorySlotList().stream())
+//                .toList();
+//        townshipSchedulingProblem.setSchedulingFactorySlotList(schedulingFactorySlotList);
+//
+//        List<SchedulingProducing> schedulingProducingList = schedulingOrders.stream()
+//                .flatMap(schedulingOrder -> schedulingOrder.calcProducingGoods().stream())
+//                .toList();
+//        schedulingGamePlayer.setSchedulingProducingList(schedulingProducingList);
+//        townshipSchedulingProblem.setSchedulingProducingList(schedulingProducingList);
+//        log.info("{} producing,details:{}", schedulingProducingList.size(), schedulingProducingList);
+//
+//
+//        UUID uuid = UUID.randomUUID();
+//        townshipSchedulingProblem.setUuid(uuid);
+//        problemHolder.write(townshipSchedulingProblem);
+//        return uuid;
+        return UUID.randomUUID();
+    }
 
-        List<Goods> goodsList = goodsService.findBy(Goods.class);
-
-        Map<Goods, SchedulingGoods> tempContrastMap = new HashMap<>();
-        List<SchedulingGoods> schedulingGoodsList = new ArrayList<>();
-
-        for (Goods goods : goodsList) {
-            SchedulingGoods schedulingGoods = new SchedulingGoods(goods);
-            schedulingGoods.setProducingDuration(goodsService.calcGoodsDuration(goods));
-            GoodsHierarchy goodsHierarchy = goodsService.calcGoodsHierarchies(goods);
-            schedulingGoods.setGoodsHierarchy(goodsHierarchy);
-            schedulingGoodsList.add(schedulingGoods);
-            tempContrastMap.put(goods, schedulingGoods);
-        }
-
-        for (SchedulingGoods schedulingGoods : schedulingGoodsList) {
-            Map<SchedulingGoods, Integer> bom = new LinkedHashMap<>();
-            schedulingGoods.getGoodsHierarchy()
-                    .getMaterials()
-                    .forEach((goodId, integer) -> {
-                        bom.put(
-                                schedulingGoodsList.stream().filter(goods -> goodId.equals(goods.getGoodId())).findFirst().orElseThrow(),
-                                integer
-                        );
-                    });
-            schedulingGoods.setBom(bom);
-        }
-        townshipSchedulingProblem.setGoods(schedulingGoodsList);
-
-        Map<String, List<Goods>> categoryGoodsListMap = goodsList.stream().collect(Collectors.groupingBy(Goods::getCategory));
-        List<SchedulingPlantFieldSlot> plantFieldSlots = new ArrayList<>();
-        categoryGoodsListMap.forEach((category, portfolios) -> {
-            for (int i = 0; i < 6; i++) {
-                SchedulingPlantFieldSlot slot = new SchedulingPlantFieldSlot();
-                slot.setCategory(category);
-                slot.setCategorySeq(i + 1);
-                slot.setPortfolioGoods(portfolios.stream().map(tempContrastMap::get).toList());
-                slot.setParallel(1);
-                plantFieldSlots.add(slot);
-            }
+    @Override
+    public CompletableFuture<Void> scheduling(UUID problemId) {
+        return CompletableFuture.runAsync(() -> {
+            solverManager.solveBuilder()
+                    .withProblemId(problemId)
+                    .withProblemFinder(this::getSchedule)
+                    .withBestSolutionConsumer(problemHolder::write)
+                    .run();
         });
-        townshipSchedulingProblem.setPlantSlots(plantFieldSlots);
+    }
 
-        List<Order> orders = billScheduleRequest.getOrders();
-        List<SchedulingOrder> schedulingOrders = orders.stream()
-                .map(order -> {
-                    Map<Goods, Integer> productAmountPairs = order.getProductAmountPairs();
-                    Map<SchedulingGoods, Integer> map = new LinkedHashMap<>();
-                    productAmountPairs.forEach((goods, integer) -> {
-                        map.put(tempContrastMap.get(goods), integer);
-                    });
-                    return new SchedulingOrder(
-                            order.getId(),
-                            order.getOrderType().name(),
-                            map,
-                            order.getDeadLine()
-                    );
-                }).toList();
-        townshipSchedulingProblem.setOrders(schedulingOrders);
+    @Override
+    public CompletableFuture<Void> abort(UUID problemId) {
+        return CompletableFuture.runAsync(() -> {
+            solverManager.terminateEarly(problemId);
+        });
+    }
 
-        List<SchedulingProducing> schedulingProducingList = schedulingGoodsList.stream()
-                .map(SchedulingProducing::new)
-                .toList();
-        townshipSchedulingProblem.setSchedulingProducingList(schedulingProducingList);
-
-        UUID uuid = UUID.randomUUID();
-        townshipSchedulingProblem.setUuid(uuid);
-        return uuid;
+    @Override
+    public TownshipSchedulingProblem getSchedule(UUID problemId) {
+        SolverStatus solverStatus = solverManager.getSolverStatus(problemId);
+        TownshipSchedulingProblem townshipSchedulingProblem = problemHolder.read();
+        townshipSchedulingProblem.setSolverStatus(solverStatus);
+        return townshipSchedulingProblem;
     }
 
     @Override
     public boolean checkUuidIsValidForSchedule(String uuid) {
-        return false;
+        if (Objects.isNull(uuid) || uuid.isBlank()) {
+            return false;
+        }
+
+        TownshipSchedulingProblem problem = problemHolder.read();
+        if (Objects.isNull(problem)) {
+            return false;
+        }
+        return problem.getUuid().toString().equals(uuid);
     }
 
 

@@ -2,11 +2,12 @@ package zzk.townshipscheduler.backend.crawling;
 
 import com.google.common.collect.Table;
 import lombok.RequiredArgsConstructor;
+import org.atteo.evo.inflector.English;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import zzk.townshipscheduler.backend.persistence.Goods;
-import zzk.townshipscheduler.backend.persistence.TownshipCrawledRepository;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -18,13 +19,14 @@ class TownshipDataTransferProcessor {
 
     public static final Logger logger = LoggerFactory.getLogger(TownshipDataTransferProcessor.class);
 
-    private final TownshipCrawledRepository townshipCrawledRepository;
+    public static final Pattern PRODUCT_NAME_GAIN_AMOUNT_PATTERN = Pattern.compile("^(.+?)\\s*x(\\d+)$");
 
+    private final WikiCrawledEntityRepository wikiCrawledEntityRepository;
 
     public TransferResult process(ParsedResult parsedResult) {
         logger.info("parsing into entity ...");
 
-        List<Goods> goodsArrayList = new ArrayList<>();
+        List<ProductEntity> productEntityArrayList = new ArrayList<>();
 
         Map<String, ParsedResultSegment> resultGroupByTable = parsedResult.groupByTable();
         Set<Map.Entry<String, ParsedResultSegment>> entries = resultGroupByTable.entrySet();
@@ -33,162 +35,117 @@ class TownshipDataTransferProcessor {
             String category = parsedResultSegment.getCategory();
 
             int size = parsedResultSegment.size();
-            Table<Integer, String, RawDataCrawledCell> cellTable = parsedResultSegment.getTable();
+            Table<Integer, String, CrawledDataCell> cellTable = parsedResultSegment.getTable();
 //            MultiValueMap<String, RawDataCrawledCell> columnCellsMultiValueMap = parsedResultSegment.getColumnValuesMap();
             Set<String> columnNames = cellTable.columnKeySet();
 //            Set<String> columnNames = columnCellsMultiValueMap.keySet();
 
-            cellTable.rowMap().forEach((rowIndex, rowEntry) -> {
-                Goods goods = new Goods();
-                goods.setCategory(category);
+            Map<Integer, Map<String, CrawledDataCell>> guavaTableEveryRowAsMap = cellTable.rowMap();
+            guavaTableEveryRowAsMap.forEach((rowIndex, rowEntry) -> {
+                ProductEntity productEntity = new ProductEntity();
+                productEntity.setCategory(category);
 
                 rowEntry.forEach((columnName, columnCell) -> {
                     Scanner cellContentScanner = new Scanner(columnCell.reasonableText());
                     switch (columnName.toLowerCase()) {
                         case "goods" -> {
-                            Pattern pattern = Pattern.compile("x\\d");
-                            Matcher matcher = pattern.matcher(cellContentScanner.nextLine());
-                            String removeXnPtn = matcher.replaceAll("");
-                            goods.setName(removeXnPtn);
+                            if (cellContentScanner.hasNextLine()) {
+                                String mayMixNameAndGain = cellContentScanner.nextLine();
+                                Matcher nameGainMatcher = PRODUCT_NAME_GAIN_AMOUNT_PATTERN.matcher(mayMixNameAndGain);
+                                if (nameGainMatcher.find()) {
+                                    // 如果匹配成功，提取单词和数字
+                                    String productName = nameGainMatcher.group(1).trim();
+                                    productEntity.setName(productName);
+                                    productEntity.setNameForMaterial(English.plural(productName.toLowerCase(),1));
+                                    String number = nameGainMatcher.group(2);
+                                    productEntity.setGainWhenCompleted(Integer.parseInt(number));
+                                } else {
+                                    String productName = mayMixNameAndGain;
+                                    productEntity.setName(productName);
+                                    productEntity.setNameForMaterial(English.plural(productName.toLowerCase(),1));
+                                }
+                            }
                         }
                         case "goods[colspan:1]",
                              "Goods[colspan:1]" -> {//include symbol '[' ']',so str.tolowercase() doesn't work??
                             columnCell.getImageString().ifPresent(imgUrl -> {
-                                goods.setImageBytes(
-                                        townshipCrawledRepository.queryImageBytesByHtml(imgUrl)
-                                );
+//                                productEntity.setImageBytes(
+//                                        wikiCrawledEntityRepository.queryImageBytesByHtml(imgUrl)
+//                                );
+                                productEntity.setCrawledAsImage(wikiCrawledEntityRepository.queryEntityBearImageByHtml(imgUrl));
                             });
                         }
                         case "image" -> {
                             columnCell.getImageString().ifPresent(imgUrl -> {
-                                goods.setImageBytes(
-                                        townshipCrawledRepository.queryImageBytesByHtml(imgUrl)
-                                );
+//                                productEntity.setImageBytes(
+//                                        wikiCrawledEntityRepository.queryImageBytesByHtml(imgUrl)
+//                                );
+                                productEntity.setCrawledAsImage(wikiCrawledEntityRepository.queryEntityBearImageByHtml(imgUrl));
                             });
 
                         }
                         case "materials" -> {
                             if (cellContentScanner.hasNextLine()) {
-                                goods.setBomString(cellContentScanner.nextLine());
+                                productEntity.setBomString(cellContentScanner.nextLine().toLowerCase());
                             }
                         }
                         case "level" -> {
                             if (cellContentScanner.hasNextInt()) {
-                                goods.setLevel(cellContentScanner.nextInt());
+                                productEntity.setLevel(cellContentScanner.nextInt());
                             }
                         }
                         case "cost" -> {
                             if (cellContentScanner.hasNextInt()) {
-                                goods.setCost(cellContentScanner.nextInt());
+                                productEntity.setCost(cellContentScanner.nextInt());
                             }
                         }
                         case "sell price", "price" -> {
                             if (cellContentScanner.hasNextInt()) {
-                                goods.setSellPrice(cellContentScanner.nextInt());
+                                productEntity.setSellPrice(cellContentScanner.nextInt());
                             }
                         }
                         case "xp" -> {
                             if (cellContentScanner.hasNextInt()) {
-                                goods.setXp(cellContentScanner.nextInt());
+                                productEntity.setXp(cellContentScanner.nextInt());
                             }
                         }
                         case "time 0%-0", "Time 0%-0[colspan:1]", "time 0%-0[colspan:1]" -> {
                             if (cellContentScanner.hasNextLine()) {
                                 String removedSpanHint = cellContentScanner.nextLine();
-                                goods.setDurationString(removedSpanHint);
+                                productEntity.setDurationString(removedSpanHint);
                             }
                         }
                         case "dealer available icon", "Dealer Available Icon[colspan:1]",
                              "dealer available icon[colspan:1]" -> {
                             if (cellContentScanner.hasNextInt()) {
-                                goods.setDealerValue(cellContentScanner.nextInt());
+                                productEntity.setDealerValue(cellContentScanner.nextInt());
                             }
                         }
                         case "help icon", "Help Icon[colspan:1]", "help icon[colspan:1]" -> {
                             if (cellContentScanner.hasNextInt()) {
-                                goods.setHelpValue(cellContentScanner.nextInt());
+                                productEntity.setHelpValue(cellContentScanner.nextInt());
                             }
                         }
                         default -> {
                             logger.warn("{}={} is resolve confused", columnName, cellContentScanner.nextLine());
                         }
                     }
-                    goodsArrayList.add(goods);
                 });
+                hotfixWithCarrotSandwich(productEntity);
+                productEntityArrayList.add(productEntity);
             });
-//            for (int itemIdx = 0; itemIdx < alignSize; itemIdx++) {
-//                Goods goods = new Goods();
-//                goods.setCategory(category);
-//
-//                Scanner cellContentScanner;
-//                for (String columnName : columnNames) {
-//                    List<RawDataCrawledCell> cells = columnCellsMultiValueMap.get(columnName);
-//                    RawDataCrawledCell cell = cells.get(itemIdx);
-//                    String reasonableText = cell.reasonableText();
-//                    cellContentScanner = new Scanner(reasonableText);
-//                    String columnNameLowerCase = columnName.toLowerCase();
-//                    switch (columnNameLowerCase) {
-//                        case "goods" -> {
-//                            Pattern pattern = Pattern.compile("x\\d");
-//                            Matcher matcher = pattern.matcher(cellContentScanner.nextLine());
-//                            String removeXnPtn = matcher.replaceAll("");
-//                            goods.setName(removeXnPtn);
-//                        }
-//                        case "goods[colspan:1]", "Goods[colspan:1]" -> {//include symbol '[' ']',so str.tolowercase() doesn't work??
-//                            cell.getImageString().ifPresent(imgUrl -> {
-//                                goods.setImageBytes(
-//                                        townshipCrawledRepository.queryImageBytesByHtml(imgUrl)
-//                                );
-//                            });
-//                        }
-//                        case "image" -> {
-//                            cell.getImageString().ifPresent(imgUrl -> {
-//                                goods.setImageBytes(
-//                                        townshipCrawledRepository.queryImageBytesByHtml(imgUrl)
-//                                );
-//                            });
-//
-//                        }
-//                        case "materials" -> {
-//                            goods.setBomString(cellContentScanner.nextLine());
-//                        }
-//                        case "level" -> {
-//                            goods.setLevel(cellContentScanner.nextInt());
-//                        }
-//                        case "cost" -> {
-//                            goods.setCost(cellContentScanner.nextInt());
-//                        }
-//                        case "sell price", "price" -> {
-//                            goods.setSellPrice(cellContentScanner.nextInt());
-//                        }
-//                        case "xp" -> {
-//                            goods.setXp(cellContentScanner.nextInt());
-//                        }
-//                        case "time 0%-0", "Time 0%-0[colspan:1]", "time 0%-0[colspan:1]" -> {
-//                            String removedSpanHint = cellContentScanner.nextLine().replace("[colspan:1]", "");
-//                            goods.setDurationString(removedSpanHint);
-//                        }
-//                        case "dealer available icon", "Dealer Available Icon[colspan:1]",
-//                             "dealer available icon[colspan:1]" -> {
-//                            goods.setDealerValue(cellContentScanner.nextInt());
-//                        }
-//                        case "help icon", "Help Icon[colspan:1]", "help icon[colspan:1]" -> {
-//                            goods.setHelpValue(cellContentScanner.nextInt());
-//                        }
-//                        default -> {
-//                            logger.warn("{}={} is resolve confused", columnName, reasonableText);
-//                        }
-//                    }
-//
-//                }
-//
-//                goodsArrayList.add(goods);
-//            }
 
         }
 
         logger.info("parse into entity done");
-        return new TransferResult(goodsArrayList);
+        return new TransferResult(productEntityArrayList);
+    }
+
+    private void hotfixWithCarrotSandwich(ProductEntity productEntity) {
+        if (productEntity.getName().equalsIgnoreCase("carrot sandwich")) {
+            productEntity.setXp(24);
+            productEntity.setDurationString("1h15m");
+        }
     }
 
 

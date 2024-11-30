@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import org.javatuples.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -7,12 +8,12 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryState;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.persistence.TownshipCrawled;
-import zzk.townshipscheduler.backend.persistence.TownshipCrawledRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
+import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 
 import java.io.IOException;
 import java.net.URI;
@@ -33,11 +34,11 @@ class TownshipDataCrawlingProcessor {
 
     public static final String TOWNSHIP_FANDOM_GOODS = "https://township.fandom.com/wiki/Goods#All_Goods_List";
 
-    private final Set<RawDataCrawledCell.Img> imageToDownload;
+    private final Set<CrawledDataCell.Img> imageToDownload;
 
-    private final TownshipGameDataInMemoryPool townshipGameDataInMemoryPool;
+    private final CrawledDataMemory crawledDataMemory;
 
-    private final TownshipCrawledRepository townshipCrawledRepository;
+    private final WikiCrawledEntityRepository wikiCrawledEntityRepository;
 
     private final ExecutorService townshipExecutorService;
 
@@ -46,14 +47,14 @@ class TownshipDataCrawlingProcessor {
     private final TransactionTemplate transactionTemplate;
 
     public TownshipDataCrawlingProcessor(
-            TownshipGameDataInMemoryPool townshipGameDataInMemoryPool,
-            TownshipCrawledRepository townshipCrawledRepository,
+            CrawledDataMemory crawledDataMemory,
+            WikiCrawledEntityRepository wikiCrawledEntityRepository,
             ExecutorService townshipExecutorService,
             RetryTemplate retryTemplate,
             TransactionTemplate transactionTemplate
     ) {
-        this.townshipGameDataInMemoryPool = townshipGameDataInMemoryPool;
-        this.townshipCrawledRepository = townshipCrawledRepository;
+        this.crawledDataMemory = crawledDataMemory;
+        this.wikiCrawledEntityRepository = wikiCrawledEntityRepository;
         this.townshipExecutorService = townshipExecutorService;
         this.retryTemplate = retryTemplate;
         this.transactionTemplate = transactionTemplate;
@@ -78,14 +79,11 @@ class TownshipDataCrawlingProcessor {
 
         fireImageDownloadAsync();
 
-        logger.info("ready to crawled poll do mending and fire image downloading");
-        return CompletableFuture.supplyAsync(
-                townshipGameDataInMemoryPool::completeAndMend,
-                townshipExecutorService
-        );
+        logger.info(" do mending and fire image downloading");
+        return CompletableFuture.supplyAsync(crawledDataMemory::completeAndMend, townshipExecutorService);
     }
 
-    private static String findTableZoneString(Element currentTable) {
+    private String findTableZoneString(Element currentTable) {
         Optional<String> tableZone = currentTable.parents()
                 .stream()
                 .filter(element -> element.hasClass("mw-collapsible-content"))
@@ -99,7 +97,7 @@ class TownshipDataCrawlingProcessor {
         return tableZone.orElse("");
     }
 
-    private static boolean checkAbandonZone(String tableZoneString) {
+    private boolean checkAbandonZone(String tableZoneString) {
         return Arrays.stream(ABANDON_ZONE).anyMatch(tableZoneString::equalsIgnoreCase);
     }
 
@@ -111,11 +109,11 @@ class TownshipDataCrawlingProcessor {
             persistDocument(document);
         } else {
             logger.info("get crawled html in db");
-            TownshipCrawled townshipCrawled = null;
-            Optional<TownshipCrawled> crawledOptional = townshipCrawledRepository.orderByCreatedDateTimeDescLimit1();
+            WikiCrawledEntity wikiCrawledEntity = null;
+            Optional<WikiCrawledEntity> crawledOptional = wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1();
             if (crawledOptional.isPresent()) {
-                townshipCrawled = crawledOptional.get();
-                document = Jsoup.parse(townshipCrawled.getHtml());
+                wikiCrawledEntity = crawledOptional.get();
+                document = Jsoup.parse(wikiCrawledEntity.getHtml());
             } else {
                 logger.warn("not found in db");
                 document = fetchDocument();
@@ -134,21 +132,19 @@ class TownshipDataCrawlingProcessor {
         }
     }
 
-    private TownshipCrawled persistDocument(Document document) {
-        TownshipCrawled townshipCrawled = new TownshipCrawled();
-        townshipCrawled.setType(TownshipCrawled.Type.HTML);
-        townshipCrawled.setHtml(document.html());
+    private void persistDocument(Document document) {
+        WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
+        wikiCrawledEntity.setType(WikiCrawledEntity.Type.HTML);
+        wikiCrawledEntity.setHtml(document.html());
         logger.info("persist document");
-        return townshipCrawledRepository.save(townshipCrawled);
+        wikiCrawledEntityRepository.save(wikiCrawledEntity);
     }
 
-    private void doTableParse(
-            Element currentTable, int tableNum, String tableZoneString
-    ) {
+    private void doTableParse(Element currentTable, int tableNum, String tableZoneString) {
         Elements trElements = currentTable.getElementsByTag("tr");
         int currentRowsSize = trElements.size();
 
-        RawDataCrawledCoord crawledCoordPrototype = new RawDataCrawledCoord();
+        CrawledDataCoordinate crawledCoordPrototype = new CrawledDataCoordinate();
         //row iteration
         for (int currentRowNum = 0; currentRowNum < currentRowsSize; currentRowNum++) {
             Element currentRow = trElements.get(currentRowNum);
@@ -162,8 +158,8 @@ class TownshipDataCrawlingProcessor {
 
                 String html = doParseUnitIntoHtml(currentThOrTd);
                 String text = doParseUnitIntoText(currentThOrTd);
-                List<RawDataCrawledCell.Anchor> anchorList = doParseUnitIntoAnchor(currentThOrTd);
-                List<RawDataCrawledCell.Img> imgList = doParseUnitIntoImg(currentThOrTd);
+                List<CrawledDataCell.Anchor> anchorList = doParseUnitIntoAnchor(currentThOrTd);
+                List<CrawledDataCell.Img> imgList = doParseUnitIntoImg(currentThOrTd);
                 imageToDownload.addAll(imgList);
 
                 int rowSpan = doParseUnitIntoRowSpanInt(currentThOrTd);
@@ -171,17 +167,17 @@ class TownshipDataCrawlingProcessor {
 
                 crawledCoordPrototype = crawledCoordPrototype.cloneAndNextColumn();
 
-                RawDataCrawledCoord currentCoord = crawledCoordPrototype.clone();
+                CrawledDataCoordinate currentCoord = crawledCoordPrototype.clone();
                 currentCoord.setTable(tableNum);
                 currentCoord.setTableZone(tableZoneString);
 
-                RawDataCrawledCell currentCell = RawDataCrawledCell.builder()
+                CrawledDataCell currentCell = CrawledDataCell.builder()
                         .html(html)
                         .text(text)
                         .anchorList(anchorList)
                         .imgList(imgList)
-                        .type(currentColumnsSize == 1 ? RawDataCrawledCell.Type.HEAD : RawDataCrawledCell.Type.CELL)
-                        .span(new RawDataCrawledCell.CellSpan(rowSpan, colSpan))
+                        .type(currentColumnsSize == 1 ? CrawledDataCell.Type.HEAD : CrawledDataCell.Type.CELL)
+                        .span(new CrawledDataCell.CellSpan(rowSpan, colSpan))
                         .build();
 
                 registerSpanFixIfNeed(currentCoord, currentCell, rowSpan, colSpan);
@@ -200,10 +196,10 @@ class TownshipDataCrawlingProcessor {
         return currentThOrTd.text();
     }
 
-    private List<RawDataCrawledCell.Anchor> doParseUnitIntoAnchor(Element currentThOrTd) {
+    private List<CrawledDataCell.Anchor> doParseUnitIntoAnchor(Element currentThOrTd) {
         Elements anchorElements = currentThOrTd.select("a");
         return anchorElements.stream().map(element -> {
-            RawDataCrawledCell.Anchor l = new RawDataCrawledCell.Anchor();
+            CrawledDataCell.Anchor l = new CrawledDataCell.Anchor();
             l.setHref(element.attr("href"));
             l.setTitle(element.attr("title"));
             l.setText(element.text());
@@ -211,10 +207,10 @@ class TownshipDataCrawlingProcessor {
         }).toList();
     }
 
-    private List<RawDataCrawledCell.Img> doParseUnitIntoImg(Element currentThOrTd) {
+    private List<CrawledDataCell.Img> doParseUnitIntoImg(Element currentThOrTd) {
         Elements imageElements = currentThOrTd.select("img");
         return imageElements.stream().map(element -> {
-            RawDataCrawledCell.Img cellImg = new RawDataCrawledCell.Img();
+            CrawledDataCell.Img cellImg = new CrawledDataCell.Img();
             cellImg.setAlt(element.attr("alt"));
             cellImg.setSrc(element.attr("data-src"));
             return cellImg;
@@ -232,121 +228,137 @@ class TownshipDataCrawlingProcessor {
     }
 
     private void registerSpanFixIfNeed(
-            RawDataCrawledCoord currentCoord, RawDataCrawledCell currentCell, int rowSpan, int colSpan
+            CrawledDataCoordinate currentCoord,
+            CrawledDataCell currentCell,
+            int rowSpan,
+            int colSpan
     ) {
-        if (currentCell.getType() == RawDataCrawledCell.Type.CELL) {
+        if (currentCell.getType() == CrawledDataCell.Type.CELL) {
             registerRowSpanFix(rowSpan, currentCell, currentCoord);
             registerColSpanFix(colSpan, currentCell, currentCoord);
         }
     }
 
-    private void registerRowSpanFix(int rowSpan, RawDataCrawledCell currentCell, RawDataCrawledCoord currentCoord) {
-        if (rowSpan > RawDataCrawledCell.CellSpan.NA_EFFECT) {
-            RawDataCrawledCell.CellSpan fixedSpan = new RawDataCrawledCell.CellSpan(
-                    RawDataCrawledCell.CellSpan.REGULAR,
-                    RawDataCrawledCell.CellSpan.REGULAR
+    private void registerRowSpanFix(int rowSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoord) {
+        if (rowSpan > CrawledDataCell.CellSpan.NA_EFFECT) {
+            CrawledDataCell.CellSpan fixedSpan = new CrawledDataCell.CellSpan(
+                    CrawledDataCell.CellSpan.REGULAR,
+                    CrawledDataCell.CellSpan.REGULAR
             );
-            RawDataCrawledCell fixCell = currentCell.clone();
-            fixCell.setSpan(fixedSpan);
+            CrawledDataCell cellFixed = currentCell.clone();
+            cellFixed.setSpan(fixedSpan);
 
             int fixSize = rowSpan - 1;
-            RawDataCrawledCoord mendedCoord = currentCoord.cloneAndNextRow();
+            CrawledDataCoordinate mendedCoord = currentCoord.cloneAndNextRow();
             while (fixSize > 0) {
-                hintIntoMemory(mendedCoord, fixCell);
+                hintIntoMemory(mendedCoord, cellFixed);
                 fixSize -= 1;
                 mendedCoord = mendedCoord.cloneAndNextRow();
             }
         }
     }
 
-    private void hintIntoMemory(RawDataCrawledCoord mendedCoord, RawDataCrawledCell fixCell) {
-        townshipGameDataInMemoryPool.putForMend(mendedCoord, fixCell);
+    private void hintIntoMemory(CrawledDataCoordinate mendedCoord, CrawledDataCell fixCell) {
+        crawledDataMemory.putForMend(mendedCoord, fixCell);
     }
 
-    private void registerColSpanFix(int colSpan, RawDataCrawledCell currentCell, RawDataCrawledCoord currentCoord) {
-        if (colSpan > RawDataCrawledCell.CellSpan.NA_EFFECT) {
-            RawDataCrawledCell.CellSpan fixedSpan = new RawDataCrawledCell.CellSpan(
-                    RawDataCrawledCell.CellSpan.REGULAR,
-                    RawDataCrawledCell.CellSpan.REGULAR
+    private void registerColSpanFix(int colSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoord) {
+        if (colSpan > CrawledDataCell.CellSpan.NA_EFFECT) {
+            CrawledDataCell.CellSpan fixedSpan = new CrawledDataCell.CellSpan(
+                    CrawledDataCell.CellSpan.REGULAR,
+                    CrawledDataCell.CellSpan.REGULAR
             );
-            RawDataCrawledCell fixCell = currentCell.clone();
-            fixCell.setSpan(fixedSpan);
+            CrawledDataCell cellFixed = currentCell.clone();
+            cellFixed.setSpan(fixedSpan);
 
             int fixSize = colSpan - 1;
             for (int i = 0; i < fixSize; i++) {
-                RawDataCrawledCell fixCellToSave = fixCell.clone();
+                CrawledDataCell fixCellToSave = cellFixed.clone();
                 fixCellToSave.setText(fixCellToSave.reasonableText() + "[colspan:" + (i + 1) + "]");
-                RawDataCrawledCoord mendedCoord = currentCoord.cloneAndNextColumn();
+                CrawledDataCoordinate mendedCoord = currentCoord.cloneAndNextColumn();
                 hintIntoMemory(mendedCoord, fixCellToSave);
             }
         }
     }
 
-    private void putIntoMemory(RawDataCrawledCoord currentCoord, RawDataCrawledCell currentCell) {
-        townshipGameDataInMemoryPool.putForSave(currentCoord, currentCell);
+    private void putIntoMemory(CrawledDataCoordinate currentCoord, CrawledDataCell currentCell) {
+        crawledDataMemory.putForSave(currentCoord, currentCell);
     }
 
     private void fireImageDownloadAsync() {
-        CompletableFuture.runAsync(() -> {
-            List<CompletableFuture<TownshipCrawled>> completableFutures = imageToDownload.stream()
-                    .distinct()
-                    .filter(img -> !townshipCrawledRepository.existsByHtml(img.getSrc()))
-                    .map(img -> this.downloadImage(img)
-                            .thenApplyAsync((bytes) -> {
-                                final TownshipCrawled townshipCrawled = new TownshipCrawled();
-                                townshipCrawled.setImageBytes(bytes);
-                                townshipCrawled.setHtml(img.getSrc());
-                                townshipCrawled.setText(img.getAlt());
-                                try {
-                                    return transactionTemplate.execute(
-                                            ts -> townshipCrawledRepository.save(townshipCrawled)
-                                    );
-                                } catch (TransactionException e) {
-                                    e.printStackTrace();
-                                    throw new RuntimeException(e);
-                                }
-                            }, townshipExecutorService)
-                    )
-                    .toList();
-            CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
-                    .whenComplete((result, exception) -> {
-                        logger.info("all picture download completed...");
-                    });
-        }, townshipExecutorService);
+        CompletableFuture.runAsync(
+                () -> {
+                    List<CompletableFuture<WikiCrawledEntity>> completableFutures = imageToDownload.stream()
+                            .distinct()
+                            .filter(img -> !wikiCrawledEntityRepository.existsByHtml(img.getSrc()))
+                            .map(rawData_Img -> {
+                                WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
+                                wikiCrawledEntity.setHtml(rawData_Img.getSrc());
+                                wikiCrawledEntity.setText(rawData_Img.getAlt());
+
+                                return new Pair<>(
+                                        rawData_Img,
+                                        transactionTemplate.execute(
+                                                _ -> wikiCrawledEntityRepository.save(wikiCrawledEntity)
+                                        )
+                                );
+                            })
+                            .map(Pair_RawDataImg_CrawledEntity -> {
+                                CrawledDataCell.Img img = Pair_RawDataImg_CrawledEntity.getValue0();
+                                WikiCrawledEntity wikiCrawledEntity = Pair_RawDataImg_CrawledEntity.getValue1();
+                                CompletableFuture<byte[]> completableFuture = this.downloadImage(img);
+                                return completableFuture.thenApplyAsync(
+                                        (bytes) -> {
+                                            wikiCrawledEntity.setImageBytes(bytes);
+                                            return transactionTemplate.execute(
+                                                    _ -> wikiCrawledEntityRepository.save(wikiCrawledEntity)
+                                            );
+                                        }, townshipExecutorService
+                                );
+                            })
+                            .toList();
+                    CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
+                            .whenComplete((result, exception) -> {
+                                logger.info("all picture download completed...");
+                            });
+                }, townshipExecutorService
+        );
     }
 
-    CompletableFuture<byte[]> downloadImage(RawDataCrawledCell.Img img) {
+    CompletableFuture<byte[]> downloadImage(CrawledDataCell.Img img) {
         return downloadImage(img.getSrc());
     }
 
     CompletableFuture<byte[]> downloadImage(String url) {
-        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url))
-                .header(
-                        "User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-                ).timeout(Duration.ofSeconds(20))
-                .GET()
-                .build();
+        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url)).header(
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        ).timeout(Duration.ofSeconds(20)).GET().build();
 
-        return CompletableFuture.supplyAsync(() -> {
-            byte[] bytes = null;
-            try {
-                bytes = retryTemplate.execute((RetryCallback<byte[], Throwable>) retryContext -> {
-                    try (HttpClient client = HttpClient.newHttpClient()) {
-                        HttpResponse<byte[]> httpResponse = client.send(
-                                httpRequest, HttpResponse.BodyHandlers.ofByteArray()
+        return CompletableFuture.supplyAsync(
+                () -> {
+                    byte[] bytes = null;
+                    try {
+                        bytes = retryTemplate.execute(
+                                (RetryCallback<byte[], Throwable>) retryContext -> {
+                                    try (HttpClient client = HttpClient.newHttpClient()) {
+                                        HttpResponse<byte[]> httpResponse = client.send(
+                                                httpRequest,
+                                                HttpResponse.BodyHandlers.ofByteArray()
+                                        );
+                                        return httpResponse.body();
+                                    } catch (IOException | InterruptedException e) {
+                                        logger.error(retryContext.getLastThrowable().getMessage());
+                                        throw new RuntimeException(retryContext.getLastThrowable());
+                                    }
+                                }
                         );
-                        return httpResponse.body();
-                    } catch (IOException | InterruptedException e) {
-                        logger.error(retryContext.getLastThrowable().getMessage());
-                        throw new RuntimeException(retryContext.getLastThrowable());
+                    } catch (Throwable e) {
+                        throw new RuntimeException(e);
                     }
-                });
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
-            return bytes;
-        }, townshipExecutorService);
+                    return bytes;
+                }, townshipExecutorService
+        );
 
     }
 

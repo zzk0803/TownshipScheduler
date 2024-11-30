@@ -1,52 +1,80 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.domain.variable.AnchorShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariableGraphType;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.variable.*;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.UUID;
 
 @PlanningEntity
-public class SchedulingProducing extends BaseSchedulingProducingOrWarehouse{
+@Data
+@ToString(of = {"uid", "schedulingProduct"})
+@EqualsAndHashCode(of = "uid")
+@JsonIdentityInfo(
+        scope = SchedulingProducing.class,
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "uid"
+)
+public class SchedulingProducing {
 
-    private SchedulingGoods producingGood;
+    @PlanningId
+    private String uid = UUID.randomUUID().toString();
 
-    @PlanningVariable
-    private SchedulingPlantFieldSlot plantSlot;
+    private  SchedulingProduct schedulingProduct;
 
-    @PlanningVariable(graphType = PlanningVariableGraphType.CHAINED, allowsUnassigned = true,valueRangeProviderRefs = {"prerequisite-produced"})
-    private BaseSchedulingProducingOrWarehouse previousProducingOrWarehouse;
+    @InverseRelationShadowVariable(sourceVariableName = "schedulingProducingList")
+    private SchedulingFactorySlot schedulingFactorySlot;
 
-    @AnchorShadowVariable(sourceVariableName = "previousProducing")
-    private SchedulingWarehouse warehouse;
+    @IndexShadowVariable(sourceVariableName = "schedulingProducingList")
+    private Integer producingIndex;
 
+    @PreviousElementShadowVariable(sourceVariableName = "schedulingProducingList")
+    private SchedulingProducing previousProducing;
+
+    @NextElementShadowVariable(sourceVariableName = "schedulingProducingList")
+    private SchedulingProducing nextProducing;
+
+    @CascadingUpdateShadowVariable(targetMethodName = "schedulingProducingShadowUpdate")
     private LocalDateTime arrangeDateTime;
 
-    private LocalDateTime finishDateTime;
+    @CascadingUpdateShadowVariable(targetMethodName = "schedulingProducingShadowUpdate")
+    private LocalDateTime producingInGameDateTime;
 
-    public SchedulingProducing(SchedulingGoods producingGood) {
-        this.producingGood = producingGood;
-    }
+    @CascadingUpdateShadowVariable(targetMethodName = "schedulingProducingShadowUpdate")
+    private LocalDateTime completedInGameDateTime;
 
-    @ValueRangeProvider(id = "prerequisite-produced")
-    public List<SchedulingProducing> calcSubtreeProducing() {
-        List<SchedulingProducing> subtreeProducingList = new ArrayList<>();
-        Map<SchedulingGoods, Integer> bom = this.producingGood.getBom();
-        for (Map.Entry<SchedulingGoods, Integer> entry : bom.entrySet()) {
-            SchedulingGoods material = entry.getKey();
-            Integer amount = entry.getValue();
-            for (int i = 0; i < amount; i++) {
-                subtreeProducingList.add(new SchedulingProducing(material));
-            }
-        }
-        return subtreeProducingList;
+    @JsonIgnore
+    @CascadingUpdateShadowVariable(targetMethodName = "schedulingProducingShadowUpdate")
+    private LinkedHashMap<SchedulingProduct, Integer> warehouse = new LinkedHashMap<>();
+
+    public void schedulingProducingShadowUpdate() {
+//        getSchedulingProduct().getMaterialAmountMap().forEach((sp, i) -> {
+//            warehouse.compute(sp, ((spInMap, iInMap) -> warehouse.getOrDefault(spInMap, 0) - i));
+//        });
+//
+//        //deduce arrange datetime,producing datetime and complete datetime
+//        if (getPreviousProducing() == null) {
+//            setArrangeDateTime(LocalDateTime.now());
+//            setProducingInGameDateTime(getArrangeDateTime());
+//            setCompletedInGameDateTime(this.getArrangeDateTime().plus(getSchedulingProduct().getProducingDuration()));
+//        } else {
+//            warehouse.compute(getPreviousProducing().getSchedulingProduct(), (sp, i) -> i + sp.getGainWhenCompleted());
+//            setArrangeDateTime(getPreviousProducing().getCompletedInGameDateTime());
+//            setProducingInGameDateTime(getPreviousProducing().getCompletedInGameDateTime());
+//            setCompletedInGameDateTime(
+//                    getPreviousProducing().getProducingInGameDateTime()
+//                            .plus(getSchedulingProduct().getProducingDuration())
+//            );
+//        }
     }
 
 }

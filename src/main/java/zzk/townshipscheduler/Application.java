@@ -2,18 +2,26 @@ package zzk.townshipscheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.retry.support.RetryTemplateBuilder;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.support.TransactionTemplate;
+import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.persistence.dao.AppUserEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.WarehouseEntityRepository;
 
+import java.net.http.HttpConnectTimeoutException;
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,6 +35,39 @@ public class Application {
         SpringApplication.run(Application.class, args);
     }
 
+    @Bean
+    public ApplicationRunner applicationRunner(
+            AppUserEntityRepository appUserEntityRepository,
+            PlayerEntityRepository playerEntityRepository,
+            WarehouseEntityRepository warehouseEntityRepository,
+            PasswordEncoder passwordEncoder,
+            TransactionTemplate transactionTemplate
+    ) {
+
+        return (applicationArguments) -> {
+            boolean test = appUserEntityRepository.existsAppUserEntitiesByUsername("test");
+            if (!test) {
+                transactionTemplate.executeWithoutResult(transactionStatus -> {
+                    AccountEntity accountEntity = new AccountEntity();
+                    accountEntity.setName("test");
+                    accountEntity.setUsername("test");
+                    accountEntity.setHashedPassword(passwordEncoder.encode("test"));
+
+                    PlayerEntity playerEntity = new PlayerEntity();
+                    accountEntity.attachePlayerEntity(playerEntity);
+
+                    WarehouseEntity warehouseEntity = new WarehouseEntity();
+                    playerEntity.attacheWarehouseEntity(warehouseEntity);
+
+                    appUserEntityRepository.save(accountEntity);
+                    playerEntityRepository.save(playerEntity);
+                    warehouseEntityRepository.save(warehouseEntity);
+                });
+
+            }
+        };
+    }
+
     @Bean("townshipExecutorService")
     public ExecutorService townshipExecutorService() {
         return Executors.newVirtualThreadPerTaskExecutor();
@@ -34,17 +75,11 @@ public class Application {
 
     @Bean
     public RetryTemplate retryTemplate() {
-        RetryTemplate retryTemplate = new RetryTemplate();
+        RetryTemplateBuilder retryTemplateBuilder = new RetryTemplateBuilder();
 
-        FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
-        fixedBackOffPolicy.setBackOffPeriod(2000L);
-        retryTemplate.setBackOffPolicy(fixedBackOffPolicy);
-
-        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-        retryPolicy.setMaxAttempts(2);
-        retryTemplate.setRetryPolicy(retryPolicy);
-
-        return retryTemplate;
+        return retryTemplateBuilder.fixedBackoff(Duration.ofSeconds(10))
+                .retryOn(HttpConnectTimeoutException.class)
+                .maxAttempts(3).build();
     }
 
     @Bean(name = "java8EnhancedObjectMapper")

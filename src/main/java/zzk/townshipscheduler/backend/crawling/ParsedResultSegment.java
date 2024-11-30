@@ -15,7 +15,7 @@ public final class ParsedResultSegment {
 
 //    private MultiValueMap<String, RawDataCrawledCell> columnValuesMap;
 
-    private Table<Integer, String, RawDataCrawledCell> table;
+    private Table<Integer, String, CrawledDataCell> table;
 
     public ParsedResultSegment(String category) {
         this.category = category;
@@ -27,7 +27,7 @@ public final class ParsedResultSegment {
 //        columnValuesMap.add(columnName, dataAsCell);
 //    }
 
-    public void add(int row, String columnName, RawDataCrawledCell cell) {
+    public void add(int row, String columnName, CrawledDataCell cell) {
         this.table.put(row, columnName, cell);
     }
 

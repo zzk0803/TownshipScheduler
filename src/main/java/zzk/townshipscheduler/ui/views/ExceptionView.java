@@ -6,11 +6,15 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.HasErrorParameter;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.HttpStatusCode;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@Route(layout = MainLayout.class)
+@AnonymousAllowed
 public class ExceptionView
         extends VerticalLayout
         implements HasErrorParameter<Exception> {
@@ -26,7 +30,6 @@ public class ExceptionView
     @Override
     public int setErrorParameter(BeforeEnterEvent beforeEnterEvent, ErrorParameter<Exception> errorParameter) {
         Exception exception = errorParameter.getException();
-        exception.printStackTrace();
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter, true);
         exception.printStackTrace(printWriter);
