@@ -77,8 +77,13 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
             Tab basicTab = new Tab("Basic");
             Tab fieldFactoryTab = new Tab("Field&Factory");
             Tab warehouseTab = new Tab("Warehouse Stock");
-            Map<Tab, Composite<VerticalLayout>> tabArticleMap = Map.of(
-                    basicTab, new PlayerBasicArticle(playerEntity, playerService),
+            Map<Tab, Composite<VerticalLayout>> tabArticleMap
+                    = Map.of(
+                    basicTab, new PlayerBasicArticle(
+                            playerEntity,
+                            playerService
+                    )
+                    ,
                     fieldFactoryTab, new PlayerFieldFactoryArticle(
                             playerEntity,
                             playerService
@@ -141,7 +146,7 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
             grid.addColumn(PlayerEntity::getLevel).setHeader("Level");
             grid.addColumn(player -> player.getFieldFactoryEntities().size()).setHeader("Factory Capability");
             grid.addColumn(player -> player.getWarehouseEntity()
-                    .getItemAmountMap()
+                    .getProductAmountMap()
                     .values()
                     .stream()
                     .mapToInt(Integer::intValue)

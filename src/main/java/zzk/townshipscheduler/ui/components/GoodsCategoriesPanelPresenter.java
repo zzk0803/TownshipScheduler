@@ -10,13 +10,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.crawling.TownshipFandomCrawlingProcessFacade;
 import zzk.townshipscheduler.backend.persistence.*;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @SpringComponent
@@ -40,7 +37,7 @@ public class GoodsCategoriesPanelPresenter {
 
     private List<FieldFactoryInfoEntity> factoryList;
 
-    private List<ProductEntity> productEntityList;
+    private Set<ProductEntity> productEntities;
 
     private GridListDataView<ProductEntity> gridListDataView;
 
@@ -52,18 +49,21 @@ public class GoodsCategoriesPanelPresenter {
 
     public void queryAndCache() {
 
-        productEntityList = productEntityRepository.findBy(
+        productEntities = productEntityRepository.findBy(
                 ProductEntity.class,
                 Sort.by(Sort.Order.asc("level"))
         );
 
-        factoryList = productEntityRepository.queryFieldFactory();
-        factoryList.sort(Comparator.comparing(FieldFactoryInfoEntity::getLevel, Integer::compareTo));
+        factoryList = productEntities.stream()
+                .map(ProductEntity::getFieldFactoryInfo)
+                .distinct()
+                .sorted(Comparator.comparing(FieldFactoryInfoEntity::getLevel, Integer::compareTo))
+                .toList();
     }
 
 
     public void setupGridItems(Grid<ProductEntity> grid) {
-        gridListDataView = grid.setItems(productEntityList);
+        gridListDataView = grid.setItems(productEntities);
     }
 
 

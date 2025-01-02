@@ -3,12 +3,13 @@ package zzk.townshipscheduler.backend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import zzk.townshipscheduler.backend.dao.*;
 import zzk.townshipscheduler.backend.persistence.*;
-import zzk.townshipscheduler.backend.persistence.dao.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -37,13 +38,32 @@ public class PlayerService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<PlayerEntityDto> findPlayerEntitiesDtoByAppUser(AccountEntity accountEntity) {
+        return playerEntityRepository.findPlayerEntitiesByAccount(accountEntity, PlayerEntityDto.class);
+    }
+
+    @Transactional(readOnly = true)
     public List<FieldFactoryEntity> findFieldFactoryEntityByPlayer(PlayerEntity playerEntity) {
         return fieldFactoryEntityRepository.findFieldFactoryEntityByPlayerEntity(playerEntity);
     }
 
     @Transactional(readOnly = true)
+    public Optional<PlayerEntityDto> findPlayerDtoEntitiesById(Long playerId) {
+        return playerEntityRepository.findPlayerById(playerId, PlayerEntityDto.class);
+    }
+
+    public Optional<PlayerEntityProjection> findPlayerProjectionById(long playerId) {
+        return playerEntityRepository.findPlayerById(playerId, PlayerEntityProjection.class);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PlayerEntity> findPlayerEntitiesById(Long playerId) {
+        return playerEntityRepository.findPlayerById(playerId);
+    }
+
+    @Transactional(readOnly = true)
     public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer(PlayerEntity player) {
-        List<FieldFactoryInfoEntity> allFieldFactoryInfo
+        Set<FieldFactoryInfoEntity> allFieldFactoryInfo
                 = fieldFactoryInfoEntityRepository.findBy(FieldFactoryInfoEntity.class);
         List<FieldFactoryEntity> playersFieldFactory
                 = fieldFactoryEntityRepository.findFieldFactoryEntityByPlayerEntity(player);
@@ -68,7 +88,7 @@ public class PlayerService {
     }
 
     @Transactional
-    public void updatePlayerWithFieldFactory(PlayerEntity playerEntity, FieldFactoryEntity fieldFactoryEntity) {
+    public FieldFactoryEntity saveFieldFactory(FieldFactoryEntity fieldFactoryEntity, PlayerEntity playerEntity) {
         PlayerEntity mergedPlayer = playerEntityRepository.save(playerEntity);
         fieldFactoryEntity.setPlayerEntity(mergedPlayer);
         int alreadyHave = fieldFactoryEntityRepository.countByPlayerEntityAndFieldFactoryInfoEntity(
@@ -76,7 +96,7 @@ public class PlayerService {
                 fieldFactoryEntity.getFieldFactoryInfoEntity()
         );
         if (alreadyHave < fieldFactoryEntity.getFieldFactoryInfoEntity().getMaxInstanceAmount()) {
-            fieldFactoryEntityRepository.save(fieldFactoryEntity);
+            return fieldFactoryEntityRepository.save(fieldFactoryEntity);
         } else {
             throw new RuntimeException("field factory amount exceed its max instance limit");
         }
@@ -88,30 +108,36 @@ public class PlayerService {
     }
 
     @Transactional
-    public PlayerEntity updatePlayer(PlayerEntity player) {
+    public PlayerEntity emergeAndUpdate(PlayerEntity player) {
         return playerEntityRepository.save(player);
     }
 
     @Transactional
     public void playerFactoryToCorrespondedLevelInBatch(PlayerEntity playerEntity) {
-        List<FieldFactoryInfoEntity> factoryInfoEntities = fieldFactoryInfoEntityRepository.queryFactoryInfoByLevelLessThanOrEqual(
+        List<FieldFactoryInfoEntity> availableFieldFactoryInfoAsList
+                = fieldFactoryInfoEntityRepository.queryFactoryInfoByLevelLessThanOrEqual(
                 playerEntity.getLevel()
         );
 
         PlayerEntity managedPlayer = playerEntityRepository.save(playerEntity);
+        FieldFactoryInfoEntity field
+                = fieldFactoryInfoEntityRepository.findByCategory(FieldFactoryInfoEntity.FIELD_CRITERIA)
+                .orElseThrow();
+        IntStream.range(0, managedPlayer.getFieldAmount())
+                .mapToObj(i -> field.toFieldFactoryEntity(()->managedPlayer))
+                .forEach(fieldFactoryEntityRepository::save);
 
-        factoryInfoEntities.forEach(fieldFactoryInfoEntity -> {
-            FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity(fieldFactoryInfoEntity, managedPlayer);
-            Integer maxInstanceAmount = fieldFactoryInfoEntity.getMaxInstanceAmount();
-            IntStream.range(0,maxInstanceAmount).forEach(value -> {
-                FieldFactoryEntity.FieldFactoryDetails fieldFactoryDetails = new FieldFactoryEntity.FieldFactoryDetails(
-                        fieldFactoryInfoEntity.getMaxProducingCapacity(),
-                        fieldFactoryInfoEntity.getMaxReapWindowCapacity()
-                );
-                fieldFactoryEntity.appendFieldFactoryDetails(fieldFactoryDetails);
-            });
-            fieldFactoryEntityRepository.save(fieldFactoryEntity);
-        });
+        availableFieldFactoryInfoAsList.forEach(
+                fieldFactoryInfoEntity -> {
+                    IntStream.range(0, fieldFactoryInfoEntity.getMaxInstanceAmount())
+                            .forEach(_ -> {
+                                FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(() -> managedPlayer);
+                                fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getMaxProducingCapacity());
+                                fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getMaxReapWindowCapacity());
+                                fieldFactoryEntityRepository.save(fieldFactoryEntity);
+                            });
+                }
+        );
 
     }
 

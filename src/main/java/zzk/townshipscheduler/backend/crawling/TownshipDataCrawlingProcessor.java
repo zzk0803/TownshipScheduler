@@ -8,12 +8,11 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.retry.RetryCallback;
-import org.springframework.retry.RetryState;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
+import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 
 import java.io.IOException;
 import java.net.URI;
@@ -105,7 +104,11 @@ class TownshipDataCrawlingProcessor {
         Document document = null;
         if (mandatory) {
             logger.info("mandatory mode,force fetch");
-            document = fetchDocument();
+            try {
+                document = fetchDocument();
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
             persistDocument(document);
         } else {
             logger.info("get crawled html in db");
@@ -116,20 +119,27 @@ class TownshipDataCrawlingProcessor {
                 document = Jsoup.parse(wikiCrawledEntity.getHtml());
             } else {
                 logger.warn("not found in db");
-                document = fetchDocument();
+                try {
+                    document = fetchDocument();
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
                 persistDocument(document);
             }
         }
         return document;
     }
 
-    private Document fetchDocument() {
-        logger.info("fetch random wiki...");
-        try {
-            return Jsoup.connect(TOWNSHIP_FANDOM_GOODS).get();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    private Document fetchDocument() throws Throwable {
+        return retryTemplate.execute(
+                (RetryCallback<Document, Throwable>) retryContext -> {
+                    logger.info(
+                            "try to establish connection to fandom wiki ..retry X {}",
+                            retryContext.getRetryCount()
+                    );
+                    return Jsoup.connect(TOWNSHIP_FANDOM_GOODS).get();
+                }
+        );
     }
 
     private void persistDocument(Document document) {
@@ -144,7 +154,7 @@ class TownshipDataCrawlingProcessor {
         Elements trElements = currentTable.getElementsByTag("tr");
         int currentRowsSize = trElements.size();
 
-        CrawledDataCoordinate crawledCoordPrototype = new CrawledDataCoordinate();
+        CrawledDataCoordinate crawledCoordPrototype = CrawledDataCoordinate.create();
         //row iteration
         for (int currentRowNum = 0; currentRowNum < currentRowsSize; currentRowNum++) {
             Element currentRow = trElements.get(currentRowNum);
@@ -228,18 +238,18 @@ class TownshipDataCrawlingProcessor {
     }
 
     private void registerSpanFixIfNeed(
-            CrawledDataCoordinate currentCoord,
+            CrawledDataCoordinate currentCoordinate,
             CrawledDataCell currentCell,
             int rowSpan,
             int colSpan
     ) {
         if (currentCell.getType() == CrawledDataCell.Type.CELL) {
-            registerRowSpanFix(rowSpan, currentCell, currentCoord);
-            registerColSpanFix(colSpan, currentCell, currentCoord);
+            registerRowSpanFix(rowSpan, currentCell, currentCoordinate);
+            registerColSpanFix(colSpan, currentCell, currentCoordinate);
         }
     }
 
-    private void registerRowSpanFix(int rowSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoord) {
+    private void registerRowSpanFix(int rowSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoordinate) {
         if (rowSpan > CrawledDataCell.CellSpan.NA_EFFECT) {
             CrawledDataCell.CellSpan fixedSpan = new CrawledDataCell.CellSpan(
                     CrawledDataCell.CellSpan.REGULAR,
@@ -249,7 +259,7 @@ class TownshipDataCrawlingProcessor {
             cellFixed.setSpan(fixedSpan);
 
             int fixSize = rowSpan - 1;
-            CrawledDataCoordinate mendedCoord = currentCoord.cloneAndNextRow();
+            CrawledDataCoordinate mendedCoord = currentCoordinate.cloneAndNextRow();
             while (fixSize > 0) {
                 hintIntoMemory(mendedCoord, cellFixed);
                 fixSize -= 1;
@@ -258,11 +268,11 @@ class TownshipDataCrawlingProcessor {
         }
     }
 
-    private void hintIntoMemory(CrawledDataCoordinate mendedCoord, CrawledDataCell fixCell) {
-        crawledDataMemory.putForMend(mendedCoord, fixCell);
+    private void hintIntoMemory(CrawledDataCoordinate currentCoordinate, CrawledDataCell fixCell) {
+        crawledDataMemory.putForMend(currentCoordinate, fixCell);
     }
 
-    private void registerColSpanFix(int colSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoord) {
+    private void registerColSpanFix(int colSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoordinate) {
         if (colSpan > CrawledDataCell.CellSpan.NA_EFFECT) {
             CrawledDataCell.CellSpan fixedSpan = new CrawledDataCell.CellSpan(
                     CrawledDataCell.CellSpan.REGULAR,
@@ -275,20 +285,21 @@ class TownshipDataCrawlingProcessor {
             for (int i = 0; i < fixSize; i++) {
                 CrawledDataCell fixCellToSave = cellFixed.clone();
                 fixCellToSave.setText(fixCellToSave.reasonableText() + "[colspan:" + (i + 1) + "]");
-                CrawledDataCoordinate mendedCoord = currentCoord.cloneAndNextColumn();
+                CrawledDataCoordinate mendedCoord = currentCoordinate.cloneAndNextColumn();
                 hintIntoMemory(mendedCoord, fixCellToSave);
             }
         }
     }
 
-    private void putIntoMemory(CrawledDataCoordinate currentCoord, CrawledDataCell currentCell) {
-        crawledDataMemory.putForSave(currentCoord, currentCell);
+    private void putIntoMemory(CrawledDataCoordinate currentCoordinate, CrawledDataCell currentCell) {
+        crawledDataMemory.putForSave(currentCoordinate, currentCell);
     }
 
     private void fireImageDownloadAsync() {
         CompletableFuture.runAsync(
                 () -> {
-                    List<CompletableFuture<WikiCrawledEntity>> completableFutures = imageToDownload.stream()
+                    List<CompletableFuture<WikiCrawledEntity>> completableFutures
+                            = imageToDownload.stream()
                             .distinct()
                             .filter(img -> !wikiCrawledEntityRepository.existsByHtml(img.getSrc()))
                             .map(rawData_Img -> {
@@ -306,19 +317,21 @@ class TownshipDataCrawlingProcessor {
                             .map(Pair_RawDataImg_CrawledEntity -> {
                                 CrawledDataCell.Img img = Pair_RawDataImg_CrawledEntity.getValue0();
                                 WikiCrawledEntity wikiCrawledEntity = Pair_RawDataImg_CrawledEntity.getValue1();
-                                CompletableFuture<byte[]> completableFuture = this.downloadImage(img);
-                                return completableFuture.thenApplyAsync(
-                                        (bytes) -> {
-                                            wikiCrawledEntity.setImageBytes(bytes);
-                                            return transactionTemplate.execute(
-                                                    _ -> wikiCrawledEntityRepository.save(wikiCrawledEntity)
-                                            );
-                                        }, townshipExecutorService
-                                );
+                                return this.downloadImage(img)
+                                        .thenApplyAsync(
+                                                (bytes) -> {
+                                                    wikiCrawledEntity.setImageBytes(bytes);
+                                                    return transactionTemplate.execute(
+                                                            _ -> wikiCrawledEntityRepository.save(wikiCrawledEntity)
+                                                    );
+                                                },
+                                                townshipExecutorService
+                                        );
                             })
                             .toList();
                     CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
                             .whenComplete((result, exception) -> {
+                                this.imageToDownload.clear();
                                 logger.info("all picture download completed...");
                             });
                 }, townshipExecutorService
@@ -330,16 +343,19 @@ class TownshipDataCrawlingProcessor {
     }
 
     CompletableFuture<byte[]> downloadImage(String url) {
-        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url)).header(
-                "User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-        ).timeout(Duration.ofSeconds(20)).GET().build();
+        HttpRequest httpRequest
+                = HttpRequest.newBuilder(URI.create(url))
+                .header(
+                        "User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                ).timeout(Duration.ofSeconds(20))
+                .GET()
+                .build();
 
         return CompletableFuture.supplyAsync(
                 () -> {
-                    byte[] bytes = null;
                     try {
-                        bytes = retryTemplate.execute(
+                        return retryTemplate.execute(
                                 (RetryCallback<byte[], Throwable>) retryContext -> {
                                     try (HttpClient client = HttpClient.newHttpClient()) {
                                         HttpResponse<byte[]> httpResponse = client.send(
@@ -356,7 +372,6 @@ class TownshipDataCrawlingProcessor {
                     } catch (Throwable e) {
                         throw new RuntimeException(e);
                     }
-                    return bytes;
                 }, townshipExecutorService
         );
 

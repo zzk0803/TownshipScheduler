@@ -5,7 +5,7 @@
 //import org.jsoup.select.Elements;
 //import org.springframework.retry.support.RetryTemplate;
 //import org.springframework.transaction.support.TransactionTemplate;
-//import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
+//import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
 //
 //import java.util.List;
 //import java.util.concurrent.ExecutorService;

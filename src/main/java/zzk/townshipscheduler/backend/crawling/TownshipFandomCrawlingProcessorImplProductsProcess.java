@@ -5,7 +5,7 @@
 //import org.springframework.retry.support.RetryTemplate;
 //import org.springframework.stereotype.Component;
 //import org.springframework.transaction.support.TransactionTemplate;
-//import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
+//import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
 //
 //import java.util.concurrent.ExecutorService;
 //import java.util.function.Supplier;

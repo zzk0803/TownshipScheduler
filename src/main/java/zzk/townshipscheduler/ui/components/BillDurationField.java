@@ -44,7 +44,7 @@ public class BillDurationField
     private int formFieldToInt(TextField textField) {
         String value = textField.getValue();
         int i = Objects.isNull(value) || value.isEmpty() ? 0 : Integer.parseInt(value);
-        return i < 0 ? 0 : i;
+        return Math.max(i, 0);
     }
 
     @Override

@@ -19,10 +19,14 @@ public class FieldFactoryEntity implements Comparable<FieldFactoryEntity> {
             Comparator.comparing(fieldFactoryEntity -> fieldFactoryEntity.getFieldFactoryInfoEntity().getLevel());
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @MapsId
+    @ManyToOne(optional = false)
+    @JoinColumn(
+            name = "factory_info_id",
+            foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+    )
     private FieldFactoryInfoEntity fieldFactoryInfoEntity;
 
     @ManyToOne(optional = false)
@@ -32,10 +36,11 @@ public class FieldFactoryEntity implements Comparable<FieldFactoryEntity> {
     )
     private PlayerEntity playerEntity;
 
-    @ElementCollection
-    @CollectionTable
-    @MapKeyColumn(name = "fieldfactory_sequence")
-    private Map<Integer, FieldFactoryDetails> instanceSequenceDetailsMap = new HashMap<>();
+    @Column
+    private int producingLength;
+
+    @Column
+    private int reapWindowSize;
 
     public FieldFactoryEntity() {
         //JPA use
@@ -55,46 +60,6 @@ public class FieldFactoryEntity implements Comparable<FieldFactoryEntity> {
         this.playerEntity = playerEntity;
     }
 
-    private int generateInstanceDetailsMapSequenceKey() {
-        return this.instanceSequenceDetailsMap.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-    }
-
-    public FieldFactoryDetails appendFieldFactoryDetails() {
-        FieldFactoryDetails fieldFactoryDetails = new FieldFactoryDetails();
-        if (fieldFactoryInfoEntity != null) {
-            fieldFactoryDetails.setProducingLength(fieldFactoryInfoEntity.getDefaultProducingCapacity());
-            fieldFactoryDetails.setReapWindowSize(fieldFactoryInfoEntity.getDefaultReapWindowCapacity());
-        }
-        this.instanceSequenceDetailsMap.put(
-                generateInstanceDetailsMapSequenceKey(),
-                fieldFactoryDetails
-        );
-        return fieldFactoryDetails;
-    }
-
-    public FieldFactoryDetails appendFieldFactoryDetails(FieldFactoryDetails inFieldFactoryDetails) {
-        return this.instanceSequenceDetailsMap.put(
-                generateInstanceDetailsMapSequenceKey(),
-                inFieldFactoryDetails
-        );
-    }
-
-    public FieldFactoryEntity setFieldFactoryDetails(
-            Integer instanceKey,
-            FieldFactoryDetails fieldFactoryDetails
-    ) {
-        this.instanceSequenceDetailsMap.put(
-                instanceKey,
-                fieldFactoryDetails
-        );
-        return this;
-    }
-
-    public FieldFactoryDetails getFieldFactoryDetails(
-            Integer instanceKey
-    ){
-        return this.instanceSequenceDetailsMap.get(instanceKey);
-    }
 
     @Override
     public final int hashCode() {
@@ -130,20 +95,6 @@ public class FieldFactoryEntity implements Comparable<FieldFactoryEntity> {
     @Override
     public int compareTo(FieldFactoryEntity that) {
         return COMPARATOR.compare(this, that);
-    }
-
-    @Embeddable
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Data
-    public static class FieldFactoryDetails {
-
-        @Column
-        private int producingLength;
-
-        @Column
-        private int reapWindowSize;
-
     }
 
 }

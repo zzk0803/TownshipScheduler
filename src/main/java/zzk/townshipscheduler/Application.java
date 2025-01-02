@@ -1,6 +1,7 @@
 package zzk.townshipscheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -16,9 +17,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.persistence.*;
-import zzk.townshipscheduler.backend.persistence.dao.AppUserEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.WarehouseEntityRepository;
+import zzk.townshipscheduler.backend.dao.AppUserEntityRepository;
+import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
+import zzk.townshipscheduler.backend.dao.WarehouseEntityRepository;
 
 import java.net.http.HttpConnectTimeoutException;
 import java.time.Duration;
@@ -77,17 +78,18 @@ public class Application {
     public RetryTemplate retryTemplate() {
         RetryTemplateBuilder retryTemplateBuilder = new RetryTemplateBuilder();
 
-        return retryTemplateBuilder.fixedBackoff(Duration.ofSeconds(10))
-                .retryOn(HttpConnectTimeoutException.class)
-                .maxAttempts(3).build();
+        return retryTemplateBuilder.fixedBackoff(Duration.ofSeconds(3))
+                .maxAttempts(3)
+                .retryOn(Exception.class)
+                .build();
     }
 
-    @Bean(name = "java8EnhancedObjectMapper")
-    public ObjectMapper java8EnhancedObjectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        return objectMapper;
-    }
+//    @Bean(name = "java8EnhancedObjectMapper")
+//    public ObjectMapper java8EnhancedObjectMapper() {
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        objectMapper.registerModule(new JavaTimeModule());
+//        return objectMapper;
+//    }
 
     @Bean
     public TaskScheduler taskScheduler() {

@@ -1,59 +1,204 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
-import ai.timefold.solver.core.api.domain.valuerange.CountableValueRange;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
+import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import lombok.Data;
+import org.springframework.util.Assert;
+import zzk.townshipscheduler.backend.scheduling.ProductAmountBill;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @PlanningSolution
 public class TownshipSchedulingProblem {
 
+    public static final int DEFAULT_SCHEDULING_TIMESLOT_SIZE = 15;
+
     private UUID uuid;
 
-    private LocalDateTime dateTime=LocalDateTime.now();
-
-    @ProblemFactProperty
-    private SchedulingGamePlayer schedulingGamePlayer;
+    @ProblemFactCollectionProperty
+    private Set<SchedulingProduct> schedulingProductSet;
 
     @ProblemFactCollectionProperty
-    private List<SchedulingProduct> schedulingProductList;
+    private Set<SchedulingFactoryInfo> schedulingFactoryInfoSet;
 
     @ProblemFactCollectionProperty
-    private List<SchedulingOrder> schedulingOrderList;
-
-    @ProblemFactCollectionProperty
-    private List<SchedulingFactory> schedulingFactoryList;
-
-    @PlanningEntityCollectionProperty
-    private List<SchedulingFactorySlot> schedulingFactorySlotList;
+    private Set<SchedulingOrder> schedulingOrderSet;
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider
-    private List<SchedulingProducing> schedulingProducingList;
+    private Set<SchedulingFactoryInstance> schedulingFactoryInstanceSet;
 
-    @PlanningScore
-    private HardMediumSoftLongScore score;
+    @PlanningEntityCollectionProperty
+    @ValueRangeProvider
+    private Set<SchedulingDateTimeSlot> dateTimeSlotSet;
+
+    @PlanningEntityCollectionProperty
+    private Set<SchedulingProducingExecutionMode> schedulingProducingExecutionModeSet;
+
+    @PlanningEntityCollectionProperty
+    private List<SchedulingGameAction> schedulingGameActions;
+
+    @ProblemFactProperty
+    private SchedulingWarehouse schedulingWarehouse;
+
+    @ProblemFactProperty
+    private SchedulingWorkTimeLimit schedulingWorkTimeLimit;
+
+    @PlanningScore(
+            bendableHardLevelsSize = 2,
+            bendableSoftLevelsSize = 1
+    )
+    private BendableScore score;
 
     private SolverStatus solverStatus;
 
-//    @ValueRangeProvider(id = "producingBeginDateTime")
-//    public CountableValueRange<LocalDateTime> producingBeginDateTime() {
-//        return ValueRangeFactory.createLocalDateTimeValueRange(
-//                LocalDateTime.now(),
-//                LocalDateTime.now().plusDays(1),
-//                5,
-//                ChronoUnit.MINUTES
-//        );
-//    }
+    public TownshipSchedulingProblem(
+            UUID uuid,
+            Set<SchedulingProduct> schedulingProducts,
+            Set<SchedulingFactoryInfo> schedulingFactoryInfos,
+            Set<SchedulingOrder> schedulingOrders,
+            Set<SchedulingFactoryInstance> schedulingFactoryInstances,
+            SchedulingWarehouse schedulingWarehouse,
+            SchedulingWorkTimeLimit schedulingWorkTimeLimit,
+            BendableScore score,
+            SolverStatus solverStatus
+    ) {
+        this(
+                schedulingProducts,
+                schedulingFactoryInfos,
+                schedulingOrders,
+                schedulingFactoryInstances,
+                schedulingWarehouse,
+                schedulingWorkTimeLimit
+        );
+        this.score = score;
+        this.solverStatus = solverStatus;
+    }
+
+    public TownshipSchedulingProblem(
+            Set<SchedulingProduct> schedulingProducts,
+            Set<SchedulingFactoryInfo> schedulingFactoryInfos,
+            Set<SchedulingOrder> schedulingOrders,
+            Set<SchedulingFactoryInstance> schedulingFactoryInstances,
+            SchedulingWarehouse schedulingWarehouse,
+            SchedulingWorkTimeLimit schedulingWorkTimeLimit
+    ) {
+        this();
+        this.schedulingProductSet = schedulingProducts;
+        this.schedulingFactoryInfoSet = schedulingFactoryInfos;
+        this.schedulingOrderSet = schedulingOrders;
+        this.schedulingFactoryInstanceSet = schedulingFactoryInstances;
+        this.schedulingWarehouse = schedulingWarehouse;
+        this.schedulingWorkTimeLimit = schedulingWorkTimeLimit;
+
+    }
+
+    public TownshipSchedulingProblem() {
+        this.uuid = UUID.randomUUID();
+    }
+
+    public void setupGameActions() {
+        SchedulingGameAction.GameActionIdRoller idRoller = SchedulingGameAction.createIdRoller();
+        SchedulingGameAction sourceAction = SchedulingGameAction.createSourceAction();
+        SchedulingGameAction sinkAction = SchedulingGameAction.createSinkAction();
+
+        sourceAction.idRoller(idRoller);
+
+        ArrayList<SchedulingGameAction> mappedAction = this.schedulingOrderSet
+                .stream()
+                .flatMap(
+                        schedulingOrder -> schedulingOrder.getGameActionSet().stream()
+                )
+                .flatMap(
+                        productAction -> expandAndSetupGameActionSet(
+                                idRoller, productAction, sourceAction, sinkAction
+                        ).stream()
+                )
+                .collect(Collectors.toCollection(ArrayList<SchedulingGameAction>::new));
+        sinkAction.idRoller(idRoller);
+
+        ArrayList<SchedulingGameAction> result = new ArrayList<>(mappedAction);
+        result.addFirst(sourceAction);
+        result.addLast(sinkAction);
+        result.forEach(SchedulingGameAction::readyElseThrow);
+
+        this.setSchedulingGameActions(result);
+    }
+
+    private ArrayList<SchedulingGameAction> expandAndSetupGameActionSet(
+            SchedulingGameAction.GameActionIdRoller idRoller,
+            SchedulingGameAction productAction,
+            SchedulingGameAction sourceAction,
+            SchedulingGameAction sinkAction
+    ) {
+        productAction.setSourceGameAction(sourceAction);
+        productAction.setSinkGameAction(sinkAction);
+
+        LinkedList<SchedulingGameAction> dealingChain = new LinkedList<>(List.of(productAction));
+        ArrayList<SchedulingGameAction> result = new ArrayList<>();
+
+        ListIterator<SchedulingGameAction> chainIterator = dealingChain.listIterator();
+        while (chainIterator.hasNext()) {
+            SchedulingGameAction gameAction = chainIterator.next();
+            gameAction.idRoller(idRoller);
+            result.add(gameAction);
+            chainIterator.remove();
+
+            if (gameAction instanceof SchedulingGameActionProductProducing producingAction) {
+                Set<SchedulingProducingExecutionMode> executionModes
+                        = producingAction.getValueRangeProducingExecutionModeSet();
+
+                if (executionModes.size() == 1) {
+                    SchedulingProducingExecutionMode executionMode
+                            = executionModes.toArray(SchedulingProducingExecutionMode[]::new)[0];
+                    producingAction.setExecutionModeMandatory(executionMode);
+
+                    if (!executionMode.atomicProduct()) {
+                        ProductAmountBill productAmountBill = executionMode.getMaterials();
+                        for (Map.Entry<SchedulingProduct, Integer> entry : productAmountBill.entrySet()) {
+                            SchedulingProduct material = entry.getKey();
+                            Integer amount = entry.getValue();
+                            for (int i = amount; i > 0; i--) {
+                                for (SchedulingGameAction materialGameAction : material.getGameActionSet()) {
+                                    Assert.notNull(materialGameAction, "materialGameAction shouldn't be null");
+                                    producingAction.biAssociateWholeToPart(materialGameAction);
+                                    chainIterator.add(materialGameAction);
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    public void setupDateTimeSlotSet() {
+        setupDateTimeSlotSet(
+                this.schedulingWorkTimeLimit.getStartDateTime(),
+                this.schedulingWorkTimeLimit.getEndDateTime(),
+                DEFAULT_SCHEDULING_TIMESLOT_SIZE
+        );
+    }
+
+    private void setupDateTimeSlotSet(
+            final LocalDateTime startInclusive,
+            final LocalDateTime endExclusive,
+            final int durationInMinute
+    ) {
+        Set<SchedulingDateTimeSlot> result = SchedulingDateTimeSlot.generate(
+                startInclusive,
+                endExclusive,
+                durationInMinute
+        );
+        this.setDateTimeSlotSet(result);
+    }
+
 
 }

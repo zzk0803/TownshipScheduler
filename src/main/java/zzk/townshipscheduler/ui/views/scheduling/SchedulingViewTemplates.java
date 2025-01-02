@@ -1,6 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
+import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.*;
@@ -13,7 +13,9 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.Resource;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,7 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -51,9 +54,11 @@ public class SchedulingViewTemplates extends LitTemplate {
             "2s"
     );
 
-    private ObjectMapper objectMapper;
-
+    @Getter
+    @Setter
     private SchedulingView schedulingView;
+
+    private ObjectMapper objectMapper;
 
     @Value("${timefold.solver.termination.spent-limit}")
     private String timefoldComputingDuration;
@@ -69,22 +74,21 @@ public class SchedulingViewTemplates extends LitTemplate {
     @ClientCallable
     public void pullScheduleResult() {
         TownshipSchedulingProblem townshipSchedulingProblem = townshipSchedulingService.getSchedule(getProblemId());
-        getElement().setPropertyList("schedulingOrder", townshipSchedulingProblem.getSchedulingOrderList());
-        getElement().setPropertyList("schedulingProduct", townshipSchedulingProblem.getSchedulingProductList());
-        getElement().setPropertyList("schedulingFactory", townshipSchedulingProblem.getSchedulingFactoryList());
-        getElement().setPropertyList("schedulingFactorySlot", townshipSchedulingProblem.getSchedulingFactorySlotList());
-        getElement().setPropertyList("schedulingProducing", townshipSchedulingProblem.getSchedulingProducingList());
+        getElement().setPropertyList("schedulingOrder", new ArrayList<>(townshipSchedulingProblem.getSchedulingOrderSet()));
+        getElement().setPropertyList("schedulingProduct", new ArrayList<>(townshipSchedulingProblem.getSchedulingProductSet()));
+        getElement().setPropertyList("schedulingFactory", new ArrayList<>(townshipSchedulingProblem.getSchedulingFactoryInfoSet()));
+        getElement().setPropertyList("schedulingFactorySlot", new ArrayList<>(townshipSchedulingProblem.getSchedulingFactoryInstanceSet()));
+        getElement().setPropertyList("schedulingGameAction", new ArrayList<>(townshipSchedulingProblem.getSchedulingGameActions()));
         getElement().setProperty(
                 "schedulingGamePlayer",
-                json(townshipSchedulingProblem.getSchedulingGamePlayer())
+                json(townshipSchedulingProblem.getSchedulingWarehouse())
         );
 
         getElement().setProperty("solverStatus", townshipSchedulingProblem.getSolverStatus().name());
-        HardMediumSoftLongScore score = townshipSchedulingProblem.getScore();
-        if (Objects.nonNull(score)) {
+        if (Objects.nonNull(townshipSchedulingProblem.getScore())) {
             getElement().setProperty(
                     "score",
-                    score.toString()
+                    townshipSchedulingProblem.getScore().toString()
             );
         }
 
@@ -160,14 +164,6 @@ public class SchedulingViewTemplates extends LitTemplate {
     @Resource
     public void setObjectMapper(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-    }
-
-    public SchedulingView getSchedulingView() {
-        return schedulingView;
-    }
-
-    public void setSchedulingView(SchedulingView schedulingView) {
-        this.schedulingView = schedulingView;
     }
 
 }

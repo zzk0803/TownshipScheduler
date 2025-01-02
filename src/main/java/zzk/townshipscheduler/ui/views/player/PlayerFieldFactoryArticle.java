@@ -11,16 +11,13 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.dom.ElementFactory;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
 import zzk.townshipscheduler.ui.eventbus.UiEventBus;
-
-import java.util.Map;
 
 class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
 
@@ -40,34 +37,10 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
         factoryEntityGrid.addColumn(
                 fieldFactory -> fieldFactory.getFieldFactoryInfoEntity().getCategory()
         ).setHeader("Field&Factory Type");
-        factoryEntityGrid.addColumn(
-                fieldFactoryEntity -> (long) fieldFactoryEntity.getInstanceSequenceDetailsMap().keySet().size()
-        ).setHeader("Instance").setFlexGrow(1);
-        factoryEntityGrid.setItemDetailsRenderer(
-                new ComponentRenderer<>(fieldFactoryEntity -> {
-                    Map<Integer, FieldFactoryEntity.FieldFactoryDetails> instanceSequenceDetailsMap = fieldFactoryEntity.getInstanceSequenceDetailsMap();
-                    VerticalLayout renderedContent = new VerticalLayout();
-                    renderedContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-                    renderedContent.setDefaultHorizontalComponentAlignment(FlexComponent.Alignment.CENTER);
-                    instanceSequenceDetailsMap.entrySet().stream()
-                            .map(integerFieldFactoryDetailsEmbedEntry -> {
-                                Integer sequence = integerFieldFactoryDetailsEmbedEntry.getKey();
-                                FieldFactoryEntity.FieldFactoryDetails factoryDetailsEmbed = integerFieldFactoryDetailsEmbedEntry.getValue();
-                                HorizontalLayout horizontalLayout = new HorizontalLayout();
-                                horizontalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-                                horizontalLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.START);
-                                horizontalLayout.add(
-                                        new Text("#" + sequence),
-                                        new Text(" Producing Length=" + factoryDetailsEmbed.getProducingLength()),
-                                        new Text(" Reap Window Size=" + factoryDetailsEmbed.getReapWindowSize())
-                                );
-                                return horizontalLayout;
-                            })
-                            .forEach(renderedContent::add);
-                    return renderedContent;
-                }
-                )
-        );
+        factoryEntityGrid.addColumn(FieldFactoryEntity::getProducingLength)
+                .setHeader("Factory Producing Length");
+        factoryEntityGrid.addColumn(FieldFactoryEntity::getReapWindowSize)
+                .setHeader("Factory Reap Window Size");
         getContent().addAndExpand(factoryEntityGrid);
     }
 
@@ -81,7 +54,7 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
         MenuItem menuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.PLUS.create());
         menuItem.addSingleClickListener(menuItemClickEvent -> {
             Dialog dialog = new Dialog(new PlayerFieldFactoryArticleForm(currentPlayer, playerService));
-            dialog.setSizeFull();
+            dialog.setSizeUndefined();
             dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
 
             Dialog.DialogHeader header = dialog.getHeader();
@@ -94,6 +67,7 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
                     }
             );
             closeBtn.getStyle().set("margin-left", "auto");
+            dialogHeaderWrapper.add(new Text("New Factory Instance"));
             dialogHeaderWrapper.add(closeBtn);
             header.add(dialogHeaderWrapper);
 

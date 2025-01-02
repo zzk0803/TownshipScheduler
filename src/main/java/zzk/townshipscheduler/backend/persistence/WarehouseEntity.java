@@ -7,6 +7,7 @@ import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -16,25 +17,25 @@ import java.util.Objects;
 @Entity
 @DynamicUpdate
 @NamedEntityGraph(
-        name = "warehouse.item-amount-map",
+        name = "warehouse.product-amount-map",
         attributeNodes = {
                 @NamedAttributeNode(
-                        value = "itemAmountMap",
-                        keySubgraph = "warehouse.item-amount-map.key"
+                        value = "productAmountMap",
+                        keySubgraph = "warehouse.product-amount-map.key"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "warehouse.item-amount-map.key",
+                        name = "warehouse.product-amount-map.key",
                         attributeNodes = {
                                 @NamedAttributeNode(
                                         value = "crawledAsImage",
-                                        subgraph = "warehouse.item-amount-map.key.image"
+                                        subgraph = "warehouse.product-amount-map.key.image"
                                 )
                         }
                 ),
                 @NamedSubgraph(
-                        name = "warehouse.item-amount-map.key.image",
+                        name = "warehouse.product-amount-map.key.image",
                         attributeNodes = {
                                 @NamedAttributeNode(
                                         value = "imageBytes"
@@ -62,7 +63,7 @@ public class WarehouseEntity {
             foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     @MapKeyClass(ProductEntity.class)
-    private Map<ProductEntity, Integer> itemAmountMap;
+    private Map<ProductEntity, Integer> productAmountMap =new HashMap<>();
 
 //    @OneToMany(
 //            targetEntity = WarehouseRecordEntity.class,
@@ -80,7 +81,7 @@ public class WarehouseEntity {
 //    private WarehouseStocktakeEntity warehouseStocktakeEntity;
 
     public boolean containsProduct(ProductEntity key) {
-        return itemAmountMap.containsKey(key);
+        return productAmountMap.containsKey(key);
     }
 
 //    @Transient
@@ -124,11 +125,11 @@ public class WarehouseEntity {
 //    }
 
     public Integer get(ProductEntity product) {
-        return itemAmountMap.getOrDefault(product, 0);
+        return productAmountMap.getOrDefault(product, 0);
     }
 
     public Integer setProductAmount(ProductEntity product, Integer value) {
-        return itemAmountMap.put(product, value);
+        return productAmountMap.put(product, value);
     }
 
     public Integer doStockAction(ProductEntity product, WarehouseAction action, Integer amount) {

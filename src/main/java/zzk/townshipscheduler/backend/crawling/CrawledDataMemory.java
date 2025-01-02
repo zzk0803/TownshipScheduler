@@ -25,7 +25,12 @@ public class CrawledDataMemory {
         // last dataZone miss the row doesn't exist
         //so append a row  called "sentinel" make the algorithm make it work
         putForSave(
-                new CrawledDataCoordinate("SENTINEL", Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
+                new CrawledDataCoordinate(
+                        "SENTINEL",
+                        Integer.MAX_VALUE,
+                        Integer.MAX_VALUE,
+                        Integer.MAX_VALUE
+                ),
                 new CrawledDataCell(
                         "SENTINEL",
                         "SENTINEL",

@@ -9,7 +9,7 @@ import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
-import zzk.townshipscheduler.backend.persistence.dao.*;
+import zzk.townshipscheduler.backend.dao.*;
 import zzk.townshipscheduler.backend.service.ProductService;
 
 import java.util.List;
@@ -53,7 +53,8 @@ class TownshipDataPersistProcessor {
             logger.info("persist goods......done");
 
             logger.info("bonus...map to factory info and persist");
-            Objects.requireNonNull(savedProductList).stream()
+            Objects.requireNonNull(savedProductList)
+                    .stream()
                     .collect(Collectors.groupingBy(ProductEntity::getCategory))
                     .forEach((category, productEntities) -> {
                         FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();

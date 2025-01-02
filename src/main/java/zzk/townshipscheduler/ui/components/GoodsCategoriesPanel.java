@@ -211,16 +211,13 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
         });
     }
 
-    public void forceReloadingData() {
-        this.presenter.queryAndCache();
-        this.goodsGrid.getDataProvider().refreshAll();
-        this.categoryRadioGroup.getDataProvider().refreshAll();
-    }
-
     @Override
     protected void onAttach(AttachEvent attachEvent) {
-        super.onAttach(attachEvent);
+        this.forceReloadingData();
+    }
 
+    public void forceReloadingData() {
+        this.presenter.queryAndCache();
         this.goodsGrid.getDataProvider().refreshAll();
         this.categoryRadioGroup.getDataProvider().refreshAll();
     }

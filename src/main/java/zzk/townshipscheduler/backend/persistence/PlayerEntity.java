@@ -7,13 +7,32 @@ import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Getter
 @Setter
 @ToString
 @DynamicUpdate
+@NamedEntityGraph(
+        name = "player.full",
+        attributeNodes = {
+                @NamedAttributeNode(value = "warehouseEntity", subgraph = "player.warehouse"),
+                @NamedAttributeNode(value = "fieldFactoryEntities"),
+                @NamedAttributeNode(value = "account")
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "player.warehouse",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "productAmountMap")
+                        }
+                )
+        }
+)
 public class PlayerEntity {
 
     @Id
@@ -27,6 +46,8 @@ public class PlayerEntity {
     @ToString.Exclude
     private AccountEntity account;
 
+    private int fieldAmount;
+
     @OneToMany(
             targetEntity = FieldFactoryEntity.class,
             cascade = CascadeType.ALL,
@@ -34,6 +55,13 @@ public class PlayerEntity {
     )
     @ToString.Exclude
     private Set<FieldFactoryEntity> fieldFactoryEntities = new HashSet<>();
+
+    @OneToMany(
+            targetEntity = OrderEntity.class,
+            mappedBy = "playerEntity"
+    )
+    @ToString.Exclude
+    private Set<OrderEntity> orderEntities = new HashSet<>();
 
     @OneToOne(
             targetEntity = WarehouseEntity.class,
@@ -44,9 +72,31 @@ public class PlayerEntity {
     @ToString.Exclude
     private WarehouseEntity warehouseEntity;
 
-    public void attacheWarehouseEntity(WarehouseEntity warehouseEntity) {
-        warehouseEntity.setPlayerEntity(this);
-        this.setWarehouseEntity(warehouseEntity);
+    public void addAllOrderEntity(Collection<? extends OrderEntity> orderEntities) {
+        orderEntities.forEach(this::attacheOrderEntity);
+    }
+
+    public void attacheOrderEntity(OrderEntity orderEntity) {
+        orderEntity.setPlayerEntity(this);
+        this.addOrderEntity(orderEntity);
+    }
+
+    public boolean addOrderEntity(OrderEntity orderEntity) {
+        orderEntity.setPlayerEntity(this);
+        return orderEntities.add(orderEntity);
+    }
+
+    public void removeAllOrderEntity(Collection<? extends OrderEntity> orderEntities) {
+        orderEntities.forEach(this::removeOrderEntity);
+    }
+
+    public boolean removeOrderEntity(OrderEntity orderEntity) {
+        orderEntity.setPlayerEntity(null);
+        return orderEntities.remove(orderEntity);
+    }
+
+    public boolean addAllFieldFactory(Collection<? extends FieldFactoryEntity> fieldFactoryEntities) {
+        return fieldFactoryEntities.stream().map(this::addFieldFactory).anyMatch(boolResult -> !boolResult);
     }
 
     public boolean addFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
@@ -54,8 +104,8 @@ public class PlayerEntity {
         return fieldFactoryEntities.add(fieldFactoryEntity);
     }
 
-    public boolean addAllFieldFactory(Collection<? extends FieldFactoryEntity> fieldFactoryEntities) {
-        return fieldFactoryEntities.stream().map(this::addFieldFactory).anyMatch(boolResult -> !boolResult);
+    public boolean removeAllFieldFactory(Collection<? extends FieldFactoryEntity> fieldFactoryEntities) {
+        return fieldFactoryEntities.stream().map(this::removeFieldFactory).anyMatch(boolResult -> !boolResult);
     }
 
     public boolean removeFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
@@ -63,8 +113,9 @@ public class PlayerEntity {
         return fieldFactoryEntities.remove(fieldFactoryEntity);
     }
 
-    public boolean removeAllFieldFactory(Collection<? extends FieldFactoryEntity> fieldFactoryEntities) {
-        return fieldFactoryEntities.stream().map(this::removeFieldFactory).anyMatch(boolResult -> !boolResult);
+    public void attacheWarehouseEntity(WarehouseEntity warehouseEntity) {
+        warehouseEntity.setPlayerEntity(this);
+        this.setWarehouseEntity(warehouseEntity);
     }
 
     @Override

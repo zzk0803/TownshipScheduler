@@ -1,16 +1,16 @@
 package zzk.townshipscheduler.backend.service;
 
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.atteo.evo.inflector.English;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import zzk.townshipscheduler.backend.ProductId;
-import zzk.townshipscheduler.backend.TempProductManufactureRelation;
-import zzk.townshipscheduler.backend.persistence.*;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductManufactureInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductMaterialsRelationRepository;
-import zzk.townshipscheduler.pojo.projection.ProductEntityDto;
+import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.ProductEntityDtoForBuildUp;
+import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
+import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
 
 import java.time.Duration;
 import java.util.*;
@@ -25,41 +25,35 @@ public class ProductService {
 
     public static final String REGEX_MATERIAL_AMOUNT = "(\\d+)\\s+([^\\d\\s]+(?:\\s+[^\\d\\s]+)*)";
 
-    private static final GoodsHierarchyContext cachedGoodsHierarchyContext = new GoodsHierarchyContext();
+    private static final ProductHierarchyBuildUpContext CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT
+            = new ProductHierarchyBuildUpContext();
 
     private final ProductEntityRepository productEntityRepository;
 
-    private final ProductMaterialsRelationRepository productMaterialsRelationRepository;
-
-    private final ProductManufactureInfoEntityRepository productManufactureInfoEntityRepository;
-
     private boolean boolNeedCachedGoodHierarchiesReady = true;
 
-    public ProductService(
-            ProductEntityRepository productEntityRepository,
-            ProductMaterialsRelationRepository productMaterialsRelationRepository,
-            ProductManufactureInfoEntityRepository productManufactureInfoEntityRepository
-    ) {
+    public ProductService(ProductEntityRepository productEntityRepository) {
         this.productEntityRepository = productEntityRepository;
-        this.productMaterialsRelationRepository = productMaterialsRelationRepository;
-        this.productManufactureInfoEntityRepository = productManufactureInfoEntityRepository;
     }
 
     //<editor-fold desc="delegate repository methods">
+    public <T> Set<T> findBy(Class<T> projectionClass, Sort sort) {
+        return productEntityRepository.findBy(projectionClass, sort);
+    }
     //</editor-fold>
 
     public Set<ProductManufactureInfoEntity> calcManufactureInfoSet(ProductEntity productEntity) {
-        List<TempProductManufactureRelation> tempProductManufactureRelations = calcGoodsHierarchies(productEntity);
+        List<ContextProductHierarchyStructure> productHierarchies = calcGoodsHierarchies(productEntity);
         List<Duration> durations = calcGoodsDuration(productEntity);
-        assert durations.size() == tempProductManufactureRelations.size();
+        assert durations.size() == productHierarchies.size();
 
         Set<ProductManufactureInfoEntity> producingInfoSet = new HashSet<>();
-        Iterator<TempProductManufactureRelation> manufactureRelationIterator = tempProductManufactureRelations.iterator();
+        Iterator<ContextProductHierarchyStructure> manufactureRelationIterator = productHierarchies.iterator();
         Iterator<Duration> durationIterator = durations.iterator();
         while (manufactureRelationIterator.hasNext() || durationIterator.hasNext()) {
-            TempProductManufactureRelation tempProductManufactureRelation = null;
+            ContextProductHierarchyStructure contextProductHierarchyStructure = null;
             try {
-                tempProductManufactureRelation = manufactureRelationIterator.next();
+                contextProductHierarchyStructure = manufactureRelationIterator.next();
             } catch (NoSuchElementException e) {
                 //don't be alert
             }
@@ -73,7 +67,7 @@ public class ProductService {
 
             ProductManufactureInfoEntity productManufactureInfoEntity = buildProductManufactureInfoEntity(
                     productEntity,
-                    tempProductManufactureRelation,
+                    contextProductHierarchyStructure,
                     duration
             );
             producingInfoSet.add(productManufactureInfoEntity);
@@ -84,15 +78,15 @@ public class ProductService {
 
     private ProductManufactureInfoEntity buildProductManufactureInfoEntity(
             ProductEntity productEntity,
-            TempProductManufactureRelation tempProductManufactureRelation,
+            ContextProductHierarchyStructure contextProductHierarchyStructure,
             Duration duration
     ) {
         ProductManufactureInfoEntity productManufactureInfoEntity = new ProductManufactureInfoEntity();
         productManufactureInfoEntity.setProductEntity(productEntity);
-        if (tempProductManufactureRelation != null && !tempProductManufactureRelation.boolAtomicProduct()) {
+        if (contextProductHierarchyStructure != null && !contextProductHierarchyStructure.boolAtomicProduct()) {
             Set<ProductMaterialsRelation> productMaterialsRelations = buildProductMaterialRelationSet(
                     productManufactureInfoEntity,
-                    tempProductManufactureRelation
+                    contextProductHierarchyStructure
             );
             productMaterialsRelations.forEach(productManufactureInfoEntity::attacheProductMaterialsRelation);
         }
@@ -104,10 +98,10 @@ public class ProductService {
 
     private Set<ProductMaterialsRelation> buildProductMaterialRelationSet(
             ProductManufactureInfoEntity productManufactureInfoEntity,
-            TempProductManufactureRelation tempProductManufactureRelation
+            ContextProductHierarchyStructure contextProductHierarchyStructure
     ) {
         Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
-        Map<ProductId, Integer> productManufactureRelationMaterials = tempProductManufactureRelation.getMaterials();
+        Map<ProductEntity.ProductId, Integer> productManufactureRelationMaterials = contextProductHierarchyStructure.getMaterials();
         productManufactureRelationMaterials.forEach((productId, integer) -> {
             ProductMaterialsRelation productMaterialsRelation = new ProductMaterialsRelation();
             productMaterialsRelation.setProductManufactureInfo(productManufactureInfoEntity);
@@ -118,54 +112,57 @@ public class ProductService {
         return productMaterialsRelations;
     }
 
-    public List<TempProductManufactureRelation> calcGoodsHierarchies(ProductEntity productEntity) {
+    public List<ContextProductHierarchyStructure> calcGoodsHierarchies(ProductEntity productEntity) {
         if (boolNeedCachedGoodHierarchiesReady) {
             calcGoodsHierarchies();
         }
 
-        return cachedGoodsHierarchyContext.resultByGroupInProduct().get(ProductId.of(productEntity.getId()));
+        return CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.resultByGroupInProduct()
+                .get(productEntity.getProductId());
     }
 
     public void calcGoodsHierarchies() {
-        Set<TempProductManufactureRelation> cachedRelations = cachedGoodsHierarchyContext.getCachedRelations();
+        Set<ContextProductHierarchyStructure> cachedRelations = CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.getCachedRelations();
 
-        List<ProductEntityDto> productEntityDtoList = productEntityRepository.findBy(
-                ProductEntityDto.class,
+        Set<ProductEntityDtoForBuildUp> productEntityDtoForBuildUpList = productEntityRepository.findBy(
+                ProductEntityDtoForBuildUp.class,
                 Sort.by("id")
         );
-        log.info("{} product entities load", productEntityDtoList.size());
+        log.info("{} product entities load", productEntityDtoForBuildUpList.size());
 
         AtomicInteger idRoller = new AtomicInteger(1);
-        LinkedHashMap<String, ProductEntityDto> nameProductDtoMap = new LinkedHashMap<>(productEntityDtoList.size());
-        productEntityDtoList.forEach(
-                productEntityDto -> {
+        LinkedHashMap<String, ProductEntityDtoForBuildUp> nameProductDtoMap = new LinkedHashMap<>(
+                productEntityDtoForBuildUpList.size());
+        productEntityDtoForBuildUpList.forEach(
+                productEntityDtoForBuildUp -> {
                     //prepare material STRING process
                     nameProductDtoMap.putIfAbsent(
-                            productEntityDto.getNameForMaterial(),
-                            productEntityDto
+                            productEntityDtoForBuildUp.getNameForMaterial(),
+                            productEntityDtoForBuildUp
                     );
 
                     //prepare internal process
-                    initProductIntoCachedRelations(cachedRelations, productEntityDto, idRoller);
+                    initProductIntoCachedRelations(cachedRelations, productEntityDtoForBuildUp, idRoller);
                 }
         );
 
         long systemCurrentTimeMillis = System.currentTimeMillis();
         log.info("calcGoodsHierarchies start");
-        for (ProductEntityDto currentProductDto : productEntityDtoList) {
+        for (ProductEntityDtoForBuildUp currentProductDto : productEntityDtoForBuildUpList) {
             checkMaterialOfGoodsIntoHierarchy(
                     currentProductDto,
                     nameProductDtoMap
             );
         }
-        for (ProductEntityDto currentProductDto : productEntityDtoList) {
+        for (ProductEntityDtoForBuildUp currentProductDto : productEntityDtoForBuildUpList) {
             checkCompositeOfGoodsIntoHierarchy(
                     currentProductDto,
                     nameProductDtoMap
             );
         }
 
-        Map<ProductId, List<TempProductManufactureRelation>> groupedByProduct = cachedGoodsHierarchyContext.resultByGroupInProduct();
+        Map<ProductEntity.ProductId, List<ContextProductHierarchyStructure>> groupedByProduct
+                = CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.resultByGroupInProduct();
         log.info(
                 "calcGoodsHierarchies end...result in {} items,{} passed",
                 groupedByProduct.size(),
@@ -176,13 +173,13 @@ public class ProductService {
     }
 
     private void initProductIntoCachedRelations(
-            Set<TempProductManufactureRelation> cachedRelations,
-            ProductEntityDto productEntityDto,
+            Set<ContextProductHierarchyStructure> cachedRelations,
+            ProductEntityDtoForBuildUp productEntityDtoForBuildUp,
             AtomicInteger idRoller
     ) {
-        TempProductManufactureRelation manufactureRelation = TempProductManufactureRelation.builder()
+        ContextProductHierarchyStructure manufactureRelation = ContextProductHierarchyStructure.builder()
                 .id(idRoller.getAndIncrement())
-                .productId(ProductId.of(productEntityDto.getId()))
+                .productId(ProductEntity.ProductId.of(productEntityDtoForBuildUp.getId()))
                 .composite(new ArrayList<>())
                 .materials(new HashMap<>())
                 .build();
@@ -190,8 +187,8 @@ public class ProductService {
     }
 
     private void checkMaterialOfGoodsIntoHierarchy(
-            ProductEntityDto targetProduct,
-            LinkedHashMap<String, ProductEntityDto> nameProductMap
+            ProductEntityDtoForBuildUp targetProduct,
+            LinkedHashMap<String, ProductEntityDtoForBuildUp> nameProductMap
     ) {
         String bomStringFromEntity = targetProduct.getBomString();
         if (bomStringFromEntity == null || bomStringFromEntity.isEmpty()) {
@@ -212,19 +209,19 @@ public class ProductService {
                             int quantity = Integer.parseInt(matcher.group(1));
                             String productName = English.plural(matcher.group(2).trim(), 1);
 
-                            ProductEntityDto goodsMaterialDto = nameProductMap.get(productName);
+                            ProductEntityDtoForBuildUp goodsMaterialDto = nameProductMap.get(productName);
                             assert goodsMaterialDto != null;
 
-                            Optional<TempProductManufactureRelation> relationOptional = cachedGoodsHierarchyContext.getCachedRelations()
+                            Optional<ContextProductHierarchyStructure> relationOptional = CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.getCachedRelations()
                                     .stream()
-                                    .filter(tempProductManufactureRelation -> Objects.equals(
-                                            tempProductManufactureRelation.getProductId().getValue(),
+                                    .filter(contextProductHierarchyStructure -> Objects.equals(
+                                            contextProductHierarchyStructure.getProductId().getValue(),
                                             targetProduct.getId()
                                     ))
                                     .findFirst();
-                            Map<ProductId, Integer> materials = relationOptional.map(TempProductManufactureRelation::getMaterials)
+                            Map<ProductEntity.ProductId, Integer> materials = relationOptional.map(ContextProductHierarchyStructure::getMaterials)
                                     .orElseThrow();
-                            materials.putIfAbsent(ProductId.of(goodsMaterialDto.getId()), quantity);
+                            materials.putIfAbsent(ProductEntity.ProductId.of(goodsMaterialDto.getId()), quantity);
 
                         } catch (RuntimeException e) {
                             //ignore and do nothing
@@ -234,28 +231,28 @@ public class ProductService {
     }
 
     private void checkCompositeOfGoodsIntoHierarchy(
-            ProductEntityDto productEntityDto,
-            LinkedHashMap<String, ProductEntityDto> nameProductMap
+            ProductEntityDtoForBuildUp productEntityDtoForBuildUp,
+            LinkedHashMap<String, ProductEntityDtoForBuildUp> nameProductMap
     ) {
-        Set<TempProductManufactureRelation> cachedRelations = cachedGoodsHierarchyContext.getCachedRelations();
+        Set<ContextProductHierarchyStructure> cachedRelations = CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.getCachedRelations();
 
-        Long productEntityId = productEntityDto.getId();
-        String name = productEntityDto.getName();
+        Long productEntityId = productEntityDtoForBuildUp.getId();
+        String name = productEntityDtoForBuildUp.getName();
 
-        ArrayList<ProductId> productIdList = cachedRelations.stream()
-                .filter(tempProductManufactureRelation -> tempProductManufactureRelation.getMaterials()
-                        .containsKey(ProductId.of(productEntityId)))
-                .map(TempProductManufactureRelation::getProductId)
+        ArrayList<ProductEntity.ProductId> productIdList = cachedRelations.stream()
+                .filter(contextProductHierarchyStructure -> contextProductHierarchyStructure.getMaterials()
+                        .containsKey(ProductEntity.ProductId.of(productEntityId)))
+                .map(ContextProductHierarchyStructure::getProductId)
                 .collect(Collectors.toCollection(ArrayList::new));
 
         cachedRelations.stream()
-                .filter(tempProductManufactureRelation -> Objects.equals(
-                                tempProductManufactureRelation.getProductId().getValue(),
-                                productEntityDto.getId()
+                .filter(contextProductHierarchyStructure -> Objects.equals(
+                                contextProductHierarchyStructure.getProductId().getValue(),
+                                productEntityDtoForBuildUp.getId()
                         )
                 )
-                .forEach(tempProductManufactureRelation -> {
-                    tempProductManufactureRelation.getComposite().addAll(productIdList);
+                .forEach(contextProductHierarchyStructure -> {
+                    contextProductHierarchyStructure.getComposite().addAll(productIdList);
                 });
 
     }
@@ -289,19 +286,43 @@ public class ProductService {
                 .toList();
     }
 
-    private static class GoodsHierarchyContext {
+    private static class ProductHierarchyBuildUpContext {
 
-        private final Set<TempProductManufactureRelation> cachedRelations = new LinkedHashSet<>();
+        private final Set<ContextProductHierarchyStructure> cachedRelations = new LinkedHashSet<>();
 
-        public Set<TempProductManufactureRelation> getCachedRelations() {
+        public Set<ContextProductHierarchyStructure> getCachedRelations() {
             return cachedRelations;
         }
 
-        public Map<ProductId, List<TempProductManufactureRelation>> resultByGroupInProduct() {
+        public Map<ProductEntity.ProductId, List<ContextProductHierarchyStructure>> resultByGroupInProduct() {
             return cachedRelations.stream()
-                    .collect(Collectors.groupingBy(TempProductManufactureRelation::getProductId));
+                    .collect(Collectors.groupingBy(ContextProductHierarchyStructure::getProductId));
         }
 
     }
+
+    @Data
+    @Builder
+    public static class ContextProductHierarchyStructure {
+
+        private int id;
+
+        private ProductEntity.ProductId productId;
+
+        private List<ProductEntity.ProductId> composite;
+
+        private Map<ProductEntity.ProductId, Integer> materials;
+
+        private Boolean atomicProduct;
+
+        public boolean boolAtomicProduct() {
+            if (atomicProduct == null) {
+                atomicProduct = materials == null || materials.isEmpty();
+            }
+            return atomicProduct;
+        }
+
+    }
+
 
 }

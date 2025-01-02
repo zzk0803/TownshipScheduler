@@ -1,10 +1,7 @@
 package zzk.townshipscheduler.backend.persistence;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
@@ -20,31 +17,27 @@ import java.util.Set;
 @AllArgsConstructor
 @DynamicUpdate
 @DynamicInsert
-@NamedEntityGraphs(
-        {
-                @NamedEntityGraph(
-                        name = "products.g.full",
-                        attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "crawledAsImage",
-                                        subgraph = "products.g.full.image"
-                                ),
-                                @NamedAttributeNode("fieldFactoryInfo"),
-                                @NamedAttributeNode(
-                                        value = "manufactureInfoEntities",
-                                        subgraph = "products.g.full.manufacture"
-                                )
-                        },
-                        subgraphs = {
-                                @NamedSubgraph(
-                                        name = "products.g.full.image",
-                                        attributeNodes = @NamedAttributeNode("imageBytes")
-                                ),
-                                @NamedSubgraph(
-                                        name = "products.g.full.manufacture",
-                                        attributeNodes = @NamedAttributeNode("productMaterialsRelations")
-                                )
-                        }
+@NamedEntityGraph(
+        name = "products.g.full",
+        attributeNodes = {
+                @NamedAttributeNode(
+                        value = "crawledAsImage",
+                        subgraph = "products.g.full.image"
+                ),
+                @NamedAttributeNode("fieldFactoryInfo"),
+                @NamedAttributeNode(
+                        value = "manufactureInfoEntities",
+                        subgraph = "products.g.full.manufacture"
+                )
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "products.g.full.image",
+                        attributeNodes = @NamedAttributeNode("imageBytes")
+                ),
+                @NamedSubgraph(
+                        name = "products.g.full.manufacture",
+                        attributeNodes = @NamedAttributeNode("productMaterialsRelations")
                 )
         }
 )
@@ -53,6 +46,9 @@ public class ProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Transient
+    private transient ProductId productId;
 
     private String name = "";
 
@@ -85,7 +81,7 @@ public class ProductEntity {
     private String durationString = "";
 
     @OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "jointable_product_pManufacture")
+    @JoinTable(name = "jointable_product_manufacture")
     private Set<ProductManufactureInfoEntity> manufactureInfoEntities = new HashSet<>();
 
     @OneToOne
@@ -120,6 +116,26 @@ public class ProductEntity {
         if (thisEffectiveClass != oEffectiveClass) return false;
         ProductEntity productEntity = (ProductEntity) o;
         return getId() != null && Objects.equals(getId(), productEntity.getId());
+    }
+
+    public ProductId getProductId() {
+        return this.productId == null
+                ? this.productId = new ProductId(this.getId())
+                : this.productId;
+    }
+
+    @Data
+    @Embeddable
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ProductId {
+
+        private Long value;
+
+        public static ProductId of(long value) {
+            return new ProductId(value);
+        }
+
     }
 
 }

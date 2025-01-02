@@ -35,6 +35,8 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
 
     private final PlayerService playerService;
 
+    private final Grid<Map.Entry<ProductEntity, Integer>> grid;
+
     public PlayerWarehouseArticle(
             PlayerEntity playerEntity,
             PlayerService playerService,
@@ -44,11 +46,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
         this.playerService = playerService;
 
         setupMenuBar(goodsCategoriesPanel);
-        setupWarehouseGrid();
-    }
-
-    private void setupWarehouseGrid() {
-        Grid<Map.Entry<ProductEntity, Integer>> grid = new Grid<>();
+        grid = new Grid<>();
         grid.addColumn(new ComponentRenderer<>(productEntityIntegerEntry -> {
             HorizontalLayout result = new HorizontalLayout();
             result.add(
@@ -66,15 +64,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
             );
             return result;
         })).setHeader("item-amount");
-        grid.setItems(
-                query -> {
-                    int offset = query.getOffset();
-                    int limit = query.getLimit();
-                    WarehouseEntity warehouseEntity = playerService.findWarehouseEntityByPlayerEntity(currentPlayer);
-                    Map<ProductEntity, Integer> itemAmountMap = warehouseEntity.getItemAmountMap();
-                    return itemAmountMap.entrySet().stream().skip(offset).limit(limit);
-                }
-        );
+
         UiEventBus.subscribe(
                 this,
                 PlayerWarehouseArticleGridUpdateEvent.class,
@@ -131,6 +121,16 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
 
     @Override
     protected void onAttach(AttachEvent attachEvent) {
+        grid.setItems(
+                query -> {
+                    int offset = query.getOffset();
+                    int limit = query.getLimit();
+                    WarehouseEntity warehouseEntity = playerService.findWarehouseEntityByPlayerEntity(currentPlayer);
+
+                    Map<ProductEntity, Integer> itemAmountMap = warehouseEntity.getProductAmountMap();
+                    return itemAmountMap.entrySet().stream().skip(offset).limit(limit);
+                }
+        );
     }
 
     class PlayerWarehouseArticleGridUpdateEvent extends ComponentEvent<PlayerWarehouseArticle> {

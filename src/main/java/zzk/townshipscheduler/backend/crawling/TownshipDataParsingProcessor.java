@@ -16,24 +16,13 @@ class TownshipDataParsingProcessor {
 
     public static final Logger logger = LoggerFactory.getLogger(TownshipDataParsingProcessor.class);
 
-    private static TreeMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> betweenTowHeaderAndGroupByRowNumber(
-            SortedMap<CrawledDataCoordinate, CrawledDataCell> betweenTwoHeaders
-    ) {
-        return betweenTwoHeaders.entrySet()
-                .stream()
-                .collect(Collectors.groupingBy(
-                        entry -> entry.getKey().getRow(),
-                        TreeMap::new,
-                        Collectors.toList()
-                ));
-    }
-
     public ParsedResult process(CrawledResult crawledResult) {
         logger.info("ParsedResult working...");
         LinkedHashMap<String, ParsedResultSegment> result = new LinkedHashMap<>();
-        TreeMap<CrawledDataCoordinate, CrawledDataCell> crawledAsMap = crawledResult.get();
+        TreeMap<CrawledDataCoordinate, CrawledDataCell> coordinateToDataCellMap = crawledResult.get();
 
-        LinkedList<CrawledDataCoordinate> oneCoordRowAsHeadRowList = filterCoordTypeHeadAsList(crawledAsMap);
+        LinkedList<CrawledDataCoordinate> oneCoordRowAsHeadRowList
+                = filterCoordTypeHeadAsList(coordinateToDataCellMap);
 
         int headRowSize = oneCoordRowAsHeadRowList.size();
         Assert.isTrue(headRowSize >= 2, "should be more than 2");
@@ -53,7 +42,8 @@ class TownshipDataParsingProcessor {
 
         boolean rowIteratorBool = true;
         while (rowIteratorBool) {
-            SortedMap<CrawledDataCoordinate, CrawledDataCell> betweenTwoHeadersAsSortedMap = crawledAsMap.subMap(
+            SortedMap<CrawledDataCoordinate, CrawledDataCell> betweenTwoHeadersAsSortedMap
+                    = coordinateToDataCellMap.subMap(
                     formerRowCoord,
                     false,
                     latterRowCoord,
@@ -70,28 +60,29 @@ class TownshipDataParsingProcessor {
                 continue;
             }
 
-            TreeMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> betweenTwoHeadersGroupByRowAsTreeMap =
-                    betweenTowHeaderAndGroupByRowNumber(betweenTwoHeadersAsSortedMap);
+            TreeMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> betweenTwoHeader
+                    = betweenTowHeaderAndGroupByRowNumber(betweenTwoHeadersAsSortedMap);
 
             String categotyString = figureOutCategotyString(
                     formerRowCoord,
                     oneCoordRowAsHeadRowList,
-                    crawledAsMap
+                    coordinateToDataCellMap
             );
 
-            Map.Entry<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> columnsNameRowAsMapEntry =
-                    betweenTwoHeadersGroupByRowAsTreeMap.firstEntry();
+            Map.Entry<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> columnsNameRowAsMapEntry
+                    = betweenTwoHeader.firstEntry();
 
-            SortedMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> dataAsMapEntries =
-                    betweenTwoHeadersGroupByRowAsTreeMap.tailMap(
-                            columnsNameRowAsMapEntry.getKey(),
-                            false
-                    );
+            SortedMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> dataAsMapEntries
+                    = betweenTwoHeader.tailMap(
+                    columnsNameRowAsMapEntry.getKey(),
+                    false
+            );
 
             ParsedResultSegment parsedResultSegment = new ParsedResultSegment(categotyString);
             for (Map.Entry<CrawledDataCoordinate, CrawledDataCell> columnEntry : columnsNameRowAsMapEntry.getValue()) {
                 AtomicInteger rowCounter = new AtomicInteger(0);
-                dataAsMapEntries.values().stream()
+                dataAsMapEntries.values()
+                        .stream()
                         .flatMap(Collection::stream)
                         .filter(dataEntry -> dataEntry.getKey().getTable() == columnEntry.getKey().getTable())
                         .filter(dataEntry -> dataEntry.getKey().getColumn() == columnEntry.getKey().getColumn())
@@ -116,8 +107,22 @@ class TownshipDataParsingProcessor {
         return new ParsedResult(result);
     }
 
+    private TreeMap<Integer, List<Map.Entry<CrawledDataCoordinate, CrawledDataCell>>> betweenTowHeaderAndGroupByRowNumber(
+            SortedMap<CrawledDataCoordinate, CrawledDataCell> betweenTwoHeaders
+    ) {
+        return betweenTwoHeaders.entrySet()
+                .stream()
+                .collect(Collectors.groupingBy(
+                                entry -> entry.getKey().getRow(),
+                                TreeMap::new,
+                                Collectors.toList()
+                        )
+                );
+    }
+
     private LinkedList<CrawledDataCoordinate> filterCoordTypeHeadAsList(TreeMap<CrawledDataCoordinate, CrawledDataCell> crawledAsMap) {
-        return crawledAsMap.entrySet().stream()
+        return crawledAsMap.entrySet()
+                .stream()
                 .filter(entry -> entry.getValue().getType() == CrawledDataCell.Type.HEAD)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toCollection(LinkedList::new));

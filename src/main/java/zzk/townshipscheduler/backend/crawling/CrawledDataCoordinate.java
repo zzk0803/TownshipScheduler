@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,10 @@ public final class CrawledDataCoordinate
     private int row = BOUNDARY;
 
     private int column = BOUNDARY;
+
+    public static CrawledDataCoordinate create() {
+        return new CrawledDataCoordinate();
+    }
 
     @Override
     public int compareTo(CrawledDataCoordinate that) {

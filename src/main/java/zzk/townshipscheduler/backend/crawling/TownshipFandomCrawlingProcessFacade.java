@@ -6,8 +6,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -22,7 +20,7 @@ public class TownshipFandomCrawlingProcessFacade {
 
     private final TownshipDataParsingProcessor parsingProcessor;
 
-    private final TownshipDataTransferProcessor transferProcessor;
+    private final TownshipDataMappingProcessor transferProcessor;
 
     private final TownshipDataPersistProcessor persistProcessor;
 
@@ -35,18 +33,6 @@ public class TownshipFandomCrawlingProcessFacade {
     private ParsedResult parsedResult;
 
     private TransferResult transferResult;
-
-    public Set<String> segmentNameSet() {
-        return parsedResult.segmentNameSet();
-    }
-
-    public ParsedResultSegment getSegment(String category) {
-        return parsedResult.getSegment(category);
-    }
-
-    public LinkedHashMap<String, ParsedResultSegment> getZoneDtoMap() {
-        return parsedResult.groupByTable();
-    }
 
     public CompletableFuture<Void> process() {
         return crawlingProcessor.process()

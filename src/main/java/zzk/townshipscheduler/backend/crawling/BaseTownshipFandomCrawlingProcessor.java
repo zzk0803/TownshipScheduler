@@ -12,7 +12,7 @@
 //import org.springframework.stereotype.Component;
 //import org.springframework.transaction.support.TransactionTemplate;
 //import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
-//import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
+//import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
 //
 //import java.io.IOException;
 //import java.net.URI;

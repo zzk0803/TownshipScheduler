@@ -25,6 +25,8 @@ class PlayerBasicArticle extends Composite<VerticalLayout> {
 
     private IntegerField levelField;
 
+    private IntegerField fieldAmountField;
+
     private Binder<PlayerEntity> playerEntityBinder;
 
     public PlayerBasicArticle(PlayerEntity player, PlayerService playerService) {
@@ -33,6 +35,7 @@ class PlayerBasicArticle extends Composite<VerticalLayout> {
         playerEntityBinder = new Binder<>(PlayerEntity.class);
         nameField = new TextField("Name");
         levelField = new IntegerField("Level");
+        fieldAmountField = new IntegerField("Field Amount");
         playerEntityBinder.bindReadOnly(
                 nameField,
                 playerEntity -> Optional.ofNullable(playerEntity.getAccount())
@@ -42,11 +45,17 @@ class PlayerBasicArticle extends Composite<VerticalLayout> {
         playerEntityBinder.forField(levelField)
                 .withValidator((integer, valueContext) -> integer > 0
                         ? ValidationResult.ok()
-                        : ValidationResult.error("level number should >0"))
+                        : ValidationResult.error("level number should >0")
+                )
                 .bind(PlayerEntity::getLevel, PlayerEntity::setLevel);
+        playerEntityBinder.forField(fieldAmountField)
+                .withValidator((integer, valueContext) -> integer > 0
+                        ? ValidationResult.ok()
+                        : ValidationResult.error("field number should >0"))
+                .bind(PlayerEntity::getFieldAmount, PlayerEntity::setFieldAmount);
         playerEntityBinder.setBean(player);
 
-        getContent().add(nameField, levelField);
+        getContent().add(nameField, levelField, fieldAmountField);
 
         getContent().add(buildUpdatePlayerButton(player));
     }
@@ -55,7 +64,7 @@ class PlayerBasicArticle extends Composite<VerticalLayout> {
         Button button = new Button("Update");
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         button.addClickListener(clicked -> {
-            PlayerEntity savedPlayer = playerService.updatePlayer(player);
+            PlayerEntity savedPlayer = playerService.emergeAndUpdate(player);
 
             ConfirmDialog dialog = new ConfirmDialog();
             dialog.setHeader("Extra Transaction");

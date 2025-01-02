@@ -7,13 +7,16 @@ import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
+import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
+import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
-import zzk.townshipscheduler.backend.persistence.dao.OrderEntityRepository;
-import zzk.townshipscheduler.pojo.form.BillItem;
+import zzk.townshipscheduler.ui.pojo.BillItem;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -26,6 +29,8 @@ public class OrderFormPresenter {
     private final List<BillItem> gridBillItems = new ArrayList<>();
 
     private OrderFormView orderFormView;
+
+    private TownshipAuthenticationContext townshipAuthenticationContext;
 
     private OrderEntity orderEntity;
 
@@ -64,14 +69,28 @@ public class OrderFormPresenter {
 
     void onSubmit() {
         getBinder().validate();
-        getOrderEntity().setCreatedDateTime(LocalDateTime.now());
+        OrderEntity savingOrder = getOrderEntity();
+        savingOrder.setCreatedDateTime(LocalDateTime.now());
+        if (!savingOrder.isBoolDeadLine()) {
+            savingOrder.setDeadLine(null);
+        }
 
-        getGridBillItems().forEach(billItem -> getOrderEntity().addItem(
+        getGridBillItems().forEach(billItem -> savingOrder.addItem(
                 billItem.getProductEntity(),
                 billItem.getAmount()
         ));
 
-        getOrderEntityRepository().saveAndFlush(getOrderEntity());
+
+        Optional.ofNullable(getTownshipAuthenticationContext())
+                .map(TownshipAuthenticationContext::getUserDetails)
+                .map(AccountEntity::getPlayerEntity)
+                .ifPresent(player -> {
+                    orderEntity.setPlayerEntity(player);
+                });
+        if (orderEntity.getPlayerEntity() == null) {
+            log.error("fail to get player");
+        }
+        getOrderEntityRepository().saveAndFlush(savingOrder);
     }
 
     public Binder<OrderEntity> prepareBillAndBinder() {
@@ -91,5 +110,9 @@ public class OrderFormPresenter {
         gridBillItemsCounter = new AtomicInteger();
     }
 
+
+    public void setTownshipAuthenticationContext(TownshipAuthenticationContext townshipAuthenticationContext) {
+        this.townshipAuthenticationContext = townshipAuthenticationContext;
+    }
 
 }

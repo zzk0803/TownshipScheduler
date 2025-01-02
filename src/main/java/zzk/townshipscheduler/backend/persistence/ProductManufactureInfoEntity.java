@@ -30,7 +30,7 @@ public class ProductManufactureInfoEntity {
     private Duration producingDuration;
 
     @OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "jointable_pInfo_pMaterial")
+    @JoinTable(name = "jointable_manufacture_material")
     @ToString.Exclude
     private Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
 

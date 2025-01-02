@@ -4,7 +4,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import zzk.townshipscheduler.backend.persistence.dao.AppUserEntityRepository;
+import zzk.townshipscheduler.backend.dao.AppUserEntityRepository;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {

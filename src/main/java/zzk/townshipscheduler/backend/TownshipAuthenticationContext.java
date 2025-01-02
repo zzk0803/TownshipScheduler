@@ -8,10 +8,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
+import zzk.townshipscheduler.backend.persistence.PlayerEntity;
+
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -19,8 +23,14 @@ public class TownshipAuthenticationContext {
 
     private final AuthenticationContext authenticationContext;
 
+    public Optional<PlayerEntity> getPlayerEntity() {
+        return Optional.ofNullable(getUserDetails()).map(AccountEntity::getPlayerEntity);
+    }
+
     public AccountEntity getUserDetails() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        Object principal = authentication.getPrincipal();
         if (principal instanceof AccountEntity accountEntity) {
             return accountEntity;
         }else {

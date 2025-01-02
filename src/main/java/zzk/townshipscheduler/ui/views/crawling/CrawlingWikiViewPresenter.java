@@ -6,9 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import zzk.townshipscheduler.backend.crawling.TownshipFandomCrawlingProcessFacade;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledParsedCoordCellEntityRepository;
+import zzk.townshipscheduler.backend.dao.WikiCrawledParsedCoordCellEntityRepository;
 
 import java.util.concurrent.CompletableFuture;
 

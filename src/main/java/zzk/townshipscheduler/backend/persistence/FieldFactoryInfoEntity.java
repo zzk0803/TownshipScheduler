@@ -25,11 +25,15 @@ import java.util.function.Supplier;
 )
 public class FieldFactoryInfoEntity {
 
+    public static final String FIELD_CRITERIA = "Field";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String category;
+
+    private boolean boolCategoryField;
 
     private Integer level;
 
@@ -42,7 +46,7 @@ public class FieldFactoryInfoEntity {
     private Set<ProductEntity> portfolioGoods = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
-    private ProducingType producingType = ProducingType.QUEUE;
+    private FieldFactoryProducingType producingType = FieldFactoryProducingType.QUEUE;
 
     private Integer defaultInstanceAmount = 1;
 
@@ -101,29 +105,16 @@ public class FieldFactoryInfoEntity {
     public FieldFactoryEntity toFieldFactoryEntity() {
         FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity();
         fieldFactoryEntity.setFieldFactoryInfoEntity(this);
-        fieldFactoryEntity.appendFieldFactoryDetails(
-                new FieldFactoryEntity.FieldFactoryDetails(
-                        getDefaultProducingCapacity(),
-                        getDefaultReapWindowCapacity()
-                )
-        );
+        fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
+        fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
         return fieldFactoryEntity;
     }
 
     public FieldFactoryEntity toFieldFactoryEntity(Supplier<PlayerEntity> playerEntitySupplier) {
         FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity(this, playerEntitySupplier.get());
-        fieldFactoryEntity.appendFieldFactoryDetails(
-                new FieldFactoryEntity.FieldFactoryDetails(
-                        getDefaultProducingCapacity(),
-                        getDefaultReapWindowCapacity()
-                )
-        );
+        fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
+        fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
         return fieldFactoryEntity;
-    }
-
-    public static enum ProducingType {
-        QUEUE,
-        SLOT
     }
 
 }

@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.ui.views.product;
 
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
@@ -15,15 +14,10 @@ public class ProductView extends VerticalLayout {
     private final GoodsCategoriesPanel goodsCategoriesPanel;
 
     public ProductView(GoodsCategoriesPanel goodsCategoriesPanel) {
+        this.goodsCategoriesPanel = goodsCategoriesPanel;
         setSizeFull();
         setPadding(false);
-        this.goodsCategoriesPanel = goodsCategoriesPanel;
         addAndExpand(this.goodsCategoriesPanel);
-    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        goodsCategoriesPanel.forceReloadingData();
     }
 
 }

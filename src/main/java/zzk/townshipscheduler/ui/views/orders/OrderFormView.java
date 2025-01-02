@@ -31,12 +31,14 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import jakarta.annotation.security.PermitAll;
+import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.OrderType;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.pojo.form.BillItem;
 import zzk.townshipscheduler.ui.components.BillDurationField;
 import zzk.townshipscheduler.ui.components.GoodsCategoriesPanel;
+import zzk.townshipscheduler.ui.pojo.BillItem;
 
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
@@ -44,7 +46,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 
 @Route
-@AnonymousAllowed
+@PermitAll
 public class OrderFormView extends VerticalLayout {
 
     private final OrderFormPresenter presenter;
@@ -55,11 +57,14 @@ public class OrderFormView extends VerticalLayout {
 
     public OrderFormView(
             OrderFormPresenter orderFormPresenter,
-            GoodsCategoriesPanel goodsCategoriesPanel
+            GoodsCategoriesPanel goodsCategoriesPanel,
+            TownshipAuthenticationContext townshipAuthenticationContext
     ) {
         this.presenter = orderFormPresenter;
         this.goodsCategoriesPanel = goodsCategoriesPanel;
         this.presenter.setOrderFormView(this);
+        this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
+
         addClassName("bill-form");
         setDefaultHorizontalComponentAlignment(Alignment.CENTER);
 

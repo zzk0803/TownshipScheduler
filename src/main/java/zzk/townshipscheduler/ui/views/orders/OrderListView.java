@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.grid.dataview.GridDataView;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -19,31 +18,32 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import jakarta.annotation.security.PermitAll;
+import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.pojo.form.BillScheduleRequest;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Route("/orders")
 @Menu
 @PermitAll
 public class OrderListView extends VerticalLayout implements AfterNavigationObserver {
 
-    private final OrderListViewPresenter orderListViewPresenter;
+    private final OrderListViewPresenter presenter;
 
     private final Grid<OrderEntity> grid = new Grid<>();
 
     public OrderListView(
-            OrderListViewPresenter orderListViewPresenter
+            OrderListViewPresenter presenter,
+            TownshipAuthenticationContext townshipAuthenticationContext
     ) {
-        this.orderListViewPresenter = orderListViewPresenter;
-        orderListViewPresenter.setView(this);
+        this.presenter = presenter;
+        presenter.setView(this);
+        presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
 
         style();
 
@@ -54,13 +54,7 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
 
         Button schedulingButton = new Button(VaadinIcon.TIMER.create());
         schedulingButton.addClickListener(click -> {
-            GridDataView<OrderEntity> genericDataView = grid.getGenericDataView();
-            Stream<OrderEntity> orderEntityStream = genericDataView.getItems();
-            UUID uuid = orderListViewPresenter.dealBillScheduleRequest(
-                    BillScheduleRequest.builder()
-                            .orderEntities(orderEntityStream.toList())
-                            .build()
-            );
+            UUID uuid = presenter.backendPrepareTownshipScheduling(townshipAuthenticationContext);
             UI.getCurrent().navigate(SchedulingView.class, uuid.toString());
         });
 
@@ -76,28 +70,30 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
         setMargin(false);
     }
 
-    public Component buildBillCard(OrderEntity orderEntity) {
+    public Component buildBillCard(OrderEntity orderView) {
         HorizontalLayout card = new HorizontalLayout();
         card.setDefaultVerticalComponentAlignment(Alignment.CENTER);
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
-        boolean boolDeadLine = orderEntity.isBoolDeadLine();
+        boolean boolDeadLine = orderView.isBoolDeadLine();
         if (boolDeadLine) {
-            LocalDateTime deadLine = orderEntity.getDeadLine();
+            LocalDateTime deadLine = orderView.getDeadLine();
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
             dateTimePicker.setLabel("Dead Line");
             dateTimePicker.setReadOnly(true);
-            card.add(new VerticalLayout(strAsSpan(orderEntity.getOrderType().name()), dateTimePicker));
+            card.add(new VerticalLayout(strAsSpan(orderView.getOrderType().name()), dateTimePicker));
         } else {
-            card.add(new VerticalLayout(strAsSpan(orderEntity.getOrderType().name()), strAsSpan("No Deadline")));
+            card.add(new VerticalLayout(strAsSpan(orderView.getOrderType().name()), strAsSpan("No Deadline")));
         }
 
-        card.add(buildBillItemPairsComponent(orderEntity));
+        card.add(buildBillItemPairsComponent(orderView));
 
-        card.add(new Button(VaadinIcon.CLOSE.create(), click -> {
-            orderListViewPresenter.onBillDeleteClick(orderEntity);
-        }));
+        card.add(new Button(
+                VaadinIcon.CLOSE.create(), click -> {
+            presenter.onBillDeleteClick(orderView);
+        }
+        ));
 
         return card;
     }
@@ -108,24 +104,24 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
 
     private HorizontalLayout buildBillItemPairsComponent(OrderEntity orderEntity) {
         HorizontalLayout billItemLayout = new HorizontalLayout();
-        Map<ProductEntity, Integer> productAmountPairs = orderEntity.getProductAmountPairs();
-        productAmountPairs.forEach((goods, integer) -> {
+        Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
+        productAmountMap.forEach((product, amount) -> {
             Image image = new Image();
             image.setHeight("40px");
             image.setWidth("40px");
             image.setSrc(
                     new StreamResource(
-                            goods.getName(),
-                            () -> new ByteArrayInputStream(goods.getCrawledAsImage().getImageBytes())
+                            product.getName(),
+                            () -> new ByteArrayInputStream(product.getCrawledAsImage().getImageBytes())
                     )
             );
 
-            Span span = new Span(goods.getName());
+            Span span = new Span(product.getName());
 
             VerticalLayout leftImageAndTextVL = new VerticalLayout(image, span);
             leftImageAndTextVL.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
 
-            HorizontalLayout itemAndAmountHL = new HorizontalLayout(leftImageAndTextVL, new Span("x" + integer));
+            HorizontalLayout itemAndAmountHL = new HorizontalLayout(leftImageAndTextVL, new Span("x" + amount));
             itemAndAmountHL.setDefaultVerticalComponentAlignment(Alignment.CENTER);
             itemAndAmountHL.setSpacing(false);
             itemAndAmountHL.setMargin(false);
@@ -141,11 +137,7 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
 
     @Override
     public void afterNavigation(AfterNavigationEvent afterNavigationEvent) {
-        fillBillCards(grid);
-    }
-
-    private void fillBillCards(Grid<OrderEntity> grid) {
-        orderListViewPresenter.fillGrid(grid);
+        presenter.fillGrid(grid);
     }
 
 }

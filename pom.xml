@@ -12,15 +12,15 @@
 
     <properties>
         <java.version>23</java.version>
-        <vaadin.version>24.5.6</vaadin.version>
-        <timefold-solver.version>1.16.0</timefold-solver.version>
+        <vaadin.version>24.6.0</vaadin.version>
+        <timefold-solver.version>1.17.0</timefold-solver.version>
 <!--        <org.mapstruct.version>1.6.2</org.mapstruct.version>-->
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.0</version>
+        <version>3.4.1</version>
     </parent>
 
     <dependencyManagement>
@@ -112,7 +112,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.3.1-jre</version>
+            <version>33.4.0-jre</version>
         </dependency>
 
         <dependency>
