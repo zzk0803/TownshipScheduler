@@ -62,7 +62,8 @@ class MappingProcess {
     }
 
     private void fetchAndMapToSchedulingFactoryInfo() {
-        Set<FieldFactoryInfoEntityProjectionForScheduling> factoryInfoEntities = townshipSchedulingRequest.getFieldFactoryInfoEntities();
+        Set<FieldFactoryInfoEntityProjectionForScheduling> factoryInfoEntities
+                = townshipSchedulingRequest.getFieldFactoryInfoEntities();
 //            Set<FieldFactoryInfoEntityDto> factoryInfoEntities = townshipSchedulingRequest.getFieldFactoryInfoEntities();
         for (FieldFactoryInfoEntityProjectionForScheduling factoryDto : factoryInfoEntities) {
 //            for (FieldFactoryInfoEntityDto factoryDto : factoryInfoEntities) {
@@ -100,7 +101,7 @@ class MappingProcess {
                     = productDto.getFieldFactoryInfo();
             SchedulingFactoryInfo schedulingFactoryInfo
                     = buildOrGetSchedulingFactoryInfo(
-                            SchedulingFactoryInfo.Id.of(fieldFactoryInfo)
+                    SchedulingFactoryInfo.Id.of(fieldFactoryInfo)
             );
             schedulingProduct.setRequireFactory(schedulingFactoryInfo);
 
@@ -121,6 +122,7 @@ class MappingProcess {
             productManufactureInfos.forEach(productManufactureInfo -> {
                 SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();
                 executionMode.setUuid(UUID.randomUUID().toString());
+                executionMode.setProduct(schedulingProduct);
                 Duration producingDuration = productManufactureInfo.getProducingDuration();
                 executionMode.setExecuteDuration(producingDuration);
                 ProductAmountBill productAmountBill = new ProductAmountBill();
@@ -132,11 +134,12 @@ class MappingProcess {
                         Integer amount = productMaterialsRelation.getAmount();
                         SchedulingProduct material
                                 = buildOrGetSchedulingProduct(
-                                        SchedulingProduct.Id.of(productId)
+                                SchedulingProduct.Id.of(productId)
                         );
                         productAmountBill.put(material, amount);
                     });
                 }
+                executionModes.add(executionMode);
             });
             return executionModes;
         } else {

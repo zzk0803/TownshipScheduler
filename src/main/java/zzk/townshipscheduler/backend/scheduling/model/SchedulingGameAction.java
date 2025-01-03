@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Data
-@NoArgsConstructor
 @PlanningEntity
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public abstract class SchedulingGameAction {
@@ -22,10 +21,10 @@ public abstract class SchedulingGameAction {
     @Setter(value = AccessLevel.PRIVATE)
     @EqualsAndHashCode.Include
     @PlanningId
-    protected Integer id;
+    protected Integer planningId;
 
     @EqualsAndHashCode.Include
-    protected String uuid = UUID.randomUUID().toString();
+    protected String uuid;
 
     protected SchedulingGameActionObject schedulingGameActionObject;
 
@@ -42,7 +41,12 @@ public abstract class SchedulingGameAction {
 
     private Flag flag = Flag.SCHEDULING;
 
+    public SchedulingGameAction() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
     public SchedulingGameAction(SchedulingGameActionObject schedulingGameActionObject) {
+        this();
         this.schedulingGameActionObject = schedulingGameActionObject;
     }
 
@@ -84,7 +88,7 @@ public abstract class SchedulingGameAction {
     public abstract String getHumanReadable();
 
     public void readyElseThrow() {
-        Objects.requireNonNull(getId());
+        Objects.requireNonNull(getPlanningId());
     }
 
     public static enum Flag {
@@ -102,7 +106,7 @@ public abstract class SchedulingGameAction {
         }
 
         public void setup(SchedulingGameAction schedulingGameAction) {
-            schedulingGameAction.setId(idRoller.getAndIncrement());
+            schedulingGameAction.setPlanningId(idRoller.getAndIncrement());
         }
 
     }

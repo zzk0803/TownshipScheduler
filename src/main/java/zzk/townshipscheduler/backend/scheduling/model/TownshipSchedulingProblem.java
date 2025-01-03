@@ -142,12 +142,10 @@ public class TownshipSchedulingProblem {
         LinkedList<SchedulingGameAction> dealingChain = new LinkedList<>(List.of(productAction));
         ArrayList<SchedulingGameAction> result = new ArrayList<>();
 
-        ListIterator<SchedulingGameAction> chainIterator = dealingChain.listIterator();
-        while (chainIterator.hasNext()) {
-            SchedulingGameAction gameAction = chainIterator.next();
+        while (!dealingChain.isEmpty()) {
+            SchedulingGameAction gameAction = dealingChain.removeFirst();
             gameAction.idRoller(idRoller);
             result.add(gameAction);
-            chainIterator.remove();
 
             if (gameAction instanceof SchedulingGameActionProductProducing producingAction) {
                 Set<SchedulingProducingExecutionMode> executionModes
@@ -164,10 +162,11 @@ public class TownshipSchedulingProblem {
                             SchedulingProduct material = entry.getKey();
                             Integer amount = entry.getValue();
                             for (int i = amount; i > 0; i--) {
-                                for (SchedulingGameAction materialGameAction : material.getGameActionSet()) {
+                                List<SchedulingGameAction> listActionOfMaterial = material.getGameActionSet();
+                                for (SchedulingGameAction materialGameAction : listActionOfMaterial) {
                                     Assert.notNull(materialGameAction, "materialGameAction shouldn't be null");
                                     producingAction.biAssociateWholeToPart(materialGameAction);
-                                    chainIterator.add(materialGameAction);
+                                    dealingChain.addLast(materialGameAction);
                                 }
                             }
                         }

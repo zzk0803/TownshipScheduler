@@ -6,7 +6,6 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
@@ -66,7 +65,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     private void buildUI() {
         List<SchedulingGameAction> schedulingGameActions = currentProblem.getSchedulingGameActions();
         Grid<SchedulingGameAction> grid = new Grid<>(SchedulingGameAction.class, false);
-        grid.addColumn(SchedulingGameAction::getId).setHeader("#");
+        grid.addColumn(SchedulingGameAction::getPlanningId).setHeader("#");
         grid.addColumn(SchedulingGameAction::getHumanReadable).setHeader("Description");
         grid.addColumn(SchedulingGameAction::getPlanningDateTimeSlot).setHeader("Planning Slot");
         grid.addComponentColumn(
