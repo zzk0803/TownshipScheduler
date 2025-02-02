@@ -1,11 +1,16 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
@@ -23,7 +28,6 @@ import java.util.UUID;
 @Menu
 @PermitAll
 public class SchedulingView extends VerticalLayout implements HasUrlParameter<String> {
-
 
     private final ITownshipSchedulingService schedulingService;
 
@@ -63,44 +67,83 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     }
 
     private void buildUI() {
-        List<SchedulingGameAction> schedulingGameActions = currentProblem.getSchedulingGameActions();
-        Grid<SchedulingGameAction> grid = new Grid<>(SchedulingGameAction.class, false);
-        grid.addColumn(SchedulingGameAction::getPlanningId).setHeader("#");
-        grid.addColumn(SchedulingGameAction::getHumanReadable).setHeader("Description");
-        grid.addColumn(SchedulingGameAction::getPlanningDateTimeSlot).setHeader("Planning Slot");
+        TabSheet tabSheet = new TabSheet();
+        tabSheet.setSizeFull();
+
+        Tab gameActionSheet = tabSheet.add("Game Action", buildGameActionTabSheetArticle());
+
+        tabSheet.setSelectedTab(gameActionSheet);
+
+        addAndExpand(tabSheet);
+    }
+
+    private VerticalLayout buildGameActionTabSheetArticle() {
+        VerticalLayout gameActionArticle = new VerticalLayout();
+        List<SchedulingPlayerFactoryAction> schedulingPlayerFactoryActions = currentProblem.getSchedulingPlayerFactoryActions();
+        Grid<SchedulingPlayerFactoryAction> grid = new Grid<>(SchedulingPlayerFactoryAction.class, false);
+        grid.addColumn(SchedulingPlayerFactoryAction::getActionId).setHeader("#");
+        grid.addColumn(SchedulingPlayerFactoryAction::getHumanReadable).setHeader("Description");
+        grid.addColumn(SchedulingPlayerFactoryAction::getPlanningPlayerDoItDateTime).setHeader("When To Do");
         grid.addComponentColumn(
-                schedulingGameAction -> {
-                    boolean boolProducing = schedulingGameAction instanceof SchedulingGameActionProductProducing;
-                    if (boolProducing) {
-                        SchedulingGameActionProductProducing productProducing = (SchedulingGameActionProductProducing) schedulingGameAction;
-                        SchedulingProducingExecutionMode producingExecutionMode = productProducing.getPlanningProducingExecutionMode();
-                        return new Text(producingExecutionMode != null ? producingExecutionMode.toString() : "N/A");
-                    } else {
-                        return new Text("N/A");
-                    }
+                playerFactoryAction -> {
+                    SchedulingGameActionExecutionMode producingExecutionMode = playerFactoryAction.getPlanningProducingExecutionMode();
+                    return new Text(producingExecutionMode != null ? producingExecutionMode.toString() : "N/A");
                 }
         ).setHeader("Execution Mode(Producing Use)");
         grid.addComponentColumn(
-                schedulingGameAction -> {
-                    boolean boolProducing = schedulingGameAction instanceof SchedulingGameActionProductProducing;
-                    if (boolProducing) {
-                        SchedulingGameActionProductProducing productProducing = (SchedulingGameActionProductProducing) schedulingGameAction;
-                        SchedulingFactoryInstance factoryInstance = productProducing.getPlanningFactoryInstance();
-                        return new Text(factoryInstance != null ? factoryInstance.toString() : "N/A");
-                    } else {
-                        return new Text("N/A");
-                    }
+                playerFactoryAction -> {
+                    SchedulingFactoryInstance planningFactory = playerFactoryAction.getPlanningFactory();
+                    return new Text(Objects.toString(planningFactory, "N/A"));
                 }
         ).setHeader("Factory Instance(Producing Use)");
-        grid.setItems(schedulingGameActions);
+        grid.setItems(schedulingPlayerFactoryActions);
 
         Set<SchedulingOrder> orderSet = currentProblem.getSchedulingOrderSet();
+
+        gameActionArticle.add(buildOrderCard(orderSet));
+        gameActionArticle.add(buildBtnPanel());
+        gameActionArticle.addAndExpand(grid);
+        return gameActionArticle;
+    }
+
+    private HorizontalLayout buildBtnPanel() {
+        HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
+        Button stopBtn = new Button();
+        stopBtn.setText("Stop");
+        stopBtn.setVisible(false);
+        stopBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_LARGE);
+        Button startBtn = new Button();
+        startBtn.setText("Start");
+        startBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+        startBtn.addClickListener(buttonClickEvent -> {
+            UI.getCurrent().access(() -> {
+                startBtn.setDisableOnClick(true);
+                startBtn.setVisible(false);
+                stopBtn.setVisible(true);
+                schedulingService.scheduling(currentProblemId);
+            });
+        });
+        stopBtn.addClickListener(buttonClickEvent -> {
+            UI.getCurrent().access(() -> {
+                stopBtn.setDisableOnClick(true);
+                stopBtn.setVisible(false);
+                startBtn.setVisible(true);
+                schedulingService.abort(currentProblemId);
+            });
+        });
+        schedulingBtnPanel.setWidthFull();
+        schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.END);
+        schedulingBtnPanel.add(startBtn, stopBtn);
+        return schedulingBtnPanel;
+    }
+
+    private VerticalLayout buildOrderCard(Set<SchedulingOrder> orderSet) {
         VerticalLayout orderSummarizeCard = new VerticalLayout();
+        orderSummarizeCard.addClassNames(LumoUtility.Background.CONTRAST_20);
         for (SchedulingOrder order : orderSet) {
             HorizontalLayout orderBasic = new HorizontalLayout();
-            orderBasic.addClassNames(LumoUtility.Gap.SMALL);
             long id = order.getId();
-            String orderType = order.getOrderType();
+            String orderType = order.getOrderType().name();
             LocalDateTime deadline = order.getDeadline();
             orderBasic.add(new Text("Id:" + id), new Text("Type:" + orderType), new Text("Deadline:" + deadline));
 
@@ -113,9 +156,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
             orderSummarizeCard.add(orderBasic, orderItemAmounts);
         }
-
-        schedulingViewWrapper.add(orderSummarizeCard);
-        schedulingViewWrapper.addAndExpand(grid);
+        return orderSummarizeCard;
     }
 
 

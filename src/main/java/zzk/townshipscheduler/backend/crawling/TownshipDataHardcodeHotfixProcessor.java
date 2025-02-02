@@ -7,7 +7,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryProducingType;
+import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -52,7 +52,7 @@ class TownshipDataHardcodeHotfixProcessor {
             FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
             fieldFactoryInfo.setCategory(categoryString);
             fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
-            fieldFactoryInfo.setProducingType(FieldFactoryProducingType.SLOT);
+            fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
             fieldFactoryInfo.setDefaultInstanceAmount(1);
             fieldFactoryInfo.setDefaultProducingCapacity(3);
             fieldFactoryInfo.setDefaultReapWindowCapacity(3);
@@ -75,7 +75,7 @@ class TownshipDataHardcodeHotfixProcessor {
             FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
             fieldFactoryInfo.setCategory(categoryString);
             fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
-            fieldFactoryInfo.setProducingType(FieldFactoryProducingType.SLOT);
+            fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
             fieldFactoryInfo.setDefaultInstanceAmount(1);
             fieldFactoryInfo.setDefaultProducingCapacity(3);
             fieldFactoryInfo.setDefaultReapWindowCapacity(3);
@@ -96,7 +96,7 @@ class TownshipDataHardcodeHotfixProcessor {
         FieldFactoryInfoEntity duckFeeder = new FieldFactoryInfoEntity();
         duckFeeder.setCategory("Duck Feeder");
         duckFeeder.setLevel(48);
-        duckFeeder.setProducingType(FieldFactoryProducingType.SLOT);
+        duckFeeder.setProducingType(ProducingStructureType.SLOT);
         duckFeeder.setDefaultInstanceAmount(1);
         duckFeeder.setDefaultProducingCapacity(3);
         duckFeeder.setDefaultReapWindowCapacity(3);
@@ -114,7 +114,7 @@ class TownshipDataHardcodeHotfixProcessor {
         FieldFactoryInfoEntity otterPond = new FieldFactoryInfoEntity();
         otterPond.setCategory("Otter Pond");
         otterPond.setLevel(58);
-        otterPond.setProducingType(FieldFactoryProducingType.SLOT);
+        otterPond.setProducingType(ProducingStructureType.SLOT);
         otterPond.setDefaultInstanceAmount(1);
         otterPond.setDefaultProducingCapacity(3);
         otterPond.setDefaultReapWindowCapacity(3);
@@ -131,7 +131,7 @@ class TownshipDataHardcodeHotfixProcessor {
         FieldFactoryInfoEntity mushroomFarm = new FieldFactoryInfoEntity();
         mushroomFarm.setCategory("Mushroom Farm");
         mushroomFarm.setLevel(63);
-        mushroomFarm.setProducingType(FieldFactoryProducingType.SLOT);
+        mushroomFarm.setProducingType(ProducingStructureType.SLOT);
         mushroomFarm.setDefaultInstanceAmount(1);
         mushroomFarm.setDefaultProducingCapacity(3);
         mushroomFarm.setDefaultReapWindowCapacity(3);
@@ -171,7 +171,7 @@ class TownshipDataHardcodeHotfixProcessor {
             FieldFactoryInfoEntity field = fieldOptional.orElseThrow();
             field.setCategory(FieldFactoryInfoEntity.FIELD_CRITERIA);
             field.setLevel(1);
-            field.setProducingType(FieldFactoryProducingType.SLOT);
+            field.setProducingType(ProducingStructureType.SLOT);
             field.setBoolCategoryField(true);
             field.setDefaultInstanceAmount(6);
             field.setDefaultProducingCapacity(1);
@@ -188,7 +188,7 @@ class TownshipDataHardcodeHotfixProcessor {
             FieldFactoryInfoEntity islandShip = islandShipOptional.orElseThrow();
             islandShip.setCategory("IslandsShip");
             islandShip.setLevel(29);
-            islandShip.setProducingType(FieldFactoryProducingType.SLOT);
+            islandShip.setProducingType(ProducingStructureType.SLOT);
             islandShip.setDefaultInstanceAmount(1);
             islandShip.setDefaultProducingCapacity(1);
             islandShip.setDefaultReapWindowCapacity(3);
@@ -202,7 +202,7 @@ class TownshipDataHardcodeHotfixProcessor {
             Optional<FieldFactoryInfoEntity> foundryOptional = fieldFactoryInfoEntityRepository.findByCategory("Foundry");
             FieldFactoryInfoEntity foundry = foundryOptional.orElseThrow();
             foundry.setLevel(21);
-            foundry.setProducingType(FieldFactoryProducingType.SLOT);
+            foundry.setProducingType(ProducingStructureType.SLOT);
             foundry.setDefaultInstanceAmount(1);
             foundry.setDefaultProducingCapacity(1);
             foundry.setDefaultReapWindowCapacity(1);

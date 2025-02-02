@@ -3,7 +3,9 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.persistence.select.*;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -11,7 +13,7 @@ import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SchedulingFactoryInfo {
+public  class SchedulingFactoryInfo  {
 
     @EqualsAndHashCode.Include
     private Id id;
@@ -23,7 +25,7 @@ public class SchedulingFactoryInfo {
 
     private Set<SchedulingProduct> portfolio;
 
-    private String producingType;
+    private ProducingStructureType producingStructureType;
 
     private int defaultInstanceAmount;
 
@@ -51,7 +53,7 @@ public class SchedulingFactoryInfo {
                + "        \"id\":" + id
                + ",         \"categoryName\":\"" + categoryName + "\""
                + ",         \"portfolio\":" + portfolio.stream().map(SchedulingProduct::getName).collect(Collectors.joining(","))
-               + ",         \"producingType\":\"" + producingType + "\""
+               + ",         \"producingType\":\"" + producingStructureType + "\""
                + "}}";
     }
 
@@ -82,6 +84,14 @@ public class SchedulingFactoryInfo {
 
         public static Id of(FieldFactoryEntityProjection fieldFactoryEntityProjection) {
             return of(fieldFactoryEntityProjection.getId());
+        }
+
+        public static Id of(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
+            return of(fieldFactoryInfoEntity.getId());
+        }
+
+        public static Id of(FieldFactoryEntity fieldFactoryEntity) {
+            return of(fieldFactoryEntity.getFieldFactoryInfoEntity());
         }
 
     }

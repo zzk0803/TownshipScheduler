@@ -1,24 +1,27 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
+import ai.timefold.solver.core.api.domain.valuerange.CountableValueRange;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
-@PlanningEntity
-public class SchedulingDateTimeSlot {
+public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
+
+    public static final Comparator<SchedulingDateTimeSlot> COMPARATOR
+            = Comparator.comparing(SchedulingDateTimeSlot::getStart)
+            .thenComparing(SchedulingDateTimeSlot::getEnd)
+            .thenComparingInt(SchedulingDateTimeSlot::getId);
 
     private static ThreadLocal<Set<SchedulingDateTimeSlot>> cached = new ThreadLocal<>();
 
-    @PlanningId
     private Integer id;
 
     private LocalDateTime start;
@@ -27,21 +30,43 @@ public class SchedulingDateTimeSlot {
 
     private int durationInMinute;
 
-    @InverseRelationShadowVariable(sourceVariableName = "planningDateTimeSlot")
-    private List<SchedulingGameAction> assignedActionInTimeSlot;
+    public static CountableValueRange<LocalDateTime> toValueRange(
+            final LocalDateTime startInclusive,
+            final LocalDateTime endExclusive,
+            final int durationInMinute
+    ) {
+        return ValueRangeFactory.createLocalDateTimeValueRange(
+                startInclusive,
+                endExclusive,
+                durationInMinute,
+                ChronoUnit.MINUTES
+        );
+    }
 
-    public static SchedulingDateTimeSlot of(
+    public static Optional<SchedulingDateTimeSlot> of(
             final LocalDateTime dateTime
     ) {
         Set<SchedulingDateTimeSlot> dateTimeSlots = cached.get();
-        return dateTimeSlots.stream().filter(slot -> {
-            LocalDateTime slotStart = slot.getStart();
-            LocalDateTime slotEnd = slot.getEnd();
-            return (slotStart.isAfter(dateTime) || slotStart.isEqual(dateTime)) && slotEnd.isBefore(dateTime);
-        }).findFirst().get();
+        for (SchedulingDateTimeSlot currentSlot : dateTimeSlots) {
+            LocalDateTime currentSlotStart = currentSlot.getStart();
+            LocalDateTime currentSlotEnd = currentSlot.getEnd();
+            if (isDateTimeBetween(dateTime, currentSlotStart, currentSlotEnd)) {
+                return Optional.of(currentSlot);
+            }
+        }
+        return Optional.empty();
     }
 
-    public static Set<SchedulingDateTimeSlot> generate(
+    private static boolean isDateTimeBetween(
+            LocalDateTime dateTime,
+            LocalDateTime formerDateTime,
+            LocalDateTime latterDateTime
+    ) {
+        return (formerDateTime.isEqual(dateTime) || formerDateTime.isBefore(dateTime))
+               && latterDateTime.isAfter(dateTime);
+    }
+
+    public static Set<SchedulingDateTimeSlot> toSlotSet(
             final LocalDateTime startInclusive,
             final LocalDateTime endExclusive,
             final int durationInMinute
@@ -70,6 +95,11 @@ public class SchedulingDateTimeSlot {
     @Override
     public String toString() {
         return start.toString() + "~" + end.toString();
+    }
+
+    @Override
+    public int compareTo(SchedulingDateTimeSlot that) {
+        return COMPARATOR.compare(this, that);
     }
 
 }

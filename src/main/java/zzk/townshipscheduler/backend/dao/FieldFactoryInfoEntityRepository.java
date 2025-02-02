@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.backend.dao;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
@@ -15,10 +16,15 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
 
     <T> Set<T> findBy(Class<T> projectionClass);
 
+    @EntityGraph(attributePaths = {"portfolioGoods"}, type = EntityGraph.EntityGraphType.LOAD)
     <T> Set<T> findBy(Class<T> projectionClass, Sort sort);
 
     @Query("select f from FieldFactoryInfoEntity f where f.level <= ?1  and f.boolCategoryField=false order by f.level")
     List<FieldFactoryInfoEntity> queryFactoryInfoByLevelLessThanOrEqual(Integer level);
+
+    @EntityGraph(attributePaths = {"portfolioGoods.fieldFactoryInfo"})
+    @Query("select f from FieldFactoryInfoEntity f")
+    Set<FieldFactoryInfoEntity> queryForPrepareScheduling();
 
     /*
     SELECT fffi.*

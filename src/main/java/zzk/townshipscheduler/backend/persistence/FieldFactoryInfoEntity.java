@@ -3,6 +3,7 @@ package zzk.townshipscheduler.backend.persistence;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
+import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -46,7 +47,7 @@ public class FieldFactoryInfoEntity {
     private Set<ProductEntity> portfolioGoods = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
-    private FieldFactoryProducingType producingType = FieldFactoryProducingType.QUEUE;
+    private ProducingStructureType producingType = ProducingStructureType.QUEUE;
 
     private Integer defaultInstanceAmount = 1;
 

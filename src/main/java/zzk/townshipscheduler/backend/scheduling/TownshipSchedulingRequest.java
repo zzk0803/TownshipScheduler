@@ -10,19 +10,19 @@ import java.util.Set;
 @Builder
 public class TownshipSchedulingRequest {
 
-    Set<ProductEntityProjectionForScheduling> productEntities;
+    Set<ProductEntity> productEntities;
 //    Set<ProductEntityDtoForScheduling> productEntities;
 
-    Set<FieldFactoryInfoEntityProjectionForScheduling> fieldFactoryInfoEntities;
+    Set<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
 //    Set<FieldFactoryInfoEntityDto> fieldFactoryInfoEntities;
 
-    Set<OrderEntityProjection> playerEntityOrderEntities;
+    Set<OrderEntity> playerEntityOrderEntities;
 //    Set<OrderEntityDto> playerEntityOrderEntities;
 
-    Set<FieldFactoryEntityProjection> playerEntityFieldFactoryEntities;
+    Set<FieldFactoryEntity> playerEntityFieldFactoryEntities;
 //    Set<FieldFactoryEntityDto> playerEntityFieldFactoryEntities;
 
-    WarehouseEntityProjection playerEntityWarehouseEntity;
+    WarehouseEntity playerEntityWarehouseEntity;
 //    WarehouseEntityDto playerEntityWarehouseEntity;
 
 }

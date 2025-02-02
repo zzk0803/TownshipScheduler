@@ -12,15 +12,15 @@
 
     <properties>
         <java.version>23</java.version>
-        <vaadin.version>24.6.0</vaadin.version>
-        <timefold-solver.version>1.17.0</timefold-solver.version>
+        <vaadin.version>24.6.4</vaadin.version>
+        <timefold-solver.version>1.18.0</timefold-solver.version>
 <!--        <org.mapstruct.version>1.6.2</org.mapstruct.version>-->
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.2</version>
     </parent>
 
     <dependencyManagement>

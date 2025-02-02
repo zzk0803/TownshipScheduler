@@ -78,7 +78,7 @@ public class SchedulingViewTemplates extends LitTemplate {
         getElement().setPropertyList("schedulingProduct", new ArrayList<>(townshipSchedulingProblem.getSchedulingProductSet()));
         getElement().setPropertyList("schedulingFactory", new ArrayList<>(townshipSchedulingProblem.getSchedulingFactoryInfoSet()));
         getElement().setPropertyList("schedulingFactorySlot", new ArrayList<>(townshipSchedulingProblem.getSchedulingFactoryInstanceSet()));
-        getElement().setPropertyList("schedulingGameAction", new ArrayList<>(townshipSchedulingProblem.getSchedulingGameActions()));
+        getElement().setPropertyList("schedulingGameAction", new ArrayList<>(townshipSchedulingProblem.getSchedulingPlayerFactoryActions()));
         getElement().setProperty(
                 "schedulingGamePlayer",
                 json(townshipSchedulingProblem.getSchedulingWarehouse())

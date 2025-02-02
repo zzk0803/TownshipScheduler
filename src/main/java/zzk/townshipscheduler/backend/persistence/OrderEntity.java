@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
+import zzk.townshipscheduler.backend.OrderEntityScheduleState;
+import zzk.townshipscheduler.backend.OrderType;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

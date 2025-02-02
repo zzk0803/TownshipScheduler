@@ -36,7 +36,6 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
 
     private final PlayerService playerService;
 
-    private AccountEntity currentUser;
 
     public PlayerView(
             TownshipAuthenticationContext townshipAuthenticationContext,
@@ -55,7 +54,7 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
             new Dialog(new Text("townshipAuthenticationContext=null")).open();
         }
 
-        currentUser = townshipAuthenticationContext.getUserDetails();
+        AccountEntity currentUser = townshipAuthenticationContext.getUserDetails();
         if (currentUser != null) {
             Optional<PlayerEntity> playerOptional =
                     playerService.findPlayerEntitiesByAppUser(currentUser);

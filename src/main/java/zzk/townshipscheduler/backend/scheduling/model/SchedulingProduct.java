@@ -4,11 +4,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Value;
-import zzk.townshipscheduler.backend.persistence.ProductEntityDtoForScheduling;
-import zzk.townshipscheduler.backend.persistence.ProductEntityDtoJustId;
-import zzk.townshipscheduler.backend.persistence.ProductEntityProjectionJustId;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForScheduling;
+import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoJustId;
+import zzk.townshipscheduler.backend.persistence.select.ProductEntityProjectionJustId;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Data
@@ -23,16 +26,18 @@ public final class SchedulingProduct implements SchedulingGameActionObject {
 
     private int level;
 
+    private int gainWhenCompleted = 1;
+
     private SchedulingFactoryInfo requireFactory;
 
-    private Set<SchedulingProducingExecutionMode> producingExecutionModeSet;
+    private Set<SchedulingGameActionExecutionMode> producingExecutionModeSet;
 
     public SchedulingProduct(
             Id id,
             String name,
             int level,
             SchedulingFactoryInfo requireFactory,
-            Set<SchedulingProducingExecutionMode> executionModeSet
+            Set<SchedulingGameActionExecutionMode> executionModeSet
     ) {
         this.id = id;
         this.name = name;
@@ -42,11 +47,55 @@ public final class SchedulingProduct implements SchedulingGameActionObject {
     }
 
     @Override
-    public List<SchedulingGameAction> getGameActionSet() {
+    public String readable() {
+        return getName();
+    }
+
+    @Override
+    public List<SchedulingPlayerWarehouseAction> calcWarehouseActions() {
+        return List.of();
+    }
+
+    @Override
+    public List<SchedulingPlayerFactoryAction> calcFactoryActions() {
         return List.of(
-                new SchedulingGameActionProductProducing(this, this.producingExecutionModeSet),
-                new SchedulingGameActionProductStocking(this)
+                new SchedulingPlayerFactoryAction(
+                        PlayerFactoryActionType.ARRANGE_PRODUCING,
+                        this,
+                        this
+                ),
+                new SchedulingPlayerFactoryAction(
+                        PlayerFactoryActionType.REAP_AND_STOCK,
+                        this,
+                        this
+                )
         );
+    }
+
+    @Override
+    public List<SchedulingPlayerFactoryAction> calcFactoryActions(SchedulingGameActionObject targetObject) {
+        return List.of(
+                new SchedulingPlayerFactoryAction(
+                        PlayerFactoryActionType.ARRANGE_PRODUCING,
+                        targetObject,
+                        this
+                ),
+                new SchedulingPlayerFactoryAction(
+                        PlayerFactoryActionType.REAP_AND_STOCK,
+                        targetObject,
+                        this
+                )
+        );
+    }
+
+    @Override
+    public Set<SchedulingGameActionExecutionMode> getExecutionModeSet() {
+        return getProducingExecutionModeSet();
+    }
+
+    @Override
+    public Optional<LocalDateTime> optionalDeadline() {
+        return Optional.empty();
     }
 
     @Override
@@ -78,6 +127,10 @@ public final class SchedulingProduct implements SchedulingGameActionObject {
 
         public static Id of(ProductEntityProjectionJustId productEntityDtoJustId) {
             return of(productEntityDtoJustId.getId());
+        }
+
+        public static Id of(ProductEntity productEntity) {
+            return of(productEntity.getId());
         }
 
     }

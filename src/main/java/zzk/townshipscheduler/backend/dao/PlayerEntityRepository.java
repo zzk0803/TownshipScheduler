@@ -2,6 +2,8 @@ package zzk.townshipscheduler.backend.dao;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 
@@ -20,13 +22,15 @@ public interface PlayerEntityRepository extends JpaRepository<PlayerEntity, Long
     @EntityGraph(value = "player.full")
     Optional<PlayerEntity> findPlayerById(Long playerId);
 
-//    @EntityGraph(
-//            value = "player.full"
-//    )
-    @EntityGraph(value = "player.full")
-    <T> Optional<T> findPlayerEntitiesByAccount(AccountEntity appUser, Class<T> projectionClass);
-
-    @EntityGraph(value = "player.full")
-    <T> Optional<T> findPlayerById(Long playerId, Class<T> projectionClass);
+    @EntityGraph(
+            attributePaths = {
+                    "warehouseEntity.productAmountMap",
+                    "fieldFactoryEntities",
+                    "fieldFactoryEntities.fieldFactoryInfoEntity",
+                    "orderEntities.productAmountMap"
+            }
+    )
+    @Query("select p from PlayerEntity p where p.id=:playerId")
+    Optional<PlayerEntity> queryForPrepareScheduling(@Param("playerId") Long playerId);
 
 }

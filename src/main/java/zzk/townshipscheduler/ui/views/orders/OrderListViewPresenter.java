@@ -11,7 +11,7 @@ import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
-import zzk.townshipscheduler.backend.scheduling.TownshipRequestBuildingService;
+import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareComponent;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.backend.service.PlayerService;
@@ -31,7 +31,7 @@ public class OrderListViewPresenter {
 
     private final PlayerService playerService;
 
-    private final TownshipRequestBuildingService townshipRequestBuildingService;
+    private final TownshipSchedulingPrepareComponent townshipSchedulingPrepareComponent;
 
     private final TransactionTemplate transactionTemplate;
 
@@ -48,14 +48,14 @@ public class OrderListViewPresenter {
             ProductEntityRepository productEntityRepository,
             ITownshipSchedulingService schedulingService,
             PlayerService playerService,
-            TownshipRequestBuildingService townshipRequestBuildingService, TransactionTemplate transactionTemplate
+            TownshipSchedulingPrepareComponent townshipSchedulingPrepareComponent, TransactionTemplate transactionTemplate
     ) {
 
         this.orderEntityRepository = orderEntityRepository;
         this.productEntityRepository = productEntityRepository;
         this.schedulingService = schedulingService;
         this.playerService = playerService;
-        this.townshipRequestBuildingService = townshipRequestBuildingService;
+        this.townshipSchedulingPrepareComponent = townshipSchedulingPrepareComponent;
         this.transactionTemplate = transactionTemplate;
     }
 
@@ -81,12 +81,12 @@ public class OrderListViewPresenter {
     private List<OrderEntity> queryBillList() {
         Optional<PlayerEntity> optionalPlayer = townshipAuthenticationContext.getPlayerEntity();
         PlayerEntity player = optionalPlayer.orElseThrow();
-        return orderEntityRepository.findByPlayerEntity(player, OrderEntity.class);
+        return orderEntityRepository.queryForOrderListView(player);
     }
 
-//    public UUID backendPrepareTownshipScheduling() {
+//    public UUID buildTownshipSchedulingRequest() {
 //        TownshipSchedulingRequest townshipSchedulingRequest
-//                = prepareSchedulingService.backendPrepareTownshipScheduling();
+//                = prepareSchedulingService.buildTownshipSchedulingRequest();
 //        TownshipSchedulingProblem problem
 //                = schedulingService.prepareScheduling(townshipSchedulingRequest);
 //        return problem.getUuid();
@@ -95,7 +95,7 @@ public class OrderListViewPresenter {
     public UUID backendPrepareTownshipScheduling(TownshipAuthenticationContext townshipAuthenticationContext) {
         return transactionTemplate.execute(status -> {
             TownshipSchedulingRequest townshipSchedulingRequest
-                    = townshipRequestBuildingService.backendPrepareTownshipScheduling(townshipAuthenticationContext);
+                    = townshipSchedulingPrepareComponent.buildTownshipSchedulingRequest(townshipAuthenticationContext);
             TownshipSchedulingProblem problem
                     = schedulingService.prepareScheduling(townshipSchedulingRequest);
             return problem.getUuid();

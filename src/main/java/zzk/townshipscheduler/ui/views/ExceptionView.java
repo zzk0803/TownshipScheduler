@@ -33,6 +33,7 @@ public class ExceptionView
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter, true);
         exception.printStackTrace(printWriter);
+        exception.printStackTrace();
         errorShowLayout.add(new Paragraph(stringWriter.toString()));
         return HttpStatusCode.INTERNAL_SERVER_ERROR.getCode();
     }

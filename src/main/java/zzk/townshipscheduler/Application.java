@@ -20,6 +20,7 @@ import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.dao.AppUserEntityRepository;
 import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
 import zzk.townshipscheduler.backend.dao.WarehouseEntityRepository;
+import zzk.townshipscheduler.backend.service.PlayerService;
 
 import java.net.http.HttpConnectTimeoutException;
 import java.time.Duration;
@@ -42,7 +43,8 @@ public class Application {
             PlayerEntityRepository playerEntityRepository,
             WarehouseEntityRepository warehouseEntityRepository,
             PasswordEncoder passwordEncoder,
-            TransactionTemplate transactionTemplate
+            TransactionTemplate transactionTemplate,
+            PlayerService playerService
     ) {
 
         return (applicationArguments) -> {
@@ -63,6 +65,8 @@ public class Application {
                     appUserEntityRepository.save(accountEntity);
                     playerEntityRepository.save(playerEntity);
                     warehouseEntityRepository.save(warehouseEntity);
+
+                    playerService.playerFactoryToCorrespondedLevelInBatch(playerEntity);
                 });
 
             }

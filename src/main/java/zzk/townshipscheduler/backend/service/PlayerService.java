@@ -38,27 +38,8 @@ public class PlayerService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<PlayerEntityDto> findPlayerEntitiesDtoByAppUser(AccountEntity accountEntity) {
-        return playerEntityRepository.findPlayerEntitiesByAccount(accountEntity, PlayerEntityDto.class);
-    }
-
-    @Transactional(readOnly = true)
     public List<FieldFactoryEntity> findFieldFactoryEntityByPlayer(PlayerEntity playerEntity) {
         return fieldFactoryEntityRepository.findFieldFactoryEntityByPlayerEntity(playerEntity);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<PlayerEntityDto> findPlayerDtoEntitiesById(Long playerId) {
-        return playerEntityRepository.findPlayerById(playerId, PlayerEntityDto.class);
-    }
-
-    public Optional<PlayerEntityProjection> findPlayerProjectionById(long playerId) {
-        return playerEntityRepository.findPlayerById(playerId, PlayerEntityProjection.class);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<PlayerEntity> findPlayerEntitiesById(Long playerId) {
-        return playerEntityRepository.findPlayerById(playerId);
     }
 
     @Transactional(readOnly = true)

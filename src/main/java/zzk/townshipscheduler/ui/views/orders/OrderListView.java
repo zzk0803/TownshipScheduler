@@ -62,7 +62,9 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
         addBillButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
         addBillButton.setWidth("5rem");
         addBillButton.addClickListener(addBillClicked -> UI.getCurrent().navigate(OrderFormView.class));
-        add(new HorizontalLayout(addBillButton, schedulingButton));
+        HorizontalLayout horizontalLayout = new HorizontalLayout(addBillButton, schedulingButton);
+        horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+        add(horizontalLayout);
     }
 
     private void style() {
