@@ -1,9 +1,8 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
@@ -14,12 +13,17 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
-import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import zzk.townshipscheduler.backend.scheduling.ProductAmountBill;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingExecutionMode;
+import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -29,27 +33,25 @@ import java.util.UUID;
 @PermitAll
 public class SchedulingView extends VerticalLayout implements HasUrlParameter<String> {
 
-    private final ITownshipSchedulingService schedulingService;
+    @Getter
+    @Setter
+    private final SchedulingViewPresenter schedulingViewPresenter;
 
-    private final VerticalLayout schedulingViewWrapper;
+    @Getter
+    @Setter
+    private UI ui;
 
-    private UUID currentProblemId;
-
-    private TownshipSchedulingProblem currentProblem;
+    @Getter
+    @Setter
+    private Grid<SchedulingPlayerFactoryAction> actionGrid;
 
     public SchedulingView(
-            ITownshipSchedulingService schedulingService
+            SchedulingViewPresenter schedulingViewPresenter
     ) {
-        this.schedulingService = schedulingService;
-        this.schedulingViewWrapper = new VerticalLayout();
-        style();
-
-        schedulingViewWrapper.add(new H1("Scheduling View"));
-    }
-
-    private void style() {
-        schedulingViewWrapper.setSizeFull();
-        addAndExpand(schedulingViewWrapper);
+        this.schedulingViewPresenter = schedulingViewPresenter;
+        this.schedulingViewPresenter.setSchedulingView(this);
+        this.setSizeFull();
+        this.add(new H1("Scheduling View"));
     }
 
     @Override
@@ -58,8 +60,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                 Objects.nonNull(parameter)
                 && !parameter.isBlank()
         ) {
-            this.currentProblemId = UUID.fromString(parameter);
-            this.currentProblem = this.schedulingService.getSchedule(this.currentProblemId);
+            this.schedulingViewPresenter.setCurrentProblemId(UUID.fromString(parameter));
             buildUI();
         } else {
             Notification.show("FIXME");
@@ -70,71 +71,48 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();
 
-        Tab gameActionSheet = tabSheet.add("Game Action", buildGameActionTabSheetArticle());
+        Tab tab = tabSheet.add(
+                "Game Action",
+                buildGameActionTabSheetArticle()
+        );
 
-        tabSheet.setSelectedTab(gameActionSheet);
+        tabSheet.setSelectedTab(tab);
 
         addAndExpand(tabSheet);
     }
 
     private VerticalLayout buildGameActionTabSheetArticle() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        List<SchedulingPlayerFactoryAction> schedulingPlayerFactoryActions = currentProblem.getSchedulingPlayerFactoryActions();
-        Grid<SchedulingPlayerFactoryAction> grid = new Grid<>(SchedulingPlayerFactoryAction.class, false);
-        grid.addColumn(SchedulingPlayerFactoryAction::getActionId).setHeader("#");
-        grid.addColumn(SchedulingPlayerFactoryAction::getHumanReadable).setHeader("Description");
-        grid.addColumn(SchedulingPlayerFactoryAction::getPlanningPlayerDoItDateTime).setHeader("When To Do");
-        grid.addComponentColumn(
-                playerFactoryAction -> {
-                    SchedulingGameActionExecutionMode producingExecutionMode = playerFactoryAction.getPlanningProducingExecutionMode();
-                    return new Text(producingExecutionMode != null ? producingExecutionMode.toString() : "N/A");
-                }
-        ).setHeader("Execution Mode(Producing Use)");
-        grid.addComponentColumn(
+        actionGrid = new Grid<>(SchedulingPlayerFactoryAction.class, false);
+        actionGrid.addColumn(SchedulingPlayerFactoryAction::getActionId)
+                .setHeader("#")
+                .setResizable(true);
+        actionGrid.addColumn(SchedulingPlayerFactoryAction::getHumanReadable)
+                .setHeader("Description")
+                .setResizable(true);
+        actionGrid.addColumn(SchedulingPlayerFactoryAction::getPlanningPlayerArrangeDateTime)
+                .setHeader("When To Do")
+                .setResizable(true);
+        actionGrid.addComponentColumn(
+                        playerFactoryAction -> {
+                            SchedulingProducingExecutionMode producingExecutionMode = playerFactoryAction.getPlanningProducingExecutionMode();
+                            return new Text(producingExecutionMode != null ? producingExecutionMode.toString() : "N/A");
+                        }
+                ).setHeader("Execution Mode(Producing Use)")
+                .setResizable(true);
+        actionGrid.addComponentColumn(
                 playerFactoryAction -> {
                     SchedulingFactoryInstance planningFactory = playerFactoryAction.getPlanningFactory();
                     return new Text(Objects.toString(planningFactory, "N/A"));
                 }
-        ).setHeader("Factory Instance(Producing Use)");
-        grid.setItems(schedulingPlayerFactoryActions);
+        ).setHeader("Factory Instance(Producing Use)").setResizable(true);
 
-        Set<SchedulingOrder> orderSet = currentProblem.getSchedulingOrderSet();
+        schedulingViewPresenter.setupPlayerActionGrid(actionGrid);
 
-        gameActionArticle.add(buildOrderCard(orderSet));
+        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));
         gameActionArticle.add(buildBtnPanel());
-        gameActionArticle.addAndExpand(grid);
+        gameActionArticle.addAndExpand(actionGrid);
         return gameActionArticle;
-    }
-
-    private HorizontalLayout buildBtnPanel() {
-        HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
-        Button stopBtn = new Button();
-        stopBtn.setText("Stop");
-        stopBtn.setVisible(false);
-        stopBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_LARGE);
-        Button startBtn = new Button();
-        startBtn.setText("Start");
-        startBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
-        startBtn.addClickListener(buttonClickEvent -> {
-            UI.getCurrent().access(() -> {
-                startBtn.setDisableOnClick(true);
-                startBtn.setVisible(false);
-                stopBtn.setVisible(true);
-                schedulingService.scheduling(currentProblemId);
-            });
-        });
-        stopBtn.addClickListener(buttonClickEvent -> {
-            UI.getCurrent().access(() -> {
-                stopBtn.setDisableOnClick(true);
-                stopBtn.setVisible(false);
-                startBtn.setVisible(true);
-                schedulingService.abort(currentProblemId);
-            });
-        });
-        schedulingBtnPanel.setWidthFull();
-        schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.END);
-        schedulingBtnPanel.add(startBtn, stopBtn);
-        return schedulingBtnPanel;
     }
 
     private VerticalLayout buildOrderCard(Set<SchedulingOrder> orderSet) {
@@ -149,15 +127,42 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
             HorizontalLayout orderItemAmounts = new HorizontalLayout();
             ProductAmountBill bill = order.getProductAmountBill();
-            bill.forEach((schedulingProduct, amount) -> orderItemAmounts.add(new VerticalLayout(
-                    new Text(schedulingProduct.getName()),
-                    new Text("X" + amount)
-            )));
+            bill.forEach(
+                    (schedulingProduct, amount) -> orderItemAmounts.add(
+                            new VerticalLayout(
+                                    new Text(schedulingProduct.getName()),
+                                    new Text("X" + amount)
+                            ))
+            );
 
             orderSummarizeCard.add(orderBasic, orderItemAmounts);
         }
         return orderSummarizeCard;
     }
 
+    private HorizontalLayout buildBtnPanel() {
+        HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
+        TriggerButton triggerButton = new TriggerButton(
+                "Start",
+                buttonClickEvent -> {
+                    this.schedulingViewPresenter.schedulingAndPush();
+                },
+                "Stop",
+                buttonClickEvent1 -> {
+                    this.schedulingViewPresenter.schedulingAbort();
+                }
+        );
+        schedulingBtnPanel.setWidthFull();
+        schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.END);
+        schedulingBtnPanel.add(triggerButton);
+        return schedulingBtnPanel;
+    }
+
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        this.ui = attachEvent.getUI();
+        this.schedulingViewPresenter.setUi(this.ui);
+    }
 
 }

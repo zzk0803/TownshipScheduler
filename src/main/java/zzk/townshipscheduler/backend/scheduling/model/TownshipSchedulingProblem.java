@@ -7,9 +7,6 @@ import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
-import org.springframework.util.Assert;
-import zzk.townshipscheduler.backend.scheduling.model.utility.ActionIdRoller;
-import zzk.townshipscheduler.backend.scheduling.ProductAmountBill;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -20,11 +17,17 @@ import java.util.stream.Collectors;
 @PlanningSolution
 public class TownshipSchedulingProblem {
 
-    public static final int DEFAULT_SCHEDULING_TIMESLOT_SIZE = 15;
-
     public static final int BENDABLE_SCORE_HARD_SIZE = 2;
 
     public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
+
+    public static final int HARD_BROKEN = 0;
+
+    public static final int HARD_NEED_REVISE = 1;
+
+    public static final int SOFT_MAKESPAN = 0;
+
+    public static final int SOFT_BATTER = 1;
 
     private UUID uuid;
 
@@ -47,19 +50,19 @@ public class TownshipSchedulingProblem {
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider(id = "producingExecutionMode")
-    private Set<SchedulingGameActionExecutionMode> schedulingGameActionExecutionModeSet;
+    private Set<SchedulingProducingExecutionMode> schedulingProducingExecutionModeSet;
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider(id = "factoryActions")
     private List<SchedulingPlayerFactoryAction> schedulingPlayerFactoryActions;
 
-    @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = "warehouseActions")
-    private List<SchedulingPlayerWarehouseAction> schedulingPlayerWarehouseActions;
-
-
-    @PlanningEntityProperty
-    private SchedulingWarehouse schedulingWarehouse;
+//    @PlanningEntityCollectionProperty
+//    @ValueRangeProvider(id = "warehouseActions")
+//    private List<SchedulingPlayerWarehouseAction> schedulingPlayerWarehouseActions;
+//
+//
+//    @PlanningEntityProperty
+//    private SchedulingWarehouse schedulingWarehouse;
 
     @ProblemFactProperty
     private SchedulingWorkTimeLimit schedulingWorkTimeLimit;
@@ -77,7 +80,7 @@ public class TownshipSchedulingProblem {
             Set<SchedulingFactoryInfo> schedulingFactoryInfos,
             Set<SchedulingOrder> schedulingOrders,
             Set<SchedulingFactoryInstance> schedulingFactoryInstances,
-            SchedulingWarehouse schedulingWarehouse,
+//            SchedulingWarehouse schedulingWarehouse,
             SchedulingWorkTimeLimit schedulingWorkTimeLimit,
             BendableScore score,
             SolverStatus solverStatus
@@ -87,7 +90,7 @@ public class TownshipSchedulingProblem {
                 schedulingFactoryInfos,
                 schedulingOrders,
                 schedulingFactoryInstances,
-                schedulingWarehouse,
+//                schedulingWarehouse,
                 schedulingWorkTimeLimit
         );
         this.score = score;
@@ -99,18 +102,18 @@ public class TownshipSchedulingProblem {
             Set<SchedulingFactoryInfo> schedulingFactoryInfos,
             Set<SchedulingOrder> schedulingOrders,
             Set<SchedulingFactoryInstance> schedulingFactoryInstances,
-            SchedulingWarehouse schedulingWarehouse,
+//            SchedulingWarehouse schedulingWarehouse,
             SchedulingWorkTimeLimit schedulingWorkTimeLimit
     ) {
         this();
         this.schedulingProductSet = schedulingProducts;
-        this.schedulingGameActionExecutionModeSet = schedulingProducts.stream()
-                .flatMap(schedulingProduct -> schedulingProduct.getProducingExecutionModeSet().stream())
+        this.schedulingProducingExecutionModeSet = schedulingProducts.stream()
+                .flatMap(schedulingProduct -> schedulingProduct.getExecutionModeSet().stream())
                 .collect(Collectors.toSet());
         this.schedulingFactoryInfoSet = schedulingFactoryInfos;
         this.schedulingOrderSet = schedulingOrders;
         this.schedulingFactoryInstanceSet = schedulingFactoryInstances;
-        this.schedulingWarehouse = schedulingWarehouse;
+//        this.schedulingWarehouse = schedulingWarehouse;
         this.schedulingWorkTimeLimit = schedulingWorkTimeLimit;
 
     }
@@ -119,85 +122,100 @@ public class TownshipSchedulingProblem {
         this.uuid = UUID.randomUUID();
     }
 
-    @ValueRangeProvider(id = "planningPlayerDoItDateTimeValueRange")
+    @ValueRangeProvider(id = "planningPlayerArrangeDateTimeValueRange")
     public CountableValueRange<LocalDateTime> dateTimeValueRange() {
         return ValueRangeFactory.createLocalDateTimeValueRange(
                 schedulingWorkTimeLimit.getStartDateTime(),
                 schedulingWorkTimeLimit.getEndDateTime(),
-                DEFAULT_SCHEDULING_TIMESLOT_SIZE,
+                15,
                 ChronoUnit.MINUTES
         );
     }
 
-    @ValueRangeProvider(id = "warehouse")
-    public List<SchedulingWarehouse> schedulingWarehouses() {
-        return List.of(schedulingWarehouse);
-    }
+//    @ValueRangeProvider(id = "warehouse")
+//    public List<SchedulingWarehouse> schedulingWarehouses() {
+//        return List.of(schedulingWarehouse);
+//    }
 
     public void setupGameActions() {
-        ActionIdRoller idRoller = ActionIdRoller.createIdRoller();
+        ActionIdRoller idRoller = ActionIdRoller.forProblem(getUuid().toString());
 
-        ArrayList<SchedulingPlayerFactoryAction> factoryActions
-                = this.schedulingOrderSet
+//        ArrayList<SchedulingPlayerWarehouseAction> warehouseActions
+//                = this.schedulingOrderSet.stream()
+//                .flatMap(schedulingOrder -> schedulingOrder.calcWarehouseActions().stream())
+//                .peek(idRoller::setup)
+//                .collect(Collectors.toCollection(ArrayList::new));
+
+        ArrayList<SchedulingPlayerFactoryAction> factoryActions = new ArrayList<>();
+        this.schedulingOrderSet
                 .stream()
                 .flatMap(
                         schedulingOrder -> schedulingOrder.calcFactoryActions().stream()
                 )
-                .flatMap(productAction ->
-                        expandAndSetupGameActionSet(idRoller, productAction).stream()
-                ).collect(Collectors.toCollection(ArrayList::new));
-        factoryActions.forEach(SchedulingPlayerFactoryAction::readyElseThrow);
+                .map(productAction -> expandAndSetupGameActionSet(idRoller, productAction))
+                .forEach(schedulingPlayerFactoryActions -> {
+//                    ArrayList<SchedulingPlayerFactoryAction> collectingFactoryActions = schedulingPlayerFactoryActions.getValue0();
+//                    ArrayList<SchedulingPlayerWarehouseAction> collectingWarehouseActions = schedulingPlayerFactoryActions.getValue1();
+                    factoryActions.addAll(schedulingPlayerFactoryActions);
+//                    warehouseActions.addAll(collectingWarehouseActions);
+                });
 
-        ArrayList<SchedulingPlayerWarehouseAction> warehouseActions = this.schedulingOrderSet.stream()
-                .flatMap(schedulingOrder -> schedulingOrder.calcWarehouseActions().stream())
-                .peek(idRoller::setup)
-                .collect(Collectors.toCollection(ArrayList::new));
-        warehouseActions.forEach(SchedulingPlayerWarehouseAction::readyElseThrow);
+        factoryActions.forEach(SchedulingPlayerFactoryAction::readyElseThrow);
+//        warehouseActions.forEach(SchedulingPlayerWarehouseAction::readyElseThrow);
 
         setSchedulingPlayerFactoryActions(factoryActions);
-        setSchedulingPlayerWarehouseActions(warehouseActions);
+//        setSchedulingPlayerWarehouseActions(warehouseActions);
     }
 
     private ArrayList<SchedulingPlayerFactoryAction> expandAndSetupGameActionSet(
+//    private Pair<ArrayList<SchedulingPlayerFactoryAction>, ArrayList<SchedulingPlayerWarehouseAction>> expandAndSetupGameActionSet(
             ActionIdRoller idRoller,
             SchedulingPlayerFactoryAction productAction
     ) {
         LinkedList<SchedulingPlayerFactoryAction> dealingChain = new LinkedList<>(List.of(productAction));
-        ArrayList<SchedulingPlayerFactoryAction> result = new ArrayList<>();
+        ArrayList<SchedulingPlayerFactoryAction> factoryActions = new ArrayList<>();
+//        ArrayList<SchedulingPlayerWarehouseAction> warehouseActions = new ArrayList<>();
 
         while (!dealingChain.isEmpty()) {
             SchedulingPlayerFactoryAction currentFactoryAction = dealingChain.removeFirst();
             currentFactoryAction.idRoller(idRoller);
-            result.add(currentFactoryAction);
+            factoryActions.add(currentFactoryAction);
 
-            Set<SchedulingGameActionExecutionMode> executionModes
+            Set<SchedulingProducingExecutionMode> executionModes
                     = currentFactoryAction.getCurrentActionObject().getExecutionModeSet();
 
             if (executionModes.size() == 1) {
-                SchedulingGameActionExecutionMode executionMode
-                        = executionModes.toArray(SchedulingGameActionExecutionMode[]::new)[0];
+                SchedulingProducingExecutionMode executionMode
+                        = executionModes.toArray(SchedulingProducingExecutionMode[]::new)[0];
                 currentFactoryAction.forceSetupExecutionMode(executionMode);
-
-                if (!executionMode.atomicProduct()) {
-                    ProductAmountBill productAmountBill = executionMode.getMaterials();
-                    for (Map.Entry<SchedulingProduct, Integer> entry : productAmountBill.entrySet()) {
-                        SchedulingProduct material = entry.getKey();
-                        Integer amount = entry.getValue();
-                        for (int i = amount; i > 0; i--) {
-                            List<SchedulingPlayerFactoryAction> listActionOfMaterial = material.calcFactoryActions();
-                            for (SchedulingPlayerFactoryAction materialFactoryAction : listActionOfMaterial) {
-                                Assert.notNull(materialFactoryAction, "materialFactoryAction shouldn't be null");
-                                currentFactoryAction.biAssociateWholeToPart(materialFactoryAction);
-                                dealingChain.addLast(materialFactoryAction);
-                            }
-                        }
-                    }
-
-                }
+                List<SchedulingPlayerFactoryAction> materialsActions = executionMode.materialsActions();
+                materialsActions.forEach(materialsAction -> {
+                    currentFactoryAction.biAssociateWholeToPart(materialsAction);
+                    dealingChain.addLast(materialsAction);
+                });
+//                if (!executionMode.atomicProduct()) {
+//                    ProductAmountBill productAmountBill = executionMode.getMaterials();
+//                    for (Map.Entry<SchedulingProduct, Integer> entry : productAmountBill.entrySet()) {
+//                        SchedulingProduct material = entry.getKey();
+//                        Integer amount = entry.getValue();
+//                        for (int i = amount; i > 0; i--) {
+//                            List<SchedulingPlayerFactoryAction> listFactoryActionOfMaterial = material.calcFactoryActions();
+//                            List<SchedulingPlayerWarehouseAction> listWarehouseActionOfMaterial = material.calcWarehouseActions();
+//                            warehouseActions.addAll(listWarehouseActionOfMaterial);
+//                            for (SchedulingPlayerFactoryAction materialFactoryAction : listFactoryActionOfMaterial) {
+//                                Assert.notNull(materialFactoryAction, "materialFactoryAction shouldn't be null");
+//                                currentFactoryAction.biAssociateWholeToPart(materialFactoryAction);
+//                                dealingChain.addLast(materialFactoryAction);
+//                            }
+//                        }
+//                    }
+//
+//                }
             }
 
         }
-        return result;
+        return factoryActions;
+//        return Pair.with(factoryActions, warehouseActions);
     }
 
 

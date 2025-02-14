@@ -1,67 +1,107 @@
 package zzk.townshipscheduler.backend.scheduling;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
-import ai.timefold.solver.core.api.solver.*;
+import ai.timefold.solver.core.api.solver.SolutionManager;
+import ai.timefold.solver.core.api.solver.SolverJob;
+import ai.timefold.solver.core.api.solver.SolverManager;
+import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
 
-    public static final int SCHEDULING_END_DAY_FROM_START = 2;
-
-    private final ExecutorService executorService;
-
-    private final TownshipSchedulingProblemHolder problemHolder;
-
     private final SolverManager<TownshipSchedulingProblem, UUID> solverManager;
 
     private final SolutionManager<TownshipSchedulingProblem, HardMediumSoftLongScore> solutionManager;
+
+    private final Map<UUID, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
+
+    private final Consumer<TownshipSchedulingProblem> defaultConsumer
+            = townshipSchedulingProblem -> {
+        UUID uuid = townshipSchedulingProblem.getUuid();
+        idProblemMap.put(uuid, townshipSchedulingProblem);
+    };
+
+    private final BiConsumer<UUID, Throwable> defaultExceptionHandler
+            = (uuid, throwable) -> {
+        log.error("problem {} exception {}", uuid, throwable);
+    };
+
+    private final Map<UUID, SolverJob<TownshipSchedulingProblem, UUID>> idSolverJobMap = new ConcurrentHashMap<>();
 
     @Override
     public TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest) {
         MappingProcess process = new MappingProcess(townshipSchedulingRequest);
         TownshipSchedulingProblem townshipSchedulingProblem = process.map();
-        problemHolder.write(townshipSchedulingProblem);
+        UUID uuid = townshipSchedulingProblem.getUuid();
+        idProblemMap.put(uuid, townshipSchedulingProblem);
         return townshipSchedulingProblem;
     }
 
     @Override
-    public CompletableFuture<Void> scheduling(UUID problemId) {
-        return CompletableFuture.runAsync(
-                () -> {
-                    SolverJobBuilder<TownshipSchedulingProblem, UUID> solverJobBuilder = solverManager.solveBuilder();
-                    SolverJob<TownshipSchedulingProblem, UUID> solverJob = solverJobBuilder
-                            .withProblemId(problemId)
-                            .withProblemFinder(this::getSchedule)
-                            .withBestSolutionConsumer(problemHolder::write)
-                            .run();
-                }, executorService
-        );
+    public void scheduling(UUID problemId) {
+        SolverJob<TownshipSchedulingProblem, UUID> solverJob
+                = solverManager.solveBuilder()
+                .withProblemId(problemId)
+                .withProblemFinder(this::getSchedule)
+                .withBestSolutionConsumer(defaultConsumer)
+                .withExceptionHandler(defaultExceptionHandler)
+                .run();
+        idSolverJobMap.put(problemId, solverJob);
+    }
+
+    @Override
+    public void scheduling(UUID problemId, Consumer<TownshipSchedulingProblem> problemConsumer) {
+        SolverJob<TownshipSchedulingProblem, UUID> solverJob
+                = solverManager.solveBuilder()
+                .withProblemId(problemId)
+                .withProblemFinder(this::getSchedule)
+                .withBestSolutionConsumer(
+                        defaultConsumer.andThen(problemConsumer)
+                )
+                .run();
+        idSolverJobMap.put(problemId, solverJob);
+    }
+
+    @Override
+    public void scheduling(
+            UUID problemId,
+            Consumer<TownshipSchedulingProblem> problemConsumer,
+            BiConsumer<UUID, Throwable> solveExceptionConsumer
+    ) {
+        SolverJob<TownshipSchedulingProblem, UUID> solverJob
+                = solverManager.solveBuilder()
+                .withProblemId(problemId)
+                .withProblemFinder(this::getSchedule)
+                .withBestSolutionConsumer(
+                        defaultConsumer.andThen(problemConsumer)
+                )
+                .withExceptionHandler(defaultExceptionHandler.andThen(solveExceptionConsumer))
+                .run();
+        idSolverJobMap.put(problemId, solverJob);
     }
 
     @Override
     public void abort(UUID problemId) {
-        CompletableFuture.runAsync(
-                () -> {
-                    solverManager.terminateEarly(problemId);
-                }, executorService
-        );
+        solverManager.terminateEarly(problemId);
     }
 
     @Override
     public TownshipSchedulingProblem getSchedule(UUID problemId) {
         SolverStatus solverStatus = solverManager.getSolverStatus(problemId);
-        TownshipSchedulingProblem townshipSchedulingProblem = problemHolder.read();
+        TownshipSchedulingProblem townshipSchedulingProblem = idProblemMap.get(problemId);
         townshipSchedulingProblem.setSolverStatus(solverStatus);
         return townshipSchedulingProblem;
     }
@@ -72,11 +112,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
             return false;
         }
 
-        TownshipSchedulingProblem problem = problemHolder.read();
-        if (Objects.isNull(problem)) {
-            return false;
-        }
-        return problem.getUuid().toString().equals(uuid);
+        return idProblemMap.containsKey(UUID.fromString(uuid));
     }
 
 }

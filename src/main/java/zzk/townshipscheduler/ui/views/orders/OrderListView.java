@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -16,16 +15,13 @@ import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.StreamResource;
 import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.ui.components.BillCard;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
-import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.UUID;
 
 @Route("/orders")
@@ -89,7 +85,7 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
             card.add(new VerticalLayout(strAsSpan(orderView.getOrderType().name()), strAsSpan("No Deadline")));
         }
 
-        card.add(buildBillItemPairsComponent(orderView));
+        card.add(new BillCard(orderView));
 
         card.add(new Button(
                 VaadinIcon.CLOSE.create(), click -> {
@@ -104,33 +100,6 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
         return new Span(content);
     }
 
-    private HorizontalLayout buildBillItemPairsComponent(OrderEntity orderEntity) {
-        HorizontalLayout billItemLayout = new HorizontalLayout();
-        Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
-        productAmountMap.forEach((product, amount) -> {
-            Image image = new Image();
-            image.setHeight("40px");
-            image.setWidth("40px");
-            image.setSrc(
-                    new StreamResource(
-                            product.getName(),
-                            () -> new ByteArrayInputStream(product.getCrawledAsImage().getImageBytes())
-                    )
-            );
-
-            Span span = new Span(product.getName());
-
-            VerticalLayout leftImageAndTextVL = new VerticalLayout(image, span);
-            leftImageAndTextVL.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
-
-            HorizontalLayout itemAndAmountHL = new HorizontalLayout(leftImageAndTextVL, new Span("x" + amount));
-            itemAndAmountHL.setDefaultVerticalComponentAlignment(Alignment.CENTER);
-            itemAndAmountHL.setSpacing(false);
-            itemAndAmountHL.setMargin(false);
-            billItemLayout.add(itemAndAmountHL);
-        });
-        return billItemLayout;
-    }
 
     public void onBillDeleteDone() {
         grid.getDataProvider().refreshAll();

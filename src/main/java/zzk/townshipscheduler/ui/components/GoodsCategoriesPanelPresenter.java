@@ -5,6 +5,7 @@ import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -16,6 +17,7 @@ import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+@Data
 @SpringComponent
 @UIScope
 @RequiredArgsConstructor
@@ -111,14 +113,6 @@ public class GoodsCategoriesPanelPresenter {
             this.currentSelectFactory = category;
             this.gridListDataView.addFilter(product -> this.currentSelectFactory.equals(product.getFieldFactoryInfo()));
         }
-    }
-
-    public Optional<ProductEntity> getCurrentSelect() {
-        return currentSelect;
-    }
-
-    public void setCurrentSelect(Optional<ProductEntity> currentSelect) {
-        this.currentSelect = currentSelect;
     }
 
 }

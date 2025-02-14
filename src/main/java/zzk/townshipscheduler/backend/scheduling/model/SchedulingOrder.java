@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public final class SchedulingOrder implements SchedulingGameActionObject {
+public final class SchedulingOrder implements IGameActionObject {
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -52,6 +52,11 @@ public final class SchedulingOrder implements SchedulingGameActionObject {
     }
 
     @Override
+    public Long longIdentity() {
+        return getId();
+    }
+
+    @Override
     public String readable() {
         String stringBuilder = "Order#" + getId() +
                                "~Type::" + getOrderType().name() +
@@ -59,12 +64,19 @@ public final class SchedulingOrder implements SchedulingGameActionObject {
         return stringBuilder;
     }
 
-    @Override
-    public List<SchedulingPlayerWarehouseAction> calcWarehouseActions() {
-        SchedulingPlayerWarehouseAction schedulingPlayerWarehouseAction
-                = new SchedulingPlayerWarehouseAction(this);
-        return List.of(schedulingPlayerWarehouseAction);
-    }
+//    @Override
+//    public List<SchedulingPlayerWarehouseAction> calcWarehouseActions() {
+//        SchedulingPlayerWarehouseAction schedulingPlayerWarehouseAction
+//                = new SchedulingPlayerWarehouseAction(this);
+//        return List.of(schedulingPlayerWarehouseAction);
+//    }
+//
+//    @Override
+//    public List<SchedulingPlayerWarehouseAction> calcWarehouseActions(IGameActionObject targetObject) {
+//        SchedulingPlayerWarehouseAction schedulingPlayerWarehouseAction
+//                = new SchedulingPlayerWarehouseAction(targetObject);
+//        return List.of(schedulingPlayerWarehouseAction);
+//    }
 
     @Override
     public List<SchedulingPlayerFactoryAction> calcFactoryActions() {
@@ -83,7 +95,7 @@ public final class SchedulingOrder implements SchedulingGameActionObject {
     }
 
     @Override
-    public List<SchedulingPlayerFactoryAction> calcFactoryActions(SchedulingGameActionObject targetObject) {
+    public List<SchedulingPlayerFactoryAction> calcFactoryActions(IGameActionObject targetObject) {
         List<SchedulingPlayerFactoryAction> result
                 = this.getProductAmountBill().entrySet().stream()
                 .flatMap(entry -> {
@@ -99,7 +111,7 @@ public final class SchedulingOrder implements SchedulingGameActionObject {
     }
 
     @Override
-    public Set<SchedulingGameActionExecutionMode> getExecutionModeSet() {
+    public Set<SchedulingProducingExecutionMode> getExecutionModeSet() {
         return Set.of();
     }
 

@@ -18,19 +18,19 @@ class MappingProcess {
 
     private final Map<SchedulingFactoryInfo.Id, SchedulingFactoryInfo> idFactoryMap;
 
-    private final Set<SchedulingGameActionExecutionMode> schedulingGameActionExecutionModes;
+    private final Set<SchedulingProducingExecutionMode> schedulingProducingExecutionModes;
 
     private final Set<SchedulingFactoryInstance> schedulingFactoryInstances;
 
     private final Set<SchedulingOrder> schedulingOrders;
 
-    private SchedulingWarehouse schedulingWarehouse;
+//    private SchedulingWarehouse schedulingWarehouse;
 
     public MappingProcess(TownshipSchedulingRequest townshipSchedulingRequest) {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
         this.idProductMap = new LinkedHashMap<>();
         this.idFactoryMap = new LinkedHashMap<>();
-        this.schedulingGameActionExecutionModes = new LinkedHashSet<>();
+        this.schedulingProducingExecutionModes = new LinkedHashSet<>();
         this.schedulingFactoryInstances = new LinkedHashSet<>();
         this.schedulingOrders = new LinkedHashSet<>();
     }
@@ -43,7 +43,7 @@ class MappingProcess {
                 new LinkedHashSet<>(this.idFactoryMap.values()),
                 this.schedulingOrders,
                 this.schedulingFactoryInstances,
-                this.schedulingWarehouse,
+//                this.schedulingWarehouse,
                 new SchedulingWorkTimeLimit(
                         LocalDateTime.now(),
                         LocalDateTime.now().plusDays(3)
@@ -59,8 +59,29 @@ class MappingProcess {
         fetchAndMapToSchedulingProduct();
         fetchAndMapToSchedulingFactoryInfo();
         fetchAndMapToSchedulingFactoryInstance();
-        fetchAndMapToSchedulingWarehouse();
+//        fetchAndMapToSchedulingWarehouse();
         fetchAndMapToSchedulingOrder();
+    }
+
+    private void fetchAndMapToSchedulingProduct() {
+        Set<ProductEntity> productDtoList = townshipSchedulingRequest.getProductEntities();
+        SchedulingProduct schedulingProduct = null;
+        for (ProductEntity productDto : productDtoList) {
+            schedulingProduct = buildOrGetSchedulingProduct(productDto);
+
+            FieldFactoryInfoEntity fieldFactoryInfo
+                    = productDto.getFieldFactoryInfo();
+            SchedulingFactoryInfo schedulingFactoryInfo
+                    = buildOrGetSchedulingFactoryInfo(
+                    SchedulingFactoryInfo.Id.of(fieldFactoryInfo)
+            );
+            schedulingProduct.setRequireFactory(schedulingFactoryInfo);
+
+            Set<SchedulingProducingExecutionMode> producingExecutionModes
+                    = calcProducingExecutionMode(productDto, schedulingProduct);
+            schedulingProduct.setExecutionModeSet(producingExecutionModes);
+            this.schedulingProducingExecutionModes.addAll(producingExecutionModes);
+        }
     }
 
     private void fetchAndMapToSchedulingFactoryInfo() {
@@ -85,45 +106,69 @@ class MappingProcess {
         }
     }
 
-    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
-        SchedulingFactoryInfo schedulingFactoryInfo
-                = buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntity));
-        schedulingFactoryInfo.setCategoryName(fieldFactoryInfoEntity.getCategory());
-        schedulingFactoryInfo.setLevel(fieldFactoryInfoEntity.getLevel());
-        return schedulingFactoryInfo;
+    private void fetchAndMapToSchedulingFactoryInstance() {
+        townshipSchedulingRequest.getPlayerEntityFieldFactoryEntities()
+                .stream()
+                .map(fieldFactoryEntity -> {
+                    SchedulingFactoryInstance schedulingFactoryInstance = new SchedulingFactoryInstance();
+                    SchedulingFactoryInfo.Id schedulingFactoryInfoId
+                            = SchedulingFactoryInfo.Id.of(fieldFactoryEntity.getFieldFactoryInfoEntity());
+                    SchedulingFactoryInfo schedulingFactoryInfo
+                            = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
+                    schedulingFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
+                    schedulingFactoryInstance.setProducingLength(fieldFactoryEntity.getProducingLength());
+                    schedulingFactoryInstance.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
+                    return schedulingFactoryInstance;
+                })
+                .forEach(this.schedulingFactoryInstances::add);
     }
 
-    private void fetchAndMapToSchedulingProduct() {
-        Set<ProductEntity> productDtoList = townshipSchedulingRequest.getProductEntities();
-        SchedulingProduct schedulingProduct = null;
-        for (ProductEntity productDto : productDtoList) {
-            schedulingProduct = buildOrGetSchedulingProduct(productDto);
+    private void fetchAndMapToSchedulingOrder() {
+        townshipSchedulingRequest.getPlayerEntityOrderEntities()
+                .forEach(orderEntity -> {
+                    Long id = orderEntity.getId();
+                    OrderType orderType = orderEntity.getOrderType();
+                    LocalDateTime deadLine = orderEntity.getDeadLine();
+                    ProductAmountBill productAmountBill = createProductAmountBill(orderEntity);
+                    this.schedulingOrders.add(
+                            new SchedulingOrder(
+                                    id,
+                                    productAmountBill,
+                                    orderType,
+                                    deadLine
+                            ));
+                });
+    }
 
-            FieldFactoryInfoEntity fieldFactoryInfo
-                    = productDto.getFieldFactoryInfo();
-            SchedulingFactoryInfo schedulingFactoryInfo
-                    = buildOrGetSchedulingFactoryInfo(
-                    SchedulingFactoryInfo.Id.of(fieldFactoryInfo)
-            );
-            schedulingProduct.setRequireFactory(schedulingFactoryInfo);
+    private SchedulingProduct buildOrGetSchedulingProduct(ProductEntity product) {
+        SchedulingProduct.Id productId = SchedulingProduct.Id.of(Objects.requireNonNull(product.getId()));
+        SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productId);
+        schedulingProduct.setName(product.getName());
+        schedulingProduct.setLevel(product.getLevel());
+        return schedulingProduct;
 
-            Set<SchedulingGameActionExecutionMode> producingExecutionModes
-                    = calcProducingExecutionMode(productDto, schedulingProduct);
-            schedulingProduct.setProducingExecutionModeSet(producingExecutionModes);
-            this.schedulingGameActionExecutionModes.addAll(producingExecutionModes);
+    }
+
+    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id schedulingFactoryInfoId) {
+        if (!idFactoryMap.containsKey(schedulingFactoryInfoId)) {
+            SchedulingFactoryInfo schedulingFactoryInfo = new SchedulingFactoryInfo();
+            schedulingFactoryInfo.setId(schedulingFactoryInfoId);
+            idFactoryMap.put(schedulingFactoryInfoId, schedulingFactoryInfo);
         }
+        return idFactoryMap.get(schedulingFactoryInfoId);
+
     }
 
-    private Set<SchedulingGameActionExecutionMode> calcProducingExecutionMode(
+    private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
             ProductEntity productEntity,
             SchedulingProduct schedulingProduct
     ) {
         AtomicInteger idRoller = new AtomicInteger(1);
         Set<ProductManufactureInfoEntity> productManufactureInfos = productEntity.getManufactureInfoEntities();
         if (productManufactureInfos != null && !productManufactureInfos.isEmpty()) {
-            Set<SchedulingGameActionExecutionMode> executionModes = new LinkedHashSet<>();
+            Set<SchedulingProducingExecutionMode> executionModes = new LinkedHashSet<>();
             productManufactureInfos.forEach(productManufactureInfo -> {
-                SchedulingGameActionExecutionMode executionMode = new SchedulingGameActionExecutionMode();
+                SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();
                 executionMode.setId(idRoller.getAndIncrement());
                 executionMode.setProduct(schedulingProduct);
                 Duration producingDuration = productManufactureInfo.getProducingDuration();
@@ -146,7 +191,7 @@ class MappingProcess {
             });
             return executionModes;
         } else {
-            SchedulingGameActionExecutionMode defaultProducingExecutionMode = new SchedulingGameActionExecutionMode();
+            SchedulingProducingExecutionMode defaultProducingExecutionMode = new SchedulingProducingExecutionMode();
             defaultProducingExecutionMode.setId(idRoller.getAndIncrement());
             defaultProducingExecutionMode.setProduct(schedulingProduct);
             return Set.of(defaultProducingExecutionMode);
@@ -154,13 +199,12 @@ class MappingProcess {
 
     }
 
-    private SchedulingProduct buildOrGetSchedulingProduct(ProductEntity product) {
-        SchedulingProduct.Id productId = SchedulingProduct.Id.of(Objects.requireNonNull(product.getId()));
-        SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productId);
-        schedulingProduct.setName(product.getName());
-        schedulingProduct.setLevel(product.getLevel());
-        return schedulingProduct;
-
+    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
+        SchedulingFactoryInfo schedulingFactoryInfo
+                = buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntity));
+        schedulingFactoryInfo.setCategoryName(fieldFactoryInfoEntity.getCategory());
+        schedulingFactoryInfo.setLevel(fieldFactoryInfoEntity.getLevel());
+        return schedulingFactoryInfo;
     }
 
     private SchedulingProduct buildOrGetSchedulingProduct(SchedulingProduct.Id schedulingProductId) {
@@ -176,32 +220,24 @@ class MappingProcess {
         return idProductMap.get(schedulingProductId);
     }
 
-    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id schedulingFactoryInfoId) {
-        if (!idFactoryMap.containsKey(schedulingFactoryInfoId)) {
-            SchedulingFactoryInfo schedulingFactoryInfo = new SchedulingFactoryInfo();
-            schedulingFactoryInfo.setId(schedulingFactoryInfoId);
-            idFactoryMap.put(schedulingFactoryInfoId, schedulingFactoryInfo);
-        }
-        return idFactoryMap.get(schedulingFactoryInfoId);
-
-    }
-
-    private void fetchAndMapToSchedulingOrder() {
-        townshipSchedulingRequest.getPlayerEntityOrderEntities()
-                .forEach(orderEntity -> {
-                    Long id = orderEntity.getId();
-                    OrderType orderType = orderEntity.getOrderType();
-                    LocalDateTime deadLine = orderEntity.getDeadLine();
-                    ProductAmountBill productAmountBill = createProductAmountBill(orderEntity);
-                    this.schedulingOrders.add(
-                            new SchedulingOrder(
-                                    id,
-                                    productAmountBill,
-                                    orderType,
-                                    deadLine
-                            ));
-                });
-    }
+//    private void fetchAndMapToSchedulingWarehouse() {
+//        SchedulingWarehouse schedulingWarehouse = new SchedulingWarehouse();
+//        Map<SchedulingProduct, Integer> productAmountMap = new LinkedHashMap<>();
+//
+//        WarehouseEntity warehouseEntityProjection
+//                = townshipSchedulingRequest.getPlayerEntityWarehouseEntity();
+//        Map<ProductEntity, Integer> dtoMap = warehouseEntityProjection.getProductAmountMap();
+//        dtoMap.forEach(
+//                (product, amount) -> {
+//                    productAmountMap.put(
+//                            buildOrGetSchedulingProduct(SchedulingProduct.Id.of(product.getId())),
+//                            amount
+//                    );
+//                }
+//        );
+//        schedulingWarehouse.setProductAmountMap(productAmountMap);
+//        this.schedulingWarehouse = schedulingWarehouse;
+//    }
 
     private ProductAmountBill createProductAmountBill(OrderEntity order) {
         Map<ProductEntity, Integer> productIdAmountMap = order.getProductAmountMap();
@@ -217,42 +253,6 @@ class MappingProcess {
         return productAmountBill;
     }
 
-    private void fetchAndMapToSchedulingWarehouse() {
-        SchedulingWarehouse schedulingWarehouse = new SchedulingWarehouse();
-        Map<SchedulingProduct, Integer> productAmountMap = new LinkedHashMap<>();
-
-        WarehouseEntity warehouseEntityProjection
-                = townshipSchedulingRequest.getPlayerEntityWarehouseEntity();
-        Map<ProductEntity, Integer> dtoMap = warehouseEntityProjection.getProductAmountMap();
-        dtoMap.forEach(
-                (product, amount) -> {
-                    productAmountMap.put(
-                            buildOrGetSchedulingProduct(SchedulingProduct.Id.of(product.getId())),
-                            amount
-                    );
-                }
-        );
-        schedulingWarehouse.setProductAmountMap(productAmountMap);
-        this.schedulingWarehouse = schedulingWarehouse;
-    }
-
-    private void fetchAndMapToSchedulingFactoryInstance() {
-        townshipSchedulingRequest.getPlayerEntityFieldFactoryEntities()
-                .stream()
-                .map(fieldFactoryEntity -> {
-                    SchedulingFactoryInstance schedulingFactoryInstance = new SchedulingFactoryInstance();
-                    SchedulingFactoryInfo.Id schedulingFactoryInfoId
-                            = SchedulingFactoryInfo.Id.of(fieldFactoryEntity.getFieldFactoryInfoEntity());
-                    SchedulingFactoryInfo schedulingFactoryInfo
-                            = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
-                    schedulingFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
-                    schedulingFactoryInstance.setProducingLength(fieldFactoryEntity.getProducingLength());
-                    schedulingFactoryInstance.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
-                    return schedulingFactoryInstance;
-                })
-                .forEach(this.schedulingFactoryInstances::add);
-    }
-
     private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntityProjectionForScheduling fieldFactoryInfoEntityDto) {
         SchedulingFactoryInfo schedulingFactoryInfo
                 = buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntityDto));
@@ -261,16 +261,16 @@ class MappingProcess {
         return schedulingFactoryInfo;
     }
 
-    private Set<SchedulingGameActionExecutionMode> calcProducingExecutionMode(
+    private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
             ProductEntityProjectionForScheduling productDto,
             SchedulingProduct schedulingProduct
     ) {
         AtomicInteger idRoller = new AtomicInteger(1);
         Set<ProductManufactureInfoEntityProjection> productManufactureInfos = productDto.getManufactureInfoEntities();
         if (productManufactureInfos != null && !productManufactureInfos.isEmpty()) {
-            Set<SchedulingGameActionExecutionMode> executionModes = new LinkedHashSet<>();
+            Set<SchedulingProducingExecutionMode> executionModes = new LinkedHashSet<>();
             productManufactureInfos.forEach(productManufactureInfo -> {
-                SchedulingGameActionExecutionMode executionMode = new SchedulingGameActionExecutionMode();
+                SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();
                 executionMode.setId(idRoller.getAndIncrement());
                 executionMode.setProduct(schedulingProduct);
                 Duration producingDuration = productManufactureInfo.getProducingDuration();
@@ -293,7 +293,7 @@ class MappingProcess {
             });
             return executionModes;
         } else {
-            SchedulingGameActionExecutionMode defaultProducingExecutionMode = new SchedulingGameActionExecutionMode();
+            SchedulingProducingExecutionMode defaultProducingExecutionMode = new SchedulingProducingExecutionMode();
             defaultProducingExecutionMode.setId(idRoller.getAndIncrement());
             defaultProducingExecutionMode.setProduct(schedulingProduct);
             return Set.of(defaultProducingExecutionMode);
@@ -320,16 +320,16 @@ class MappingProcess {
         return schedulingFactoryInfo;
     }
 
-    private Set<SchedulingGameActionExecutionMode> calcProducingExecutionMode(
+    private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
             ProductEntityDtoForScheduling productDto,
             SchedulingProduct schedulingProduct
     ) {
         //deal producing info
-        Set<SchedulingGameActionExecutionMode> producingExecutionModes = new LinkedHashSet<>();
+        Set<SchedulingProducingExecutionMode> producingExecutionModes = new LinkedHashSet<>();
         Set<ProductManufactureInfoEntityDtoForScheduling> productManufactureInfoSet = productDto.getManufactureInfoEntities();
         for (ProductManufactureInfoEntityDtoForScheduling manufactureInfo : productManufactureInfoSet) {
-            SchedulingGameActionExecutionMode producingExecutionMode
-                    = new SchedulingGameActionExecutionMode();
+            SchedulingProducingExecutionMode producingExecutionMode
+                    = new SchedulingProducingExecutionMode();
             producingExecutionMode.setProduct(schedulingProduct);
             producingExecutionMode.setExecuteDuration(manufactureInfo.getProducingDuration());
 
@@ -346,7 +346,7 @@ class MappingProcess {
             }
             producingExecutionMode.setMaterials(productAmountBill);
             producingExecutionModes.add(producingExecutionMode);
-            this.schedulingGameActionExecutionModes.addAll(producingExecutionModes);
+            this.schedulingProducingExecutionModes.addAll(producingExecutionModes);
         }
         return producingExecutionModes;
     }

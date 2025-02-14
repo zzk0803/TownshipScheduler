@@ -1,0 +1,32 @@
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<solver xmlns="https://timefold.ai/xsd/solver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--        xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">-->
+
+<!--    <environmentMode>FAST_ASSERT</environmentMode>-->
+<!--    <randomSeed>42</randomSeed>-->
+
+<!--    &lt;!&ndash; Define the model &ndash;&gt;-->
+<!--    <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>-->
+<!--&lt;!&ndash;    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>&ndash;&gt;-->
+<!--    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction</entityClass>-->
+<!--    <entityClass>zzk.townshipscheduler.backend.scheduling.model.BasePlanningChainSupportFactoryOrAction</entityClass>-->
+
+<!--    &lt;!&ndash; Define the score function &ndash;&gt;-->
+<!--    <scoreDirectorFactory>-->
+<!--        <constraintProviderClass>zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider-->
+<!--        </constraintProviderClass>-->
+<!--    </scoreDirectorFactory>-->
+
+<!--    &lt;!&ndash; Configure the optimization algorithms (optional) &ndash;&gt;-->
+<!--    <termination>-->
+
+<!--    </termination>-->
+
+<!--    <constructionHeuristic>-->
+
+<!--    </constructionHeuristic>-->
+
+<!--    <localSearch>-->
+
+<!--    </localSearch>-->
+<!--</solver>-->

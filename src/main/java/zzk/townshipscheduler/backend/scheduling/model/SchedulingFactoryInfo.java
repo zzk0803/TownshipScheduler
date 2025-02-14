@@ -2,22 +2,26 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.Value;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.select.*;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public  class SchedulingFactoryInfo  {
+@ToString(onlyExplicitlyIncluded = true)
+public class SchedulingFactoryInfo {
 
+    @ToString.Include
     @EqualsAndHashCode.Include
     private Id id;
 
+    @ToString.Include
     @EqualsAndHashCode.Include
     private String categoryName;
 
@@ -25,6 +29,7 @@ public  class SchedulingFactoryInfo  {
 
     private Set<SchedulingProduct> portfolio;
 
+    @ToString.Include
     private ProducingStructureType producingStructureType;
 
     private int defaultInstanceAmount;
@@ -47,27 +52,17 @@ public  class SchedulingFactoryInfo  {
         this.portfolio.add(schedulingProduct);
     }
 
-    @Override
-    public String toString() {
-        return "{\"SchedulingFactoryInfo\":{"
-               + "        \"id\":" + id
-               + ",         \"categoryName\":\"" + categoryName + "\""
-               + ",         \"portfolio\":" + portfolio.stream().map(SchedulingProduct::getName).collect(Collectors.joining(","))
-               + ",         \"producingType\":\"" + producingStructureType + "\""
-               + "}}";
-    }
-
     @Value
-    public static class Id{
+    public static class Id {
 
-         long value;
-
-        public static Id of(long value) {
-            return new Id(value);
-        }
+        long value;
 
         public static Id of(FieldFactoryInfoEntityDtoJustId factoryDto) {
             return of(factoryDto.getId());
+        }
+
+        public static Id of(long value) {
+            return new Id(value);
         }
 
         public static Id of(FieldFactoryInfoEntityDtoForScheduling factoryInfoDto) {
@@ -86,12 +81,12 @@ public  class SchedulingFactoryInfo  {
             return of(fieldFactoryEntityProjection.getId());
         }
 
-        public static Id of(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
-            return of(fieldFactoryInfoEntity.getId());
-        }
-
         public static Id of(FieldFactoryEntity fieldFactoryEntity) {
             return of(fieldFactoryEntity.getFieldFactoryInfoEntity());
+        }
+
+        public static Id of(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
+            return of(fieldFactoryInfoEntity.getId());
         }
 
     }

@@ -5,17 +5,22 @@ import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.BasePlanningChainSupportFactoryOrAction;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Slf4j
-public class FactoryActionShadowGameProducingDataTimeVariableListener implements VariableListener<TownshipSchedulingProblem, SchedulingPlayerFactoryAction> {
+public class FactoryActionShadowGameProducingDataTimeVariableListener
+        implements VariableListener<TownshipSchedulingProblem, SchedulingPlayerFactoryAction> {
 
     @Override
     public void beforeVariableChanged(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            @NonNull SchedulingPlayerFactoryAction schedulingPlayerFactoryAction
+            @NonNull SchedulingPlayerFactoryAction factoryOrAction
     ) {
 
     }
@@ -23,15 +28,70 @@ public class FactoryActionShadowGameProducingDataTimeVariableListener implements
     @Override
     public void afterVariableChanged(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
+            @NonNull SchedulingPlayerFactoryAction factoryOrAction
+    ) {
+        doUpdateShadowVariable(scoreDirector, factoryOrAction);
+    }
+
+    private void doUpdateShadowVariable(
+            @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             @NonNull SchedulingPlayerFactoryAction schedulingPlayerFactoryAction
     ) {
-        doComputeShadowInGameProducingDateTime(scoreDirector, schedulingPlayerFactoryAction);
+        SchedulingPlayerFactoryAction currentAction = schedulingPlayerFactoryAction;
+        while (currentAction != null) {
+            SchedulingPlayerFactoryAction planningNext = currentAction.getPlanningNext();
+
+            scoreDirector.beforeVariableChanged(currentAction, "shadowGameProducingDataTime");
+            currentAction.setShadowGameProducingDataTime(
+                    calcShadowGameProducingDataTime(
+                            currentAction.getPlanningFactory(),
+                            currentAction.getPlanningPrevious(),
+                            currentAction.getPlanningPlayerArrangeDateTime()
+                    )
+            );
+            scoreDirector.afterVariableChanged(currentAction, "shadowGameProducingDataTime");
+
+
+            currentAction = planningNext;
+        }
+
     }
+
+    private LocalDateTime calcShadowGameProducingDataTime(
+            SchedulingFactoryInstance planningFactory,
+            BasePlanningChainSupportFactoryOrAction planningPrevious,
+            LocalDateTime currentPlanningArrangeDateTime
+    ) {
+        if (planningFactory == null) {
+            return null;
+        }
+
+        if (currentPlanningArrangeDateTime == null) {
+            return null;
+        }
+
+        if (planningFactory.getProducingStructureType() == ProducingStructureType.SLOT) {
+            return currentPlanningArrangeDateTime;
+        } else {
+            Duration finishDurationFromFactory
+                    = planningFactory.nextAvailableAsDuration(currentPlanningArrangeDateTime);
+            Duration finishDurationFromPreviousCompleted
+                    = planningPrevious.nextAvailableAsDuration(currentPlanningArrangeDateTime);
+            return (finishDurationFromFactory == null || finishDurationFromPreviousCompleted == null)
+                    ? null
+                    : currentPlanningArrangeDateTime.plus(
+                            finishDurationFromFactory.compareTo(finishDurationFromPreviousCompleted) >= 0
+                                    ? finishDurationFromFactory
+                                    : finishDurationFromPreviousCompleted
+                    );
+        }
+    }
+
 
     @Override
     public void beforeEntityAdded(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            @NonNull SchedulingPlayerFactoryAction schedulingPlayerFactoryAction
+            @NonNull SchedulingPlayerFactoryAction factoryOrAction
     ) {
 
     }
@@ -39,83 +99,15 @@ public class FactoryActionShadowGameProducingDataTimeVariableListener implements
     @Override
     public void afterEntityAdded(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            @NonNull SchedulingPlayerFactoryAction schedulingPlayerFactoryAction
+            @NonNull SchedulingPlayerFactoryAction factoryOrAction
     ) {
-        doComputeShadowInGameProducingDateTime(scoreDirector, schedulingPlayerFactoryAction);
-    }
-
-    private void doComputeShadowInGameProducingDateTime(
-            @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            @NonNull SchedulingPlayerFactoryAction schedulingPlayerFactoryAction
-    ) {
-        SchedulingFactoryInstance factoryInstance = schedulingPlayerFactoryAction.getPlanningFactory();
-        if (factoryInstance == null) {
-            schedulingPlayerFactoryAction.clearShadowVariable();
-            return;
-        }
-
-        ProducingStructureType factoryProducingType
-                = factoryInstance.getSchedulingFactoryInfo().getProducingStructureType();
-        LocalDateTime planningPlayerDoItDateTime
-                = schedulingPlayerFactoryAction.getPlanningPlayerDoItDateTime();
-        SchedulingGameActionExecutionMode planningProducingExecutionMode
-                = schedulingPlayerFactoryAction.getPlanningProducingExecutionMode();
-        SchedulingPlayerFactoryAction planningPrevious
-                = (SchedulingPlayerFactoryAction) schedulingPlayerFactoryAction.getPlanningPrevious();
-
-        if (planningPrevious == null) {
-            scoreDirector.beforeVariableChanged(schedulingPlayerFactoryAction,"shadowGameProducingDataTime");
-            schedulingPlayerFactoryAction.setShadowGameProducingDataTime(planningPlayerDoItDateTime);
-            scoreDirector.afterVariableChanged(schedulingPlayerFactoryAction,"shadowGameProducingDataTime");
-
-            LocalDateTime shadowGameCompleteDateTime
-                    = planningPlayerDoItDateTime.plus(planningProducingExecutionMode.getExecuteDuration());
-            scoreDirector.beforeVariableChanged(schedulingPlayerFactoryAction,"shadowGameCompleteDateTime");
-            schedulingPlayerFactoryAction.setShadowGameCompleteDateTime(shadowGameCompleteDateTime);
-            scoreDirector.afterVariableChanged(schedulingPlayerFactoryAction,"shadowGameCompleteDateTime");
-        }else {
-            if (factoryProducingType == ProducingStructureType.QUEUE) {
-
-                LocalDateTime previousShadowGameCompleteDateTime = planningPrevious.getShadowGameCompleteDateTime();
-                scoreDirector.beforeVariableChanged(planningPrevious,"shadowGameProducingDataTime");
-                planningPrevious.setShadowGameProducingDataTime(
-                        planningPlayerDoItDateTime.isAfter(previousShadowGameCompleteDateTime)
-                                ? planningPlayerDoItDateTime
-                                : previousShadowGameCompleteDateTime
-                );
-                scoreDirector.afterVariableChanged(planningPrevious,"shadowGameProducingDataTime");
-
-                LocalDateTime shadowGameCompleteDateTime = planningPlayerDoItDateTime.plus(
-                        planningProducingExecutionMode.getExecuteDuration()
-                );
-                scoreDirector.beforeVariableChanged(planningPrevious,"shadowGameCompleteDateTime");
-                planningPrevious.setShadowGameCompleteDateTime(shadowGameCompleteDateTime);
-                scoreDirector.afterVariableChanged(planningPrevious,"shadowGameCompleteDateTime");
-
-            } else if (factoryProducingType == ProducingStructureType.SLOT) {
-
-                scoreDirector.beforeVariableChanged(schedulingPlayerFactoryAction,"shadowGameProducingDataTime");
-                schedulingPlayerFactoryAction.setShadowGameProducingDataTime(planningPlayerDoItDateTime);
-                scoreDirector.afterVariableChanged(schedulingPlayerFactoryAction,"shadowGameProducingDataTime");
-
-                LocalDateTime shadowGameCompleteDateTime
-                        = planningPlayerDoItDateTime.plus(planningProducingExecutionMode.getExecuteDuration());
-                scoreDirector.beforeVariableChanged(schedulingPlayerFactoryAction,"shadowGameCompleteDateTime");
-                schedulingPlayerFactoryAction.setShadowGameCompleteDateTime(shadowGameCompleteDateTime);
-                scoreDirector.afterVariableChanged(schedulingPlayerFactoryAction,"shadowGameCompleteDateTime");
-
-            }else {
-                log.warn("Run To Here");
-            }
-        }
-
-
+        doUpdateShadowVariable(scoreDirector, factoryOrAction);
     }
 
     @Override
     public void beforeEntityRemoved(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            @NonNull SchedulingPlayerFactoryAction schedulingPlayerFactoryAction
+            @NonNull SchedulingPlayerFactoryAction factoryOrAction
     ) {
 
     }
@@ -123,8 +115,9 @@ public class FactoryActionShadowGameProducingDataTimeVariableListener implements
     @Override
     public void afterEntityRemoved(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            @NonNull SchedulingPlayerFactoryAction schedulingPlayerFactoryAction
+            @NonNull SchedulingPlayerFactoryAction factoryOrAction
     ) {
 
     }
+
 }

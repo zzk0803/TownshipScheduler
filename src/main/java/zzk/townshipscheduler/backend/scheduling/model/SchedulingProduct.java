@@ -1,9 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.Value;
+import lombok.*;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForScheduling;
 import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoJustId;
@@ -17,33 +14,41 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public final class SchedulingProduct implements SchedulingGameActionObject {
+@ToString(onlyExplicitlyIncluded = true)
+public final class SchedulingProduct implements IGameActionObject {
 
     @EqualsAndHashCode.Include
     private Id id;
 
+    @ToString.Include
     private String name;
 
     private int level;
 
     private int gainWhenCompleted = 1;
 
+    @ToString.Include
     private SchedulingFactoryInfo requireFactory;
 
-    private Set<SchedulingGameActionExecutionMode> producingExecutionModeSet;
+    private Set<SchedulingProducingExecutionMode> executionModeSet;
 
     public SchedulingProduct(
             Id id,
             String name,
             int level,
             SchedulingFactoryInfo requireFactory,
-            Set<SchedulingGameActionExecutionMode> executionModeSet
+            Set<SchedulingProducingExecutionMode> executionModeSet
     ) {
         this.id = id;
         this.name = name;
         this.level = level;
         this.requireFactory = requireFactory;
-        this.producingExecutionModeSet = executionModeSet;
+        this.executionModeSet = executionModeSet;
+    }
+
+    @Override
+    public Long longIdentity() {
+        return getId().getValue();
     }
 
     @Override
@@ -51,21 +56,22 @@ public final class SchedulingProduct implements SchedulingGameActionObject {
         return getName();
     }
 
-    @Override
-    public List<SchedulingPlayerWarehouseAction> calcWarehouseActions() {
-        return List.of();
-    }
+//    @Override
+//    public List<SchedulingPlayerWarehouseAction> calcWarehouseActions() {
+//        return List.of(
+//                new SchedulingPlayerWarehouseAction(this)
+//        );
+//    }
+//
+//    @Override
+//    public List<SchedulingPlayerWarehouseAction> calcWarehouseActions(IGameActionObject targetObject) {
+//        return List.of(new SchedulingPlayerWarehouseAction(targetObject));
+//    }
 
     @Override
     public List<SchedulingPlayerFactoryAction> calcFactoryActions() {
         return List.of(
                 new SchedulingPlayerFactoryAction(
-                        PlayerFactoryActionType.ARRANGE_PRODUCING,
-                        this,
-                        this
-                ),
-                new SchedulingPlayerFactoryAction(
-                        PlayerFactoryActionType.REAP_AND_STOCK,
                         this,
                         this
                 )
@@ -73,39 +79,18 @@ public final class SchedulingProduct implements SchedulingGameActionObject {
     }
 
     @Override
-    public List<SchedulingPlayerFactoryAction> calcFactoryActions(SchedulingGameActionObject targetObject) {
+    public List<SchedulingPlayerFactoryAction> calcFactoryActions(IGameActionObject targetObject) {
         return List.of(
                 new SchedulingPlayerFactoryAction(
-                        PlayerFactoryActionType.ARRANGE_PRODUCING,
-                        targetObject,
-                        this
-                ),
-                new SchedulingPlayerFactoryAction(
-                        PlayerFactoryActionType.REAP_AND_STOCK,
                         targetObject,
                         this
                 )
         );
-    }
-
-    @Override
-    public Set<SchedulingGameActionExecutionMode> getExecutionModeSet() {
-        return getProducingExecutionModeSet();
     }
 
     @Override
     public Optional<LocalDateTime> optionalDeadline() {
         return Optional.empty();
-    }
-
-    @Override
-    public String toString() {
-        return "{\"SchedulingProduct\":{"
-               + "        \"id\":" + id
-               + ",         \"name\":\"" + name + "\""
-               + ",         \"level\":\"" + level + "\""
-               + ",         \"requireFactory\":" + requireFactory.getCategoryName()
-               + "}}";
     }
 
     @Value
@@ -131,6 +116,11 @@ public final class SchedulingProduct implements SchedulingGameActionObject {
 
         public static Id of(ProductEntity productEntity) {
             return of(productEntity.getId());
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(getValue());
         }
 
     }
