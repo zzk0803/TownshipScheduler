@@ -102,7 +102,7 @@ public class PlayerService {
 
         PlayerEntity managedPlayer = playerEntityRepository.save(playerEntity);
         FieldFactoryInfoEntity field
-                = fieldFactoryInfoEntityRepository.findByCategory(FieldFactoryInfoEntity.FIELD_CRITERIA)
+                = fieldFactoryInfoEntityRepository.findByCategory(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA)
                 .orElseThrow();
         IntStream.range(0, managedPlayer.getFieldAmount())
                 .mapToObj(i -> field.toFieldFactoryEntity(()->managedPlayer))

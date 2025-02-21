@@ -66,7 +66,7 @@ public class Application {
                     playerEntityRepository.save(playerEntity);
                     warehouseEntityRepository.save(warehouseEntity);
 
-                    playerService.playerFactoryToCorrespondedLevelInBatch(playerEntity);
+//                    playerService.playerFactoryToCorrespondedLevelInBatch(playerEntity);
                 });
 
             }

@@ -1,7 +1,5 @@
 package zzk.townshipscheduler.backend.scheduling;
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
-import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverJob;
 import ai.timefold.solver.core.api.solver.SolverManager;
 import ai.timefold.solver.core.api.solver.SolverStatus;
@@ -23,8 +21,6 @@ import java.util.function.Consumer;
 public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
 
     private final SolverManager<TownshipSchedulingProblem, UUID> solverManager;
-
-    private final SolutionManager<TownshipSchedulingProblem, HardMediumSoftLongScore> solutionManager;
 
     private final Map<UUID, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
 

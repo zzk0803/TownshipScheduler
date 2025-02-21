@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class ActionIdRoller {
+public final class ActionIdRoller {
 
     private static final Map<String, ActionIdRoller> HOLDER_MAPPING = new LinkedHashMap<>();
 

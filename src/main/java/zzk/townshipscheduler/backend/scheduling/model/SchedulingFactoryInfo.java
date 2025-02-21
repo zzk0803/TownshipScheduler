@@ -1,14 +1,13 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-import lombok.Value;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import lombok.*;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.select.*;
 
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -17,8 +16,8 @@ import java.util.Set;
 @ToString(onlyExplicitlyIncluded = true)
 public class SchedulingFactoryInfo {
 
+    @PlanningId
     @ToString.Include
-    @EqualsAndHashCode.Include
     private Id id;
 
     @ToString.Include
@@ -28,6 +27,8 @@ public class SchedulingFactoryInfo {
     private int level;
 
     private Set<SchedulingProduct> portfolio;
+
+    private Set<SchedulingFactoryInstance> factoryInstances;
 
     @ToString.Include
     private ProducingStructureType producingStructureType;
@@ -46,16 +47,22 @@ public class SchedulingFactoryInfo {
 
     public SchedulingFactoryInfo() {
         this.portfolio = new LinkedHashSet<>();
+        this.factoryInstances = new LinkedHashSet<>();
     }
 
     public void appendPortfolioProduct(SchedulingProduct schedulingProduct) {
         this.portfolio.add(schedulingProduct);
     }
 
-    @Value
-    public static class Id {
+    public void appendFactoryInstance(SchedulingFactoryInstance schedulingFactoryInstance) {
+        this.factoryInstances.add(schedulingFactoryInstance);
+    }
 
-        long value;
+    @Value
+    public static class Id implements Comparable<Id> {
+
+        @Getter
+        private long value;
 
         public static Id of(FieldFactoryInfoEntityDtoJustId factoryDto) {
             return of(factoryDto.getId());
@@ -87,6 +94,12 @@ public class SchedulingFactoryInfo {
 
         public static Id of(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
             return of(fieldFactoryInfoEntity.getId());
+        }
+
+        @Override
+        public int compareTo(Id that) {
+            Comparator<Id> comparator = Comparator.comparing(Id::getValue);
+            return comparator.compare(this, that);
         }
 
     }

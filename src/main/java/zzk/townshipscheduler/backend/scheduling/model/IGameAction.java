@@ -10,7 +10,7 @@
 //
 //    String actionUuid();
 //
-//    List<Consequence> toConsequence();
+//    List<Consequence> actionConsequence();
 //
 //    @Data
 //    @Builder

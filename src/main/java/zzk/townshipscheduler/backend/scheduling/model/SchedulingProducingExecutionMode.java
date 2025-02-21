@@ -1,11 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningPin;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import zzk.townshipscheduler.backend.scheduling.ProductAmountBill;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -18,7 +15,6 @@ import java.util.stream.IntStream;
 @ToString(onlyExplicitlyIncluded = true)
 public class SchedulingProducingExecutionMode {
 
-    @PlanningId
     @EqualsAndHashCode.Include
     @ToString.Include
     private Integer id;
@@ -31,12 +27,6 @@ public class SchedulingProducingExecutionMode {
     @ToString.Include
     private Duration executeDuration = Duration.ZERO;
 
-    @PlanningPin
-    private boolean boolForceSetupExecutionMode;
-
-    @PlanningPin
-    private boolean boolForceSetupByScheduling;
-
 //    @InverseRelationShadowVariable(sourceVariableName = "planningProducingExecutionMode")
 //    private List<SchedulingPlayerFactoryAction> assignedProducingActionSet = new ArrayList<>();
 
@@ -44,7 +34,7 @@ public class SchedulingProducingExecutionMode {
     }
 
     public List<SchedulingPlayerFactoryAction> materialsActions() {
-        return atomicProduct()
+        return boolAtomicProduct()
                 ? List.of()
                 : materials.entrySet().stream()
                         .flatMap(entry -> {
@@ -57,7 +47,7 @@ public class SchedulingProducingExecutionMode {
                         .toList();
     }
 
-    public boolean atomicProduct() {
+    public boolean boolAtomicProduct() {
         return materials == null || materials.isEmpty();
     }
 

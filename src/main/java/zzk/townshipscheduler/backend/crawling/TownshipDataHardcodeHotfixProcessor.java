@@ -169,7 +169,7 @@ class TownshipDataHardcodeHotfixProcessor {
             Optional<FieldFactoryInfoEntity> fieldOptional
                     = fieldFactoryInfoEntityRepository.findByCategory("Crops");
             FieldFactoryInfoEntity field = fieldOptional.orElseThrow();
-            field.setCategory(FieldFactoryInfoEntity.FIELD_CRITERIA);
+            field.setCategory(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA);
             field.setLevel(1);
             field.setProducingType(ProducingStructureType.SLOT);
             field.setBoolCategoryField(true);

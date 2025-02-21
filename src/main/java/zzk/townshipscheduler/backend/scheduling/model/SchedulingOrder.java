@@ -6,7 +6,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.select.OrderEntityDto;
-import zzk.townshipscheduler.backend.scheduling.ProductAmountBill;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -58,10 +57,9 @@ public final class SchedulingOrder implements IGameActionObject {
 
     @Override
     public String readable() {
-        String stringBuilder = "Order#" + getId() +
-                               "~Type::" + getOrderType().name() +
-                               "~Deadline::" + (getDeadline() == null ? "N/A" : getDeadline());
-        return stringBuilder;
+        return "Order#" + getId() +
+               "~Type::" + getOrderType().name() +
+               "~Deadline::" + (getDeadline() == null ? "N/A" : getDeadline());
     }
 
 //    @Override
@@ -80,24 +78,24 @@ public final class SchedulingOrder implements IGameActionObject {
 
     @Override
     public List<SchedulingPlayerFactoryAction> calcFactoryActions() {
-        List<SchedulingPlayerFactoryAction> result
-                = this.getProductAmountBill().entrySet().stream()
-                .flatMap(entry -> {
-                    SchedulingProduct schedulingProduct = entry.getKey();
-                    int amount = entry.getValue();
-                    return IntStream.range(0, amount)
-                            .mapToObj(_ -> schedulingProduct.calcFactoryActions())
-                            .flatMap(Collection::stream);
-                })
-                .toList();
-
-        return result;
+        return this.calcFactoryActions(this);
+//        return this.getProductAmountBill().entrySet()
+//                .stream()
+//                .flatMap(entry -> {
+//                    SchedulingProduct schedulingProduct = entry.getKey();
+//                    int amount = entry.getValue();
+//                    return IntStream.range(0, amount)
+//                            .mapToObj(_ -> schedulingProduct.calcFactoryActions(this))
+//                            .flatMap(Collection::stream);
+//                })
+//                .toList();
     }
 
     @Override
     public List<SchedulingPlayerFactoryAction> calcFactoryActions(IGameActionObject targetObject) {
         List<SchedulingPlayerFactoryAction> result
-                = this.getProductAmountBill().entrySet().stream()
+                = this.getProductAmountBill().entrySet()
+                .stream()
                 .flatMap(entry -> {
                     SchedulingProduct schedulingProduct = entry.getKey();
                     int amount = entry.getValue();

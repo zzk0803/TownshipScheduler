@@ -3,8 +3,10 @@ package zzk.townshipscheduler.ui.views.scheduling;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -13,14 +15,9 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.ProductAmountBill;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingExecutionMode;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
@@ -31,19 +28,18 @@ import java.util.UUID;
 @Route("/scheduling")
 @Menu
 @PermitAll
+@PreserveOnRefresh
+@Setter
+@Getter
 public class SchedulingView extends VerticalLayout implements HasUrlParameter<String> {
 
-    @Getter
-    @Setter
     private final SchedulingViewPresenter schedulingViewPresenter;
 
-    @Getter
-    @Setter
     private UI ui;
 
-    @Getter
-    @Setter
     private Grid<SchedulingPlayerFactoryAction> actionGrid;
+
+    private Paragraph scoreAnalysisParagraph;
 
     public SchedulingView(
             SchedulingViewPresenter schedulingViewPresenter
@@ -90,22 +86,19 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         actionGrid.addColumn(SchedulingPlayerFactoryAction::getHumanReadable)
                 .setHeader("Description")
                 .setResizable(true);
-        actionGrid.addColumn(SchedulingPlayerFactoryAction::getPlanningPlayerArrangeDateTime)
-                .setHeader("When To Do")
-                .setResizable(true);
-        actionGrid.addComponentColumn(
-                        playerFactoryAction -> {
-                            SchedulingProducingExecutionMode producingExecutionMode = playerFactoryAction.getPlanningProducingExecutionMode();
-                            return new Text(producingExecutionMode != null ? producingExecutionMode.toString() : "N/A");
-                        }
-                ).setHeader("Execution Mode(Producing Use)")
-                .setResizable(true);
+//        actionGrid.addComponentColumn(
+//                        playerFactoryAction -> {
+//                            SchedulingProducingExecutionMode producingExecutionMode = playerFactoryAction.getProducingExecutionMode();
+//                            return new Text(producingExecutionMode != null ? producingExecutionMode.toString() : "N/A");
+//                        }
+//                ).setHeader("Execution Mode(Producing Use)")
+//                .setResizable(true);
         actionGrid.addComponentColumn(
                 playerFactoryAction -> {
-                    SchedulingFactoryInstance planningFactory = playerFactoryAction.getPlanningFactory();
+                    SchedulingFactoryTimeSlotInstance planningFactory = playerFactoryAction.getPlanningTimeSlotFactory();
                     return new Text(Objects.toString(planningFactory, "N/A"));
                 }
-        ).setHeader("Factory Instance(Producing Use)").setResizable(true);
+        ).setHeader("Factory/DateTime").setResizable(true);
 
         schedulingViewPresenter.setupPlayerActionGrid(actionGrid);
 
@@ -153,9 +146,18 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                 }
         );
         schedulingBtnPanel.setWidthFull();
-        schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.END);
-        schedulingBtnPanel.add(triggerButton);
+        schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.AROUND);
+        schedulingBtnPanel.add(buildScorePanel(),triggerButton);
         return schedulingBtnPanel;
+    }
+
+    private HorizontalLayout buildScorePanel() {
+        HorizontalLayout layout = new HorizontalLayout();
+        layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        layout.setJustifyContentMode(JustifyContentMode.START);
+        scoreAnalysisParagraph = new Paragraph();
+        layout.add(new Details("Score Analysis:", scoreAnalysisParagraph));
+        return layout;
     }
 
 

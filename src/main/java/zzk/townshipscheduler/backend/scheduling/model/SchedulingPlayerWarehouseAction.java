@@ -8,7 +8,7 @@
 //import lombok.Data;
 //import lombok.EqualsAndHashCode;
 //import lombok.ToString;
-//import zzk.townshipscheduler.backend.scheduling.ProductAmountBill;
+//import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
 //
 //import java.time.LocalDateTime;
 //import java.util.ArrayList;
@@ -75,8 +75,8 @@
 //        Objects.requireNonNull(getActionId());
 //    }
 //
-//    public void idRoller(ActionIdRoller idRoller) {
-//        idRoller.setup(this);
+//    public void activate(ActionIdRoller activate) {
+//        activate.setup(this);
 //    }
 //
 //    @Override
@@ -85,7 +85,7 @@
 //    }
 //
 //    @Override
-//    public List<Consequence> toConsequence() {
+//    public List<Consequence> actionConsequence() {
 //
 //        if (getPlanningPlayerDoItDateTime() == null) {
 //            return List.of();

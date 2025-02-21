@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 )
 public class FieldFactoryInfoEntity {
 
-    public static final String FIELD_CRITERIA = "Field";
+    public static final String FIELD_CATEGORY_CRITERIA = "Field";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

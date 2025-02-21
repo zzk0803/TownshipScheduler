@@ -7,6 +7,7 @@ import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoJustId;
 import zzk.townshipscheduler.backend.persistence.select.ProductEntityProjectionJustId;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -94,9 +95,10 @@ public final class SchedulingProduct implements IGameActionObject {
     }
 
     @Value
-    public static class Id {
+    public static class Id implements Comparable<Id> {
 
-        long value;
+        @Getter
+        private long value;
 
         public static Id of(ProductEntityDtoForScheduling productDto) {
             return of(productDto.getId());
@@ -121,6 +123,12 @@ public final class SchedulingProduct implements IGameActionObject {
         @Override
         public String toString() {
             return String.valueOf(getValue());
+        }
+
+        @Override
+        public int compareTo(Id that) {
+            Comparator<Id> comparator = Comparator.comparing(Id::getValue);
+            return comparator.compare(this, that);
         }
 
     }
