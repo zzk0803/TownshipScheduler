@@ -7,9 +7,9 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -27,13 +27,64 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidExceedOrderDueDateTime(constraintFactory),
                 //HARD-REVISE
                 //considerNextSchedulingForUncertainExecutionMode(constraintFactory),
+                //SOFT-ASSIGN
+                shouldEveryActionHasAssignedFactory(constraintFactory),
+                shouldEveryActionNotInSameSequence(constraintFactory),
                 //SOFT-MAKESPAN
                 preferMinimizeMakeSpan(constraintFactory),
                 //SOFT-BATTER
+                preferSameProductItsActionInSameTimeslot(constraintFactory),
+                preferArrangeNotInSleepTime(constraintFactory)
                 //preferLoadBalanceForFactoryInstance(constraintFactory),
                 //preferArrangeInSameTimeGroupingMore(constraintFactory),
-                //preferArrangeNotInSleepTime(constraintFactory)
         };
+    }
+
+    private Constraint forbidArrangeOutOfFactoryProducingCapacity(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEach(SchedulingFactoryInstance.class)
+                .join(
+                        SchedulingPlayerFactoryAction.class,
+                        Joiners.equal(
+                                Function.identity(),
+                                factoryAction -> factoryAction.getPlanningTimeSlotFactory().getFactoryInstance()
+                        )
+                )
+                .groupBy(
+                        (factory, action) -> factory,
+                        ConstraintCollectors.toList((factory, action) -> action)
+                )
+                .groupBy(
+                        (factory, action) -> factory,
+                        (factory, actions)
+                                -> actions.stream()
+                                .sorted()
+                                .map(SchedulingPlayerFactoryAction::calcActionConsequence)
+                                .flatMap(Collection::stream)
+                                .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryWaitQueue)
+                                .sorted()
+                                .toList()
+                )
+                .filter((factoryInstance, actionConsequences) -> {
+                    int remain = factoryInstance.getProducingLength();
+                    for (ActionConsequence consequence : actionConsequences) {
+                        ActionConsequence.SchedulingResource resource = consequence.getResource();
+                        if (resource instanceof ActionConsequence.FactoryWaitQueue) {
+                            remain = consequence.getResourceChange().apply(remain);
+                            if (remain < 0) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                })
+                .penalize(BendableScore.ofHard(
+                        TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                        TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                        TownshipSchedulingProblem.HARD_BROKEN,
+                        10000
+                ))
+                .asConstraint("forbidArrangeOutOfFactoryProducingCapacity");
     }
 
 
@@ -66,66 +117,25 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 //                ).asConstraint("forbidMismatchExecutionMode");
 //    }
 
-    private Constraint forbidArrangeOutOfFactoryProducingCapacity(ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEach(SchedulingFactoryInstance.class)
-                .join(
-                        SchedulingPlayerFactoryAction.class,
-                        Joiners.equal(
-                                Function.identity(),
-                                factoryAction -> factoryAction.getPlanningTimeSlotFactory().getFactoryInstance()
-                        )
-                )
-                .groupBy(
-                        (factory, action) -> factory,
-                        ConstraintCollectors.toList((factory, action) -> action)
-                )
-                .expand((factoryInstance, factoryActions) -> {
-                    return factoryActions.stream()
-                            .sorted()
-                            .map(SchedulingPlayerFactoryAction::calcAccumulatedConsequence)
-                            .flatMap(Collection::stream)
-                            .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryWaitQueue)
-                            .sorted()
-                            .toList();
-                })
-                .filter((factoryInstance, factoryActions, actionConsequences) -> {
-                    int remain = factoryInstance.getProducingLength();
-                    for (ActionConsequence consequence : actionConsequences) {
-                        ActionConsequence.SchedulingResource resource = consequence.getResource();
-                        if (resource instanceof ActionConsequence.FactoryWaitQueue) {
-                            remain = consequence.getResourceChange().apply(remain);
-                            if (remain < 0) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                })
-                .penalize(BendableScore.ofHard(
-                        TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                        TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                        TownshipSchedulingProblem.HARD_BROKEN,
-                        5000
-                ))
-                .asConstraint("forbidArrangeOutOfFactoryProducingCapacity");
-    }
-
     private Constraint forbidArrangeOutOfProductStock(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingPlayerFactoryAction.class)
                 .groupBy(
                         SchedulingPlayerFactoryAction::getSchedulingWarehouse,
                         ConstraintCollectors.toList()
                 )
-                .filter((schedulingWarehouse, factoryActions) -> {
+                .groupBy(
+                        (schedulingWarehouse, factoryActions) -> schedulingWarehouse,
+                        (schedulingWarehouse, factoryActions) ->
+                                factoryActions.stream()
+                                        .sorted()
+                                        .map(SchedulingPlayerFactoryAction::calcActionConsequence)
+                                        .flatMap(Collection::stream)
+                                        .filter(consequence -> consequence.getResource() instanceof ActionConsequence.ProductStock)
+                                        .sorted()
+                                        .toList()
+                )
+                .filter((schedulingWarehouse, consequences) -> {
                     Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(schedulingWarehouse.getProductAmountMap());
-                    List<ActionConsequence> consequences = factoryActions.stream()
-                            .sorted()
-                            .map(SchedulingPlayerFactoryAction::calcAccumulatedConsequence)
-                            .flatMap(Collection::stream)
-                            .filter(consequence -> consequence.getResource() instanceof ActionConsequence.ProductStock)
-                            .sorted()
-                            .toList();
                     for (ActionConsequence consequence : consequences) {
                         ActionConsequence.ProductStock productStock = (ActionConsequence.ProductStock) consequence.getResource();
                         ActionConsequence.SchedulingResourceChange resourceChange = consequence.getResourceChange();
@@ -148,20 +158,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 ))
                 .asConstraint("forbidArrangeOutOfProductStock");
     }
-
-//    private Constraint forbidArrangeBrokenPrerequisite(ConstraintFactory constraintFactory) {
-//        return constraintFactory
-//                .forEach(SchedulingPlayerFactoryAction.class)
-//                .filter(SchedulingPlayerFactoryAction::boolArrangeBeforePrerequisiteDone)
-//                .penalize(BendableScore.ofHard(
-//                        TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-//                        TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-//                        TownshipSchedulingProblem.HARD_BROKEN,
-//                        5000
-//
-//                ))
-//                .asConstraint("forbidArrangeBrokenPrerequisite");
-//    }
 
     private Constraint forbidExceedOrderDueDateTime(ConstraintFactory constraintFactory) {
         return constraintFactory
@@ -197,25 +193,70 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidExceedOrderDueDateTime");
     }
 
+    private Constraint shouldEveryActionHasAssignedFactory(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEachIncludingUnassigned(SchedulingPlayerFactoryAction.class)
+                .filter(action -> action.getPlanningTimeSlotFactory() == null)
+                .penalize(
+                        BendableScore.ofSoft(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_ASSIGNED,
+                                1
+                        )
+                )
+                .asConstraint("shouldEveryActionHasAssignedFactory");
+    }
+
+    private Constraint shouldEveryActionNotInSameSequence(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEachUniquePair(
+                        SchedulingPlayerFactoryAction.class,
+                        Joiners.equal(SchedulingPlayerFactoryAction::getSequence),
+                        Joiners.greaterThan(SchedulingPlayerFactoryAction::getActionId)
+                )
+                .penalize(
+                        BendableScore.ofSoft(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_ASSIGNED,
+                                1
+                        )
+                )
+                .asConstraint("shouldEveryActionNotInSameSequence");
+    }
+
     private Constraint preferMinimizeMakeSpan(ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEach(SchedulingPlayerFactoryAction.class)
-                .map(SchedulingPlayerFactoryAction::getShadowGameCompleteDateTime)
-                .join(SchedulingWorkTimeLimit.class)
                 .penalize(
                         BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_MAKE_SPAN,
                                 1
-                        ), (localDateTime, workTimeLimit) -> {
-                            LocalDateTime startDateTime = workTimeLimit.getStartDateTime();
-                            LocalDateTime completeDateTime = localDateTime;
+                        ), (factoryAction) -> {
+                            LocalDateTime startDateTime = factoryAction.getWorkTimeLimit().getStartDateTime();
+                            LocalDateTime completeDateTime = factoryAction.getShadowGameCompleteDateTime();
                             return Math.toIntExact(Duration.between(startDateTime, completeDateTime).toMinutes());
                         }
                 )
                 .asConstraint("preferMinimizeMakeSpan");
     }
+
+//    private Constraint forbidArrangeBrokenPrerequisite(ConstraintFactory constraintFactory) {
+//        return constraintFactory
+//                .forEach(SchedulingPlayerFactoryAction.class)
+//                .filter(SchedulingPlayerFactoryAction::boolArrangeBeforePrerequisiteDone)
+//                .penalize(BendableScore.ofHard(
+//                        TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+//                        TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+//                        TownshipSchedulingProblem.HARD_BROKEN,
+//                        5000
+//
+//                ))
+//                .asConstraint("forbidArrangeBrokenPrerequisite");
+//    }
 
 //    private Constraint considerNextSchedulingForUncertainExecutionMode(ConstraintFactory constraintFactory) {
 //        return constraintFactory.forEach(SchedulingProduct.class)
@@ -235,19 +276,39 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 //                )).asConstraint("considerNextSchedulingForUncertainExecutionMode");
 //    }
 
-    private Constraint shouldEveryActionHasAssignedFactory(ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEachIncludingUnassigned(SchedulingPlayerFactoryAction.class)
-                .filter(action -> action.getPlanningTimeSlotFactory() == null)
+    private Constraint preferSameProductItsActionInSameTimeslot(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingPlayerFactoryAction.class)
+                .groupBy(
+                        SchedulingPlayerFactoryAction::getSchedulingProduct,
+                        ConstraintCollectors.toList(action -> action.getPlanningTimeSlotFactory().getDateTimeSlot())
+                )
                 .penalize(
                         BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_ASSIGNED,
+                                TownshipSchedulingProblem.SOFT_BATTER,
                                 1
-                        )
+                        ), (product, dateTimeSlots) -> dateTimeSlots.size()
                 )
-                .asConstraint("shouldEveryActionHasAssignedFactory");
+                .asConstraint("preferSameProductItsActionInSameTimeslot");
+    }
+
+    private Constraint preferArrangeNotInSleepTime(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingPlayerFactoryAction.class)
+                .map(SchedulingPlayerFactoryAction::getArrangeDateTimeSlot)
+                .filter(timeSlot -> {
+                    LocalTime localTime = timeSlot.getStart().toLocalTime();
+                    LocalTime sleepStart = LocalTime.MIDNIGHT.minusHours(1);
+                    LocalTime sleepEnd = LocalTime.MIDNIGHT.plusHours(7);
+                    return localTime.isAfter(sleepStart) && localTime.isBefore(sleepEnd);
+                })
+                .penalize(BendableScore.ofSoft(
+                        TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                        TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                        TownshipSchedulingProblem.SOFT_BATTER,
+                        10000
+                ))
+                .asConstraint("preferArrangeNotInSleepTime");
     }
 
 }

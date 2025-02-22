@@ -5,8 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @Data
@@ -47,8 +46,35 @@ public class SchedulingProducingExecutionMode {
                         .toList();
     }
 
+    private ArrayList<SchedulingPlayerFactoryAction> deepMaterialsActions() {
+        LinkedList<SchedulingPlayerFactoryAction> dealingChain = new LinkedList<>(materialsActions());
+        ArrayList<SchedulingPlayerFactoryAction> factoryActions = new ArrayList<>();
+
+        while (!dealingChain.isEmpty()) {
+            SchedulingPlayerFactoryAction currentFactoryAction = dealingChain.removeFirst();
+
+            Set<SchedulingProducingExecutionMode> executionModes
+                    = currentFactoryAction.getCurrentActionObject().getExecutionModeSet();
+            SchedulingProducingExecutionMode producingExecutionMode
+                    = executionModes.stream()
+                    .min(Comparator.comparing(SchedulingProducingExecutionMode::getExecuteDuration))
+                    .orElseThrow();
+            currentFactoryAction.setProducingExecutionMode(producingExecutionMode);
+
+            List<SchedulingPlayerFactoryAction> materialsActions = producingExecutionMode.materialsActions();
+            materialsActions.forEach(dealingChain::addLast);
+
+        }
+
+        return factoryActions;
+    }
+
     public boolean boolAtomicProduct() {
         return materials == null || materials.isEmpty();
+    }
+
+    public boolean boolCompositeProduct() {
+        return !boolAtomicProduct();
     }
 
 

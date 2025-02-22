@@ -59,27 +59,55 @@ public class SchedulingFactoryTimeSlotInstance {
         return factoryInstance.getProducingLength();
     }
 
-//    public Duration nextAvailableAsDuration(LocalDateTime dateTime) {
-//        return getTailAction().nextAvailableAsDuration(dateTime);
-//    }
-
-    public SchedulingPlayerFactoryAction getTailAction() {
-        List<SchedulingPlayerFactoryAction> planningActionList = getInversedPlanningActionList()
-                .stream()
-                .sorted(Comparator.comparing(SchedulingPlayerFactoryAction::getSequence))
-                .collect(Collectors.toCollection(ArrayList::new));
-        return planningActionList.getLast();
+    public int calcRemainProducingQueueSize() {
+        int producingLength = getProducingLength();
+        List<ActionConsequence> factoryConsequence = calcFactoryConsequence();
+        return factoryConsequence.stream()
+                .sorted()
+                .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryWaitQueue)
+                .map(ActionConsequence::getResourceChange)
+                .reduce(
+                        producingLength,
+                        (integer, resourceChange) -> resourceChange.apply(integer),
+                        Integer::sum
+                );
     }
 
+    public List<ActionConsequence> calcFactoryConsequenceBefore(SchedulingPlayerFactoryAction action) {
+        if (!this.getInversedPlanningActionList().contains(action)) {
+            throw new IllegalArgumentException("action not in this factory happen");
+        }
+        List<ActionConsequence> actionConsequences = new ArrayList<>();
+        List<List<ActionConsequence>> collectingPreviousConsequences = new ArrayList<>();
+        SchedulingFactoryTimeSlotInstance iterating = this;
+        SchedulingFactoryTimeSlotInstance previous = null;
+        while (iterating.getPreviousPeriodOfFactory() != null) {
+            previous = iterating.getPreviousPeriodOfFactory();
+            collectingPreviousConsequences.add(previous.calcTimeSlotFactoryConsequence());
+            iterating = previous;
+        }
+
+        Collections.reverse(collectingPreviousConsequences);
+        for (List<ActionConsequence> consequences : collectingPreviousConsequences) {
+            actionConsequences.addAll(consequences);
+        }
+        List<ActionConsequence> thisBeforeActionConsequences = this.inversedPlanningActionList.stream()
+                .takeWhile(inversedAction -> inversedAction != action)
+                .map(SchedulingPlayerFactoryAction::calcActionConsequence)
+                .flatMap(Collection::stream)
+                .toList();
+        actionConsequences.addAll(thisBeforeActionConsequences);
+        return actionConsequences;
+    }
     public List<ActionConsequence> calcFactoryConsequence() {
         List<ActionConsequence> actionConsequences = new ArrayList<>();
         List<List<ActionConsequence>> collectingPreviousConsequences = new ArrayList<>();
         SchedulingFactoryTimeSlotInstance iterating = this;
         SchedulingFactoryTimeSlotInstance previous = null;
-        collectingPreviousConsequences.add(this.calcAccumulatedConsequence());
+        collectingPreviousConsequences.add(this.calcTimeSlotFactoryConsequence());
         while (iterating.getPreviousPeriodOfFactory() != null) {
             previous = iterating.getPreviousPeriodOfFactory();
-            collectingPreviousConsequences.add(previous.calcAccumulatedConsequence());
+            collectingPreviousConsequences.add(previous.calcTimeSlotFactoryConsequence());
             iterating = previous;
         }
 
@@ -90,11 +118,11 @@ public class SchedulingFactoryTimeSlotInstance {
         return actionConsequences;
     }
 
-    public List<ActionConsequence> calcAccumulatedConsequence() {
+    public List<ActionConsequence> calcTimeSlotFactoryConsequence() {
         return getInversedPlanningActionList()
                 .stream()
-                .sorted(Comparator.comparing(SchedulingPlayerFactoryAction::getSequence))
-                .map(SchedulingPlayerFactoryAction::calcAccumulatedConsequence)
+                .sorted()
+                .map(SchedulingPlayerFactoryAction::calcActionConsequence)
                 .flatMap(Collection::stream)
                 .toList();
     }

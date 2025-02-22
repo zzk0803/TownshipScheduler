@@ -7,6 +7,8 @@ import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import zzk.townshipscheduler.backend.scheduling.model.utility.FactoryActionDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.utility.PlanningTimeSlotFactoryStrengthComparator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -14,7 +16,7 @@ import java.util.*;
 
 
 @Data
-@PlanningEntity
+@PlanningEntity(difficultyComparatorClass = FactoryActionDifficultyComparator.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlayerFactoryAction>
 //        implements IGameAction
@@ -53,7 +55,8 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
     private Integer sequence;
 
     @PlanningVariable(
-            valueRangeProviderRefs = "schedulingFactoryTimeSlotValueRange"
+            valueRangeProviderRefs = "schedulingFactoryTimeSlotValueRange",
+            strengthComparatorClass = PlanningTimeSlotFactoryStrengthComparator.class
     )
     private SchedulingFactoryTimeSlotInstance planningTimeSlotFactory;
 
@@ -153,11 +156,11 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
 //        return !producingExecutionModeSet.contains(getProducingExecutionMode());
 //    }
 
-    public boolean boolFactoryMismatch() {
-        SchedulingFactoryInfo planningFactoryType = getPlanningTimeSlotFactory().getSchedulingFactoryInfo();
-        SchedulingProduct schedulingProduct = getSchedulingProduct();
-        return !planningFactoryType.getPortfolio().contains(schedulingProduct);
-    }
+//    public boolean boolFactoryMismatch() {
+//        SchedulingFactoryInfo planningFactoryType = getPlanningTimeSlotFactory().getSchedulingFactoryInfo();
+//        SchedulingProduct schedulingProduct = getSchedulingProduct();
+//        return !planningFactoryType.getPortfolio().contains(schedulingProduct);
+//    }
 
     public SchedulingProduct getSchedulingProduct() {
         return (SchedulingProduct) getCurrentActionObject();
@@ -287,7 +290,7 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
         return affectFactories;
     }
 
-    public List<ActionConsequence> calcAccumulatedConsequence() {
+    public List<ActionConsequence> calcActionConsequence() {
         if (getPlanningTimeSlotFactory() == null) {
             return List.of();
         }

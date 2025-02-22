@@ -27,6 +27,6 @@
 //        }
 //    }
 //
-//    public abstract List<PlayerFactoryActionConsequence> calcAccumulatedConsequence();
+//    public abstract List<PlayerFactoryActionConsequence> calcTimeSlotFactoryConsequence();
 //
 //}
