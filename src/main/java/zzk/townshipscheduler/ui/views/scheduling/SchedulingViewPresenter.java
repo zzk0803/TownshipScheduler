@@ -7,6 +7,7 @@ import ai.timefold.solver.core.config.solver.SolverManagerConfig;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.spring.annotation.VaadinSessionScope;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @SpringComponent
-@VaadinSessionScope
+@UIScope
 @RequiredArgsConstructor
 public class SchedulingViewPresenter {
 

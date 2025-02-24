@@ -4,11 +4,11 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.lang3.builder.CompareToBuilder;
+import lombok.Setter;
 import zzk.townshipscheduler.backend.scheduling.model.utility.FactoryActionDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.PlanningTimeSlotFactoryStrengthComparator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -18,7 +18,7 @@ import java.util.*;
 @Data
 @PlanningEntity(difficultyComparatorClass = FactoryActionDifficultyComparator.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
-public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlayerFactoryAction>
+public class SchedulingPlayerFactoryAction
 //        implements IGameAction
 {
 
@@ -29,19 +29,17 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
     @EqualsAndHashCode.Include
     private String actionUuid;
 
-    @EqualsAndHashCode.Include
     private IGameActionObject targetActionObject;
 
-    @EqualsAndHashCode.Include
     private IGameActionObject currentActionObject;
 
 //    private SchedulingPlayerFactoryAction sourceGameAction;
 
 //    private SchedulingPlayerFactoryAction sinkGameAction;
 
-//    private List<SchedulingPlayerFactoryAction> materialActions = new ArrayList<>();
+    private List<SchedulingPlayerFactoryAction> materialActions = new ArrayList<>();
 
-//    private List<SchedulingPlayerFactoryAction> succeedingActions = new ArrayList<>();
+    private List<SchedulingPlayerFactoryAction> succeedingActions = new ArrayList<>();
 
 //    @PlanningVariable(
 //            graphType = PlanningVariableGraphType.CHAINED,
@@ -51,20 +49,27 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
 //    )
 //    private BasePlanningChainSupportFactoryOrAction planningPrevious;
 
-    @PlanningVariable(valueRangeProviderRefs = "actionSequenceValueRange")
-    private Integer sequence;
+    @PlanningVariable(valueRangeProviderRefs = {"planningPlayerArrangeDateTimeValueRange"})
+    private SchedulingDateTimeSlot planningArrangeDateTimeSlot;
 
-    @PlanningVariable(
-            valueRangeProviderRefs = "schedulingFactoryTimeSlotValueRange",
-            strengthComparatorClass = PlanningTimeSlotFactoryStrengthComparator.class
-    )
-    private SchedulingFactoryTimeSlotInstance planningTimeSlotFactory;
+    @PlanningVariable(valueRangeProviderRefs = "valueRangeForSequence")
+    private Integer planningSequence;
+
+//    @PlanningVariable(
+//            valueRangeProviderRefs = "schedulingFactoryTimeSlotValueRange",
+//            strengthComparatorClass = PlanningTimeSlotFactoryStrengthComparator.class
+//    )
+//    private SchedulingFactoryTimeSlotInstance planningTimeSlotFactory;
+
+
+    @PlanningVariable(valueRangeProviderRefs = {"valueRangeForSchedulingFactoryInstance"})
+    private SchedulingFactoryInstance planningFactory;
 
     //    @PlanningVariable(valueRangeProviderRefs = "producingExecutionMode")
     private SchedulingProducingExecutionMode producingExecutionMode;
 
-    //    @PlanningVariable(valueRangeProviderRefs = "planningPlayerArrangeDateTimeValueRange")
-    //    private LocalDateTime planningPlayerArrangeDateTime;
+//        @PlanningVariable(valueRangeProviderRefs = "planningPlayerArrangeDateTimeValueRange")
+//        private LocalDateTime planningPlayerArrangeDateTime;
 
     //    @ShadowVariable(
     //            variableListenerClass = FactoryActionShadowGameProducingDataTimeVariableListener.class,
@@ -78,6 +83,7 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
     //            variableListenerClass = FactoryActionShadowGameProducingDataTimeVariableListener.class,
     //            sourceVariableName = "schedulingPeriodFactory"
     //    )
+    @Setter(AccessLevel.PACKAGE)
     private LocalDateTime shadowGameProducingDataTime;
 
     //    @ShadowVariable(
@@ -88,6 +94,7 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
     //            variableListenerClass = FactoryActionShadowGameCompletedDataTimeVariableListener.class,
     //            sourceVariableName = "shadowGameProducingDataTime"
     //    )
+    @Setter(AccessLevel.PACKAGE)
     private LocalDateTime shadowGameCompleteDateTime;
 
     //    @ShadowVariable(
@@ -129,26 +136,22 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
         this.schedulingWarehouse = schedulingWarehouse;
     }
 
-//    public void biAssociateWholeToPart(SchedulingPlayerFactoryAction partAction) {
-//        this.appendMaterialAction(partAction);
-//        partAction.appendSucceedingAction(this);
-//        partAction.setTargetActionObject(this.getCurrentActionObject());
-//    }
+    public void biAssociateWholeToPart(SchedulingPlayerFactoryAction partAction) {
+        this.appendMaterialAction(partAction);
+        partAction.appendSucceedingAction(this);
+        partAction.setTargetActionObject(this.getCurrentActionObject());
+    }
 
-//    private void appendMaterialAction(SchedulingPlayerFactoryAction that) {
-//        this.materialActions.add(that);
-//    }
+    private void appendMaterialAction(SchedulingPlayerFactoryAction that) {
+        this.materialActions.add(that);
+    }
 
-//    private void appendSucceedingAction(SchedulingPlayerFactoryAction that) {
-//        this.succeedingActions.add(that);
-//    }
+    private void appendSucceedingAction(SchedulingPlayerFactoryAction that) {
+        this.succeedingActions.add(that);
+    }
 
     public String getHumanReadable() {
         return getCurrentActionObject().readable();
-    }
-
-    public SchedulingDateTimeSlot getArrangeDateTimeSlot() {
-        return getPlanningTimeSlotFactory().getDateTimeSlot();
     }
 
 //    public boolean boolExecutionModeMismatch() {
@@ -162,20 +165,16 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
 //        return !planningFactoryType.getPortfolio().contains(schedulingProduct);
 //    }
 
-    public SchedulingProduct getSchedulingProduct() {
-        return (SchedulingProduct) getCurrentActionObject();
-    }
-
-    @ValueRangeProvider(id = "schedulingFactoryTimeSlotValueRange")
-    public List<SchedulingFactoryTimeSlotInstance> schedulingFactoryTimeSlotValueRange() {
+    @ValueRangeProvider(id = "valueRangeForSchedulingFactoryInstance")
+    public Set<SchedulingFactoryInstance> valueRangeForSchedulingFactoryInstance() {
         SchedulingProduct schedulingProduct = getSchedulingProduct();
         SchedulingFactoryInfo requireFactory = schedulingProduct.getRequireFactory();
-        Set<SchedulingFactoryInstance> factoryInstances = requireFactory.getFactoryInstances();
-        return factoryInstances.stream()
-                .map(SchedulingFactoryInstance::getSchedulingFactoryTimeSlotInstances)
-                .flatMap(Collection::stream)
-                .toList();
+        return requireFactory.getFactoryInstances();
 
+    }
+
+    public SchedulingProduct getSchedulingProduct() {
+        return (SchedulingProduct) getCurrentActionObject();
     }
 
 //    public boolean boolArrangeBeforePrerequisiteDone() {
@@ -206,20 +205,6 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
 //        return slotStart.isBefore(prerequisiteDoneDateTime);
 //    }
 
-    @Override
-    public int compareTo(SchedulingPlayerFactoryAction that) {
-        Comparator<SchedulingPlayerFactoryAction> nullsFirst
-                = Comparator.nullsFirst(Comparator.comparing(SchedulingPlayerFactoryAction::getSequence));
-        Comparator<SchedulingPlayerFactoryAction> nullsLast
-                = Comparator.nullsLast(Comparator.comparing(SchedulingPlayerFactoryAction::getSequence));
-        return new CompareToBuilder()
-                .append(
-                        this,
-                        that,
-                        nullsFirst.thenComparing(nullsLast)
-                )
-                .toComparison();
-    }
 
 //    public LocalDateTime prerequisiteDoneTime() {
 //        LocalDateTime result = null;
@@ -239,28 +224,8 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
 //        return result;
 //    }
 
-    public Duration getActionDuration() {
+    public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();
-    }
-
-    @Override
-    public String toString() {
-        return "{\"SchedulingPlayerFactoryAction\":{"
-               + "        \"actionId\":\"" + actionId + "\""
-               + ",         \"actionUuid\":\"" + actionUuid + "\""
-               + ",         \"targetActionObject\":" + targetActionObject
-               + ",         \"planningFactory\":" + Objects.toString(planningTimeSlotFactory, "N/A")
-               + ",         \"planningProducingExecutionMode\":" + Objects.toString(
-                producingExecutionMode,
-                "N/A"
-        )
-               + ",         \"planningPlayerArrangeDateTime\":" + Objects.toString(
-                getPlanningTimeSlotFactory().getDateTimeSlot(),
-                "N/A"
-        )
-               + ",         \"shadowGameProducingDataTime\":" + Objects.toString(shadowGameProducingDataTime, "N/A")
-               + ",         \"shadowGameCompleteDateTime\":" + Objects.toString(shadowGameCompleteDateTime, "N/A")
-               + "}}";
     }
 
 //    public Duration nextAvailableAsDuration(LocalDateTime dateTime) {
@@ -277,35 +242,31 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
 //        }
 //    }
 
-    private List<SchedulingFactoryTimeSlotInstance> getAffectFollowingFactories() {
-        List<SchedulingFactoryTimeSlotInstance> affectFactories = new ArrayList<>();
-        SchedulingFactoryTimeSlotInstance planningFactory = this.getPlanningTimeSlotFactory();
-        while (
-                planningFactory.getNextPeriodOfFactory() != null
-                && planningFactory.boolAffectByAction(this)
-        ) {
-            affectFactories.add(planningFactory.getNextPeriodOfFactory());
-            planningFactory = planningFactory.getNextPeriodOfFactory();
-        }
-        return affectFactories;
+    public LocalDateTime getPlanningPlayerArrangeDateTime(){
+        SchedulingDateTimeSlot dateTimeSlot = this.getPlanningArrangeDateTimeSlot();
+        return dateTimeSlot != null
+                ? dateTimeSlot.getStart()
+                : null;
     }
 
     public List<ActionConsequence> calcActionConsequence() {
-        if (getPlanningTimeSlotFactory() == null) {
-            return List.of();
-        }
-        if (getShadowGameProducingDataTime() == null) {
+        if (
+                getPlanningPlayerArrangeDateTime() == null
+                || getPlanningSequence() == null
+                || getPlanningFactory() == null
+        ) {
             return List.of();
         }
 
         SchedulingProducingExecutionMode executionMode = getProducingExecutionMode();
-        List<ActionConsequence> actionConsequenceList = new ArrayList<>(10);
+        List<ActionConsequence> actionConsequenceList = new ArrayList<>(5);
         //when arrange,materials was consumed
         if (!executionMode.boolAtomicProduct()) {
             ProductAmountBill materials = executionMode.getMaterials();
             materials.forEach((material, amount) -> {
                 ActionConsequence consequence = ActionConsequence.builder()
-                        .localDateTime(getPlanningTimeSlotFactory().getDateTimeSlot().getStart())
+                        .actionId(getActionId())
+                        .localDateTime(getPlanningPlayerArrangeDateTime())
                         .resource(ActionConsequence.SchedulingResource.productStock(material))
                         .resourceChange(ActionConsequence.SchedulingResourceChange.decrease(amount))
                         .build();
@@ -316,9 +277,11 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
         //when arrange,factory wait queue was consumed
         actionConsequenceList.add(
                 ActionConsequence.builder()
-                        .localDateTime(getPlanningTimeSlotFactory().getDateTimeSlot().getStart())
+                        .actionId(getActionId())
+                        .localDateTime(getPlanningPlayerArrangeDateTime())
                         .resource(ActionConsequence.SchedulingResource.factoryWaitQueue(
-                                getPlanningTimeSlotFactory().getFactoryInstance()))
+                                getPlanningFactory()
+                        ))
                         .resourceChange(ActionConsequence.SchedulingResourceChange.decrease())
                         .build()
         );
@@ -326,9 +289,10 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
         //when completed ,factory wait queue was release
         actionConsequenceList.add(
                 ActionConsequence.builder()
+                        .actionId(getActionId())
                         .localDateTime(getShadowGameCompleteDateTime())
                         .resource(ActionConsequence.SchedulingResource.factoryWaitQueue(
-                                getPlanningTimeSlotFactory().getFactoryInstance()))
+                                getPlanningFactory()))
                         .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
                         .build()
         );
@@ -336,6 +300,7 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
         //when completed ,product stock was increase
         actionConsequenceList.add(
                 ActionConsequence.builder()
+                        .actionId(getActionId())
                         .localDateTime(getShadowGameCompleteDateTime())
                         .resource(ActionConsequence.SchedulingResource.productStock(getSchedulingProduct()))
                         .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
@@ -346,27 +311,31 @@ public class SchedulingPlayerFactoryAction implements Comparable<SchedulingPlaye
         return actionConsequenceList;
     }
 
-    public LocalDateTime getShadowGameProducingDataTime() {
-        if (this.getPlanningTimeSlotFactory() == null) {
-            return this.shadowGameProducingDataTime = null;
-        }
-
-        return this.shadowGameProducingDataTime
-                = this.getPlanningTimeSlotFactory().getProducingDateTime(this);
-    }
-
     public LocalDateTime getShadowGameCompleteDateTime() {
         if (this.getShadowGameProducingDataTime() == null) {
             return this.shadowGameCompleteDateTime = null;
         }
 
-        if (this.shadowGameCompleteDateTime == null) {
-            this.shadowGameCompleteDateTime
-                    = this.shadowGameProducingDataTime.plus(
-                    this.producingExecutionMode.getExecuteDuration()
-            );
+        return this.shadowGameCompleteDateTime
+                = this.getShadowGameProducingDataTime()
+                .plus(this.producingExecutionMode.getExecuteDuration());
+    }
+
+    public LocalDateTime getShadowGameProducingDataTime() {
+        if (this.getPlanningSequence() == null || getPlanningPlayerArrangeDateTime() == null || this.getPlanningFactory() == null) {
+            return this.shadowGameProducingDataTime = null;
         }
-        return this.shadowGameCompleteDateTime;
+
+        return this.shadowGameProducingDataTime
+                = this.getPlanningFactory().calcProducingDateTime(this);
+    }
+
+    public void setupComputedDateTime(SchedulingFactoryInstance factoryInstance) {
+        if (factoryInstance != this.getPlanningFactory()) {
+            return;
+        }
+        factoryInstance.setProducingDateTimeForAction(this);
+        factoryInstance.setCompletedDateTimeForAction(this);
     }
 
 }

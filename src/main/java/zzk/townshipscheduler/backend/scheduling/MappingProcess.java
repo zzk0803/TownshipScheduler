@@ -47,10 +47,10 @@ class MappingProcess {
                 this.schedulingFactoryInstances,
                 this.schedulingWarehouse,
                 new SchedulingWorkTimeLimit(
-                        LocalDateTime.now(),
-                        LocalDateTime.now().plusDays(3)
+                        LocalDateTime.now().plusMinutes(10),
+                        LocalDateTime.now().plusDays(2)
                 ),
-                TownshipSchedulingProblem.DateTimeSlotSize.BIG
+                TownshipSchedulingProblem.DateTimeSlotSize.HOUR
         );
 
         return schedulingProblem;
@@ -153,7 +153,8 @@ class MappingProcess {
                                 typeInstamceMap.entrySet().forEach(entry -> {
                                     FieldFactoryInfoEntity type = entry.getKey();
                                     List<FieldFactoryEntity> instanceList = entry.getValue();
-                                    for (int i = 0; i < instanceList.size(); i++) {
+                                    int size = instanceList.size();
+                                    for (int i = 0; i < size; i++) {
                                         FieldFactoryEntity fieldFactoryEntity = instanceList.get(i);
                                         SchedulingFactoryInstance schedulingFactoryInstance = new SchedulingFactoryInstance();
                                         SchedulingFactoryInfo.Id schedulingFactoryInfoId
@@ -161,6 +162,7 @@ class MappingProcess {
                                         SchedulingFactoryInfo schedulingFactoryInfo
                                                 = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
                                         schedulingFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
+                                        schedulingFactoryInstance.setPinIfOnlyOneVariable(size==1);
                                         schedulingFactoryInstance.setSeqNum(i + 1);
                                         schedulingFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
                                         schedulingFactoryInstance.setProducingLength(fieldFactoryEntity.getProducingLength());

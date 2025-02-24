@@ -10,23 +10,24 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @PlanningSolution
 public class TownshipSchedulingProblem {
 
-    public static final int BENDABLE_SCORE_HARD_SIZE = 1;
+    public static final int BENDABLE_SCORE_HARD_SIZE = 3;
 
-    public static final int BENDABLE_SCORE_SOFT_SIZE = 3;
+    public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
 
-    public static final int HARD_BROKEN = 0;
+    public static final int HARD_BROKEN_QUEUE = 0;
 
-    public static final int SOFT_ASSIGNED = 0;
+    public static final int HARD_BROKEN_STOCK = 1;
 
-    public static final int SOFT_MAKE_SPAN = 1;
+    public static final int HARD_BAD_ASSIGN = 2;
 
-    public static final int SOFT_BATTER = 2;
+    public static final int SOFT_MAKE_SPAN = 0;
+
+    public static final int SOFT_BATTER = 1;
 
     private UUID uuid;
 
@@ -39,16 +40,12 @@ public class TownshipSchedulingProblem {
     @ProblemFactCollectionProperty
     private Set<SchedulingOrder> schedulingOrderSet;
 
-    @ProblemFactCollectionProperty
-//    @ValueRangeProvider(id = "factories")
+    @PlanningEntityCollectionProperty
+//        @ValueRangeProvider(id = "factories")
     private Set<SchedulingFactoryInstance> schedulingFactoryInstanceSet;
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = "factories")
-    private Set<SchedulingFactoryTimeSlotInstance> schedulingFactoryTimeSlotInstanceSet;
-
-    //    @ProblemFactCollectionProperty
-//    @ValueRangeProvider(id = "dateTimeSlot")
+    @ValueRangeProvider(id = "planningPlayerArrangeDateTimeValueRange")
     private Set<SchedulingDateTimeSlot> dateTimeSlotSet;
 
     private DateTimeSlotSize slotSize;
@@ -125,7 +122,7 @@ public class TownshipSchedulingProblem {
         this.schedulingWorkTimeLimit = schedulingWorkTimeLimit;
         this.slotSize = slotSize;
         this.setupDateTimeSlot();
-        this.setupPeriodFactory();
+        //        this.setupPeriodFactory();
         this.setupGameActions();
     }
 
@@ -145,30 +142,30 @@ public class TownshipSchedulingProblem {
         setDateTimeSlotSet(schedulingDateTimeSlots);
     }
 
-    public void setupPeriodFactory() {
-        AtomicInteger idRoller = new AtomicInteger(1);
-        Set<SchedulingFactoryTimeSlotInstance> schedulingPeriodFactories = new LinkedHashSet<>();
-        Set<SchedulingFactoryInstance> factoryInstances = getSchedulingFactoryInstanceSet();
-        Set<SchedulingDateTimeSlot> timeSlotSet = getDateTimeSlotSet();
-        for (SchedulingFactoryInstance factoryInstance : factoryInstances) {
-            SchedulingFactoryTimeSlotInstance previousOfIterating = null;
-            for (SchedulingDateTimeSlot timeSlot : timeSlotSet) {
-                SchedulingFactoryTimeSlotInstance schedulingFactoryTimeSlotInstance = new SchedulingFactoryTimeSlotInstance();
-                schedulingFactoryTimeSlotInstance.setId(idRoller.getAndIncrement());
-                schedulingFactoryTimeSlotInstance.setFactoryInstance(factoryInstance);
-                schedulingFactoryTimeSlotInstance.setDateTimeSlot(timeSlot);
-                if (previousOfIterating != null) {
-                    schedulingFactoryTimeSlotInstance.setPreviousPeriodOfFactory(previousOfIterating);
-                    previousOfIterating.setNextPeriodOfFactory(schedulingFactoryTimeSlotInstance);
-                }
-                factoryInstance.addPeriodFactory(schedulingFactoryTimeSlotInstance);
-                schedulingPeriodFactories.add(schedulingFactoryTimeSlotInstance);
-                previousOfIterating = schedulingFactoryTimeSlotInstance;
-            }
-        }
-
-        setSchedulingFactoryTimeSlotInstanceSet(schedulingPeriodFactories);
-    }
+//    public void setupPeriodFactory() {
+//        AtomicInteger idRoller = new AtomicInteger(1);
+//        Set<SchedulingFactoryTimeSlotInstance> schedulingPeriodFactories = new LinkedHashSet<>();
+//        Set<SchedulingFactoryInstance> factoryInstances = getSchedulingFactoryInstanceSet();
+//        Set<SchedulingDateTimeSlot> timeSlotSet = getDateTimeSlotSet();
+//        for (SchedulingFactoryInstance factoryInstance : factoryInstances) {
+//            SchedulingFactoryTimeSlotInstance previousOfIterating = null;
+//            for (SchedulingDateTimeSlot timeSlot : timeSlotSet) {
+//                SchedulingFactoryTimeSlotInstance schedulingFactoryTimeSlotInstance = new SchedulingFactoryTimeSlotInstance();
+//                schedulingFactoryTimeSlotInstance.setId(idRoller.getAndIncrement());
+//                schedulingFactoryTimeSlotInstance.setFactoryInstance(factoryInstance);
+//                schedulingFactoryTimeSlotInstance.setDateTimeSlot(timeSlot);
+//                if (previousOfIterating != null) {
+//                    schedulingFactoryTimeSlotInstance.setPreviousPeriodOfFactory(previousOfIterating);
+//                    previousOfIterating.setNextPeriodOfFactory(schedulingFactoryTimeSlotInstance);
+//                }
+//                factoryInstance.addPeriodFactory(schedulingFactoryTimeSlotInstance);
+//                schedulingPeriodFactories.add(schedulingFactoryTimeSlotInstance);
+//                previousOfIterating = schedulingFactoryTimeSlotInstance;
+//            }
+//        }
+//
+//        setSchedulingFactoryTimeSlotInstanceSet(schedulingPeriodFactories);
+//    }
 
     public void setupGameActions() {
         ActionIdRoller idRoller = ActionIdRoller.forProblem(getUuid().toString());
@@ -200,15 +197,15 @@ public class TownshipSchedulingProblem {
 //        setSchedulingPlayerWarehouseActions(warehouseActions);
     }
 
-    //    @ValueRangeProvider(id = "planningPlayerArrangeDateTimeValueRange")
-    //    public CountableValueRange<LocalDateTime> dateTimeValueRange() {
-    //        return ValueRangeFactory.createLocalDateTimeValueRange(
-    //                schedulingWorkTimeLimit.getStartDateTime(),
-    //                schedulingWorkTimeLimit.getEndDateTime(),
-    //                15,
-    //                ChronoUnit.MINUTES
-    //        );
-    //    }
+//        @ValueRangeProvider(id = "planningPlayerArrangeDateTimeValueRange")
+//        public CountableValueRange<LocalDateTime> dateTimeValueRange() {
+//            return ValueRangeFactory.createLocalDateTimeValueRange(
+//                    schedulingWorkTimeLimit.getStartDateTime(),
+//                    schedulingWorkTimeLimit.getEndDateTime(),
+//                    getSlotSize().minute,
+//                    ChronoUnit.MINUTES
+//            );
+//        }
 
     private ArrayList<SchedulingPlayerFactoryAction> expandAndSetupGameAction(
 //    private Pair<ArrayList<SchedulingPlayerFactoryAction>, ArrayList<SchedulingPlayerWarehouseAction>> expandAndSetupGameAction(
@@ -234,7 +231,7 @@ public class TownshipSchedulingProblem {
 
             List<SchedulingPlayerFactoryAction> materialsActions = producingExecutionMode.materialsActions();
             materialsActions.forEach(materialsAction -> {
-//                currentFactoryAction.biAssociateWholeToPart(materialsAction);
+                currentFactoryAction.biAssociateWholeToPart(materialsAction);
                 dealingChain.addLast(materialsAction);
             });
 
@@ -272,9 +269,9 @@ public class TownshipSchedulingProblem {
         return factoryActions;
     }
 
-    @ValueRangeProvider(id = "actionSequenceValueRange")
-    private ValueRange<Integer> getActionSequenceValueRange() {
-        return ValueRangeFactory.createIntValueRange(1, getSchedulingPlayerFactoryActions().size());
+    @ValueRangeProvider(id = "valueRangeForSequence")
+    private ValueRange<Integer> valueRangeForSequence() {
+        return ValueRangeFactory.createIntValueRange(0, getSchedulingPlayerFactoryActions().size());
     }
 
     public enum DateTimeSlotSize {

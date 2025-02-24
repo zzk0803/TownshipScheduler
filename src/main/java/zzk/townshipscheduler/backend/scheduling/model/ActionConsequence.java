@@ -13,6 +13,8 @@ import java.util.function.IntFunction;
 @Builder
 public final class ActionConsequence implements Comparable<ActionConsequence> {
 
+    private Integer actionId;
+
     private LocalDateTime localDateTime;
 
     private SchedulingResource resource;
@@ -26,12 +28,14 @@ public final class ActionConsequence implements Comparable<ActionConsequence> {
 
     public interface SchedulingResource {
 
+        public Object getRoot();
+
         static ProductStock productStock(SchedulingProduct product) {
             return new ProductStock(product);
         }
 
-        static FactoryWaitQueue factoryWaitQueue(SchedulingFactoryInstance factoryInstance) {
-            return new FactoryWaitQueue(factoryInstance);
+        static FactoryProducingQueue factoryWaitQueue(SchedulingFactoryInstance factoryInstance) {
+            return new FactoryProducingQueue(factoryInstance);
         }
 
     }
@@ -68,13 +72,23 @@ public final class ActionConsequence implements Comparable<ActionConsequence> {
         @Getter
         private SchedulingProduct schedulingProduct;
 
+        @Override
+        public Object getRoot() {
+            return schedulingProduct;
+        }
+
     }
 
     @AllArgsConstructor
-    public static class FactoryWaitQueue implements SchedulingResource {
+    public static class FactoryProducingQueue implements SchedulingResource {
 
         @Getter
         private SchedulingFactoryInstance schedulingFactoryInstance;
+
+        @Override
+        public Object getRoot() {
+            return schedulingFactoryInstance;
+        }
 
     }
 

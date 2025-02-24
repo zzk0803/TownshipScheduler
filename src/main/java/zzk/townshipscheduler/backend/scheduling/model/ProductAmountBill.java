@@ -12,4 +12,9 @@ public class ProductAmountBill extends LinkedHashMap<SchedulingProduct, Integer>
         return productAmountBill;
     }
 
+    @Override
+    public int size() {
+        return super.size();
+    }
+
 }

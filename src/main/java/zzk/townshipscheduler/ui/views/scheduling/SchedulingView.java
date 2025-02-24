@@ -3,6 +3,7 @@ package zzk.townshipscheduler.ui.views.scheduling;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
@@ -10,8 +11,6 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
@@ -21,6 +20,7 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +28,6 @@ import java.util.UUID;
 @Route("/scheduling")
 @Menu
 @PermitAll
-@PreserveOnRefresh
 @Setter
 @Getter
 public class SchedulingView extends VerticalLayout implements HasUrlParameter<String> {
@@ -64,17 +63,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     }
 
     private void buildUI() {
-        TabSheet tabSheet = new TabSheet();
-        tabSheet.setSizeFull();
-
-        Tab tab = tabSheet.add(
-                "Game Action",
-                buildGameActionTabSheetArticle()
-        );
-
-        tabSheet.setSelectedTab(tab);
-
-        addAndExpand(tabSheet);
+        addAndExpand(buildGameActionTabSheetArticle());
     }
 
     private VerticalLayout buildGameActionTabSheetArticle() {
@@ -82,30 +71,50 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         actionGrid = new Grid<>(SchedulingPlayerFactoryAction.class, false);
         actionGrid.addColumn(SchedulingPlayerFactoryAction::getActionId)
                 .setHeader("#")
+                .setSortable(true)
+                .setFlexGrow(0)
                 .setResizable(true);
-        actionGrid.addColumn(SchedulingPlayerFactoryAction::getHumanReadable)
-                .setHeader("Description")
+        actionGrid.addComponentColumn(ActionCard::new)
+                .setHeader("Factory/DateTime")
+                .setSortable(true)
+                .setComparator(Comparator.comparing(SchedulingPlayerFactoryAction::getPlanningPlayerArrangeDateTime)
+                        .thenComparing(SchedulingPlayerFactoryAction::getPlanningSequence)
+                )
+                .setFlexGrow(1)
                 .setResizable(true);
-//        actionGrid.addComponentColumn(
-//                        playerFactoryAction -> {
-//                            SchedulingProducingExecutionMode producingExecutionMode = playerFactoryAction.getProducingExecutionMode();
-//                            return new Text(producingExecutionMode != null ? producingExecutionMode.toString() : "N/A");
-//                        }
-//                ).setHeader("Execution Mode(Producing Use)")
-//                .setResizable(true);
-        actionGrid.addComponentColumn(
-                playerFactoryAction -> {
-                    SchedulingFactoryTimeSlotInstance planningFactory = playerFactoryAction.getPlanningTimeSlotFactory();
-                    return new Text(Objects.toString(planningFactory, "N/A"));
-                }
-        ).setHeader("Factory/DateTime").setResizable(true);
-
         schedulingViewPresenter.setupPlayerActionGrid(actionGrid);
 
-        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));
+//        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));
         gameActionArticle.add(buildBtnPanel());
         gameActionArticle.addAndExpand(actionGrid);
         return gameActionArticle;
+    }
+
+    private HorizontalLayout buildBtnPanel() {
+        HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
+        TriggerButton triggerButton = new TriggerButton(
+                "Start",
+                buttonClickEvent -> {
+                    this.schedulingViewPresenter.schedulingAndPush();
+                },
+                "Stop",
+                buttonClickEvent1 -> {
+                    this.schedulingViewPresenter.schedulingAbort();
+                }
+        );
+        schedulingBtnPanel.setWidthFull();
+        schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        schedulingBtnPanel.add(buildScorePanel(), triggerButton);
+        return schedulingBtnPanel;
+    }
+
+    private HorizontalLayout buildScorePanel() {
+        HorizontalLayout layout = new HorizontalLayout();
+        layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        layout.setJustifyContentMode(JustifyContentMode.START);
+        scoreAnalysisParagraph = new Paragraph();
+        layout.add(new Details("Score Analysis:", scoreAnalysisParagraph));
+        return layout;
     }
 
     private VerticalLayout buildOrderCard(Set<SchedulingOrder> orderSet) {
@@ -133,38 +142,92 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         return orderSummarizeCard;
     }
 
-    private HorizontalLayout buildBtnPanel() {
-        HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
-        TriggerButton triggerButton = new TriggerButton(
-                "Start",
-                buttonClickEvent -> {
-                    this.schedulingViewPresenter.schedulingAndPush();
-                },
-                "Stop",
-                buttonClickEvent1 -> {
-                    this.schedulingViewPresenter.schedulingAbort();
-                }
-        );
-        schedulingBtnPanel.setWidthFull();
-        schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.AROUND);
-        schedulingBtnPanel.add(buildScorePanel(),triggerButton);
-        return schedulingBtnPanel;
-    }
-
-    private HorizontalLayout buildScorePanel() {
-        HorizontalLayout layout = new HorizontalLayout();
-        layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        layout.setJustifyContentMode(JustifyContentMode.START);
-        scoreAnalysisParagraph = new Paragraph();
-        layout.add(new Details("Score Analysis:", scoreAnalysisParagraph));
-        return layout;
-    }
-
-
     @Override
     protected void onAttach(AttachEvent attachEvent) {
         this.ui = attachEvent.getUI();
         this.schedulingViewPresenter.setUi(this.ui);
+    }
+
+
+    class ActionCard extends HorizontalLayout {
+
+        private SchedulingPlayerFactoryAction factoryAction;
+
+        public ActionCard(SchedulingPlayerFactoryAction factoryAction) {
+            this();
+            this.factoryAction = factoryAction;
+            SchedulingFactoryInstance planningFactory = factoryAction.getPlanningFactory();
+            LocalDateTime planningPlayerArrangeDateTime = factoryAction.getPlanningPlayerArrangeDateTime();
+            Integer planningSequence = factoryAction.getPlanningSequence();
+            boolean scheduled = planningFactory != null && planningPlayerArrangeDateTime != null && planningSequence != null;
+
+            VerticalLayout verticalLayout = new VerticalLayout();
+            verticalLayout.add(
+                    new Text(
+                            "Type:" + (scheduled
+                                    ? planningFactory.toString()
+                                    : "N/A"
+                            )
+                    )
+            );
+            add(verticalLayout);
+
+            String humanReadable = factoryAction.getHumanReadable();
+            add(
+                    new VerticalLayout(
+                            new Text(humanReadable + ",Seq:" + (scheduled
+                                    ? "Seq:" + planningSequence
+                                    : "Seq: N/A"))
+                            ,
+                            scheduled
+                                    ? new ReadonlyDateTimePicker("Arrange", planningPlayerArrangeDateTime)
+                                    : new Text("Arrange")
+                    )
+            );
+
+            add(
+                    new VerticalLayout(
+                            scheduled
+                                    ? new ReadonlyDateTimePicker(
+                                    "Producing",
+                                    factoryAction.getShadowGameProducingDataTime()
+                            )
+                                    : new Text("Producing")
+                            ,
+                            scheduled
+                                    ? new ReadonlyDateTimePicker(
+                                    "Completed",
+                                    factoryAction.getShadowGameCompleteDateTime()
+                            )
+                                    : new Text("Completed")
+                    )
+            );
+        }
+
+        public ActionCard() {
+            setHeight("15rem");
+            setWidthFull();
+            setDefaultVerticalComponentAlignment(Alignment.STRETCH);
+            setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+        }
+
+        public SchedulingPlayerFactoryAction getFactoryAction() {
+            return factoryAction;
+        }
+
+        public void setFactoryAction(SchedulingPlayerFactoryAction factoryAction) {
+            this.factoryAction = factoryAction;
+        }
+
+    }
+
+    class ReadonlyDateTimePicker extends DateTimePicker {
+
+        private ReadonlyDateTimePicker(String label, LocalDateTime dateTime) {
+            super(label, dateTime);
+            setReadOnly(true);
+        }
+
     }
 
 }

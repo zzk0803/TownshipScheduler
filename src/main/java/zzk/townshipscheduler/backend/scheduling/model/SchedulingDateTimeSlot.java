@@ -1,40 +1,39 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
+@PlanningEntity
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
+
+    public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
+            = Comparator.comparing(SchedulingDateTimeSlot::getId);
 
     private static ThreadLocal<Set<SchedulingDateTimeSlot>> cached = new ThreadLocal<>();
 
+    @PlanningId
+    @EqualsAndHashCode.Include
     private Integer id;
 
+    @EqualsAndHashCode.Include
     private LocalDateTime start;
 
     private LocalDateTime end;
 
     private int durationInMinute;
 
-//    public static CountableValueRange<LocalDateTime> toValueRange(
-//            final LocalDateTime startInclusive,
-//            final LocalDateTime endExclusive,
-//            final int durationInMinute
-//    ) {
-//        return ValueRangeFactory.createLocalDateTimeValueRange(
-//                startInclusive,
-//                endExclusive,
-//                durationInMinute,
-//                ChronoUnit.MINUTES
-//        );
-//    }
+    @InverseRelationShadowVariable(sourceVariableName = "planningArrangeDateTimeSlot")
+    private List<SchedulingPlayerFactoryAction> playerFactoryActionList = new ArrayList<>();
 
     public static Optional<SchedulingDateTimeSlot> of(
             final LocalDateTime dateTime
@@ -92,10 +91,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     @Override
     public int compareTo(SchedulingDateTimeSlot that) {
-        return Comparator.comparing(SchedulingDateTimeSlot::getStart)
-//                .thenComparing(SchedulingDateTimeSlot::getEnd)
-//                .thenComparingInt(SchedulingDateTimeSlot::getId)
-                .compare(this, that);
+        return DATE_TIME_SLOT_COMPARATOR.compare(this, that);
     }
 
 }
