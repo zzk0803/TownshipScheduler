@@ -21,6 +21,7 @@ public final class SchedulingProduct implements IGameActionObject {
     @EqualsAndHashCode.Include
     private Id id;
 
+    @EqualsAndHashCode.Include
     @ToString.Include
     private String name;
 

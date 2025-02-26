@@ -16,7 +16,10 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
@@ -71,8 +74,9 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         actionGrid = new Grid<>(SchedulingPlayerFactoryAction.class, false);
         actionGrid.addColumn(SchedulingPlayerFactoryAction::getActionId)
                 .setHeader("#")
-                .setSortable(true)
-                .setFlexGrow(0)
+                .setResizable(true);
+        actionGrid.addColumn(factoryAction -> factoryAction.getSchedulingProduct().getName())
+                .setHeader("Product")
                 .setResizable(true);
         actionGrid.addComponentColumn(ActionCard::new)
                 .setHeader("Factory/DateTime")
@@ -175,9 +179,10 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
             String humanReadable = factoryAction.getHumanReadable();
             add(
                     new VerticalLayout(
-                            new Text(humanReadable + ",Seq:" + (scheduled
+                            new Text((scheduled
                                     ? "Seq:" + planningSequence
-                                    : "Seq: N/A"))
+                                    : "Seq: N/A")
+                            )
                             ,
                             scheduled
                                     ? new ReadonlyDateTimePicker("Arrange", planningPlayerArrangeDateTime)
@@ -189,14 +194,14 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                     new VerticalLayout(
                             scheduled
                                     ? new ReadonlyDateTimePicker(
-                                    "Producing",
+                                    "Producing DateTime",
                                     factoryAction.getShadowGameProducingDataTime()
                             )
                                     : new Text("Producing")
                             ,
                             scheduled
                                     ? new ReadonlyDateTimePicker(
-                                    "Completed",
+                                    "Completed DateTime",
                                     factoryAction.getShadowGameCompleteDateTime()
                             )
                                     : new Text("Completed")

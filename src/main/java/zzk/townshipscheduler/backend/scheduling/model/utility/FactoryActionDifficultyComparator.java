@@ -12,12 +12,8 @@ public class FactoryActionDifficultyComparator implements Comparator<SchedulingP
     public int compare(SchedulingPlayerFactoryAction former, SchedulingPlayerFactoryAction latter) {
         return new CompareToBuilder()
                 .append(
-                        former.getMaterialActions().size(),
-                        latter.getMaterialActions().size()
-                )
-                .append(
-                        former.getSucceedingActions().size(),
-                        latter.getSucceedingActions().size()
+                        former.getMaterials().size(),
+                        latter.getMaterials().size()
                 )
                 .append(former.getActionId(), latter.getActionId())
                 .toComparison();

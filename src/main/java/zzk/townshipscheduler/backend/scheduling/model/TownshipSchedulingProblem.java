@@ -5,11 +5,13 @@ import ai.timefold.solver.core.api.domain.valuerange.ValueRange;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
+import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @PlanningSolution
@@ -41,7 +43,7 @@ public class TownshipSchedulingProblem {
     private Set<SchedulingOrder> schedulingOrderSet;
 
     @PlanningEntityCollectionProperty
-//        @ValueRangeProvider(id = "factories")
+//    @ValueRangeProvider(id = "valueRangeForSchedulingFactoryInstance")
     private Set<SchedulingFactoryInstance> schedulingFactoryInstanceSet;
 
     @PlanningEntityCollectionProperty
@@ -69,11 +71,14 @@ public class TownshipSchedulingProblem {
     @ProblemFactProperty
     private SchedulingWarehouse schedulingWarehouse;
 
-    @PlanningScore(
-            bendableHardLevelsSize = BENDABLE_SCORE_HARD_SIZE,
-            bendableSoftLevelsSize = BENDABLE_SCORE_SOFT_SIZE
-    )
-    private BendableScore score;
+//    @PlanningScore(
+//            bendableHardLevelsSize = BENDABLE_SCORE_HARD_SIZE,
+//            bendableSoftLevelsSize = BENDABLE_SCORE_SOFT_SIZE
+//    )
+//    private BendableScore score;
+
+    @PlanningScore
+    private HardSoftScore score;
 
     private SolverStatus solverStatus;
 
@@ -85,7 +90,8 @@ public class TownshipSchedulingProblem {
             SchedulingWarehouse schedulingWarehouse,
             SchedulingWorkTimeLimit schedulingWorkTimeLimit,
             DateTimeSlotSize slotSize,
-            BendableScore score,
+            HardSoftScore score,
+//            BendableScore score,
             SolverStatus solverStatus
     ) {
         this(
@@ -231,7 +237,7 @@ public class TownshipSchedulingProblem {
 
             List<SchedulingPlayerFactoryAction> materialsActions = producingExecutionMode.materialsActions();
             materialsActions.forEach(materialsAction -> {
-                currentFactoryAction.biAssociateWholeToPart(materialsAction);
+//                currentFactoryAction.biAssociateWholeToPart(materialsAction);
                 dealingChain.addLast(materialsAction);
             });
 

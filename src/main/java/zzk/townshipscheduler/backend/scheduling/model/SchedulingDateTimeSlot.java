@@ -6,10 +6,12 @@ import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Data
 @PlanningEntity
@@ -17,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
-            = Comparator.comparing(SchedulingDateTimeSlot::getId);
+            = Comparator.comparing(SchedulingDateTimeSlot::getStart);
 
     private static ThreadLocal<Set<SchedulingDateTimeSlot>> cached = new ThreadLocal<>();
 
@@ -25,15 +27,14 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     @EqualsAndHashCode.Include
     private Integer id;
 
-    @EqualsAndHashCode.Include
     private LocalDateTime start;
 
     private LocalDateTime end;
 
     private int durationInMinute;
 
-    @InverseRelationShadowVariable(sourceVariableName = "planningArrangeDateTimeSlot")
-    private List<SchedulingPlayerFactoryAction> playerFactoryActionList = new ArrayList<>();
+    @InverseRelationShadowVariable(sourceVariableName = "planningDateTimeSlot")
+    private List<SchedulingPlayerFactoryAction> planningFactoryActionList = new ArrayList<>();
 
     public static Optional<SchedulingDateTimeSlot> of(
             final LocalDateTime dateTime
@@ -92,6 +93,12 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     @Override
     public int compareTo(SchedulingDateTimeSlot that) {
         return DATE_TIME_SLOT_COMPARATOR.compare(this, that);
+    }
+
+    public Optional<Integer> getMaxSequenceInThisSlot() {
+        return this.planningFactoryActionList.stream()
+                .map(SchedulingPlayerFactoryAction::getPlanningSequence)
+                .max(Integer::compareTo);
     }
 
 }

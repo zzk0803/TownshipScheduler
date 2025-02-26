@@ -162,7 +162,7 @@ class MappingProcess {
                                         SchedulingFactoryInfo schedulingFactoryInfo
                                                 = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
                                         schedulingFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
-                                        schedulingFactoryInstance.setPinIfOnlyOneVariable(size==1);
+//                                        schedulingFactoryInstance.setPinIfOnlyOneVariable(size==1);
                                         schedulingFactoryInstance.setSeqNum(i + 1);
                                         schedulingFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
                                         schedulingFactoryInstance.setProducingLength(fieldFactoryEntity.getProducingLength());

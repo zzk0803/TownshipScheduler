@@ -4,11 +4,11 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
-import lombok.AccessLevel;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Setter;
 import zzk.townshipscheduler.backend.scheduling.model.utility.FactoryActionDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.utility.FactoryActionComputeAndPushVariableListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -37,9 +37,9 @@ public class SchedulingPlayerFactoryAction
 
 //    private SchedulingPlayerFactoryAction sinkGameAction;
 
-    private List<SchedulingPlayerFactoryAction> materialActions = new ArrayList<>();
-
-    private List<SchedulingPlayerFactoryAction> succeedingActions = new ArrayList<>();
+//    private List<SchedulingPlayerFactoryAction> materialActions = new ArrayList<>();
+//
+//    private List<SchedulingPlayerFactoryAction> succeedingActions = new ArrayList<>();
 
 //    @PlanningVariable(
 //            graphType = PlanningVariableGraphType.CHAINED,
@@ -49,10 +49,14 @@ public class SchedulingPlayerFactoryAction
 //    )
 //    private BasePlanningChainSupportFactoryOrAction planningPrevious;
 
-    @PlanningVariable(valueRangeProviderRefs = {"planningPlayerArrangeDateTimeValueRange"})
-    private SchedulingDateTimeSlot planningArrangeDateTimeSlot;
+    @PlanningVariable(
+            valueRangeProviderRefs = {"planningPlayerArrangeDateTimeValueRange"}
+    )
+    private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @PlanningVariable(valueRangeProviderRefs = "valueRangeForSequence")
+    @PlanningVariable(
+            valueRangeProviderRefs = "valueRangeForSequence"
+    )
     private Integer planningSequence;
 
 //    @PlanningVariable(
@@ -62,7 +66,9 @@ public class SchedulingPlayerFactoryAction
 //    private SchedulingFactoryTimeSlotInstance planningTimeSlotFactory;
 
 
-    @PlanningVariable(valueRangeProviderRefs = {"valueRangeForSchedulingFactoryInstance"})
+    @PlanningVariable(
+            valueRangeProviderRefs = {"valueRangeForSchedulingFactoryInstance"}
+    )
     private SchedulingFactoryInstance planningFactory;
 
     //    @PlanningVariable(valueRangeProviderRefs = "producingExecutionMode")
@@ -71,19 +77,20 @@ public class SchedulingPlayerFactoryAction
 //        @PlanningVariable(valueRangeProviderRefs = "planningPlayerArrangeDateTimeValueRange")
 //        private LocalDateTime planningPlayerArrangeDateTime;
 
-    //    @ShadowVariable(
-    //            variableListenerClass = FactoryActionShadowGameProducingDataTimeVariableListener.class,
-    //            sourceVariableName = "planningPlayerArrangeDateTime"
-    //    )
-    //    @ShadowVariable(
-    //            variableListenerClass = FactoryActionShadowGameProducingDataTimeVariableListener.class,
-    //            sourceVariableName = "sequence"
-    //    )
-    //    @ShadowVariable(
-    //            variableListenerClass = FactoryActionShadowGameProducingDataTimeVariableListener.class,
-    //            sourceVariableName = "schedulingPeriodFactory"
-    //    )
-    @Setter(AccessLevel.PACKAGE)
+    @ShadowVariable(
+            variableListenerClass = FactoryActionComputeAndPushVariableListener.class,
+            sourceVariableName = "planningDateTimeSlot"
+    )
+    @ShadowVariable(
+            variableListenerClass = FactoryActionComputeAndPushVariableListener.class,
+            sourceVariableName = "planningSequence"
+    )
+    @ShadowVariable(
+            variableListenerClass = FactoryActionComputeAndPushVariableListener.class,
+            sourceVariableName = "planningFactory"
+    )
+    private Long shadowRollingChange = 0L;
+
     private LocalDateTime shadowGameProducingDataTime;
 
     //    @ShadowVariable(
@@ -94,7 +101,7 @@ public class SchedulingPlayerFactoryAction
     //            variableListenerClass = FactoryActionShadowGameCompletedDataTimeVariableListener.class,
     //            sourceVariableName = "shadowGameProducingDataTime"
     //    )
-    @Setter(AccessLevel.PACKAGE)
+
     private LocalDateTime shadowGameCompleteDateTime;
 
     //    @ShadowVariable(
@@ -136,19 +143,19 @@ public class SchedulingPlayerFactoryAction
         this.schedulingWarehouse = schedulingWarehouse;
     }
 
-    public void biAssociateWholeToPart(SchedulingPlayerFactoryAction partAction) {
-        this.appendMaterialAction(partAction);
-        partAction.appendSucceedingAction(this);
-        partAction.setTargetActionObject(this.getCurrentActionObject());
-    }
-
-    private void appendMaterialAction(SchedulingPlayerFactoryAction that) {
-        this.materialActions.add(that);
-    }
-
-    private void appendSucceedingAction(SchedulingPlayerFactoryAction that) {
-        this.succeedingActions.add(that);
-    }
+//    public void biAssociateWholeToPart(SchedulingPlayerFactoryAction partAction) {
+//        this.appendMaterialAction(partAction);
+//        partAction.appendSucceedingAction(this);
+//        partAction.setTargetActionObject(this.getCurrentActionObject());
+//    }
+//
+//    private void appendMaterialAction(SchedulingPlayerFactoryAction that) {
+//        this.materialActions.add(that);
+//    }
+//
+//    private void appendSucceedingAction(SchedulingPlayerFactoryAction that) {
+//        this.succeedingActions.add(that);
+//    }
 
     public String getHumanReadable() {
         return getCurrentActionObject().readable();
@@ -160,7 +167,7 @@ public class SchedulingPlayerFactoryAction
 //    }
 
 //    public boolean boolFactoryMismatch() {
-//        SchedulingFactoryInfo planningFactoryType = getPlanningTimeSlotFactory().getSchedulingFactoryInfo();
+//        SchedulingFactoryInfo planningFactoryType = getPlanningFactory().getSchedulingFactoryInfo();
 //        SchedulingProduct schedulingProduct = getSchedulingProduct();
 //        return !planningFactoryType.getPortfolio().contains(schedulingProduct);
 //    }
@@ -170,7 +177,6 @@ public class SchedulingPlayerFactoryAction
         SchedulingProduct schedulingProduct = getSchedulingProduct();
         SchedulingFactoryInfo requireFactory = schedulingProduct.getRequireFactory();
         return requireFactory.getFactoryInstances();
-
     }
 
     public SchedulingProduct getSchedulingProduct() {
@@ -228,6 +234,10 @@ public class SchedulingPlayerFactoryAction
         return getProducingExecutionMode().getExecuteDuration();
     }
 
+    public ProductAmountBill getMaterials() {
+        return getProducingExecutionMode().getMaterials();
+    }
+
 //    public Duration nextAvailableAsDuration(LocalDateTime dateTime) {
 //        List<SchedulingFactoryTimeSlotInstance> affectPeriodFactories = getAffectFollowingFactories();
 //        if (affectPeriodFactories.isEmpty()) {
@@ -241,13 +251,6 @@ public class SchedulingPlayerFactoryAction
 //            return periodFactory.nextAvailableAsDuration(dateTime);
 //        }
 //    }
-
-    public LocalDateTime getPlanningPlayerArrangeDateTime(){
-        SchedulingDateTimeSlot dateTimeSlot = this.getPlanningArrangeDateTimeSlot();
-        return dateTimeSlot != null
-                ? dateTimeSlot.getStart()
-                : null;
-    }
 
     public List<ActionConsequence> calcActionConsequence() {
         if (
@@ -311,31 +314,48 @@ public class SchedulingPlayerFactoryAction
         return actionConsequenceList;
     }
 
-    public LocalDateTime getShadowGameCompleteDateTime() {
-        if (this.getShadowGameProducingDataTime() == null) {
-            return this.shadowGameCompleteDateTime = null;
-        }
-
-        return this.shadowGameCompleteDateTime
-                = this.getShadowGameProducingDataTime()
-                .plus(this.producingExecutionMode.getExecuteDuration());
+    public LocalDateTime getPlanningPlayerArrangeDateTime() {
+        SchedulingDateTimeSlot dateTimeSlot = this.getPlanningDateTimeSlot();
+        return dateTimeSlot != null
+                ? dateTimeSlot.getStart()
+                : null;
     }
 
-    public LocalDateTime getShadowGameProducingDataTime() {
-        if (this.getPlanningSequence() == null || getPlanningPlayerArrangeDateTime() == null || this.getPlanningFactory() == null) {
-            return this.shadowGameProducingDataTime = null;
-        }
-
-        return this.shadowGameProducingDataTime
-                = this.getPlanningFactory().calcProducingDateTime(this);
+    public void acceptComputedDateTime(
+            LocalDateTime producingDateTime,
+            LocalDateTime completedDateTime
+    ) {
+        setShadowGameProducingDataTime(producingDateTime);
+        setShadowGameCompleteDateTime(completedDateTime);
     }
 
-    public void setupComputedDateTime(SchedulingFactoryInstance factoryInstance) {
-        if (factoryInstance != this.getPlanningFactory()) {
-            return;
+//    public LocalDateTime getShadowGameProducingDataTime() {
+//        if (this.getPlanningSequence() == null || getPlanningPlayerArrangeDateTime() == null || this.getPlanningFactory() == null) {
+//            return this.shadowGameProducingDataTime = null;
+//        }
+//
+//        return this.shadowGameProducingDataTime
+//                = this.getPlanningFactory().calcProducingDateTime(this);
+//    }
+//
+//    public LocalDateTime getShadowGameCompleteDateTime() {
+//        if (this.getShadowGameProducingDataTime() == null) {
+//            return this.shadowGameCompleteDateTime = null;
+//        }
+//
+//        return this.shadowGameCompleteDateTime
+//                = this.getShadowGameProducingDataTime()
+//                .plus(this.producingExecutionMode.getExecuteDuration());
+//    }
+
+    public boolean isEqual(SchedulingPlayerFactoryAction that) {
+        SchedulingProduct thisProducing = this.getSchedulingProduct();
+        SchedulingProduct thatProducing = that.getSchedulingProduct();
+        if (thisProducing == null || thatProducing == null) {
+            return false;
+        } else {
+            return thisProducing.equals(thatProducing);
         }
-        factoryInstance.setProducingDateTimeForAction(this);
-        factoryInstance.setCompletedDateTimeForAction(this);
     }
 
 }
