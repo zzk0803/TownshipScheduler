@@ -16,9 +16,9 @@ public sealed interface IGameActionObject
 //
 //    List<SchedulingPlayerWarehouseAction> calcWarehouseActions(IGameActionObject targetObject);
 
-    List<SchedulingPlayerFactoryAction> calcFactoryActions();
+    List<? extends AbstractPlayerProducingArrangement>  calcFactoryActions();
 
-    List<SchedulingPlayerFactoryAction> calcFactoryActions(IGameActionObject targetObject);
+    List<? extends AbstractPlayerProducingArrangement> calcFactoryActions(IGameActionObject targetObject);
 
     Set<SchedulingProducingExecutionMode> getExecutionModeSet();
 

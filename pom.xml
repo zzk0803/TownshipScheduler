@@ -12,9 +12,8 @@
 
     <properties>
         <java.version>23</java.version>
-        <vaadin.version>24.6.5</vaadin.version>
-        <timefold-solver.version>1.19.0</timefold-solver.version>
-<!--        <org.mapstruct.version>1.6.2</org.mapstruct.version>-->
+        <vaadin.version>24.6.6</vaadin.version>
+        <timefold-solver.version>1.20.0</timefold-solver.version>
     </properties>
 
     <parent>

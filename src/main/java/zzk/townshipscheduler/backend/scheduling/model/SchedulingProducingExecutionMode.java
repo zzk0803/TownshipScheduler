@@ -32,7 +32,7 @@ public class SchedulingProducingExecutionMode {
     public SchedulingProducingExecutionMode() {
     }
 
-    public List<SchedulingPlayerFactoryAction> materialsActions() {
+    public List<AbstractPlayerProducingArrangement> materialsActions() {
         return boolAtomicProduct()
                 ? List.of()
                 : materials.entrySet().stream()
@@ -46,12 +46,12 @@ public class SchedulingProducingExecutionMode {
                         .toList();
     }
 
-    private ArrayList<SchedulingPlayerFactoryAction> deepMaterialsActions() {
-        LinkedList<SchedulingPlayerFactoryAction> dealingChain = new LinkedList<>(materialsActions());
-        ArrayList<SchedulingPlayerFactoryAction> factoryActions = new ArrayList<>();
+    private ArrayList<AbstractPlayerProducingArrangement> deepMaterialsActions() {
+        LinkedList<AbstractPlayerProducingArrangement> dealingChain = new LinkedList<>(materialsActions());
+        ArrayList<AbstractPlayerProducingArrangement> factoryActions = new ArrayList<>();
 
         while (!dealingChain.isEmpty()) {
-            SchedulingPlayerFactoryAction currentFactoryAction = dealingChain.removeFirst();
+            AbstractPlayerProducingArrangement currentFactoryAction = dealingChain.removeFirst();
 
             Set<SchedulingProducingExecutionMode> executionModes
                     = currentFactoryAction.getCurrentActionObject().getExecutionModeSet();
@@ -61,7 +61,7 @@ public class SchedulingProducingExecutionMode {
                     .orElseThrow();
             currentFactoryAction.setProducingExecutionMode(producingExecutionMode);
 
-            List<SchedulingPlayerFactoryAction> materialsActions = producingExecutionMode.materialsActions();
+            List<AbstractPlayerProducingArrangement> materialsActions = producingExecutionMode.materialsActions();
             materialsActions.forEach(dealingChain::addLast);
 
         }

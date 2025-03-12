@@ -1,22 +1,19 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import lombok.*;
+import org.springframework.util.Assert;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.select.*;
 
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 public class SchedulingFactoryInfo {
 
-    @PlanningId
     @ToString.Include
     private Id id;
 
@@ -28,10 +25,13 @@ public class SchedulingFactoryInfo {
 
     private Set<SchedulingProduct> portfolio;
 
-    private Set<SchedulingFactoryInstance> factoryInstances;
+    private SchedulingFactoryInstanceSingle factoryInstance;
 
-    @ToString.Include
+    private List<SchedulingFactoryInstanceMultiple> factoryInstances = new ArrayList<>();
+
     private ProducingStructureType producingStructureType;
+
+    private boolean oneInstance;
 
     private int defaultInstanceAmount;
 
@@ -47,15 +47,25 @@ public class SchedulingFactoryInfo {
 
     public SchedulingFactoryInfo() {
         this.portfolio = new LinkedHashSet<>();
-        this.factoryInstances = new LinkedHashSet<>();
     }
 
     public void appendPortfolioProduct(SchedulingProduct schedulingProduct) {
         this.portfolio.add(schedulingProduct);
     }
 
-    public void appendFactoryInstance(SchedulingFactoryInstance schedulingFactoryInstance) {
-        this.factoryInstances.add(schedulingFactoryInstance);
+    public void appendFactoryInstance(SchedulingFactoryInstanceSingle schedulingFactoryInstanceSingle) {
+        this.factoryInstance = schedulingFactoryInstanceSingle;
+    }
+
+    public void appendFactoryInstance(SchedulingFactoryInstanceMultiple schedulingFactoryInstanceMultiple) {
+        this.factoryInstances.add(schedulingFactoryInstanceMultiple);
+    }
+
+    public SchedulingFactoryInstanceSingle getOneFactoryInstance() {
+        if (isOneInstance()) {
+            return Objects.requireNonNull(this.factoryInstance);
+        }
+        throw new IllegalStateException();
     }
 
     @Value
@@ -100,6 +110,11 @@ public class SchedulingFactoryInfo {
         public int compareTo(Id that) {
             Comparator<Id> comparator = Comparator.comparing(Id::getValue);
             return comparator.compare(this, that);
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(value);
         }
 
     }

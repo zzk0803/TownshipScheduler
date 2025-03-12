@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.*;
@@ -12,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+@Slf4j
 class MappingProcess {
 
     private final TownshipSchedulingRequest townshipSchedulingRequest;
@@ -20,11 +22,13 @@ class MappingProcess {
 
     private final Map<SchedulingFactoryInfo.Id, SchedulingFactoryInfo> idFactoryTypeMap;
 
-    private final Set<SchedulingProducingExecutionMode> schedulingProducingExecutionModes;
+    private final List<SchedulingProducingExecutionMode> schedulingProducingExecutionModes;
 
-    private final Set<SchedulingFactoryInstance> schedulingFactoryInstances;
+    private final List<SchedulingFactoryInstanceSingle> schedulingFactoryInstanceSingles;
 
-    private final Set<SchedulingOrder> schedulingOrders;
+    private final List<SchedulingFactoryInstanceMultiple> schedulingFactoryInstanceMultipleList;
+
+    private final List<SchedulingOrder> schedulingOrders;
 
     private SchedulingWarehouse schedulingWarehouse;
 
@@ -32,19 +36,21 @@ class MappingProcess {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
         this.idProductMap = new LinkedHashMap<>();
         this.idFactoryTypeMap = new LinkedHashMap<>();
-        this.schedulingProducingExecutionModes = new LinkedHashSet<>();
-        this.schedulingFactoryInstances = new LinkedHashSet<>();
-        this.schedulingOrders = new LinkedHashSet<>();
+        this.schedulingProducingExecutionModes = new ArrayList<>();
+        this.schedulingFactoryInstanceSingles = new ArrayList<>();
+        this.schedulingFactoryInstanceMultipleList = new ArrayList<>();
+        this.schedulingOrders = new ArrayList<>();
     }
 
-    public TownshipSchedulingProblem map() {
+    public TownshipSchedulingProblem buildProblem() {
         doMapping();
         TownshipSchedulingProblem schedulingProblem
                 = new TownshipSchedulingProblem(
-                new LinkedHashSet<>(this.idProductMap.values()),
-                new LinkedHashSet<>(this.idFactoryTypeMap.values()),
+                new ArrayList<>(this.idProductMap.values()),
+                new ArrayList<>(this.idFactoryTypeMap.values()),
                 this.schedulingOrders,
-                this.schedulingFactoryInstances,
+                this.schedulingFactoryInstanceSingles,
+                this.schedulingFactoryInstanceMultipleList,
                 this.schedulingWarehouse,
                 new SchedulingWorkTimeLimit(
                         LocalDateTime.now().plusMinutes(10),
@@ -135,42 +141,65 @@ class MappingProcess {
                                 FieldFactoryEntity fieldFactoryEntity = fieldFactoryEntities.stream()
                                         .findFirst()
                                         .orElseThrow();
-                                SchedulingFactoryInstance schedulingFactoryInstance = new SchedulingFactoryInstance();
+                                SchedulingFactoryInstanceSingle schedulingFactoryInstanceSingle = new SchedulingFactoryInstanceSingle();
                                 SchedulingFactoryInfo.Id schedulingFactoryInfoId
                                         = SchedulingFactoryInfo.Id.of(fieldFactoryEntity.getFieldFactoryInfoEntity());
                                 SchedulingFactoryInfo schedulingFactoryInfo
                                         = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
-                                schedulingFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
-                                schedulingFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
-                                schedulingFactoryInstance.setProducingLength(size);
-                                schedulingFactoryInstance.setReapWindowSize(size);
-                                schedulingFactoryInfo.appendFactoryInstance(schedulingFactoryInstance);
-                                this.schedulingFactoryInstances.add(schedulingFactoryInstance);
+                                schedulingFactoryInfo.setOneInstance(true);
+                                schedulingFactoryInstanceSingle.setId(factoryInstanceIdRoller.getAndIncrement());
+                                schedulingFactoryInstanceSingle.setSchedulingFactoryInfo(schedulingFactoryInfo);
+                                schedulingFactoryInstanceSingle.setProducingLength(size);
+                                schedulingFactoryInstanceSingle.setReapWindowSize(size);
+                                schedulingFactoryInfo.appendFactoryInstance(schedulingFactoryInstanceSingle);
+                                this.schedulingFactoryInstanceSingles.add(schedulingFactoryInstanceSingle);
                             } else {
-                                Map<FieldFactoryInfoEntity, List<FieldFactoryEntity>> typeInstamceMap = fieldFactoryEntities
+                                Map<FieldFactoryInfoEntity, List<FieldFactoryEntity>> typeInstamceMap
+                                        = fieldFactoryEntities
                                         .stream()
                                         .collect(Collectors.groupingBy(FieldFactoryEntity::getFieldFactoryInfoEntity));
-                                typeInstamceMap.entrySet().forEach(entry -> {
+                                for (Map.Entry<FieldFactoryInfoEntity, List<FieldFactoryEntity>> entry : typeInstamceMap.entrySet()) {
                                     FieldFactoryInfoEntity type = entry.getKey();
                                     List<FieldFactoryEntity> instanceList = entry.getValue();
                                     int size = instanceList.size();
-                                    for (int i = 0; i < size; i++) {
-                                        FieldFactoryEntity fieldFactoryEntity = instanceList.get(i);
-                                        SchedulingFactoryInstance schedulingFactoryInstance = new SchedulingFactoryInstance();
+                                    if (size == 1) {
+                                        FieldFactoryEntity fieldFactoryEntity = instanceList.getFirst();
+                                        SchedulingFactoryInstanceSingle schedulingFactoryInstanceSingle = new SchedulingFactoryInstanceSingle();
                                         SchedulingFactoryInfo.Id schedulingFactoryInfoId
                                                 = SchedulingFactoryInfo.Id.of(type);
                                         SchedulingFactoryInfo schedulingFactoryInfo
                                                 = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
-                                        schedulingFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
+                                        schedulingFactoryInfo.setOneInstance(true);
+                                        schedulingFactoryInstanceSingle.setId(factoryInstanceIdRoller.getAndIncrement());
 //                                        schedulingFactoryInstance.setPinIfOnlyOneVariable(size==1);
-                                        schedulingFactoryInstance.setSeqNum(i + 1);
-                                        schedulingFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
-                                        schedulingFactoryInstance.setProducingLength(fieldFactoryEntity.getProducingLength());
-                                        schedulingFactoryInstance.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
-                                        schedulingFactoryInfo.appendFactoryInstance(schedulingFactoryInstance);
-                                        this.schedulingFactoryInstances.add(schedulingFactoryInstance);
+                                        schedulingFactoryInstanceSingle.setSeqNum(1);
+                                        schedulingFactoryInstanceSingle.setSchedulingFactoryInfo(schedulingFactoryInfo);
+                                        schedulingFactoryInstanceSingle.setProducingLength(fieldFactoryEntity.getProducingLength());
+                                        schedulingFactoryInstanceSingle.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
+                                        schedulingFactoryInfo.appendFactoryInstance(schedulingFactoryInstanceSingle);
+                                        this.schedulingFactoryInstanceSingles.add(schedulingFactoryInstanceSingle);
+                                    } else if(size>1) {
+                                        SchedulingFactoryInfo.Id schedulingFactoryInfoId
+                                                = SchedulingFactoryInfo.Id.of(type);
+                                        SchedulingFactoryInfo schedulingFactoryInfo
+                                                = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
+                                        schedulingFactoryInfo.setOneInstance(false);
+                                        for (int i = 0; i < size; i++) {
+                                            FieldFactoryEntity fieldFactoryEntity = instanceList.get(i);
+                                            SchedulingFactoryInstanceMultiple schedulingFactoryInstanceMultiple
+                                                    = new SchedulingFactoryInstanceMultiple();
+                                            schedulingFactoryInstanceMultiple.setId(factoryInstanceIdRoller.getAndIncrement());
+                                            schedulingFactoryInstanceMultiple.setSeqNum(i + 1);
+                                            schedulingFactoryInstanceMultiple.setSchedulingFactoryInfo(schedulingFactoryInfo);
+                                            schedulingFactoryInstanceMultiple.setProducingLength(fieldFactoryEntity.getProducingLength());
+                                            schedulingFactoryInstanceMultiple.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
+                                            schedulingFactoryInfo.appendFactoryInstance(schedulingFactoryInstanceMultiple);
+                                            this.schedulingFactoryInstanceMultipleList.add(schedulingFactoryInstanceMultiple);
+                                        }
+                                    }else {
+                                        log.warn("type {} size < 0",type);
                                     }
-                                });
+                                }
                             }
                         }
                 );

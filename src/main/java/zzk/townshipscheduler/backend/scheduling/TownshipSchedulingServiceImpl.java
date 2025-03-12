@@ -40,7 +40,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     @Override
     public TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest) {
         MappingProcess process = new MappingProcess(townshipSchedulingRequest);
-        TownshipSchedulingProblem townshipSchedulingProblem = process.map();
+        TownshipSchedulingProblem townshipSchedulingProblem = process.buildProblem();
         UUID uuid = townshipSchedulingProblem.getUuid();
         idProblemMap.put(uuid, townshipSchedulingProblem);
         return townshipSchedulingProblem;

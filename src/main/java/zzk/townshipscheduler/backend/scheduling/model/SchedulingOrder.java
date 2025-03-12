@@ -77,24 +77,13 @@ public final class SchedulingOrder implements IGameActionObject {
 //    }
 
     @Override
-    public List<SchedulingPlayerFactoryAction> calcFactoryActions() {
+    public List<AbstractPlayerProducingArrangement> calcFactoryActions() {
         return this.calcFactoryActions(this);
-//        return this.getProductAmountBill().entrySet()
-//                .stream()
-//                .flatMap(entry -> {
-//                    SchedulingProduct schedulingProduct = entry.getKey();
-//                    int amount = entry.getValue();
-//                    return IntStream.range(0, amount)
-//                            .mapToObj(_ -> schedulingProduct.calcFactoryActions(this))
-//                            .flatMap(Collection::stream);
-//                })
-//                .toList();
     }
 
     @Override
-    public List<SchedulingPlayerFactoryAction> calcFactoryActions(IGameActionObject targetObject) {
-        List<SchedulingPlayerFactoryAction> result
-                = this.getProductAmountBill().entrySet()
+    public List<AbstractPlayerProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
+        return this.getProductAmountBill().entrySet()
                 .stream()
                 .flatMap(entry -> {
                     SchedulingProduct schedulingProduct = entry.getKey();
@@ -104,8 +93,6 @@ public final class SchedulingOrder implements IGameActionObject {
                             .flatMap(Collection::stream);
                 })
                 .toList();
-
-        return result;
     }
 
     @Override

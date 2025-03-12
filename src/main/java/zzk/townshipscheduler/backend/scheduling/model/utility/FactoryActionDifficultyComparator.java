@@ -1,16 +1,20 @@
 package zzk.townshipscheduler.backend.scheduling.model.utility;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingExecutionMode;
+import zzk.townshipscheduler.backend.scheduling.model.AbstractPlayerProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerProducingArrangement;
 
 import java.util.Comparator;
 
-public class FactoryActionDifficultyComparator implements Comparator<SchedulingPlayerFactoryAction> {
+public class FactoryActionDifficultyComparator implements Comparator<AbstractPlayerProducingArrangement> {
 
     @Override
-    public int compare(SchedulingPlayerFactoryAction former, SchedulingPlayerFactoryAction latter) {
+    public int compare(AbstractPlayerProducingArrangement former, AbstractPlayerProducingArrangement latter) {
         return new CompareToBuilder()
+                .append(
+                        former.getSchedulingProduct().getLevel(),
+                        latter.getSchedulingProduct().getLevel()
+                )
                 .append(
                         former.getMaterials().size(),
                         latter.getMaterials().size()

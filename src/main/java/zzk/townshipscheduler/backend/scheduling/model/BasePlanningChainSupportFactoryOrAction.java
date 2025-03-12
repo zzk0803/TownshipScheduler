@@ -12,7 +12,7 @@
 //@PlanningEntity
 //public abstract class BasePlanningChainSupportFactoryOrAction {
 //
-//    @InverseRelationShadowVariable(sourceVariableName = "planningPrevious")
+//    @InverseRelationShadowVariable(sourceVariableName = SchedulingPlayerFactoryAction.PLANNING_PREVIOUS)
 //    private SchedulingPlayerFactoryAction planningNext;
 //
 //    public Duration nextAvailableAsDuration(LocalDateTime dateTime) {
@@ -27,6 +27,6 @@
 //        }
 //    }
 //
-//    public abstract List<PlayerFactoryActionConsequence> calcTimeSlotFactoryConsequence();
+//    public abstract List<ActionConsequence> calcConsequence();
 //
 //}

@@ -54,9 +54,11 @@ public class TownshipFandomCrawlingProcessFacade {
                             setTransferResult(transferResult);
                             this.persistProcessor.process(transferResult);
                         }, townshipExecutorService
-                ).thenAcceptAsync(_ -> {
-                    this.hardcodeHotfixProcessor.process();
-                }, townshipExecutorService);
+                ).thenAcceptAsync(
+                        _ -> {
+                            this.hardcodeHotfixProcessor.process();
+                        }, townshipExecutorService
+                );
     }
 
     public CompletableFuture<byte[]> downloadImage(String url) {

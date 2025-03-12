@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
 import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
@@ -16,10 +17,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
@@ -39,7 +37,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private UI ui;
 
-    private Grid<SchedulingPlayerFactoryAction> actionGrid;
+    private Grid<AbstractPlayerProducingArrangement> actionGrid;
 
     private Paragraph scoreAnalysisParagraph;
 
@@ -71,20 +69,25 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private VerticalLayout buildGameActionTabSheetArticle() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        actionGrid = new Grid<>(SchedulingPlayerFactoryAction.class, false);
-        actionGrid.addColumn(SchedulingPlayerFactoryAction::getActionId)
+        actionGrid = new Grid<>(AbstractPlayerProducingArrangement.class, false);
+        actionGrid.addColumn(AbstractPlayerProducingArrangement::getActionId)
                 .setHeader("#")
-                .setResizable(true);
+                .setResizable(true)
+                .setAutoWidth(true)
+                .setFlexGrow(0);
         actionGrid.addColumn(factoryAction -> factoryAction.getSchedulingProduct().getName())
                 .setHeader("Product")
-                .setResizable(true);
+                .setResizable(true)
+                .setAutoWidth(true)
+                .setFlexGrow(0);
         actionGrid.addComponentColumn(ActionCard::new)
                 .setHeader("Factory/DateTime")
                 .setSortable(true)
-                .setComparator(Comparator.comparing(SchedulingPlayerFactoryAction::getPlanningPlayerArrangeDateTime)
-                        .thenComparing(SchedulingPlayerFactoryAction::getPlanningSequence)
+                .setComparator(
+                        Comparator.comparing(AbstractPlayerProducingArrangement::getPlanningDateTimeSlotStartAsLocalDateTime)
                 )
                 .setFlexGrow(1)
+                .setAutoWidth(true)
                 .setResizable(true);
         schedulingViewPresenter.setupPlayerActionGrid(actionGrid);
 
@@ -155,15 +158,14 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     class ActionCard extends HorizontalLayout {
 
-        private SchedulingPlayerFactoryAction factoryAction;
+        private AbstractPlayerProducingArrangement factoryAction;
 
-        public ActionCard(SchedulingPlayerFactoryAction factoryAction) {
+        public ActionCard(AbstractPlayerProducingArrangement factoryAction) {
             this();
             this.factoryAction = factoryAction;
-            SchedulingFactoryInstance planningFactory = factoryAction.getPlanningFactory();
-            LocalDateTime planningPlayerArrangeDateTime = factoryAction.getPlanningPlayerArrangeDateTime();
-            Integer planningSequence = factoryAction.getPlanningSequence();
-            boolean scheduled = planningFactory != null && planningPlayerArrangeDateTime != null && planningSequence != null;
+            AbstractFactoryInstance planningFactory = factoryAction.getFactory();
+            LocalDateTime planningPlayerArrangeDateTime = factoryAction.getPlanningDateTimeSlotStartAsLocalDateTime();
+            boolean scheduled = planningFactory != null && planningPlayerArrangeDateTime != null ;
 
             VerticalLayout verticalLayout = new VerticalLayout();
             verticalLayout.add(
@@ -179,11 +181,6 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
             String humanReadable = factoryAction.getHumanReadable();
             add(
                     new VerticalLayout(
-                            new Text((scheduled
-                                    ? "Seq:" + planningSequence
-                                    : "Seq: N/A")
-                            )
-                            ,
                             scheduled
                                     ? new ReadonlyDateTimePicker("Arrange", planningPlayerArrangeDateTime)
                                     : new Text("Arrange")
@@ -216,14 +213,20 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
             setDefaultHorizontalComponentAlignment(Alignment.CENTER);
         }
 
-        public SchedulingPlayerFactoryAction getFactoryAction() {
+        public AbstractPlayerProducingArrangement getFactoryAction() {
             return factoryAction;
         }
 
-        public void setFactoryAction(SchedulingPlayerFactoryAction factoryAction) {
+        public void setFactoryAction(AbstractPlayerProducingArrangement factoryAction) {
             this.factoryAction = factoryAction;
         }
 
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        schedulingViewPresenter.reset();
+        actionGrid = null;
     }
 
     class ReadonlyDateTimePicker extends DateTimePicker {

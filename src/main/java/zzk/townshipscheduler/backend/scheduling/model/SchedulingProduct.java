@@ -71,9 +71,19 @@ public final class SchedulingProduct implements IGameActionObject {
 //    }
 
     @Override
-    public List<SchedulingPlayerFactoryAction> calcFactoryActions() {
+    public List<AbstractPlayerProducingArrangement> calcFactoryActions() {
+        SchedulingFactoryInfo factoryInfo = getRequireFactory();
+        if (factoryInfo.isOneInstance()) {
+            return List.of(
+                    new SchedulingPlayerProducingArrangement(
+                            this,
+                            this,
+                            factoryInfo.getOneFactoryInstance()
+                    )
+            );
+        }
         return List.of(
-                new SchedulingPlayerFactoryAction(
+                new SchedulingPlayerFactoryProducingArrangement(
                         this,
                         this
                 )
@@ -81,9 +91,19 @@ public final class SchedulingProduct implements IGameActionObject {
     }
 
     @Override
-    public List<SchedulingPlayerFactoryAction> calcFactoryActions(IGameActionObject targetObject) {
+    public List<AbstractPlayerProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
+        SchedulingFactoryInfo factoryInfo = getRequireFactory();
+        if (factoryInfo.isOneInstance()) {
+            return List.of(
+                    new SchedulingPlayerProducingArrangement(
+                            targetObject,
+                            this,
+                            factoryInfo.getOneFactoryInstance()
+                    )
+            );
+        }
         return List.of(
-                new SchedulingPlayerFactoryAction(
+                new SchedulingPlayerFactoryProducingArrangement(
                         targetObject,
                         this
                 )

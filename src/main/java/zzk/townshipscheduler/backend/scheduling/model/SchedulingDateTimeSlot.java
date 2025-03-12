@@ -1,27 +1,25 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Data
-@PlanningEntity
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
+public class SchedulingDateTimeSlot implements IActionSensitive {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
             = Comparator.comparing(SchedulingDateTimeSlot::getStart);
 
-    private static ThreadLocal<Set<SchedulingDateTimeSlot>> cached = new ThreadLocal<>();
+    private static ThreadLocal<List<SchedulingDateTimeSlot>> cached = new ThreadLocal<>();
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -33,13 +31,16 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     private int durationInMinute;
 
-    @InverseRelationShadowVariable(sourceVariableName = "planningDateTimeSlot")
-    private List<SchedulingPlayerFactoryAction> planningFactoryActionList = new ArrayList<>();
+//    @ShadowVariable(
+//            sourceVariableName = PLANNING_ACTIONS,
+//            variableListenerClass = DataTimeSlotRollingAndPushVariableListener.class
+//    )
+//    private Long shadowRollingChange = 0L;
 
     public static Optional<SchedulingDateTimeSlot> of(
             final LocalDateTime dateTime
     ) {
-        Set<SchedulingDateTimeSlot> dateTimeSlots = cached.get();
+        List<SchedulingDateTimeSlot> dateTimeSlots = cached.get();
         for (SchedulingDateTimeSlot currentSlot : dateTimeSlots) {
             LocalDateTime currentSlotStart = currentSlot.getStart();
             LocalDateTime currentSlotEnd = currentSlot.getEnd();
@@ -59,27 +60,28 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
                && latterDateTime.isAfter(dateTime);
     }
 
-    public static Set<SchedulingDateTimeSlot> toValueRange(
+    public static List<SchedulingDateTimeSlot> toValueRange(
             final LocalDateTime startInclusive,
             final LocalDateTime endExclusive,
             final int durationInMinute
     ) {
-        Set<SchedulingDateTimeSlot> result = new LinkedHashSet<>();
-        long minutesNumber = startInclusive.until(endExclusive, ChronoUnit.MINUTES);
-        long slot = minutesNumber / durationInMinute;
+        int minutesNumber = Math.toIntExact(startInclusive.until(endExclusive, ChronoUnit.MINUTES));
+        int slot = minutesNumber / durationInMinute;
         slot = slot + (minutesNumber % durationInMinute > 0 ? 1 : 0);
+        List<SchedulingDateTimeSlot> result = new ArrayList<>(slot);
         LocalDateTime slotStart = startInclusive;
         LocalDateTime slotEnd = startInclusive.plusMinutes(durationInMinute);
-        AtomicInteger idRoller = new AtomicInteger(1);
+        AtomicInteger idRoller = new AtomicInteger(0);
         for (long i = 0; i < slot; i++) {
             SchedulingDateTimeSlot schedulingDateTimeSlot = new SchedulingDateTimeSlot();
-            schedulingDateTimeSlot.setId(idRoller.getAndIncrement());
+            schedulingDateTimeSlot.setId(idRoller.incrementAndGet());
             schedulingDateTimeSlot.setStart(slotStart);
             schedulingDateTimeSlot.setEnd(slotEnd);
             schedulingDateTimeSlot.setDurationInMinute(durationInMinute);
             result.add(schedulingDateTimeSlot);
-            slotStart = slotStart.plusMinutes(durationInMinute);
-            slotEnd = slotEnd.plusMinutes(durationInMinute);
+
+            slotStart = slotStart.plus(durationInMinute, ChronoUnit.MINUTES);
+            slotEnd = slotEnd.plus(durationInMinute, ChronoUnit.MINUTES);
         }
         cached.set(result);
         return result;
@@ -90,15 +92,8 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         return start.toString() + "~" + end.toString();
     }
 
-    @Override
-    public int compareTo(SchedulingDateTimeSlot that) {
-        return DATE_TIME_SLOT_COMPARATOR.compare(this, that);
-    }
-
-    public Optional<Integer> getMaxSequenceInThisSlot() {
-        return this.planningFactoryActionList.stream()
-                .map(SchedulingPlayerFactoryAction::getPlanningSequence)
-                .max(Integer::compareTo);
+    public Comparator<SchedulingDateTimeSlot> getDateTimeSlotComparator() {
+        return DATE_TIME_SLOT_COMPARATOR;
     }
 
 }

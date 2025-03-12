@@ -2,27 +2,26 @@ package zzk.townshipscheduler.ui.views.scheduling;
 
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
-import ai.timefold.solver.core.api.solver.*;
-import ai.timefold.solver.core.config.solver.SolverManagerConfig;
+import ai.timefold.solver.core.api.solver.SolutionManager;
+import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.api.solver.SolverJob;
+import ai.timefold.solver.core.api.solver.SolverManager;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.spring.annotation.VaadinSessionScope;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
+import zzk.townshipscheduler.backend.scheduling.model.AbstractPlayerProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @SpringComponent
-@UIScope
 @RequiredArgsConstructor
 public class SchedulingViewPresenter {
 
@@ -54,8 +53,8 @@ public class SchedulingViewPresenter {
     @Setter
     private SchedulingView schedulingView;
 
-    public void setupPlayerActionGrid(Grid<SchedulingPlayerFactoryAction> grid) {
-        grid.setItems(findCurrentProblem().getSchedulingPlayerFactoryActions());
+    public void setupPlayerActionGrid(Grid<AbstractPlayerProducingArrangement> grid) {
+        grid.setItems(findCurrentProblem().getPlayerProducingArrangements());
     }
 
     private TownshipSchedulingProblem findCurrentProblem() {
@@ -65,7 +64,12 @@ public class SchedulingViewPresenter {
         return this.currentProblem;
     }
 
-    public Set<SchedulingOrder> getSchedulingOrder() {
+    public void reset() {
+        this.currentProblem = null;
+        this.currentProblemId = null;
+    }
+
+    public List<SchedulingOrder> getSchedulingOrder() {
         return findCurrentProblem().getSchedulingOrderSet();
     }
 
@@ -74,13 +78,15 @@ public class SchedulingViewPresenter {
                 .withProblemId(currentProblemId)
                 .withProblem(currentProblem)
                 .withFirstInitializedSolutionConsumer((townshipSchedulingProblem, isTerminatedEarly) -> {
-                    List<SchedulingPlayerFactoryAction> schedulingActions = townshipSchedulingProblem.getSchedulingPlayerFactoryActions();
-                    ScoreAnalysis<BendableScore> scoreAnalysis = solutionManager.analyze(
+                    List<AbstractPlayerProducingArrangement> schedulingActions
+                            = townshipSchedulingProblem.getPlayerProducingArrangements();
+                    ScoreAnalysis<BendableScore> scoreAnalysis
+                            = solutionManager.analyze(
                             townshipSchedulingProblem
                     );
                     this.ui.access(
                             () -> {
-                                Grid<SchedulingPlayerFactoryAction> grid = getSchedulingView().getActionGrid();
+                                Grid<AbstractPlayerProducingArrangement> grid = getSchedulingView().getActionGrid();
                                 grid.setItems(schedulingActions);
                                 grid.getDataProvider().refreshAll();
                                 getSchedulingView().getScoreAnalysisParagraph().setText(scoreAnalysis.toString());
@@ -89,29 +95,34 @@ public class SchedulingViewPresenter {
                 })
                 .withBestSolutionConsumer(
                         townshipSchedulingProblem -> {
-                            List<SchedulingPlayerFactoryAction> schedulingActions = townshipSchedulingProblem.getSchedulingPlayerFactoryActions();
-                            ScoreAnalysis<BendableScore> scoreAnalysis = solutionManager.analyze(
+                            List<AbstractPlayerProducingArrangement> schedulingActions
+                                    = townshipSchedulingProblem.getPlayerProducingArrangements();
+                            ScoreAnalysis<BendableScore> scoreAnalysis
+                                    = solutionManager.analyze(
                                     townshipSchedulingProblem
                             );
                             this.ui.access(
                                     () -> {
-                                        Grid<SchedulingPlayerFactoryAction> grid = getSchedulingView().getActionGrid();
+                                        Grid<AbstractPlayerProducingArrangement> grid = getSchedulingView().getActionGrid();
                                         grid.setItems(schedulingActions);
                                         grid.getDataProvider().refreshAll();
-                                        getSchedulingView().getScoreAnalysisParagraph().setText(scoreAnalysis.toString());
+                                        getSchedulingView().getScoreAnalysisParagraph()
+                                                .setText(scoreAnalysis.toString());
                                     }
                             );
                         }
                 )
                 .withFinalBestSolutionConsumer(townshipSchedulingProblem -> {
                     this.currentProblem = townshipSchedulingProblem;
-                    List<SchedulingPlayerFactoryAction> schedulingActions = this.currentProblem.getSchedulingPlayerFactoryActions();
-                    ScoreAnalysis<BendableScore> scoreAnalysis = solutionManager.analyze(
+                    List<AbstractPlayerProducingArrangement> schedulingActions
+                            = this.currentProblem.getPlayerProducingArrangements();
+                    ScoreAnalysis<BendableScore> scoreAnalysis
+                            = solutionManager.analyze(
                             townshipSchedulingProblem
                     );
                     this.ui.access(
                             () -> {
-                                Grid<SchedulingPlayerFactoryAction> grid = getSchedulingView().getActionGrid();
+                                Grid<AbstractPlayerProducingArrangement> grid = getSchedulingView().getActionGrid();
                                 grid.setItems(schedulingActions);
                                 grid.getDataProvider().refreshAll();
                                 getSchedulingView().getScoreAnalysisParagraph().setText(scoreAnalysis.toString());
