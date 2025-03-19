@@ -1,13 +1,14 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import lombok.*;
-import org.springframework.util.Assert;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.select.*;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -45,8 +46,17 @@ public class SchedulingFactoryInfo {
 
     private int maxInstanceAmount;
 
+    private int entitySizeEstimated;
+
+
     public SchedulingFactoryInfo() {
         this.portfolio = new LinkedHashSet<>();
+    }
+
+    public List<ArrangeSequence> toArrangeSequenceValueRange() {
+        return IntStream.range(0, entitySizeEstimated)
+                .mapToObj(i -> new ArrangeSequence(this.id, i))
+                .toList();
     }
 
     public void appendPortfolioProduct(SchedulingProduct schedulingProduct) {
@@ -66,6 +76,23 @@ public class SchedulingFactoryInfo {
             return Objects.requireNonNull(this.factoryInstance);
         }
         throw new IllegalStateException();
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class ArrangeSequence implements Comparable<ArrangeSequence> {
+
+        private Id factoryInfoId;
+
+        private Integer sequence;
+
+        @Override
+        public int compareTo(ArrangeSequence that) {
+            CompareToBuilder compareToBuilder = new CompareToBuilder();
+            compareToBuilder.append(this, that, Comparator.comparingInt(ArrangeSequence::getSequence));
+            return compareToBuilder.toComparison();
+        }
+
     }
 
     @Value

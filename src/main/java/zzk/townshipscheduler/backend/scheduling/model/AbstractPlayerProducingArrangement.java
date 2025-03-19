@@ -2,14 +2,19 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import zzk.townshipscheduler.backend.scheduling.model.utility.FactoryActionDifficultyComparator;
+import org.springframework.context.ApplicationEventPublisherAware;
+import zzk.townshipscheduler.backend.ProducingStructureType;
+import zzk.townshipscheduler.backend.scheduling.model.utility.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -18,16 +23,16 @@ import java.util.UUID;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@PlanningEntity(difficultyComparatorClass = FactoryActionDifficultyComparator.class)
-public abstract class AbstractPlayerProducingArrangement implements IActionSensitive {
+@PlanningEntity(difficultyComparatorClass = PlayerArrangementDifficultyComparator.class)
+public abstract class AbstractPlayerProducingArrangement {
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
     public static final String PLANNING_SEQUENCE = "planningSequence";
 
-    public static final String SHADOW_PRODUCING_DATE_TIME = "shadowGameProducingDataTime";
+    public static final String SHADOW_PREVIOUS = "shadowPreviousArrangements";
 
-    public static final String SHADOW_COMPLETED_DATE_TIME = "shadowGameCompleteDateTime";
+    public static final String SHADOW_DELAY_DURATION = "shadowDelayFromPlanningSlotDuration";
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -42,25 +47,43 @@ public abstract class AbstractPlayerProducingArrangement implements IActionSensi
     @ToString.Include
     protected IGameActionObject currentActionObject;
 
+    protected List<AbstractPlayerProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
+
+    protected List<AbstractPlayerProducingArrangement> supportProducingArrangements = new ArrayList<>();
+
     protected SchedulingWorkTimeLimit workTimeLimit;
 
-    protected SchedulingWarehouse schedulingWarehouse;
+    protected SchedulingPlayer schedulingPlayer;
 
     protected SchedulingProducingExecutionMode producingExecutionMode;
 
     @PlanningVariable(
-            valueRangeProviderRefs = TownshipSchedulingProblem.SEQUENCE_VALUE_RANGE
+            valueRangeProviderRefs = TownshipSchedulingProblem.SEQUENCE_VALUE_RANGE,
+            strengthComparatorClass = ArrangeSequenceStrengthComparatorClass.class
     )
-    protected Integer planningSequence;
+    protected SchedulingFactoryInfo.ArrangeSequence planningSequence;
 
     @PlanningVariable(
-            valueRangeProviderRefs = TownshipSchedulingProblem.DATE_TIME_SLOT_VALUE_RANGE
+            valueRangeProviderRefs = TownshipSchedulingProblem.DATE_TIME_SLOT_VALUE_RANGE,
+            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
     )
     protected SchedulingDateTimeSlot planningDateTimeSlot;
 
-    protected LocalDateTime shadowGameProducingDataTime;
+    @ShadowVariable(
+            variableListenerClass = ProducingArrangementPreviousArrangementsVariableListener.class,
+            sourceVariableName = PLANNING_SEQUENCE
+    )
+    @ShadowVariable(
+            variableListenerClass = ProducingArrangementPreviousArrangementsVariableListener.class,
+            sourceVariableName = PLANNING_DATA_TIME_SLOT
+    )
+    protected List<AbstractPlayerProducingArrangement> shadowPreviousArrangements;
 
-    protected LocalDateTime shadowGameCompleteDateTime;
+    @ShadowVariable(
+            variableListenerClass = ProducingArrangementComputedDateTimeVariableListener.class,
+            sourceVariableName = SHADOW_PREVIOUS
+    )
+    protected Duration shadowDelayFromPlanningSlotDuration = Duration.ZERO;
 
     public AbstractPlayerProducingArrangement(
             IGameActionObject targetActionObject,
@@ -90,29 +113,29 @@ public abstract class AbstractPlayerProducingArrangement implements IActionSensi
         return new SchedulingPlayerFactoryProducingArrangement(targetActionObject, currentActionObject);
     }
 
-    public final LocalDateTime getShadowGameCompleteDateTime() {
-        return this.shadowGameProducingDataTime == null
-                ? null
-                : this.shadowGameProducingDataTime.plus(getProducingDuration());
+    @ValueRangeProvider(id = TownshipSchedulingProblem.SEQUENCE_VALUE_RANGE)
+    public List<SchedulingFactoryInfo.ArrangeSequence> arrangeSequencesValueRange() {
+        return getRequiredFactoryInfo().toArrangeSequenceValueRange();
     }
 
-    public Duration getProducingDuration() {
-        return getProducingExecutionMode().getExecuteDuration();
+    public <T extends AbstractPlayerProducingArrangement> void setupPreviousArrangements(List<T> arrangements) {
+        shadowPreviousArrangements = new ArrayList<>(arrangements);
     }
 
     public void readyElseThrow() {
         Objects.requireNonNull(this.getCurrentActionObject());
         Objects.requireNonNull(getActionId());
+        Objects.requireNonNull(getActionUuid());
     }
 
     public void activate(
             ActionIdRoller idRoller,
             SchedulingWorkTimeLimit workTimeLimit,
-            SchedulingWarehouse schedulingWarehouse
+            SchedulingPlayer schedulingPlayer
     ) {
         idRoller.setup(this);
         this.workTimeLimit = workTimeLimit;
-        this.schedulingWarehouse = schedulingWarehouse;
+        this.schedulingPlayer = schedulingPlayer;
     }
 
     public String getHumanReadable() {
@@ -123,13 +146,109 @@ public abstract class AbstractPlayerProducingArrangement implements IActionSensi
         return getProducingExecutionMode().getMaterials();
     }
 
-    public abstract List<ActionConsequence> calcConsequence();
+    public List<ActionConsequence> calcConsequence() {
+        if (
+                getPlanningDateTimeSlot() == null
+                || getFactory() == null
+                || getPlanningSequence() == null
+        ) {
+            return List.of();
+        }
+
+        SchedulingProducingExecutionMode executionMode = getProducingExecutionMode();
+        List<ActionConsequence> actionConsequenceList = new ArrayList<>(5);
+        //when arrange,materials was consumed
+        if (!executionMode.boolAtomicProduct()) {
+            ProductAmountBill materials = executionMode.getMaterials();
+            materials.forEach((material, amount) -> {
+                ActionConsequence consequence = ActionConsequence.builder()
+                        .actionId(getActionId())
+                        .localDateTime(getPlanningDateTimeSlotStartAsLocalDateTime())
+                        .resource(ActionConsequence.SchedulingResource.productStock(material))
+                        .resourceChange(ActionConsequence.SchedulingResourceChange.decrease(amount))
+                        .build();
+                actionConsequenceList.add(consequence);
+            });
+        }
+
+        //when arrange,factory wait queue was consumed
+        actionConsequenceList.add(
+                ActionConsequence.builder()
+                        .actionId(getActionId())
+                        .localDateTime(getPlanningDateTimeSlotStartAsLocalDateTime())
+                        .resource(
+                                ActionConsequence.SchedulingResource.factoryWaitQueue(
+                                        getFactory()
+                                )
+                        )
+                        .resourceChange(ActionConsequence.SchedulingResourceChange.decrease())
+                        .build()
+        );
+
+        //when completed ,factory wait queue was release
+        actionConsequenceList.add(
+                ActionConsequence.builder()
+                        .actionId(getActionId())
+                        .localDateTime(getShadowGameCompleteDateTime())
+                        .resource(ActionConsequence.SchedulingResource.factoryWaitQueue(
+                                        getFactory()
+                                )
+                        )
+                        .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
+                        .build()
+        );
+
+        //when completed ,product stock was increase
+        actionConsequenceList.add(
+                ActionConsequence.builder()
+                        .actionId(getActionId())
+                        .localDateTime(getShadowGameCompleteDateTime())
+                        .resource(ActionConsequence.SchedulingResource.productStock(getSchedulingProduct()))
+                        .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
+                        .build()
+        );
+
+
+        return actionConsequenceList;
+    }
+
+    public abstract AbstractFactoryInstance getFactory();
 
     public LocalDateTime getPlanningDateTimeSlotStartAsLocalDateTime() {
         SchedulingDateTimeSlot dateTimeSlot = this.getPlanningDateTimeSlot();
         return dateTimeSlot != null
                 ? dateTimeSlot.getStart()
                 : null;
+    }
+
+    public final LocalDateTime getShadowGameCompleteDateTime() {
+        return this.getShadowGameProducingDateTime() == null
+                ? null
+                : this.getShadowGameProducingDateTime().plus(getProducingDuration());
+    }
+
+    public final LocalDateTime getShadowGameProducingDateTime() {
+        LocalDateTime localDateTime = null;
+        if (this.getPlanningDateTimeSlot() != null && this.getPlanningSequence() != null) {
+            localDateTime
+                    = this.getFactory().getProducingStructureType() == ProducingStructureType.SLOT
+                    ? this.getPlanningDateTimeSlotStartAsLocalDateTime()
+                    : this.getPlanningDateTimeSlotStartAsLocalDateTime()
+                            .plus(
+                                    getShadowDelayFromPlanningSlotDuration() == null
+                                            ? Duration.ZERO
+                                            : getShadowDelayFromPlanningSlotDuration()
+                            );
+        }
+        return localDateTime;
+    }
+
+    public Duration getProducingDuration() {
+        return getProducingExecutionMode().getExecuteDuration();
+    }
+
+    public SchedulingProduct getSchedulingProduct() {
+        return (SchedulingProduct) getCurrentActionObject();
     }
 
     public boolean boolEquivalent(SchedulingPlayerProducingArrangement that) {
@@ -142,10 +261,20 @@ public abstract class AbstractPlayerProducingArrangement implements IActionSensi
         }
     }
 
-    public SchedulingProduct getSchedulingProduct() {
-        return (SchedulingProduct) getCurrentActionObject();
+    public SchedulingFactoryInfo getRequiredFactoryInfo() {
+        return getSchedulingProduct().getRequireFactory();
     }
 
-    public abstract AbstractFactoryInstance getFactory();
+    public boolean boolCompositeProductProducing() {
+        return getProducingExecutionMode().boolCompositeProduct();
+    }
+
+    public void appendPrerequisiteArrangements(List<AbstractPlayerProducingArrangement> prerequisiteArrangements) {
+        this.prerequisiteProducingArrangements.addAll(prerequisiteArrangements);
+    }
+
+    public void appendSupportArrangements(List<AbstractPlayerProducingArrangement> supportProducingArrangements) {
+        this.supportProducingArrangements.addAll(supportProducingArrangements);
+    }
 
 }

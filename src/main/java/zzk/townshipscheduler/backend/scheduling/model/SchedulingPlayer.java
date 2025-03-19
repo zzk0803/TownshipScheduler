@@ -1,16 +1,19 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.apache.commons.math3.analysis.function.Abs;
 
 import java.util.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-public class SchedulingWarehouse {
+public class SchedulingPlayer {
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -68,7 +71,7 @@ public class SchedulingWarehouse {
         return productStockMap;
     }
 
-    public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<SchedulingPlayerProducingArrangement> actions) {
+    public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<AbstractPlayerProducingArrangement> actions) {
         List<ActionConsequence> actionConsequenceList = mapToActionProductStockConsequences(actions);
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);
         for (ActionConsequence consequence : actionConsequenceList) {
@@ -82,9 +85,9 @@ public class SchedulingWarehouse {
         return productStockMap;
     }
 
-    public List<ActionConsequence> mapToActionProductStockConsequences(List<SchedulingPlayerProducingArrangement> actions) {
+    public List<ActionConsequence> mapToActionProductStockConsequences(List<AbstractPlayerProducingArrangement> actions) {
         return actions.stream()
-                .map(SchedulingPlayerProducingArrangement::calcConsequence)
+                .map(AbstractPlayerProducingArrangement::calcConsequence)
                 .flatMap(Collection::stream)
                 .sorted()
                 .filter(consequence -> consequence.getResource() instanceof ActionConsequence.ProductStock)

@@ -30,7 +30,7 @@ class MappingProcess {
 
     private final List<SchedulingOrder> schedulingOrders;
 
-    private SchedulingWarehouse schedulingWarehouse;
+    private SchedulingPlayer schedulingPlayer;
 
     public MappingProcess(TownshipSchedulingRequest townshipSchedulingRequest) {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
@@ -46,12 +46,13 @@ class MappingProcess {
         doMapping();
         TownshipSchedulingProblem schedulingProblem
                 = new TownshipSchedulingProblem(
+                UUID.randomUUID().toString(),
                 new ArrayList<>(this.idProductMap.values()),
                 new ArrayList<>(this.idFactoryTypeMap.values()),
                 this.schedulingOrders,
                 this.schedulingFactoryInstanceSingles,
                 this.schedulingFactoryInstanceMultipleList,
-                this.schedulingWarehouse,
+                this.schedulingPlayer,
                 new SchedulingWorkTimeLimit(
                         LocalDateTime.now().plusMinutes(10),
                         LocalDateTime.now().plusDays(2)
@@ -207,7 +208,7 @@ class MappingProcess {
     }
 
     private void fetchAndMapToSchedulingWarehouse() {
-        SchedulingWarehouse schedulingWarehouse = new SchedulingWarehouse();
+        SchedulingPlayer schedulingPlayer = new SchedulingPlayer();
         Map<SchedulingProduct, Integer> productAmountMap = new LinkedHashMap<>();
 
         WarehouseEntity warehouseEntityProjection
@@ -221,8 +222,8 @@ class MappingProcess {
                     );
                 }
         );
-        schedulingWarehouse.setProductAmountMap(productAmountMap);
-        this.schedulingWarehouse = schedulingWarehouse;
+        schedulingPlayer.setProductAmountMap(productAmountMap);
+        this.schedulingPlayer = schedulingPlayer;
     }
 
     private void fetchAndMapToSchedulingOrder() {

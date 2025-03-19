@@ -10,7 +10,7 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
+import java.lang.String;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -20,35 +20,35 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
 
-    private final SolverManager<TownshipSchedulingProblem, UUID> solverManager;
+    private final SolverManager<TownshipSchedulingProblem, String> solverManager;
 
-    private final Map<UUID, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
+    private final Map<String, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
 
     private final Consumer<TownshipSchedulingProblem> defaultConsumer
             = townshipSchedulingProblem -> {
-        UUID uuid = townshipSchedulingProblem.getUuid();
+        var uuid = townshipSchedulingProblem.getUuid();
         idProblemMap.put(uuid, townshipSchedulingProblem);
     };
 
-    private final BiConsumer<UUID, Throwable> defaultExceptionHandler
+    private final BiConsumer<String, Throwable> defaultExceptionHandler
             = (uuid, throwable) -> {
         log.error("problem {} exception {}", uuid, throwable);
     };
 
-    private final Map<UUID, SolverJob<TownshipSchedulingProblem, UUID>> idSolverJobMap = new ConcurrentHashMap<>();
+    private final Map<String, SolverJob<TownshipSchedulingProblem, String>> idSolverJobMap = new ConcurrentHashMap<>();
 
     @Override
     public TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest) {
         MappingProcess process = new MappingProcess(townshipSchedulingRequest);
         TownshipSchedulingProblem townshipSchedulingProblem = process.buildProblem();
-        UUID uuid = townshipSchedulingProblem.getUuid();
+        var uuid = townshipSchedulingProblem.getUuid();
         idProblemMap.put(uuid, townshipSchedulingProblem);
         return townshipSchedulingProblem;
     }
 
     @Override
-    public void scheduling(UUID problemId) {
-        SolverJob<TownshipSchedulingProblem, UUID> solverJob
+    public void scheduling(String problemId) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob
                 = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
@@ -59,8 +59,8 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     }
 
     @Override
-    public void scheduling(UUID problemId, Consumer<TownshipSchedulingProblem> problemConsumer) {
-        SolverJob<TownshipSchedulingProblem, UUID> solverJob
+    public void scheduling(String problemId, Consumer<TownshipSchedulingProblem> problemConsumer) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob
                 = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
@@ -73,11 +73,11 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     @Override
     public void scheduling(
-            UUID problemId,
+            String problemId,
             Consumer<TownshipSchedulingProblem> problemConsumer,
-            BiConsumer<UUID, Throwable> solveExceptionConsumer
+            BiConsumer<String, Throwable> solveExceptionConsumer
     ) {
-        SolverJob<TownshipSchedulingProblem, UUID> solverJob
+        SolverJob<TownshipSchedulingProblem, String> solverJob
                 = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
@@ -90,12 +90,12 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     }
 
     @Override
-    public void abort(UUID problemId) {
+    public void abort(String problemId) {
         solverManager.terminateEarly(problemId);
     }
 
     @Override
-    public TownshipSchedulingProblem getSchedule(UUID problemId) {
+    public TownshipSchedulingProblem getSchedule(String problemId) {
         SolverStatus solverStatus = solverManager.getSolverStatus(problemId);
         TownshipSchedulingProblem townshipSchedulingProblem = idProblemMap.get(problemId);
         townshipSchedulingProblem.setSolverStatus(solverStatus);
@@ -108,7 +108,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
             return false;
         }
 
-        return idProblemMap.containsKey(UUID.fromString(uuid));
+        return idProblemMap.containsKey(uuid);
     }
 
 }

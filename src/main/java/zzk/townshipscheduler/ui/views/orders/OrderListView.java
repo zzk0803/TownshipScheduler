@@ -50,8 +50,8 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
 
         Button schedulingButton = new Button(VaadinIcon.TIMER.create());
         schedulingButton.addClickListener(click -> {
-            UUID uuid = presenter.backendPrepareTownshipScheduling(townshipAuthenticationContext);
-            UI.getCurrent().navigate(SchedulingView.class, uuid.toString());
+            var uuid = presenter.backendPrepareTownshipScheduling(townshipAuthenticationContext);
+            UI.getCurrent().navigate(SchedulingView.class, uuid);
         });
 
         Button addBillButton = new Button(VaadinIcon.PLUS.create());

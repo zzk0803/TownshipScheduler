@@ -39,7 +39,7 @@ public class SchedulingViewPresenter {
 
     @Getter
     @Setter
-    private UUID currentProblemId;
+    private String currentProblemId;
 
     @Getter
     @Setter
@@ -75,7 +75,7 @@ public class SchedulingViewPresenter {
 
     public void schedulingAndPush() {
         solverJob = solverManager.solveBuilder()
-                .withProblemId(currentProblemId)
+                .withProblemId(UUID.fromString(currentProblemId))
                 .withProblem(currentProblem)
                 .withFirstInitializedSolutionConsumer((townshipSchedulingProblem, isTerminatedEarly) -> {
                     List<AbstractPlayerProducingArrangement> schedulingActions
@@ -136,7 +136,7 @@ public class SchedulingViewPresenter {
     }
 
     public void schedulingAbort() {
-        solverManager.terminateEarly(currentProblemId);
+        solverManager.terminateEarly(UUID.fromString(currentProblemId));
     }
 
 }

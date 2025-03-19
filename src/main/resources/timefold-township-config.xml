@@ -1,32 +1,34 @@
-<!--<?xml version="1.0" encoding="UTF-8"?>-->
-<!--<solver xmlns="https://timefold.ai/xsd/solver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
-<!--        xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">-->
+<?xml version="1.0" encoding="UTF-8"?>
+<solver xmlns="https://timefold.ai/xsd/solver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">
 
-<!--    <environmentMode>FAST_ASSERT</environmentMode>-->
-<!--    <randomSeed>42</randomSeed>-->
+    <environmentMode>FAST_ASSERT</environmentMode>
+    <randomSeed>42</randomSeed>
 
-<!--    &lt;!&ndash; Define the model &ndash;&gt;-->
-<!--    <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>-->
-<!--&lt;!&ndash;    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>&ndash;&gt;-->
-<!--    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayerFactoryAction</entityClass>-->
-<!--    <entityClass>zzk.townshipscheduler.backend.scheduling.model.BasePlanningChainSupportFactoryOrAction</entityClass>-->
+    <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
+    <entityClass>zzk.townshipscheduler.backend.scheduling.model.AbstractPlayerProducingArrangement</entityClass>
 
-<!--    &lt;!&ndash; Define the score function &ndash;&gt;-->
-<!--    <scoreDirectorFactory>-->
-<!--        <constraintProviderClass>zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider-->
-<!--        </constraintProviderClass>-->
-<!--    </scoreDirectorFactory>-->
+    <scoreDirectorFactory>
+        <constraintProviderClass>
+            zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider
+        </constraintProviderClass>
+    </scoreDirectorFactory>
 
-<!--    &lt;!&ndash; Configure the optimization algorithms (optional) &ndash;&gt;-->
-<!--    <termination>-->
+    <constructionHeuristic>
+        <constructionHeuristicType>ALLOCATE_ENTITY_FROM_QUEUE</constructionHeuristicType>
+        <entitySorterManner>DECREASING_DIFFICULTY_IF_AVAILABLE</entitySorterManner>
+        <valueSorterManner>DECREASING_STRENGTH_IF_AVAILABLE</valueSorterManner>
+        <cartesianProductMoveSelector>
+            <changeMoveSelector>
+                <valueSelector variableName="planningDateTimeSlot"/>
+            </changeMoveSelector>
+            <changeMoveSelector>
+                <valueSelector variableName="planningSequence"/>
+            </changeMoveSelector>
+        </cartesianProductMoveSelector>
+    </constructionHeuristic>
 
-<!--    </termination>-->
+    <localSearch>
+    </localSearch>
 
-<!--    <constructionHeuristic>-->
-
-<!--    </constructionHeuristic>-->
-
-<!--    <localSearch>-->
-
-<!--    </localSearch>-->
-<!--</solver>-->
+</solver>

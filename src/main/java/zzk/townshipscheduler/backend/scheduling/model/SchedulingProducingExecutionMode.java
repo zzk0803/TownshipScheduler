@@ -46,7 +46,7 @@ public class SchedulingProducingExecutionMode {
                         .toList();
     }
 
-    private ArrayList<AbstractPlayerProducingArrangement> deepMaterialsActions() {
+    public List<AbstractPlayerProducingArrangement> materialsActionsDeep() {
         LinkedList<AbstractPlayerProducingArrangement> dealingChain = new LinkedList<>(materialsActions());
         ArrayList<AbstractPlayerProducingArrangement> factoryActions = new ArrayList<>();
 

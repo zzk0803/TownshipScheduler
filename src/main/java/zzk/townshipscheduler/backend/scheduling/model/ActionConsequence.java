@@ -70,38 +70,28 @@ public final class ActionConsequence implements Comparable<ActionConsequence> {
 
     }
 
+    @Getter
     @AllArgsConstructor
     public static class ProductStock implements SchedulingResource {
 
-        @Getter
         private SchedulingProduct schedulingProduct;
 
         @Override
-        public Object getRoot() {
+        public SchedulingProduct getRoot() {
             return schedulingProduct;
         }
 
     }
 
+    @Getter
+    @AllArgsConstructor
     public static class FactoryProducingQueue implements SchedulingResource {
 
-        @Getter
-        private AbstractFactoryInstance schedulingFactoryInstanceSingle;
-
-        @Getter
-        private SchedulingFactoryInstanceMultiple schedulingFactoryInstanceMultiple;
-
-        public FactoryProducingQueue(AbstractFactoryInstance schedulingFactoryInstanceSingle) {
-            this.schedulingFactoryInstanceSingle = schedulingFactoryInstanceSingle;
-        }
-
-        public FactoryProducingQueue(SchedulingFactoryInstanceMultiple factoryInstance) {
-            this.schedulingFactoryInstanceMultiple = factoryInstance;
-        }
+        private AbstractFactoryInstance factoryInstance;
 
         @Override
-        public Object getRoot() {
-            return schedulingFactoryInstanceSingle;
+        public AbstractFactoryInstance getRoot() {
+            return factoryInstance;
         }
 
     }

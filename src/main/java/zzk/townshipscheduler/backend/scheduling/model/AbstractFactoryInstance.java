@@ -3,7 +3,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.LocalDateTime;
@@ -11,7 +10,7 @@ import java.util.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public abstract class AbstractFactoryInstance implements IActionSensitive {
+public abstract class AbstractFactoryInstance {
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -55,6 +54,19 @@ public abstract class AbstractFactoryInstance implements IActionSensitive {
                 .stream()
                 .map(AbstractPlayerProducingArrangement::calcConsequence)
                 .flatMap(Collection::stream)
+                .filter(consequence -> consequence.getResource().getRoot() == this)
+                .toList();
+    }
+
+    public List<ActionConsequence> calcFactoryProducingQueueConsequence(
+            List<AbstractPlayerProducingArrangement> factoryActions
+    ) {
+        return Collections.checkedList(factoryActions, AbstractPlayerProducingArrangement.class)
+                .stream()
+                .map(AbstractPlayerProducingArrangement::calcConsequence)
+                .flatMap(Collection::stream)
+                .filter(consequence -> consequence.getResource().getRoot() == this)
+                .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryProducingQueue)
                 .toList();
     }
 
@@ -71,6 +83,29 @@ public abstract class AbstractFactoryInstance implements IActionSensitive {
                 .takeWhile(consequence -> {
                     boolean before = consequence.getLocalDateTime().isBefore(localDateTime);
                     boolean equal = consequence.getLocalDateTime().isEqual(localDateTime);
+                    return before || equal;
+                })
+                .map(ActionConsequence::getResourceChange)
+                .reduce(
+                        producingLength,
+                        (integer, resourceChange) -> resourceChange.apply(integer),
+                        Integer::sum
+                );
+    }
+
+    public int calcRemainProducingQueueSize(
+            List<AbstractPlayerProducingArrangement> factoryActions,
+            SchedulingDateTimeSlot dateTimeSlot
+    ) {
+        int producingLength = getProducingLength();
+        List<ActionConsequence> factoryConsequence = calcFactoryConsequence(factoryActions);
+        return factoryConsequence.stream()
+                .sorted()
+                .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryProducingQueue)
+                .filter(consequence -> consequence.getResource().getRoot() == this)
+                .takeWhile(consequence -> {
+                    boolean before = consequence.getLocalDateTime().isBefore(dateTimeSlot.getStart());
+                    boolean equal = consequence.getLocalDateTime().isEqual(dateTimeSlot.getStart());
                     return before || equal;
                 })
                 .map(ActionConsequence::getResourceChange)

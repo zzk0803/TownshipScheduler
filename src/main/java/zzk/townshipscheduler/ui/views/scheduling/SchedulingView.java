@@ -56,7 +56,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                 Objects.nonNull(parameter)
                 && !parameter.isBlank()
         ) {
-            this.schedulingViewPresenter.setCurrentProblemId(UUID.fromString(parameter));
+            this.schedulingViewPresenter.setCurrentProblemId(parameter);
             buildUI();
         } else {
             Notification.show("FIXME");
@@ -192,7 +192,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                             scheduled
                                     ? new ReadonlyDateTimePicker(
                                     "Producing DateTime",
-                                    factoryAction.getShadowGameProducingDataTime()
+                                    factoryAction.getShadowGameProducingDateTime()
                             )
                                     : new Text("Producing")
                             ,

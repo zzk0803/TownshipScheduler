@@ -92,7 +92,7 @@ public class OrderListViewPresenter {
 //        return problem.getUuid();
 //    }
 
-    public UUID backendPrepareTownshipScheduling(TownshipAuthenticationContext townshipAuthenticationContext) {
+    public String backendPrepareTownshipScheduling(TownshipAuthenticationContext townshipAuthenticationContext) {
         return transactionTemplate.execute(status -> {
             TownshipSchedulingRequest townshipSchedulingRequest
                     = townshipSchedulingPrepareComponent.buildTownshipSchedulingRequest(townshipAuthenticationContext);
