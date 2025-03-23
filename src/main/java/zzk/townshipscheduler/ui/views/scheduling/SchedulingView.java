@@ -17,14 +17,15 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.BaseProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 @Route("/scheduling")
 @Menu
@@ -37,7 +38,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private UI ui;
 
-    private Grid<AbstractPlayerProducingArrangement> actionGrid;
+    private Grid<BaseProducingArrangement> actionGrid;
 
     private Paragraph scoreAnalysisParagraph;
 
@@ -69,26 +70,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private VerticalLayout buildGameActionTabSheetArticle() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        actionGrid = new Grid<>(AbstractPlayerProducingArrangement.class, false);
-        actionGrid.addColumn(AbstractPlayerProducingArrangement::getActionId)
-                .setHeader("#")
-                .setResizable(true)
-                .setAutoWidth(true)
-                .setFlexGrow(0);
-        actionGrid.addColumn(factoryAction -> factoryAction.getSchedulingProduct().getName())
-                .setHeader("Product")
-                .setResizable(true)
-                .setAutoWidth(true)
-                .setFlexGrow(0);
-        actionGrid.addComponentColumn(ActionCard::new)
-                .setHeader("Factory/DateTime")
-                .setSortable(true)
-                .setComparator(
-                        Comparator.comparing(AbstractPlayerProducingArrangement::getPlanningDateTimeSlotStartAsLocalDateTime)
-                )
-                .setFlexGrow(1)
-                .setAutoWidth(true)
-                .setResizable(true);
+        actionGrid = new Grid<>(BaseProducingArrangement.class);
         schedulingViewPresenter.setupPlayerActionGrid(actionGrid);
 
 //        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));
@@ -155,17 +137,22 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         this.schedulingViewPresenter.setUi(this.ui);
     }
 
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        schedulingViewPresenter.reset();
+        actionGrid = null;
+    }
 
     class ActionCard extends HorizontalLayout {
 
-        private AbstractPlayerProducingArrangement factoryAction;
+        private BaseProducingArrangement producingArrangement;
 
-        public ActionCard(AbstractPlayerProducingArrangement factoryAction) {
+        public ActionCard(BaseProducingArrangement producingArrangement) {
             this();
-            this.factoryAction = factoryAction;
-            AbstractFactoryInstance planningFactory = factoryAction.getFactory();
-            LocalDateTime planningPlayerArrangeDateTime = factoryAction.getPlanningDateTimeSlotStartAsLocalDateTime();
-            boolean scheduled = planningFactory != null && planningPlayerArrangeDateTime != null ;
+            this.producingArrangement = producingArrangement;
+            var planningFactory = producingArrangement.getPlanningFactoryInstance();
+            LocalDateTime planningPlayerArrangeDateTime = producingArrangement.getPlanningDateTimeSlotStartAsLocalDateTime();
+            boolean scheduled = planningFactory != null && planningPlayerArrangeDateTime != null;
 
             VerticalLayout verticalLayout = new VerticalLayout();
             verticalLayout.add(
@@ -178,7 +165,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
             );
             add(verticalLayout);
 
-            String humanReadable = factoryAction.getHumanReadable();
+            String humanReadable = producingArrangement.getHumanReadable();
             add(
                     new VerticalLayout(
                             scheduled
@@ -192,14 +179,14 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                             scheduled
                                     ? new ReadonlyDateTimePicker(
                                     "Producing DateTime",
-                                    factoryAction.getShadowGameProducingDateTime()
+                                    producingArrangement.getProducingDateTime()
                             )
                                     : new Text("Producing")
                             ,
                             scheduled
                                     ? new ReadonlyDateTimePicker(
                                     "Completed DateTime",
-                                    factoryAction.getShadowGameCompleteDateTime()
+                                    producingArrangement.getCompletedDateTime()
                             )
                                     : new Text("Completed")
                     )
@@ -213,20 +200,14 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
             setDefaultHorizontalComponentAlignment(Alignment.CENTER);
         }
 
-        public AbstractPlayerProducingArrangement getFactoryAction() {
-            return factoryAction;
+        public BaseProducingArrangement getProducingArrangement() {
+            return producingArrangement;
         }
 
-        public void setFactoryAction(AbstractPlayerProducingArrangement factoryAction) {
-            this.factoryAction = factoryAction;
+        public void setProducingArrangement(BaseProducingArrangement producingArrangement) {
+            this.producingArrangement = producingArrangement;
         }
 
-    }
-
-    @Override
-    protected void onDetach(DetachEvent detachEvent) {
-        schedulingViewPresenter.reset();
-        actionGrid = null;
     }
 
     class ReadonlyDateTimePicker extends DateTimePicker {

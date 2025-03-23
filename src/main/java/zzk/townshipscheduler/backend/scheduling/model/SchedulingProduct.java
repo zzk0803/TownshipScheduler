@@ -71,42 +71,54 @@ public final class SchedulingProduct implements IGameActionObject {
 //    }
 
     @Override
-    public List<AbstractPlayerProducingArrangement> calcFactoryActions() {
-        SchedulingFactoryInfo factoryInfo = getRequireFactory();
-        if (factoryInfo.isOneInstance()) {
-            return List.of(
-                    new SchedulingPlayerProducingArrangement(
-                            this,
-                            this,
-                            factoryInfo.getOneFactoryInstance()
-                    )
-            );
+    public List<BaseProducingArrangement> calcFactoryActions() {
+        switch (getRequireFactory().getProducingStructureType()) {
+            case QUEUE -> {
+                return List.of(
+                        BaseProducingArrangement.createProducingArrangementFactoryQueue(
+                                this,
+                                this
+                        )
+                );
+            }
+
+            case SLOT -> {
+                return List.of(
+                        BaseProducingArrangement.createProducingArrangementFactorySlot(
+                                this,
+                                this
+                        )
+                );
+            }
         }
-        return List.of(
-                new SchedulingPlayerFactoryProducingArrangement(
-                        this,
-                        this
-                )
+        throw new IllegalStateException(
+                "getRequireFactory().getProducingStructureType() not queue or slot either,so that error"
         );
     }
 
     @Override
-    public List<AbstractPlayerProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
-        SchedulingFactoryInfo factoryInfo = getRequireFactory();
-        if (factoryInfo.isOneInstance()) {
-            return List.of(
-                    new SchedulingPlayerProducingArrangement(
-                            targetObject,
-                            this,
-                            factoryInfo.getOneFactoryInstance()
-                    )
-            );
+    public List<BaseProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
+        switch (getRequireFactory().getProducingStructureType()) {
+            case QUEUE -> {
+                return List.of(
+                        BaseProducingArrangement.createProducingArrangementFactoryQueue(
+                                targetObject,
+                                this
+                        )
+                );
+            }
+
+            case SLOT -> {
+                return List.of(
+                        BaseProducingArrangement.createProducingArrangementFactorySlot(
+                                targetObject,
+                                this
+                        )
+                );
+            }
         }
-        return List.of(
-                new SchedulingPlayerFactoryProducingArrangement(
-                        targetObject,
-                        this
-                )
+        throw new IllegalStateException(
+                "getRequireFactory().getProducingStructureType() not queue or slot either,so that error"
         );
     }
 

@@ -34,12 +34,8 @@ public final class ActionConsequence implements Comparable<ActionConsequence> {
             return new ProductStock(product);
         }
 
-        static FactoryProducingQueue factoryWaitQueue(AbstractFactoryInstance factoryInstance) {
-            return new FactoryProducingQueue(factoryInstance);
-        }
-
-        static FactoryProducingQueue factoryWaitQueue(SchedulingFactoryInstanceMultiple factoryInstance) {
-            return new FactoryProducingQueue(factoryInstance);
+        static FactoryProducingLength factoryWaitQueue(BaseSchedulingFactoryInstance factoryInstance) {
+            return new FactoryProducingLength(factoryInstance);
         }
 
     }
@@ -85,12 +81,12 @@ public final class ActionConsequence implements Comparable<ActionConsequence> {
 
     @Getter
     @AllArgsConstructor
-    public static class FactoryProducingQueue implements SchedulingResource {
+    public static class FactoryProducingLength implements SchedulingResource {
 
-        private AbstractFactoryInstance factoryInstance;
+        private BaseSchedulingFactoryInstance factoryInstance;
 
         @Override
-        public AbstractFactoryInstance getRoot() {
+        public BaseSchedulingFactoryInstance getRoot() {
             return factoryInstance;
         }
 

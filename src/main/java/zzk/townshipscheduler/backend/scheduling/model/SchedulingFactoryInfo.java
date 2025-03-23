@@ -26,13 +26,7 @@ public class SchedulingFactoryInfo {
 
     private Set<SchedulingProduct> portfolio;
 
-    private SchedulingFactoryInstanceSingle factoryInstance;
-
-    private List<SchedulingFactoryInstanceMultiple> factoryInstances = new ArrayList<>();
-
     private ProducingStructureType producingStructureType;
-
-    private boolean oneInstance;
 
     private int defaultInstanceAmount;
 
@@ -46,53 +40,12 @@ public class SchedulingFactoryInfo {
 
     private int maxInstanceAmount;
 
-    private int entitySizeEstimated;
-
-
     public SchedulingFactoryInfo() {
         this.portfolio = new LinkedHashSet<>();
     }
 
-    public List<ArrangeSequence> toArrangeSequenceValueRange() {
-        return IntStream.range(0, entitySizeEstimated)
-                .mapToObj(i -> new ArrangeSequence(this.id, i))
-                .toList();
-    }
-
     public void appendPortfolioProduct(SchedulingProduct schedulingProduct) {
         this.portfolio.add(schedulingProduct);
-    }
-
-    public void appendFactoryInstance(SchedulingFactoryInstanceSingle schedulingFactoryInstanceSingle) {
-        this.factoryInstance = schedulingFactoryInstanceSingle;
-    }
-
-    public void appendFactoryInstance(SchedulingFactoryInstanceMultiple schedulingFactoryInstanceMultiple) {
-        this.factoryInstances.add(schedulingFactoryInstanceMultiple);
-    }
-
-    public SchedulingFactoryInstanceSingle getOneFactoryInstance() {
-        if (isOneInstance()) {
-            return Objects.requireNonNull(this.factoryInstance);
-        }
-        throw new IllegalStateException();
-    }
-
-    @Data
-    @AllArgsConstructor
-    public static class ArrangeSequence implements Comparable<ArrangeSequence> {
-
-        private Id factoryInfoId;
-
-        private Integer sequence;
-
-        @Override
-        public int compareTo(ArrangeSequence that) {
-            CompareToBuilder compareToBuilder = new CompareToBuilder();
-            compareToBuilder.append(this, that, Comparator.comparingInt(ArrangeSequence::getSequence));
-            return compareToBuilder.toComparison();
-        }
-
     }
 
     @Value

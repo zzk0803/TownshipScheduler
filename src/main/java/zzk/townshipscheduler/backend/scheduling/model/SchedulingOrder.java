@@ -3,7 +3,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.Value;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.select.OrderEntityDto;
@@ -78,13 +77,13 @@ public final class SchedulingOrder implements IGameActionObject {
 //    }
 
     @Override
-    public List<AbstractPlayerProducingArrangement> calcFactoryActions() {
+    public List<BaseProducingArrangement> calcFactoryActions() {
         return this.calcFactoryActions(this);
     }
 
     @Override
-    public List<AbstractPlayerProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
-        return this.getProductAmountBill().entrySet()
+    public List<BaseProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
+         return this.getProductAmountBill().entrySet()
                 .stream()
                 .flatMap(entry -> {
                     SchedulingProduct schedulingProduct = entry.getKey();

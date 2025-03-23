@@ -9,12 +9,11 @@ import ai.timefold.solver.core.api.solver.SolverManager;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
-import zzk.townshipscheduler.backend.scheduling.model.AbstractPlayerProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.BaseProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
@@ -53,8 +52,8 @@ public class SchedulingViewPresenter {
     @Setter
     private SchedulingView schedulingView;
 
-    public void setupPlayerActionGrid(Grid<AbstractPlayerProducingArrangement> grid) {
-        grid.setItems(findCurrentProblem().getPlayerProducingArrangements());
+    public void setupPlayerActionGrid(Grid<BaseProducingArrangement> grid) {
+        grid.setItems(findCurrentProblem().getBaseProducingArrangements());
     }
 
     private TownshipSchedulingProblem findCurrentProblem() {
@@ -77,33 +76,17 @@ public class SchedulingViewPresenter {
         solverJob = solverManager.solveBuilder()
                 .withProblemId(UUID.fromString(currentProblemId))
                 .withProblem(currentProblem)
-                .withFirstInitializedSolutionConsumer((townshipSchedulingProblem, isTerminatedEarly) -> {
-                    List<AbstractPlayerProducingArrangement> schedulingActions
-                            = townshipSchedulingProblem.getPlayerProducingArrangements();
-                    ScoreAnalysis<BendableScore> scoreAnalysis
-                            = solutionManager.analyze(
-                            townshipSchedulingProblem
-                    );
-                    this.ui.access(
-                            () -> {
-                                Grid<AbstractPlayerProducingArrangement> grid = getSchedulingView().getActionGrid();
-                                grid.setItems(schedulingActions);
-                                grid.getDataProvider().refreshAll();
-                                getSchedulingView().getScoreAnalysisParagraph().setText(scoreAnalysis.toString());
-                            }
-                    );
-                })
                 .withBestSolutionConsumer(
                         townshipSchedulingProblem -> {
-                            List<AbstractPlayerProducingArrangement> schedulingActions
-                                    = townshipSchedulingProblem.getPlayerProducingArrangements();
+                            List<BaseProducingArrangement> schedulingActions
+                                    = townshipSchedulingProblem.getBaseProducingArrangements();
                             ScoreAnalysis<BendableScore> scoreAnalysis
                                     = solutionManager.analyze(
                                     townshipSchedulingProblem
                             );
                             this.ui.access(
                                     () -> {
-                                        Grid<AbstractPlayerProducingArrangement> grid = getSchedulingView().getActionGrid();
+                                        Grid<BaseProducingArrangement> grid = getSchedulingView().getActionGrid();
                                         grid.setItems(schedulingActions);
                                         grid.getDataProvider().refreshAll();
                                         getSchedulingView().getScoreAnalysisParagraph()
@@ -112,23 +95,6 @@ public class SchedulingViewPresenter {
                             );
                         }
                 )
-                .withFinalBestSolutionConsumer(townshipSchedulingProblem -> {
-                    this.currentProblem = townshipSchedulingProblem;
-                    List<AbstractPlayerProducingArrangement> schedulingActions
-                            = this.currentProblem.getPlayerProducingArrangements();
-                    ScoreAnalysis<BendableScore> scoreAnalysis
-                            = solutionManager.analyze(
-                            townshipSchedulingProblem
-                    );
-                    this.ui.access(
-                            () -> {
-                                Grid<AbstractPlayerProducingArrangement> grid = getSchedulingView().getActionGrid();
-                                grid.setItems(schedulingActions);
-                                grid.getDataProvider().refreshAll();
-                                getSchedulingView().getScoreAnalysisParagraph().setText(scoreAnalysis.toString());
-                            }
-                    );
-                })
                 .withExceptionHandler((uuid, throwable) -> {
                     throwable.printStackTrace();
                 })

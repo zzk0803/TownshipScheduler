@@ -11,7 +11,7 @@ public final class ActionIdRoller {
     private final AtomicInteger atomicInteger;
 
     ActionIdRoller() {
-        atomicInteger = new AtomicInteger(1);
+        atomicInteger = new AtomicInteger(0);
     }
 
     public static ActionIdRoller forProblem(String uuid) {
@@ -28,16 +28,8 @@ public final class ActionIdRoller {
         return new ActionIdRoller();
     }
 
-    public void setup(SchedulingPlayerProducingArrangement producingArrangement) {
-        producingArrangement.setActionId(atomicInteger.getAndIncrement());
-    }
-
-    public void setup(SchedulingPlayerFactoryProducingArrangement producingArrangement) {
-        producingArrangement.setActionId(atomicInteger.getAndIncrement());
-    }
-
-    public void setup(AbstractPlayerProducingArrangement abstractProducingArrangement) {
-        abstractProducingArrangement.setActionId(atomicInteger.getAndIncrement());
+    public void setup(BaseProducingArrangement producingArrangement) {
+        producingArrangement.setActionId(atomicInteger.incrementAndGet());
     }
 
 //    public void setup(SchedulingPlayerWarehouseAction warehouseAction) {

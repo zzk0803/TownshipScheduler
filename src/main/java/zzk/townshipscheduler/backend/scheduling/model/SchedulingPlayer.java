@@ -1,12 +1,9 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.apache.commons.math3.analysis.function.Abs;
 
 import java.util.*;
 
@@ -22,16 +19,16 @@ public class SchedulingPlayer {
 
     private Map<SchedulingProduct, Integer> productAmountMap;
 
-    private Map<SchedulingPlayerProducingArrangement, List<ActionConsequence>> acceptedActionConsequencesMap
+    private Map<BaseProducingArrangement, List<ActionConsequence>> acceptedActionConsequencesMap
             = new LinkedHashMap<>();
 
     public void acceptActionConsequence(
-            SchedulingPlayerProducingArrangement action, List<ActionConsequence> actionConsequences
+            BaseProducingArrangement producingArrangement, List<ActionConsequence> actionConsequences
     ) {
-        acceptedActionConsequencesMap.put(action, actionConsequences);
+        acceptedActionConsequencesMap.put(producingArrangement, actionConsequences);
     }
 
-    public Map<SchedulingProduct, Integer> toProductAmountMap(AbstractPlayerProducingArrangement beforeThisArrangement) {
+    public Map<SchedulingProduct, Integer> toProductAmountMap(BaseProducingArrangement beforeThisArrangement) {
         List<ActionConsequence> sortedMappedConsequences
                 = acceptedActionConsequencesMap.values().stream()
                 .flatMap(Collection::stream)
@@ -71,8 +68,8 @@ public class SchedulingPlayer {
         return productStockMap;
     }
 
-    public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<AbstractPlayerProducingArrangement> actions) {
-        List<ActionConsequence> actionConsequenceList = mapToActionProductStockConsequences(actions);
+    public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<BaseProducingArrangement> producingArrangements) {
+        List<ActionConsequence> actionConsequenceList = mapToActionProductStockConsequences(producingArrangements);
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);
         for (ActionConsequence consequence : actionConsequenceList) {
             ActionConsequence.ProductStock productStock = (ActionConsequence.ProductStock) consequence.getResource();
@@ -85,11 +82,11 @@ public class SchedulingPlayer {
         return productStockMap;
     }
 
-    public List<ActionConsequence> mapToActionProductStockConsequences(List<AbstractPlayerProducingArrangement> actions) {
-        return actions.stream()
-                .map(AbstractPlayerProducingArrangement::calcConsequence)
+    public List<ActionConsequence> mapToActionProductStockConsequences(List<BaseProducingArrangement> producingArrangements) {
+        return producingArrangements.stream()
+                .map(BaseProducingArrangement::calcConsequence)
                 .flatMap(Collection::stream)
-                .sorted()
+                .sorted(Comparator.comparing(ActionConsequence::getLocalDateTime))
                 .filter(consequence -> consequence.getResource() instanceof ActionConsequence.ProductStock)
                 .toList();
     }
