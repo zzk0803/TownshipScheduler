@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
-    <environmentMode>STEP_ASSERT</environmentMode>
+    <environmentMode>PHASE_ASSERT</environmentMode>
     <randomSeed>42</randomSeed>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>

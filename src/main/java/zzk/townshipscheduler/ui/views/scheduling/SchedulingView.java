@@ -23,7 +23,6 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.Set;
 
@@ -56,6 +55,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         if (
                 Objects.nonNull(parameter)
                 && !parameter.isBlank()
+                && this.schedulingViewPresenter.validProblemId(parameter)
         ) {
             this.schedulingViewPresenter.setCurrentProblemId(parameter);
             buildUI();
@@ -70,7 +70,23 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private VerticalLayout buildGameActionTabSheetArticle() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        actionGrid = new Grid<>(BaseProducingArrangement.class);
+        actionGrid = new Grid<>(BaseProducingArrangement.class,false);
+        actionGrid.addColumn(BaseProducingArrangement::getSchedulingProduct)
+                .setResizable(true)
+                .setHeader("Product");
+        actionGrid.addColumn(BaseProducingArrangement::getPlanningFactoryInstance)
+                .setResizable(true)
+                .setHeader("Assign Factory");
+        actionGrid.addColumn(BaseProducingArrangement::getPlanningDateTimeSlotStartAsLocalDateTime)
+                .setResizable(true)
+                .setHeader("Arrange Date Time");
+        actionGrid.addColumn(BaseProducingArrangement::getProducingDateTime)
+                .setResizable(true)
+                .setHeader("Producing Date Time");
+        actionGrid.addColumn(BaseProducingArrangement::getCompletedDateTime)
+                .setResizable(true)
+                .setHeader("Completed Date Time");
+        actionGrid.setSizeFull();
         schedulingViewPresenter.setupPlayerActionGrid(actionGrid);
 
 //        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));

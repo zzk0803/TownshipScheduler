@@ -64,7 +64,8 @@ public abstract class BaseProducingArrangement {
             IGameActionObject targetActionObject,
             IGameActionObject currentActionObject
     ) {
-        SchedulingFactoryQueueProducingArrangement producingArrangement = new SchedulingFactoryQueueProducingArrangement(
+        SchedulingFactoryQueueProducingArrangement producingArrangement
+                = new SchedulingFactoryQueueProducingArrangement(
                 targetActionObject,
                 currentActionObject
         );
@@ -121,6 +122,8 @@ public abstract class BaseProducingArrangement {
     public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();
     }
+
+    public abstract SchedulingDateTimeSlot getPlanningDateTimeSlot();
 
     @ToString.Include
     public abstract LocalDateTime getPlanningDateTimeSlotStartAsLocalDateTime();

@@ -39,8 +39,8 @@ public class ProducingArrangementFactorySequenceVariableListener
     ) {
         SchedulingTypeQueueFactoryInstance planningFactory
                 = queueProducingArrangement.getPlanningFactoryInstance();
-        SchedulingFactoryQueueProducingArrangement previousQueueProducingArrangement = null;
 
+        SchedulingFactoryQueueProducingArrangement previousQueueProducingArrangement = null;
         ISchedulingFactoryOrFactoryArrangement planningPreviousFactorySequenceOrFactory
                 = queueProducingArrangement.getPlanningPreviousFactorySequenceOrFactory();
         if (planningPreviousFactorySequenceOrFactory instanceof SchedulingFactoryQueueProducingArrangement) {
@@ -100,7 +100,8 @@ public class ProducingArrangementFactorySequenceVariableListener
         if (previousCompletedDateTime == null) {
             computedProducingDateTime = planningDateTime;
         } else {
-            computedProducingDateTime = previousCompletedDateTime.isBefore(planningDateTime)
+            computedProducingDateTime
+                    = previousCompletedDateTime.isBefore(planningDateTime)
                     ? planningDateTime
                     : previousCompletedDateTime;
         }

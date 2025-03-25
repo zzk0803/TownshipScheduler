@@ -10,6 +10,7 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.ColumnRendering;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
@@ -31,9 +32,9 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
+import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
-import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.components.BillDurationField;
 import zzk.townshipscheduler.ui.components.GoodsCategoriesPanel;
@@ -65,11 +66,15 @@ public class OrderFormView extends VerticalLayout {
         this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
 
         addClassName("bill-form");
+        addClassNames(
+                LumoUtility.Overflow.SCROLL,
+                LumoUtility.Width.FULL
+        );
         setDefaultHorizontalComponentAlignment(Alignment.CENTER);
 
         add(assembleBillForm());
 
-        add(assembleBillItemGrid());
+        addAndExpand(assembleBillItemGrid());
 
         add(assembleItemAppendBtn());
 
@@ -111,169 +116,23 @@ public class OrderFormView extends VerticalLayout {
         return formLayout;
     }
 
-    private static void settingDeadlineFieldGroupAvailableStatus(
-            boolean boolOpen,
-            BillDurationField durationCountdownField,
-            DateTimePicker deadlinePicker
-    ) {
-        durationCountdownField.setEnabled(boolOpen);
-        deadlinePicker.setEnabled(boolOpen);
-        durationCountdownField.setVisible(boolOpen);
-        deadlinePicker.setVisible(boolOpen);
-    }
-
-    private void associateResponseToPickerAndDuration(
-            DateTimePicker deadlinePicker,
-            BillDurationField durationCountdownField
-    ) {
-        deadlinePicker.addValueChangeListener(deadlinePickerValueChange -> {
-            LocalDateTime deadlinePickerValue = deadlinePickerValueChange.getValue();
-            Duration duration = getDurationLocalDateTimeConverter().convertToPresentation(deadlinePickerValue, null);
-            durationCountdownField.setValue(duration);
-        });
-
-        durationCountdownField.addValueChangeListener(durationFieldValueChange -> {
-            Duration durationFieldValue = durationFieldValueChange.getValue();
-            Result<LocalDateTime> resultInLocalDateTime = getDurationLocalDateTimeConverter().convertToModel(
-                    durationFieldValue,
-                    null
-            );
-            LocalDateTime localDateTime = resultInLocalDateTime.getOrThrow(RuntimeException::new);
-            deadlinePicker.setValue(localDateTime);
-        });
-    }
-
-    private Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
-        return new Converter<>() {
-
-            @Override
-            public Result<LocalDateTime> convertToModel(Duration duration, ValueContext valueContext) {
-                return Result.ok(LocalDateTime.now().plus(duration));
-            }
-
-            @Override
-            public Duration convertToPresentation(LocalDateTime localDateTime, ValueContext valueContext) {
-                if (localDateTime == null) {
-                    return Duration.ZERO;
-                }
-                return Duration.between(LocalDateTime.now(), localDateTime);
-            }
-        };
-    }
-
-    private void settingBinder(
-            RadioButtonGroup<String> billTypeGroup,
-            Checkbox boolDeadlineCheckbox,
-            DateTimePicker deadlinePicker,
-            BillDurationField durationCountdownField
-    ) {
-        Binder<OrderEntity> binder = presenter.prepareBillAndBinder();
-        binder.forField(billTypeGroup)
-                .asRequired()
-                .bind(
-                        orderEntity -> orderEntity.getOrderType().name(),
-                        (orderEntity, typeString) -> orderEntity.setOrderType(OrderType.valueOf(typeString))
-                );
-        binder.forField(boolDeadlineCheckbox)
-                .bind(OrderEntity::isBoolDeadLine, OrderEntity::setBoolDeadLine);
-        binder.forField(deadlinePicker)
-                .withValidator(new DateTimeRangeValidator(
-                        "not pasted datetime",
-                        LocalDateTime.now(),
-                        LocalDateTime.MAX
-                ))
-                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
-        binder.forField(durationCountdownField)
-                .withConverter(getDurationLocalDateTimeConverter())
-                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
-    }
-
     private Grid<BillItem> assembleBillItemGrid() {
         Grid<BillItem> grid = new Grid<>(BillItem.class, false);
+        grid.setWidthFull();
         grid.addThemeVariants(
                 GridVariant.LUMO_NO_ROW_BORDERS,
                 GridVariant.LUMO_NO_ROW_BORDERS
         );
-
         grid.addColumn(BillItem::getSerial)
-                .setAutoWidth(true)
-                .setFlexGrow(0);
+                .setHeader("#");
         grid.addColumn(buildItemCard())
-                .setAutoWidth(false)
-                .setFlexGrow(1);
+                .setHeader("Item");
         grid.addComponentColumn(buildItemAmountField())
-                .setAutoWidth(true)
-                .setFlexGrow(0);
+                .setHeader("Amount Operation");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
 
         this.billItemGrid = grid;
         return grid;
-    }
-
-    private ComponentRenderer<Div, BillItem> buildItemCard() {
-        return new ComponentRenderer<>(billItem -> {
-            ProductEntity productEntity = billItem.getProductEntity();
-
-            Div card = new Div();
-            card.addClassNames(
-                    LumoUtility.Display.FLEX,
-                    LumoUtility.FlexDirection.ROW,
-                    LumoUtility.AlignItems.CENTER,
-                    LumoUtility.JustifyContent.START,
-                    LumoUtility.Padding.XSMALL,
-                    LumoUtility.Margin.XSMALL
-            );
-
-            Image image = new Image();
-            image.addClassNames(
-                    LumoUtility.Display.FLEX,
-                    LumoUtility.FlexDirection.ROW,
-                    LumoUtility.AlignItems.BASELINE,
-                    LumoUtility.JustifyContent.START
-            );
-            image.setSrc(new StreamResource(
-                    productEntity.getName(),
-                    () -> new ByteArrayInputStream(productEntity.getCrawledAsImage().getImageBytes())
-            ));
-            card.add(image);
-
-            Div description = createProductDescriptionDiv(productEntity);
-            card.add(description);
-
-            return card;
-        });
-    }
-
-    private static Div createProductDescriptionDiv(ProductEntity productEntity) {
-        Div description = new Div();
-        description.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.FlexDirection.COLUMN,
-                LumoUtility.AlignItems.BASELINE,
-                LumoUtility.JustifyContent.END,
-                LumoUtility.TextColor.SECONDARY
-        );
-        Span item = new Span("Item:" + productEntity.getName());
-        item.addClassNames(LumoUtility.Display.FLEX);
-        Span factory = new Span("Factory:" + productEntity.getCategory());
-        factory.addClassNames(LumoUtility.Display.FLEX);
-        description.add(item, factory);
-        return description;
-    }
-
-    private ValueProvider<BillItem, IntegerField> buildItemAmountField() {
-        return (item) -> {
-            IntegerField integerField = new IntegerField();
-            integerField.setValue(item.getAmount());
-            integerField.setStep(1);
-            integerField.setStepButtonsVisible(true);
-            integerField.setMin(0);
-            integerField.addValueChangeListener(fieldChanged -> {
-                item.setAmount(fieldChanged.getValue());
-                billItemGrid.getDataProvider().refreshItem(item);
-            });
-            return integerField;
-        };
     }
 
     private Button assembleItemAppendBtn() {
@@ -328,8 +187,151 @@ public class OrderFormView extends VerticalLayout {
         return footer;
     }
 
+    private static void settingDeadlineFieldGroupAvailableStatus(
+            boolean boolOpen,
+            BillDurationField durationCountdownField,
+            DateTimePicker deadlinePicker
+    ) {
+        durationCountdownField.setEnabled(boolOpen);
+        deadlinePicker.setEnabled(boolOpen);
+        durationCountdownField.setVisible(boolOpen);
+        deadlinePicker.setVisible(boolOpen);
+    }
+
+    private void associateResponseToPickerAndDuration(
+            DateTimePicker deadlinePicker,
+            BillDurationField durationCountdownField
+    ) {
+        deadlinePicker.addValueChangeListener(deadlinePickerValueChange -> {
+            LocalDateTime deadlinePickerValue = deadlinePickerValueChange.getValue();
+            Duration duration = getDurationLocalDateTimeConverter().convertToPresentation(deadlinePickerValue, null);
+            durationCountdownField.setValue(duration);
+        });
+
+        durationCountdownField.addValueChangeListener(durationFieldValueChange -> {
+            Duration durationFieldValue = durationFieldValueChange.getValue();
+            Result<LocalDateTime> resultInLocalDateTime = getDurationLocalDateTimeConverter().convertToModel(
+                    durationFieldValue,
+                    null
+            );
+            LocalDateTime localDateTime = resultInLocalDateTime.getOrThrow(RuntimeException::new);
+            deadlinePicker.setValue(localDateTime);
+        });
+    }
+
+    private void settingBinder(
+            RadioButtonGroup<String> billTypeGroup,
+            Checkbox boolDeadlineCheckbox,
+            DateTimePicker deadlinePicker,
+            BillDurationField durationCountdownField
+    ) {
+        Binder<OrderEntity> binder = presenter.prepareBillAndBinder();
+        binder.forField(billTypeGroup)
+                .asRequired()
+                .bind(
+                        orderEntity -> orderEntity.getOrderType().name(),
+                        (orderEntity, typeString) -> orderEntity.setOrderType(OrderType.valueOf(typeString))
+                );
+        binder.forField(boolDeadlineCheckbox)
+                .bind(OrderEntity::isBoolDeadLine, OrderEntity::setBoolDeadLine);
+        binder.forField(deadlinePicker)
+                .withValidator(new DateTimeRangeValidator(
+                        "not pasted datetime",
+                        LocalDateTime.now(),
+                        LocalDateTime.MAX
+                ))
+                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
+        binder.forField(durationCountdownField)
+                .withConverter(getDurationLocalDateTimeConverter())
+                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
+    }
+
+    private ComponentRenderer<Div, BillItem> buildItemCard() {
+        return new ComponentRenderer<>(billItem -> {
+            ProductEntity productEntity = billItem.getProductEntity();
+
+            Div card = new Div();
+            card.addClassNames(
+                    LumoUtility.Display.FLEX,
+                    LumoUtility.FlexDirection.ROW,
+                    LumoUtility.AlignItems.CENTER,
+                    LumoUtility.JustifyContent.START,
+                    LumoUtility.Padding.XSMALL,
+                    LumoUtility.Margin.XSMALL
+            );
+
+            Image image = new Image();
+            image.addClassNames(
+                    LumoUtility.Display.FLEX,
+                    LumoUtility.FlexDirection.ROW,
+                    LumoUtility.AlignItems.BASELINE,
+                    LumoUtility.JustifyContent.START
+            );
+            image.setSrc(new StreamResource(
+                    productEntity.getName(),
+                    () -> new ByteArrayInputStream(productEntity.getCrawledAsImage().getImageBytes())
+            ));
+            card.add(image);
+
+            Div description = createProductDescriptionDiv(productEntity);
+            card.add(description);
+
+            return card;
+        });
+    }
+
+    private ValueProvider<BillItem, IntegerField> buildItemAmountField() {
+        return (item) -> {
+            IntegerField integerField = new IntegerField();
+            integerField.setValue(item.getAmount());
+            integerField.setStep(1);
+            integerField.setStepButtonsVisible(true);
+            integerField.setMin(1);
+            integerField.addValueChangeListener(fieldChanged -> {
+                item.setAmount(fieldChanged.getValue());
+                billItemGrid.getDataProvider().refreshItem(item);
+            });
+            return integerField;
+        };
+    }
+
     private HorizontalLayout buildFooterComponent() {
         return new HorizontalLayout();
+    }
+
+    private Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
+        return new Converter<>() {
+
+            @Override
+            public Result<LocalDateTime> convertToModel(Duration duration, ValueContext valueContext) {
+                return Result.ok(LocalDateTime.now().plus(duration));
+            }
+
+            @Override
+            public Duration convertToPresentation(LocalDateTime localDateTime, ValueContext valueContext) {
+                if (localDateTime == null) {
+                    return Duration.ZERO;
+                }
+                return Duration.between(LocalDateTime.now(), localDateTime);
+            }
+        };
+    }
+
+    private static Div createProductDescriptionDiv(ProductEntity productEntity) {
+        Div description = new Div();
+        description.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.AlignItems.BASELINE,
+                LumoUtility.JustifyContent.END,
+                LumoUtility.TextColor.SECONDARY
+        );
+        Span item = new Span("Item:" + productEntity.getName());
+        item.addClassNames(LumoUtility.Display.FLEX);
+        Span factory = new Span("Factory:" + productEntity.getCategory());
+        factory.addClassNames(LumoUtility.Display.FLEX);
+        description.add(item, factory);
+        return description;
     }
 
     @Override

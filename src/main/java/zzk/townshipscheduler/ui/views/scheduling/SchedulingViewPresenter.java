@@ -105,4 +105,8 @@ public class SchedulingViewPresenter {
         solverManager.terminateEarly(UUID.fromString(currentProblemId));
     }
 
+    public boolean validProblemId(String parameter) {
+        return schedulingService.checkUuidIsValidForSchedule(parameter);
+    }
+
 }

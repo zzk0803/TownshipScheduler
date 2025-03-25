@@ -22,7 +22,7 @@ public class SchedulingFactorySlotProducingArrangement extends BaseProducingArra
 
     @PlanningVariable(
             valueRangeProviderRefs = TownshipSchedulingProblem.DATE_TIME_SLOT_VALUE_RANGE,
-            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
+            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator .class
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 

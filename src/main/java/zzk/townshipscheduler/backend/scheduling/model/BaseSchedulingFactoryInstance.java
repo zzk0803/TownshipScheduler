@@ -26,4 +26,6 @@ public abstract class BaseSchedulingFactoryInstance {
         return this.schedulingFactoryInfo.getCategoryName() + "#" + this.getSeqNum() + ",size=" + this.getProducingLength();
     }
 
+    public abstract boolean remainProducingLengthHadIllegal();
+
 }
