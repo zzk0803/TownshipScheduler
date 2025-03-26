@@ -105,6 +105,10 @@ public final class SchedulingOrder implements IGameActionObject {
         return Optional.ofNullable(getDeadline());
     }
 
+    public boolean boolHasDeadline() {
+        return optionalDeadline().isEmpty();
+    }
+
     @Value
     public static class Id {
 

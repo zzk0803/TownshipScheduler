@@ -72,54 +72,50 @@ public final class SchedulingProduct implements IGameActionObject {
 
     @Override
     public List<BaseProducingArrangement> calcFactoryActions() {
-        switch (getRequireFactory().getProducingStructureType()) {
-            case QUEUE -> {
-                return List.of(
-                        BaseProducingArrangement.createProducingArrangementFactoryQueue(
-                                this,
-                                this
-                        )
-                );
-            }
-
-            case SLOT -> {
-                return List.of(
-                        BaseProducingArrangement.createProducingArrangementFactorySlot(
-                                this,
-                                this
-                        )
-                );
-            }
-        }
-        throw new IllegalStateException(
-                "getRequireFactory().getProducingStructureType() not queue or slot either,so that error"
-        );
+        return calcFactoryActions(this);
     }
 
     @Override
     public List<BaseProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
         switch (getRequireFactory().getProducingStructureType()) {
             case QUEUE -> {
+                SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+                        = BaseProducingArrangement.createProducingArrangementFactoryQueue(
+                        targetObject,
+                        this
+                );
+                if (getRequireFactory().getFactoryInstances().size() == 1) {
+                    queueProducingArrangement.setPlanningFactory(
+                            (SchedulingTypeQueueFactoryInstance) getRequireFactory().getFactoryInstances().getFirst()
+                    );
+                }
                 return List.of(
-                        BaseProducingArrangement.createProducingArrangementFactoryQueue(
-                                targetObject,
-                                this
-                        )
+                        queueProducingArrangement
                 );
             }
 
             case SLOT -> {
+                SchedulingFactorySlotProducingArrangement slotProducingArrangement
+                        = BaseProducingArrangement.createProducingArrangementFactorySlot(
+                        targetObject,
+                        this
+                );
+                if (getRequireFactory().getFactoryInstances().size() == 1) {
+                    slotProducingArrangement.setPlanningFactory(
+                            (SchedulingTypeSlotFactoryInstance) getRequireFactory().getFactoryInstances().getFirst()
+                    );
+                }
                 return List.of(
-                        BaseProducingArrangement.createProducingArrangementFactorySlot(
-                                targetObject,
-                                this
-                        )
+                        slotProducingArrangement
+                );
+            }
+
+            case null, default -> {
+                throw new IllegalStateException(
+                        "getRequireFactory().getProducingStructureType() not queue or slot either,so that error"
                 );
             }
         }
-        throw new IllegalStateException(
-                "getRequireFactory().getProducingStructureType() not queue or slot either,so that error"
-        );
     }
 
     @Override

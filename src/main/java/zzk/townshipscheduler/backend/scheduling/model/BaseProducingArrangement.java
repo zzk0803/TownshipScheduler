@@ -42,6 +42,8 @@ public abstract class BaseProducingArrangement {
     @ToString.Include
     protected IGameActionObject currentActionObject;
 
+    protected boolean orderDirect;
+
     protected List<BaseProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
 
     protected List<BaseProducingArrangement> supportProducingArrangements = new ArrayList<>();
@@ -86,11 +88,19 @@ public abstract class BaseProducingArrangement {
     }
 
     public SchedulingFactoryInfo requiredFactoryInfo() {
-        return getSchedulingProduct().getRequireFactory();
+        return asSchedulingProduct().getRequireFactory();
     }
 
-    public SchedulingProduct getSchedulingProduct() {
+    public SchedulingProduct asSchedulingProduct() {
         return (SchedulingProduct) getCurrentActionObject();
+    }
+
+    public SchedulingOrder asSchedulingOrder() {
+        return ((SchedulingOrder) getTargetActionObject());
+    }
+
+    public <T extends IGameActionObject> T asGameObject(Class<T> gameObjectClass) {
+        return gameObjectClass.cast(this);
     }
 
     public void readyElseThrow() {
@@ -131,8 +141,8 @@ public abstract class BaseProducingArrangement {
     public abstract BaseSchedulingFactoryInstance getPlanningFactoryInstance();
 
     public boolean boolEquivalent(BaseProducingArrangement that) {
-        SchedulingProduct thisProducing = this.getSchedulingProduct();
-        SchedulingProduct thatProducing = that.getSchedulingProduct();
+        SchedulingProduct thisProducing = this.asSchedulingProduct();
+        SchedulingProduct thatProducing = that.asSchedulingProduct();
         if (thisProducing == null || thatProducing == null) {
             return false;
         } else {

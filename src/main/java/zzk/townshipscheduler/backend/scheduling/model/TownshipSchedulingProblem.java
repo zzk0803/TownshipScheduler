@@ -11,7 +11,6 @@ import org.springframework.util.Assert;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Data
 @PlanningSolution
@@ -207,7 +206,7 @@ public class TownshipSchedulingProblem {
     private void trimUnrelatedObject() {
         List<SchedulingProduct> relatedSchedulingProduct
                 = getBaseProducingArrangements().stream()
-                .map(BaseProducingArrangement::getSchedulingProduct)
+                .map(BaseProducingArrangement::asSchedulingProduct)
                 .toList();
         getSchedulingProductSet().removeIf(product -> !relatedSchedulingProduct.contains(product));
 

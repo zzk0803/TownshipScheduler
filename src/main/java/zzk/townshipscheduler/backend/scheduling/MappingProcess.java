@@ -151,6 +151,7 @@ class MappingProcess {
                                 slotFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
                                 slotFactoryInstance.setProducingLength(size);
                                 slotFactoryInstance.setReapWindowSize(size);
+                                schedulingFactoryInfo.getFactoryInstances().add(slotFactoryInstance);
                                 this.schedulingTypeSlotFactoryInstances.add(slotFactoryInstance);
                             } else {
                                 Map<FieldFactoryInfoEntity, List<FieldFactoryEntity>> typeInstamceMap
@@ -176,6 +177,8 @@ class MappingProcess {
                                                 typeQueueFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
                                                 typeQueueFactoryInstance.setProducingLength(fieldFactoryEntity.getProducingLength());
                                                 typeQueueFactoryInstance.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
+                                                schedulingFactoryInfo.getFactoryInstances()
+                                                        .add(typeQueueFactoryInstance);
                                                 this.schedulingTypeQueueFactoryInstances.add(typeQueueFactoryInstance);
                                             }
 
@@ -187,6 +190,8 @@ class MappingProcess {
                                                 typeSlotFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
                                                 typeSlotFactoryInstance.setProducingLength(fieldFactoryEntity.getProducingLength());
                                                 typeSlotFactoryInstance.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
+                                                schedulingFactoryInfo.getFactoryInstances()
+                                                        .add(typeSlotFactoryInstance);
                                                 this.schedulingTypeSlotFactoryInstances.add(typeSlotFactoryInstance);
                                             }
                                         }

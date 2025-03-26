@@ -94,7 +94,7 @@ public class SchedulingFactorySlotProducingArrangement extends BaseProducingArra
                 ActionConsequence.builder()
                         .actionId(getActionId())
                         .localDateTime(getCompletedDateTime())
-                        .resource(ActionConsequence.SchedulingResource.productStock(getSchedulingProduct()))
+                        .resource(ActionConsequence.SchedulingResource.productStock(asSchedulingProduct()))
                         .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
                         .build()
         );

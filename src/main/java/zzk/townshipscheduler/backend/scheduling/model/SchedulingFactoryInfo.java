@@ -24,7 +24,9 @@ public class SchedulingFactoryInfo {
 
     private int level;
 
-    private Set<SchedulingProduct> portfolio;
+    private List<SchedulingProduct> portfolio;
+
+    private List<BaseSchedulingFactoryInstance> factoryInstances;
 
     private ProducingStructureType producingStructureType;
 
@@ -41,7 +43,8 @@ public class SchedulingFactoryInfo {
     private int maxInstanceAmount;
 
     public SchedulingFactoryInfo() {
-        this.portfolio = new LinkedHashSet<>();
+        this.portfolio = new ArrayList<>();
+        this.factoryInstances = new ArrayList<>();
     }
 
     public void appendPortfolioProduct(SchedulingProduct schedulingProduct) {
