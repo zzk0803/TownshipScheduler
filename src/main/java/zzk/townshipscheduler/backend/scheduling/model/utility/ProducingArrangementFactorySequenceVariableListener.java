@@ -41,10 +41,10 @@ public class ProducingArrangementFactorySequenceVariableListener
                 = queueProducingArrangement.getPlanningFactoryInstance();
 
         SchedulingFactoryQueueProducingArrangement previousQueueProducingArrangement = null;
-        ISchedulingFactoryOrFactoryArrangement planningPreviousFactorySequenceOrFactory
-                = queueProducingArrangement.getPlanningPreviousFactorySequenceOrFactory();
-        if (planningPreviousFactorySequenceOrFactory instanceof SchedulingFactoryQueueProducingArrangement) {
-            previousQueueProducingArrangement = ((SchedulingFactoryQueueProducingArrangement) planningPreviousFactorySequenceOrFactory);
+        ISchedulingFactoryOrFactoryArrangement planningPreviousProducingArrangementOrFactory
+                = queueProducingArrangement.getPlanningPreviousProducingArrangementOrFactory();
+        if (planningPreviousProducingArrangementOrFactory instanceof SchedulingFactoryQueueProducingArrangement) {
+            previousQueueProducingArrangement = ((SchedulingFactoryQueueProducingArrangement) planningPreviousProducingArrangementOrFactory);
         }
 
         LocalDateTime computedProducingDateTime

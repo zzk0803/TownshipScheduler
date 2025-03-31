@@ -23,7 +23,11 @@ public class SchedulingFactoryQueueProducingArrangement
         extends BaseProducingArrangement
         implements ISchedulingFactoryOrFactoryArrangement {
 
-    public static final String PLANNING_PREVIOUS = "planningPreviousFactorySequenceOrFactory";
+    public static final String PLANNING_ANCHOR_FACTORY = "planningAnchorFactory";
+
+    public static final String PLANNING_PREVIOUS = "planningPreviousProducingArrangementOrFactory";
+
+    public static final String SHADOW_PRODUCING_DATE_TIME = "shadowProducingDateTime";
 
     @PlanningVariable(
             valueRangeProviderRefs = TownshipSchedulingProblem.DATE_TIME_SLOT_VALUE_RANGE,
@@ -34,7 +38,7 @@ public class SchedulingFactoryQueueProducingArrangement
     @AnchorShadowVariable(
             sourceVariableName = PLANNING_PREVIOUS
     )
-    private SchedulingTypeQueueFactoryInstance planningFactory;
+    private SchedulingTypeQueueFactoryInstance planningAnchorFactory;
 
     @PlanningVariable(
             graphType = PlanningVariableGraphType.CHAINED,
@@ -43,14 +47,14 @@ public class SchedulingFactoryQueueProducingArrangement
                     TownshipSchedulingProblem.PRODUCING_ARRANGEMENTS_FACTORY_QUEUE_VALUE_RANGE
             }
     )
-    private ISchedulingFactoryOrFactoryArrangement planningPreviousFactorySequenceOrFactory;
+    private ISchedulingFactoryOrFactoryArrangement planningPreviousProducingArrangementOrFactory;
 
     @Getter
     @Setter
     private SchedulingFactoryQueueProducingArrangement nextQueueProducingArrangement;
 
     @ShadowVariable(
-            sourceVariableName = PLANNING_FACTORY,
+            sourceVariableName = PLANNING_ANCHOR_FACTORY,
             variableListenerClass = ProducingArrangementFactorySequenceVariableListener.class
     )
     @ShadowVariable(
@@ -65,13 +69,6 @@ public class SchedulingFactoryQueueProducingArrangement
 
 //    @PiggybackShadowVariable(shadowVariableName = SHADOW_PRODUCING_DATE_TIME)
 //    private LocalDateTime shadowCompletedDateTime;
-
-    public LocalDateTime getShadowCompletedDateTime() {
-        if (shadowProducingDateTime == null) {
-            return null;
-        }
-        return shadowProducingDateTime.plus(getProducingDuration());
-    }
 
     public SchedulingFactoryQueueProducingArrangement(
             IGameActionObject targetActionObject,
@@ -137,7 +134,7 @@ public class SchedulingFactoryQueueProducingArrangement
                 ActionConsequence.builder()
                         .actionId(getActionId())
                         .localDateTime(getCompletedDateTime())
-                        .resource(ActionConsequence.SchedulingResource.productStock(asSchedulingProduct()))
+                        .resource(ActionConsequence.SchedulingResource.productStock(getSchedulingProduct()))
                         .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
                         .build()
         );
@@ -146,9 +143,24 @@ public class SchedulingFactoryQueueProducingArrangement
         return actionConsequenceList;
     }
 
+    public LocalDateTime getShadowCompletedDateTime() {
+        if (shadowProducingDateTime == null) {
+            return null;
+        }
+        return shadowProducingDateTime.plus(getProducingDuration());
+    }
+
+    @Override
+    public LocalDateTime getPlanningDateTimeSlotStartAsLocalDateTime() {
+        SchedulingDateTimeSlot dateTimeSlot = this.getPlanningDateTimeSlot();
+        return dateTimeSlot != null
+                ? dateTimeSlot.getStart()
+                : null;
+    }
+
     @Override
     public SchedulingTypeQueueFactoryInstance getPlanningFactoryInstance() {
-        return this.planningFactory;
+        return this.planningAnchorFactory;
     }
 
     @Override
@@ -162,11 +174,8 @@ public class SchedulingFactoryQueueProducingArrangement
     }
 
     @Override
-    public LocalDateTime getPlanningDateTimeSlotStartAsLocalDateTime() {
-        SchedulingDateTimeSlot dateTimeSlot = this.getPlanningDateTimeSlot();
-        return dateTimeSlot != null
-                ? dateTimeSlot.getStart()
-                : null;
+    public SchedulingFactoryInfo getFactoryInfo() {
+        return getPlanningFactoryInstance().getSchedulingFactoryInfo();
     }
 
 }

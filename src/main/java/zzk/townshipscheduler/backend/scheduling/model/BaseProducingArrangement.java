@@ -20,13 +20,7 @@ import java.util.UUID;
 @ToString(onlyExplicitlyIncluded = true)
 public abstract class BaseProducingArrangement {
 
-    public static final String PLANNING_FACTORY = "planningFactory";
-
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
-
-    public static final String SHADOW_PRODUCING_DATE_TIME = "shadowProducingDateTime";
-
-    public static final String SHADOW_COMPLETED_DATE_TIME = "shadowCompletedDateTime";
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -88,14 +82,18 @@ public abstract class BaseProducingArrangement {
     }
 
     public SchedulingFactoryInfo requiredFactoryInfo() {
-        return asSchedulingProduct().getRequireFactory();
+        return getSchedulingProduct().getRequireFactory();
     }
 
-    public SchedulingProduct asSchedulingProduct() {
+    public SchedulingProduct getSchedulingProduct() {
         return (SchedulingProduct) getCurrentActionObject();
     }
 
-    public SchedulingOrder asSchedulingOrder() {
+    public SchedulingFactoryInfo getRequiredFactoryInfo() {
+        return getSchedulingProduct().getRequireFactory();
+    }
+
+    public SchedulingOrder getSchedulingOrder() {
         return ((SchedulingOrder) getTargetActionObject());
     }
 
@@ -140,9 +138,13 @@ public abstract class BaseProducingArrangement {
 
     public abstract BaseSchedulingFactoryInstance getPlanningFactoryInstance();
 
+    public boolean boolRightfulFactory() {
+        return getPlanningFactoryInstance().getSchedulingFactoryInfo() == getSchedulingProduct().getRequireFactory();
+    }
+
     public boolean boolEquivalent(BaseProducingArrangement that) {
-        SchedulingProduct thisProducing = this.asSchedulingProduct();
-        SchedulingProduct thatProducing = that.asSchedulingProduct();
+        SchedulingProduct thisProducing = this.getSchedulingProduct();
+        SchedulingProduct thatProducing = that.getSchedulingProduct();
         if (thisProducing == null || thatProducing == null) {
             return false;
         } else {

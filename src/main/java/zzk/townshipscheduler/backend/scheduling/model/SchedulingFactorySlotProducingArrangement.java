@@ -20,9 +20,11 @@ import java.util.List;
 @PlanningEntity(difficultyComparatorClass = ProducingArrangementDifficultyComparator.class)
 public class SchedulingFactorySlotProducingArrangement extends BaseProducingArrangement {
 
+    public static final String PLANNING_FACTORY = "planningFactory";
+
     @PlanningVariable(
             valueRangeProviderRefs = TownshipSchedulingProblem.DATE_TIME_SLOT_VALUE_RANGE,
-            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator .class
+            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
@@ -94,7 +96,7 @@ public class SchedulingFactorySlotProducingArrangement extends BaseProducingArra
                 ActionConsequence.builder()
                         .actionId(getActionId())
                         .localDateTime(getCompletedDateTime())
-                        .resource(ActionConsequence.SchedulingResource.productStock(asSchedulingProduct()))
+                        .resource(ActionConsequence.SchedulingResource.productStock(getSchedulingProduct()))
                         .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
                         .build()
         );

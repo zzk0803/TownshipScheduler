@@ -79,34 +79,20 @@ public final class SchedulingProduct implements IGameActionObject {
     public List<BaseProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
         switch (getRequireFactory().getProducingStructureType()) {
             case QUEUE -> {
-                SchedulingFactoryQueueProducingArrangement queueProducingArrangement
-                        = BaseProducingArrangement.createProducingArrangementFactoryQueue(
-                        targetObject,
-                        this
-                );
-                if (getRequireFactory().getFactoryInstances().size() == 1) {
-                    queueProducingArrangement.setPlanningFactory(
-                            (SchedulingTypeQueueFactoryInstance) getRequireFactory().getFactoryInstances().getFirst()
-                    );
-                }
                 return List.of(
-                        queueProducingArrangement
+                        BaseProducingArrangement.createProducingArrangementFactoryQueue(
+                        targetObject,
+                                this
+                )
                 );
             }
 
             case SLOT -> {
-                SchedulingFactorySlotProducingArrangement slotProducingArrangement
-                        = BaseProducingArrangement.createProducingArrangementFactorySlot(
-                        targetObject,
-                        this
-                );
-                if (getRequireFactory().getFactoryInstances().size() == 1) {
-                    slotProducingArrangement.setPlanningFactory(
-                            (SchedulingTypeSlotFactoryInstance) getRequireFactory().getFactoryInstances().getFirst()
-                    );
-                }
                 return List.of(
-                        slotProducingArrangement
+                        BaseProducingArrangement.createProducingArrangementFactorySlot(
+                        targetObject,
+                                this
+                )
                 );
             }
 

@@ -55,4 +55,9 @@ public class SchedulingTypeQueueFactoryInstance
         return false;
     }
 
+    @Override
+    public SchedulingFactoryInfo getFactoryInfo() {
+        return super.getSchedulingFactoryInfo();
+    }
+
 }

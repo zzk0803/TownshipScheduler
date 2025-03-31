@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling.score;
 
 
+import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
@@ -41,14 +42,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                            || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.requiredFactoryInfo();
                 })
                 .penalize(
-                        HardMediumSoftScore.ofHard(100),
-                        (producingArrangement -> {
-                            var planningFactoryInstanceInfo = producingArrangement.getPlanningFactoryInstance()
-                                    .getSchedulingFactoryInfo();
-                            SchedulingFactoryInfo requiredFactoryInfo = producingArrangement.requiredFactoryInfo();
-                            return Math.abs(Math.toIntExact(planningFactoryInstanceInfo.getId()
-                                    .getValue()) - Math.toIntExact(requiredFactoryInfo.getId().getValue()));
-                        })
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.HARD_BROKEN_FACTORY,
+                                500
+                        )
                 )
                 .asConstraint("forbidMismatchQueueFactory");
     }
@@ -61,14 +60,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                            || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.requiredFactoryInfo();
                 })
                 .penalize(
-                        HardMediumSoftScore.ofHard(100),
-                        (producingArrangement -> {
-                            var planningFactoryInstanceInfo = producingArrangement.getPlanningFactoryInstance()
-                                    .getSchedulingFactoryInfo();
-                            SchedulingFactoryInfo requiredFactoryInfo = producingArrangement.requiredFactoryInfo();
-                            return Math.abs(Math.toIntExact(planningFactoryInstanceInfo.getId()
-                                    .getValue()) - Math.toIntExact(requiredFactoryInfo.getId().getValue()));
-                        })
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.HARD_BROKEN_FACTORY,
+                                500
+                        )
                 )
                 .asConstraint("forbidMismatchSlotFactory");
     }
@@ -76,77 +73,29 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint forbidBrokenQueueFactoryAbility(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingTypeQueueFactoryInstance.class)
                 .filter(SchedulingTypeQueueFactoryInstance::remainProducingLengthHadIllegal)
-                .penalize(HardMediumSoftScore.ofHard(100))
+                .penalize(
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.HARD_ASSIGN,
+                                100
+                        )
+                )
                 .asConstraint("forbidBrokenQueueFactoryAbility");
-//        return constraintFactory.forEach(SchedulingFactoryQueueProducingArrangement.class)
-//                .groupBy(
-//                        SchedulingFactoryQueueProducingArrangement::getPlanningFactory,
-//                        ConstraintCollectors.toList()
-//                )
-//                .groupBy(
-//                        (factoryInstance, slotProducingArrangements) -> factoryInstance,
-//                        (factoryInstance, slotProducingArrangements) -> slotProducingArrangements.stream()
-//                                .map(SchedulingFactoryQueueProducingArrangement::calcConsequence)
-//                                .flatMap(Collection::stream)
-//                                .toList()
-//                )
-//                .complement(SchedulingTypeQueueFactoryInstance.class, (factoryInstance -> List.of()))
-//                .filter((factoryInstance, consequences) -> {
-//                    int remain = factoryInstance.getProducingLength();
-//                    var resourceChanges = consequences.stream()
-//                            .filter(consequence -> consequence.getResource().getRoot() == factoryInstance)
-//                            .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryProducingLength)
-//                            .sorted()
-//                            .map(ActionConsequence::getResourceChange)
-//                            .toList();
-//                    for (ActionConsequence.SchedulingResourceChange resourceChange : resourceChanges) {
-//                        remain = resourceChange.apply(remain);
-//                        if (remain < 0) {
-//                            return true;
-//                        }
-//                    }
-//                    return false;
-//                })
-//                .penalize(HardMediumSoftScore.ofHard(1))
-//                .asConstraint("forbidBrokenQueueFactoryAbility");
     }
 
     private Constraint forbidBrokenSlotFactoryAbility(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingTypeSlotFactoryInstance.class)
                 .filter(SchedulingTypeSlotFactoryInstance::remainProducingLengthHadIllegal)
-                .penalize(HardMediumSoftScore.ofHard(100))
+                .penalize(
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.HARD_BROKEN_FACTORY,
+                                100
+                        )
+                )
                 .asConstraint("forbidBrokenSlotFactoryAbility");
-//        return constraintFactory.forEach(SchedulingFactorySlotProducingArrangement.class)
-//                .groupBy(
-//                        SchedulingFactorySlotProducingArrangement::getPlanningFactory,
-//                        ConstraintCollectors.toList()
-//                )
-//                .groupBy(
-//                        (factoryInstance, slotProducingArrangements) -> factoryInstance,
-//                        (factoryInstance, slotProducingArrangements) -> slotProducingArrangements.stream()
-//                                .map(SchedulingFactorySlotProducingArrangement::calcConsequence)
-//                                .flatMap(Collection::stream)
-//                                .toList()
-//                )
-//                .complement(SchedulingTypeSlotFactoryInstance.class, (factoryInstance -> List.of()))
-//                .filter((factoryInstance, consequences) -> {
-//                    int remain = factoryInstance.getProducingLength();
-//                    var resourceChanges = consequences.stream()
-//                            .filter(consequence -> consequence.getResource().getRoot() == factoryInstance)
-//                            .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryProducingLength)
-//                            .sorted()
-//                            .map(ActionConsequence::getResourceChange)
-//                            .toList();
-//                    for (ActionConsequence.SchedulingResourceChange resourceChange : resourceChanges) {
-//                        remain = resourceChange.apply(remain);
-//                        if (remain < 0) {
-//                            return true;
-//                        }
-//                    }
-//                    return false;
-//                })
-//                .penalize(HardMediumSoftScore.ofHard(1))
-//                .asConstraint("forbidBrokenSlotFactoryAbility");
     }
 
     private Constraint forbidBrokenPrerequisite(@NonNull ConstraintFactory constraintFactory) {
@@ -181,7 +130,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     return productArrangeDateTime.isBefore(materialCompletedDateTime);
                 })
                 .penalize(
-                        HardMediumSoftScore.ofHard(10),
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.HARD_ASSIGN,
+                                10
+                        ),
                         ((productArrangement, materialArrangement) -> {
                             return Math.toIntExact(
                                     Duration.between(
@@ -198,7 +152,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(BaseProducingArrangement.class)
                 .filter(producingArrangement -> producingArrangement.getProducingDateTime() == null || producingArrangement.getCompletedDateTime() == null)
                 .penalize(
-                        HardMediumSoftScore.ONE_MEDIUM
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_AS_MIDDLE_ASSIGN,
+                                10
+                        )
                 )
                 .asConstraint("shouldArrangementClear");
     }
@@ -218,7 +177,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     return completedDateTime.isAfter(deadline);
                 })
                 .penalize(
-                        HardMediumSoftScore.ofMedium(1000),
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_AS_MIDDLE_ASSIGN,
+                                1000
+                        ),
                         ((schedulingOrder, producingArrangement) -> {
                             LocalDateTime deadline = schedulingOrder.getDeadline();
                             LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
@@ -242,7 +206,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     );
                 })
                 .penalize(
-                        HardMediumSoftScore.ofMedium(100)
+                        BendableScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.HARD_ASSIGN,
+                                100
+                        )
                 )
                 .asConstraint("shouldNotArrangeInPlayerSleepTime");
     }
@@ -281,7 +250,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                            && Objects.nonNull(completedDateTime);
                 })
                 .penalize(
-                        HardMediumSoftScore.ofSoft(100),
+                        BendableScore.ofSoft(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_BATTER,
+                                1
+                        ),
                         (arrangement) -> {
                             LocalDateTime startDateTime = arrangement.getSchedulingWorkTimeLimit().getStartDateTime();
                             LocalDateTime arrangementLocalDateTime = arrangement.getPlanningDateTimeSlotStartAsLocalDateTime();

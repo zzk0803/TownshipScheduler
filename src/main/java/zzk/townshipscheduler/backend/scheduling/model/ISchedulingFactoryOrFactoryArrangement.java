@@ -17,4 +17,6 @@ public interface ISchedulingFactoryOrFactoryArrangement {
 
     LocalDateTime getCompletedDateTime();
 
+    SchedulingFactoryInfo getFactoryInfo();
+
 }

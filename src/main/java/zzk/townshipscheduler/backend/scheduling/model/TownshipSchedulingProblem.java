@@ -2,7 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,17 +17,15 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TownshipSchedulingProblem {
 
-    public static final int BENDABLE_SCORE_HARD_SIZE = 3;
+    public static final int BENDABLE_SCORE_HARD_SIZE = 2;
 
     public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
 
-    public static final int HARD_BROKEN_QUEUE = 0;
+    public static final int HARD_BROKEN_FACTORY = 0;
 
-    public static final int HARD_BROKEN_STOCK = 1;
+    public static final int HARD_ASSIGN = 1;
 
-    public static final int HARD_BAD_ASSIGN = 2;
-
-    public static final int SOFT_MAKE_SPAN = 0;
+    public static final int SOFT_AS_MIDDLE_ASSIGN = 0;
 
     public static final int SOFT_BATTER = 1;
 
@@ -64,7 +62,7 @@ public class TownshipSchedulingProblem {
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider(id = DATE_TIME_SLOT_VALUE_RANGE)
-    private List<SchedulingDateTimeSlot> dateTimeSlotSet;
+    private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider(id = PRODUCING_ARRANGEMENTS_FACTORY_QUEUE_VALUE_RANGE)
@@ -88,14 +86,11 @@ public class TownshipSchedulingProblem {
     @ProblemFactProperty
     private SchedulingPlayer schedulingPlayer;
 
-    @PlanningScore
-    private HardMediumSoftScore score;
-
-//    @PlanningScore(
-//            bendableHardLevelsSize = BENDABLE_SCORE_HARD_SIZE,
-//            bendableSoftLevelsSize = BENDABLE_SCORE_SOFT_SIZE
-//    )
-//    private BendableScore score;
+    @PlanningScore(
+            bendableHardLevelsSize = BENDABLE_SCORE_HARD_SIZE,
+            bendableSoftLevelsSize = BENDABLE_SCORE_SOFT_SIZE
+    )
+    private BendableScore score;
 
     private DateTimeSlotSize slotSize;
 
@@ -138,7 +133,7 @@ public class TownshipSchedulingProblem {
                 endDateTime,
                 slotSize.minute
         );
-        setDateTimeSlotSet(schedulingDateTimeSlots);
+        setSchedulingDateTimeSlots(schedulingDateTimeSlots);
     }
 
     public void setupGameActions() {
@@ -206,7 +201,7 @@ public class TownshipSchedulingProblem {
     private void trimUnrelatedObject() {
         List<SchedulingProduct> relatedSchedulingProduct
                 = getBaseProducingArrangements().stream()
-                .map(BaseProducingArrangement::asSchedulingProduct)
+                .map(BaseProducingArrangement::getSchedulingProduct)
                 .toList();
         getSchedulingProductSet().removeIf(product -> !relatedSchedulingProduct.contains(product));
 

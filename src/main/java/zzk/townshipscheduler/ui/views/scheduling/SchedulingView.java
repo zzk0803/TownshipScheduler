@@ -71,7 +71,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     private VerticalLayout buildGameActionTabSheetArticle() {
         VerticalLayout gameActionArticle = new VerticalLayout();
         actionGrid = new Grid<>(BaseProducingArrangement.class,false);
-        actionGrid.addColumn(BaseProducingArrangement::asSchedulingProduct)
+        actionGrid.addColumn(BaseProducingArrangement::getSchedulingProduct)
                 .setResizable(true)
                 .setHeader("Product");
         actionGrid.addColumn(BaseProducingArrangement::getPlanningFactoryInstance)

@@ -16,7 +16,7 @@ import java.util.List;
 @PlanningEntity
 public class SchedulingTypeSlotFactoryInstance extends BaseSchedulingFactoryInstance {
 
-    @InverseRelationShadowVariable(sourceVariableName = BaseProducingArrangement.PLANNING_FACTORY)
+    @InverseRelationShadowVariable(sourceVariableName = SchedulingFactorySlotProducingArrangement.PLANNING_FACTORY)
     private List<SchedulingFactorySlotProducingArrangement> producingArrangementFactorySlotList = new ArrayList<>();
 
     @Override
