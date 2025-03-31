@@ -5,7 +5,10 @@
 Township 是playrix的模拟经营游戏。
 
 Township Scheduler 是以此为课题的玩具项目，用于我自己学习Timefold和Vaadin的使用。
-主要功能是依据给出的【订单】计算需要的【生产活动】，再通过Timefold计算进行这些【生产活动】日期时间和工厂。
+
+主要功能是依据给出的【订单】计算需要的【生产活动】，再通过Timefold计算分配这些【生产活动】的【日期时间】和【工厂】。
+
+未完工，BUG多。
 
 ## Township Scheduler 约束 
 
