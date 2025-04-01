@@ -91,7 +91,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         BendableScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_FACTORY,
+                                TownshipSchedulingProblem.HARD_ASSIGN,
                                 100
                         )
                 )
@@ -152,7 +152,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(BaseProducingArrangement.class)
                 .filter(producingArrangement -> producingArrangement.getProducingDateTime() == null || producingArrangement.getCompletedDateTime() == null)
                 .penalize(
-                        BendableScore.ofHard(
+                        BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_AS_MIDDLE_ASSIGN,
@@ -177,7 +177,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     return completedDateTime.isAfter(deadline);
                 })
                 .penalize(
-                        BendableScore.ofHard(
+                        BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_AS_MIDDLE_ASSIGN,
@@ -206,10 +206,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     );
                 })
                 .penalize(
-                        BendableScore.ofHard(
+                        BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_ASSIGN,
+                                TownshipSchedulingProblem.SOFT_AS_MIDDLE_ASSIGN,
                                 100
                         )
                 )
