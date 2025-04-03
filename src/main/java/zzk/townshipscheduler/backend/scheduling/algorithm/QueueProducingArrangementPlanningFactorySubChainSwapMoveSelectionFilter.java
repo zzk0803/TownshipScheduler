@@ -1,35 +1,53 @@
 package zzk.townshipscheduler.backend.scheduling.algorithm;
 
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
+import ai.timefold.solver.core.impl.heuristic.move.AbstractMove;
 import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
-import ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainChangeMove;
+import ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainReversingSwapMove;
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainSwapMove;
 import ai.timefold.solver.core.impl.heuristic.selector.value.chained.SubChain;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeSlotFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeQueueFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 public class QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter
-        implements SelectionFilter<TownshipSchedulingProblem, SubChainSwapMove<TownshipSchedulingProblem>> {
+        implements SelectionFilter<TownshipSchedulingProblem, AbstractMove<TownshipSchedulingProblem>> {
 
     @Override
     public boolean accept(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            SubChainSwapMove<TownshipSchedulingProblem> selection
+            AbstractMove<TownshipSchedulingProblem> selection
     ) {
-        SubChain leftSubChain = selection.getLeftSubChain();
-        var leftSubChainFirstEntity = ((SchedulingFactorySlotProducingArrangement) leftSubChain.getFirstEntity());
-        SchedulingFactoryInfo leftProducingRequiredFactoryInfo = leftSubChainFirstEntity.getRequiredFactoryInfo();
-        SchedulingTypeSlotFactoryInstance leftEntityPlanningFactory = leftSubChainFirstEntity.getPlanningFactory();
+        if (selection instanceof SubChainSwapMove<TownshipSchedulingProblem> subChainChangeMove) {
+            SubChain leftSubChain = subChainChangeMove.getLeftSubChain();
+            var leftSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) leftSubChain.getFirstEntity());
+            SchedulingFactoryInfo leftProducingRequiredFactoryInfo = leftSubChainFirstEntity.getRequiredFactoryInfo();
+            SchedulingTypeQueueFactoryInstance leftEntityPlanningFactory = leftSubChainFirstEntity.getPlanningAnchorFactory();
 
-        SubChain rightSubChain = selection.getRightSubChain();
-        var rightSubChainFirstEntity = ((SchedulingFactorySlotProducingArrangement) rightSubChain.getFirstEntity());
-        SchedulingFactoryInfo rightProducingRequiredFactoryInfo = rightSubChainFirstEntity.getRequiredFactoryInfo();
-        SchedulingTypeSlotFactoryInstance rightEntityPlanningFactory = rightSubChainFirstEntity.getPlanningFactory();
+            SubChain rightSubChain = subChainChangeMove.getRightSubChain();
+            var rightSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) rightSubChain.getFirstEntity());
+            SchedulingFactoryInfo rightProducingRequiredFactoryInfo = rightSubChainFirstEntity.getRequiredFactoryInfo();
+            SchedulingTypeQueueFactoryInstance rightEntityPlanningFactory = rightSubChainFirstEntity.getPlanningAnchorFactory();
 
-        return leftProducingRequiredFactoryInfo == rightEntityPlanningFactory.getSchedulingFactoryInfo()
-               || rightProducingRequiredFactoryInfo == leftEntityPlanningFactory.getSchedulingFactoryInfo();
+            return leftProducingRequiredFactoryInfo == rightEntityPlanningFactory.getSchedulingFactoryInfo()
+                   || rightProducingRequiredFactoryInfo == leftEntityPlanningFactory.getSchedulingFactoryInfo();
+        } else if (selection instanceof SubChainReversingSwapMove<TownshipSchedulingProblem> subChainReversingChangeMove) {
+            SubChain leftSubChain = subChainReversingChangeMove.getLeftSubChain();
+            var leftSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) leftSubChain.getFirstEntity());
+            SchedulingFactoryInfo leftProducingRequiredFactoryInfo = leftSubChainFirstEntity.getRequiredFactoryInfo();
+            SchedulingTypeQueueFactoryInstance leftEntityPlanningFactory = leftSubChainFirstEntity.getPlanningAnchorFactory();
+
+            SubChain rightSubChain = subChainReversingChangeMove.getRightSubChain();
+            var rightSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) rightSubChain.getFirstEntity());
+            SchedulingFactoryInfo rightProducingRequiredFactoryInfo = rightSubChainFirstEntity.getRequiredFactoryInfo();
+            SchedulingTypeQueueFactoryInstance rightEntityPlanningFactory = rightSubChainFirstEntity.getPlanningAnchorFactory();
+
+            return leftProducingRequiredFactoryInfo == rightEntityPlanningFactory.getSchedulingFactoryInfo()
+                   || rightProducingRequiredFactoryInfo == leftEntityPlanningFactory.getSchedulingFactoryInfo();
+        } else {
+            throw new RuntimeException(selection.toString());
+        }
     }
 
 }

@@ -17,15 +17,17 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TownshipSchedulingProblem {
 
-    public static final int BENDABLE_SCORE_HARD_SIZE = 2;
+    public static final int BENDABLE_SCORE_HARD_SIZE = 3;
 
     public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
 
     public static final int HARD_BROKEN_FACTORY = 0;
 
-    public static final int HARD_ASSIGN = 1;
+    public static final int HARD_BROKEN_CAPACITY = 1;
 
-    public static final int SOFT_AS_MIDDLE_ASSIGN = 0;
+    public static final int HARD_BROKEN_STOCK = 2;
+
+    public static final int SOFT_MIDDLE = 0;
 
     public static final int SOFT_BATTER = 1;
 

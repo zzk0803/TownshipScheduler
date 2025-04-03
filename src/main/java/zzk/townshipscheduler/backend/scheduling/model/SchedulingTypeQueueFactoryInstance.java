@@ -1,7 +1,11 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.javatuples.Pair;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,34 +34,51 @@ public class SchedulingTypeQueueFactoryInstance
     }
 
     @Override
-    public boolean remainProducingLengthHadIllegal() {
-        List<ActionConsequence> actionConsequences = new ArrayList<>();
-        SchedulingFactoryQueueProducingArrangement queueProducingArrangement = nextQueueProducingArrangement;
-        while (queueProducingArrangement != null) {
-            actionConsequences.addAll(queueProducingArrangement.calcConsequence());
-            queueProducingArrangement = queueProducingArrangement.getNextQueueProducingArrangement();
-        }
-
-        var resourceChanges = actionConsequences.stream()
-                .filter(consequence -> consequence.getResource().getRoot() == this)
-                .filter(consequence -> consequence.getResource() instanceof ActionConsequence.FactoryProducingLength)
-                .sorted()
-                .map(ActionConsequence::getResourceChange)
-                .toList();
-
-        int remain = getProducingLength();
-        for (ActionConsequence.SchedulingResourceChange resourceChange : resourceChanges) {
-            remain = resourceChange.apply(remain);
-            if (remain < 0) {
-                return true;
-            }
-        }
-        return false;
+    public SchedulingFactoryInfo getFactoryInfo() {
+        return super.getSchedulingFactoryInfo();
     }
 
     @Override
-    public SchedulingFactoryInfo getFactoryInfo() {
-        return super.getSchedulingFactoryInfo();
+    public Pair<Integer, Duration> remainProducingCapacityAndNextAvailable(SchedulingDateTimeSlot schedulingDateTimeSlot) {
+        List<ArrangeConsequence> arrangeConsequences = new ArrayList<>();
+        SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+                = this.nextQueueProducingArrangement;
+        while (queueProducingArrangement != null) {
+            arrangeConsequences.addAll(queueProducingArrangement.calcConsequence());
+            queueProducingArrangement = queueProducingArrangement.getNextQueueProducingArrangement();
+        }
+
+        var filteredArrangeConsequences
+                = arrangeConsequences.stream()
+                .filter(consequence -> consequence.getResource().getRoot() == this)
+                .filter(consequence -> consequence.getResource() instanceof ArrangeConsequence.FactoryProducingLength)
+                .sorted()
+                .toList();
+
+        Duration firstCapacityIncreaseDuration
+                = filteredArrangeConsequences.stream()
+                .filter(arrangeConsequence -> arrangeConsequence.getLocalDateTime()
+                        .isAfter(schedulingDateTimeSlot.getStart()))
+                .filter(arrangeConsequence -> arrangeConsequence.getResourceChange() instanceof ArrangeConsequence.Increase)
+                .findFirst()
+                .map(arrangeConsequence -> Duration.between(
+                        schedulingDateTimeSlot.getStart(),
+                        arrangeConsequence.getLocalDateTime()
+                ))
+                .orElse(null);
+
+        int remain = filteredArrangeConsequences.stream()
+                .filter(arrangeConsequence -> arrangeConsequence.getLocalDateTime()
+                                                      .isBefore(schedulingDateTimeSlot.getStart())
+                                              || arrangeConsequence.getLocalDateTime()
+                                                      .isEqual(schedulingDateTimeSlot.getStart()))
+                .reduce(
+                        getProducingLength(),
+                        (integer, arrangeConsequence) -> arrangeConsequence.getResourceChange().apply(integer),
+                        Integer::sum
+                );
+
+        return Pair.with(remain, remain > 0 ? Duration.ZERO : firstCapacityIncreaseDuration);
     }
 
 }

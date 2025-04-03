@@ -4,6 +4,10 @@ import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.javatuples.Pair;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -26,6 +30,5 @@ public abstract class BaseSchedulingFactoryInstance {
         return this.schedulingFactoryInfo.getCategoryName() + "#" + this.getSeqNum() + ",size=" + this.getProducingLength();
     }
 
-    public abstract boolean remainProducingLengthHadIllegal();
-
+    public abstract Pair<Integer, Duration> remainProducingCapacityAndNextAvailable(SchedulingDateTimeSlot schedulingDateTimeSlot);
 }

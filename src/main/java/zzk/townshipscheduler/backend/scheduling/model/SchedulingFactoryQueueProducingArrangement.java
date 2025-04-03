@@ -77,7 +77,7 @@ public class SchedulingFactoryQueueProducingArrangement
         super(targetActionObject, currentActionObject);
     }
 
-    public List<ActionConsequence> calcConsequence() {
+    public List<ArrangeConsequence> calcConsequence() {
         if (
                 getPlanningDateTimeSlot() == null
                 || getPlanningFactoryInstance() == null
@@ -87,60 +87,60 @@ public class SchedulingFactoryQueueProducingArrangement
         }
 
         SchedulingProducingExecutionMode executionMode = getProducingExecutionMode();
-        List<ActionConsequence> actionConsequenceList = new ArrayList<>(5);
+        List<ArrangeConsequence> arrangeConsequenceList = new ArrayList<>(5);
         //when arrange,materials was consumed
-        if (!executionMode.boolAtomicProduct()) {
+        if (executionMode.boolCompositeProduct()) {
             ProductAmountBill materials = executionMode.getMaterials();
             materials.forEach((material, amount) -> {
-                ActionConsequence consequence = ActionConsequence.builder()
-                        .actionId(getActionId())
+                ArrangeConsequence consequence = ArrangeConsequence.builder()
+                        .producingArrangement(this)
                         .localDateTime(getPlanningDateTimeSlotStartAsLocalDateTime())
-                        .resource(ActionConsequence.SchedulingResource.productStock(material))
-                        .resourceChange(ActionConsequence.SchedulingResourceChange.decrease(amount))
+                        .resource(ArrangeConsequence.SchedulingResource.productStock(material))
+                        .resourceChange(ArrangeConsequence.SchedulingResourceChange.decrease(amount))
                         .build();
-                actionConsequenceList.add(consequence);
+                arrangeConsequenceList.add(consequence);
             });
         }
 
         //when arrange,factory wait queue was consumed
-        actionConsequenceList.add(
-                ActionConsequence.builder()
-                        .actionId(getActionId())
+        arrangeConsequenceList.add(
+                ArrangeConsequence.builder()
+                        .producingArrangement(this)
                         .localDateTime(getPlanningDateTimeSlotStartAsLocalDateTime())
                         .resource(
-                                ActionConsequence.SchedulingResource.factoryWaitQueue(
+                                ArrangeConsequence.SchedulingResource.factoryWaitQueue(
                                         getPlanningFactoryInstance()
                                 )
                         )
-                        .resourceChange(ActionConsequence.SchedulingResourceChange.decrease())
+                        .resourceChange(ArrangeConsequence.SchedulingResourceChange.decrease())
                         .build()
         );
 
         //when completed ,factory wait queue was release
-        actionConsequenceList.add(
-                ActionConsequence.builder()
-                        .actionId(getActionId())
+        arrangeConsequenceList.add(
+                ArrangeConsequence.builder()
+                        .producingArrangement(this)
                         .localDateTime(getCompletedDateTime())
-                        .resource(ActionConsequence.SchedulingResource.factoryWaitQueue(
+                        .resource(ArrangeConsequence.SchedulingResource.factoryWaitQueue(
                                         getPlanningFactoryInstance()
                                 )
                         )
-                        .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
+                        .resourceChange(ArrangeConsequence.SchedulingResourceChange.increase())
                         .build()
         );
 
         //when completed ,product stock was increase
-        actionConsequenceList.add(
-                ActionConsequence.builder()
-                        .actionId(getActionId())
+        arrangeConsequenceList.add(
+                ArrangeConsequence.builder()
+                        .producingArrangement(this)
                         .localDateTime(getCompletedDateTime())
-                        .resource(ActionConsequence.SchedulingResource.productStock(getSchedulingProduct()))
-                        .resourceChange(ActionConsequence.SchedulingResourceChange.increase())
+                        .resource(ArrangeConsequence.SchedulingResource.productStock(getSchedulingProduct()))
+                        .resourceChange(ArrangeConsequence.SchedulingResourceChange.increase())
                         .build()
         );
 
 
-        return actionConsequenceList;
+        return arrangeConsequenceList;
     }
 
     public LocalDateTime getShadowCompletedDateTime() {

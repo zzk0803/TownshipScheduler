@@ -11,9 +11,9 @@ import java.util.function.IntFunction;
 
 @Data
 @Builder
-public final class ActionConsequence implements Comparable<ActionConsequence> {
+public final class ArrangeConsequence implements Comparable<ArrangeConsequence> {
 
-    private Integer actionId;
+    private BaseProducingArrangement producingArrangement;
 
     private LocalDateTime localDateTime;
 
@@ -22,8 +22,8 @@ public final class ActionConsequence implements Comparable<ActionConsequence> {
     private SchedulingResourceChange resourceChange;
 
     @Override
-    public int compareTo(ActionConsequence that) {
-        return Comparator.comparing(ActionConsequence::getLocalDateTime).compare(this, that);
+    public int compareTo(ArrangeConsequence that) {
+        return Comparator.comparing(ArrangeConsequence::getLocalDateTime).compare(this, that);
     }
 
     public interface SchedulingResource {

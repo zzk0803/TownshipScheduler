@@ -125,7 +125,7 @@ public abstract class BaseProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    public abstract List<ActionConsequence> calcConsequence();
+    public abstract List<ArrangeConsequence> calcConsequence();
 
     public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();

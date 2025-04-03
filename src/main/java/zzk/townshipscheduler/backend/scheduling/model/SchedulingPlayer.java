@@ -25,11 +25,11 @@ public class SchedulingPlayer {
     private Map<SchedulingProduct, Integer> productAmountMap;
 
     public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<BaseProducingArrangement> producingArrangements) {
-        List<ActionConsequence> actionConsequenceList = mapToActionProductStockConsequences(producingArrangements);
+        List<ArrangeConsequence> arrangeConsequenceList = mapToActionProductStockConsequences(producingArrangements);
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);
-        for (ActionConsequence consequence : actionConsequenceList) {
-            ActionConsequence.ProductStock productStock = (ActionConsequence.ProductStock) consequence.getResource();
-            ActionConsequence.SchedulingResourceChange resourceChange = consequence.getResourceChange();
+        for (ArrangeConsequence consequence : arrangeConsequenceList) {
+            ArrangeConsequence.ProductStock productStock = (ArrangeConsequence.ProductStock) consequence.getResource();
+            ArrangeConsequence.SchedulingResourceChange resourceChange = consequence.getResourceChange();
             SchedulingProduct schedulingProduct = productStock.getSchedulingProduct();
             Integer stock = productStockMap.getOrDefault(schedulingProduct, 0);
             stock = resourceChange.apply(stock);
@@ -38,21 +38,21 @@ public class SchedulingPlayer {
         return productStockMap;
     }
 
-    public List<ActionConsequence> mapToActionProductStockConsequences(List<BaseProducingArrangement> producingArrangements) {
+    public List<ArrangeConsequence> mapToActionProductStockConsequences(List<BaseProducingArrangement> producingArrangements) {
         return producingArrangements.stream()
                 .map(BaseProducingArrangement::calcConsequence)
                 .flatMap(Collection::stream)
-                .sorted(Comparator.comparing(ActionConsequence::getLocalDateTime))
-                .filter(consequence -> consequence.getResource() instanceof ActionConsequence.ProductStock)
+                .sorted(Comparator.comparing(ArrangeConsequence::getLocalDateTime))
+                .filter(consequence -> consequence.getResource() instanceof ArrangeConsequence.ProductStock)
                 .toList();
     }
 
     public boolean remainStockHadIllegal(List<BaseProducingArrangement> producingArrangements) {
-        List<ActionConsequence> actionConsequences = mapToActionProductStockConsequences(producingArrangements);
+        List<ArrangeConsequence> arrangeConsequences = mapToActionProductStockConsequences(producingArrangements);
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);
-        for (ActionConsequence consequence : actionConsequences) {
-            ActionConsequence.ProductStock productStock = (ActionConsequence.ProductStock) consequence.getResource();
-            ActionConsequence.SchedulingResourceChange resourceChange = consequence.getResourceChange();
+        for (ArrangeConsequence consequence : arrangeConsequences) {
+            ArrangeConsequence.ProductStock productStock = (ArrangeConsequence.ProductStock) consequence.getResource();
+            ArrangeConsequence.SchedulingResourceChange resourceChange = consequence.getResourceChange();
             SchedulingProduct schedulingProduct = productStock.getSchedulingProduct();
             Integer stock = productStockMap.getOrDefault(schedulingProduct, 0);
             stock = resourceChange.apply(stock);

@@ -20,68 +20,71 @@
     </scoreDirectorFactory>
 
     <customPhase>
-        <customPhaseCommandClass>zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase</customPhaseCommandClass>
+        <customPhaseCommandClass>
+            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
+        </customPhaseCommandClass>
     </customPhase>
 
-<!-- IT"S WRONG ,NOT WORK-->
-<!--    <constructionHeuristic>-->
-<!--        <queuedEntityPlacer>-->
-<!--            <entitySelector id="ches1">-->
-<!--                <entityClass>-->
-<!--                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement-->
-<!--                </entityClass>-->
-<!--                <cacheType>PHASE</cacheType>-->
-<!--            </entitySelector>-->
+    <!-- IT"S WRONG ,NOT WORK-->
+    <!--    <constructionHeuristic>-->
+    <!--        <queuedEntityPlacer>-->
+    <!--            <entitySelector id="ches1">-->
+    <!--                <entityClass>-->
+    <!--                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement-->
+    <!--                </entityClass>-->
+    <!--                <cacheType>PHASE</cacheType>-->
+    <!--            </entitySelector>-->
 
-<!--            <cartesianProductMoveSelector>-->
-<!--                <changeMoveSelector>-->
-<!--                    <filterClass>-->
-<!--                        zzk.townshipscheduler.backend.scheduling.algorithm.SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
-<!--                    </filterClass>-->
-<!--                    <valueSelector variableName="planningFactory">-->
-<!--                        <downcastEntityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeSlotFactoryInstance</downcastEntityClass>-->
-<!--                    </valueSelector>-->
-<!--                </changeMoveSelector>-->
+    <!--            <cartesianProductMoveSelector>-->
+    <!--                <changeMoveSelector>-->
+    <!--                    <filterClass>-->
+    <!--                        zzk.townshipscheduler.backend.scheduling.algorithm.SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
+    <!--                    </filterClass>-->
+    <!--                    <valueSelector variableName="planningFactory">-->
+    <!--                        <downcastEntityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeSlotFactoryInstance</downcastEntityClass>-->
+    <!--                    </valueSelector>-->
+    <!--                </changeMoveSelector>-->
 
-<!--                <changeMoveSelector>-->
-<!--                    <valueSelector variableName="planningDateTimeSlot"/>-->
-<!--                </changeMoveSelector>-->
-<!--            </cartesianProductMoveSelector>-->
-<!--        </queuedEntityPlacer>-->
-<!--    </constructionHeuristic>-->
+    <!--                <changeMoveSelector>-->
+    <!--                    <valueSelector variableName="planningDateTimeSlot"/>-->
+    <!--                </changeMoveSelector>-->
+    <!--            </cartesianProductMoveSelector>-->
+    <!--        </queuedEntityPlacer>-->
+    <!--    </constructionHeuristic>-->
 
-<!--    <constructionHeuristic>-->
-<!--        <queuedEntityPlacer>-->
-<!--            <entitySelector id="ches2">-->
-<!--                <entityClass>-->
-<!--                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement-->
-<!--                </entityClass>-->
-<!--                <cacheType>PHASE</cacheType>-->
-<!--            </entitySelector>-->
+    <!--    <constructionHeuristic>-->
+    <!--        <queuedEntityPlacer>-->
+    <!--            <entitySelector id="ches2">-->
+    <!--                <entityClass>-->
+    <!--                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement-->
+    <!--                </entityClass>-->
+    <!--                <cacheType>PHASE</cacheType>-->
+    <!--            </entitySelector>-->
 
-<!--            <cartesianProductMoveSelector>-->
-<!--                <changeMoveSelector>-->
-<!--                    <valueSelector variableName="planningDateTimeSlot"/>-->
-<!--                </changeMoveSelector>-->
+    <!--            <cartesianProductMoveSelector>-->
+    <!--                <changeMoveSelector>-->
+    <!--                    <valueSelector variableName="planningDateTimeSlot"/>-->
+    <!--                </changeMoveSelector>-->
 
-<!--                <changeMoveSelector>-->
-<!--                    <filterClass>-->
-<!--                        zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactoryChainChangeMoveSelectionFilter-->
-<!--                    </filterClass>-->
-<!--                </changeMoveSelector>-->
+    <!--                <changeMoveSelector>-->
+    <!--                    <filterClass>-->
+    <!--                        zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactoryChainChangeMoveSelectionFilter-->
+    <!--                    </filterClass>-->
+    <!--                </changeMoveSelector>-->
 
-<!--                <tailChainSwapMoveSelector>-->
-<!--                    <filterClass>-->
-<!--                        zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter-->
-<!--                    </filterClass>-->
-<!--                </tailChainSwapMoveSelector>-->
-<!--            </cartesianProductMoveSelector>-->
-<!--        </queuedEntityPlacer>-->
-<!--    </constructionHeuristic>-->
+    <!--                <tailChainSwapMoveSelector>-->
+    <!--                    <filterClass>-->
+    <!--                        zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter-->
+    <!--                    </filterClass>-->
+    <!--                </tailChainSwapMoveSelector>-->
+    <!--            </cartesianProductMoveSelector>-->
+    <!--        </queuedEntityPlacer>-->
+    <!--    </constructionHeuristic>-->
 
+    <!-- stage 1:tweak factory instance-->
     <localSearch>
         <termination>
-            <bestScoreLimit>[0/*]hard/[*/*]soft</bestScoreLimit>
+            <bestScoreLimit>[0/*/*]hard/[*/*]soft</bestScoreLimit>
         </termination>
 
         <unionMoveSelector>
@@ -100,22 +103,6 @@
                 </valueSelector>
             </changeMoveSelector>
 
-            <swapMoveSelector>
-                <filterClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.SlotProducingArrangementPlanningFactorySwapMoveSelectionFilter
-                </filterClass>
-                <entitySelector id="es2">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement
-                    </entityClass>
-                </entitySelector>
-                <secondaryEntitySelector id="es2second">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement
-                    </entityClass>
-                </secondaryEntitySelector>
-            </swapMoveSelector>
-
             <tailChainSwapMoveSelector>
                 <filterClass>
                     zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter
@@ -124,41 +111,134 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
                     </entityClass>
-                    <cacheType>PHASE</cacheType>
                 </entitySelector>
                 <valueSelector id="vs3" variableName="planningPreviousProducingArrangementOrFactory"/>
             </tailChainSwapMoveSelector>
 
-            <!-- IT"S WRONG ,NOT WORK-->
-            <!--            <subChainChangeMoveSelector>-->
-            <!--                <filterClass>-->
-            <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainChangeMoveSelectionFilter-->
-            <!--                </filterClass>-->
-            <!--                <entityClass>-->
-            <!--                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement-->
-            <!--                </entityClass>-->
-            <!--                <valueSelector id="vs4" variableName="planningPreviousFactorySequenceOrFactory"/>-->
-            <!--            </subChainChangeMoveSelector>-->
+            <subChainSwapMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter
+                </filterClass>
+                <entityClass>
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                </entityClass>
+                <subChainSelector>
+                    <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
+                </subChainSelector>
+                <!--ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainReversingSwapMove-->
+                <selectReversingMoveToo>true</selectReversingMoveToo>
+            </subChainSwapMoveSelector>
 
-            <!--            <subChainSwapMoveSelector>-->
-            <!--                <filterClass>-->
-            <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter-->
-            <!--                </filterClass>-->
-            <!--                <entityClass>-->
-            <!--                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement-->
-            <!--                </entityClass>-->
-            <!--            </subChainSwapMoveSelector>-->
+            <subChainChangeMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainChangeMoveSelectionFilter
+                </filterClass>
+                <entityClass>
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                </entityClass>
+                <subChainSelector>
+                    <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
+                </subChainSelector>
+                <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
+                <selectReversingMoveToo>true</selectReversingMoveToo>
+            </subChainChangeMoveSelector>
 
         </unionMoveSelector>
+
     </localSearch>
 
+
+    <!-- stage 2:tweak dataTime and sequence-->
     <localSearch>
-        <termination>
-            <diminishedReturns>
-                <slidingWindowMinutes>3</slidingWindowMinutes>
-                <minimumImprovementRatio>0.2</minimumImprovementRatio>
-            </diminishedReturns>
-        </termination>
+
+        <unionMoveSelector>
+            <changeMoveSelector>
+                <entitySelector id="ls2es1">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement
+                    </entityClass>
+                </entitySelector>
+                <valueSelector id="ls2vs1" variableName="planningDateTimeSlot">
+
+                </valueSelector>
+            </changeMoveSelector>
+
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="ls2es2">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector id="ls2vs2" variableName="planningDateTimeSlot">
+
+                </valueSelector>
+            </pillarChangeMoveSelector>
+
+            <changeMoveSelector>
+                <entitySelector id="ls2es3">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                    </entityClass>
+                </entitySelector>
+                <valueSelector id="ls2vs3" variableName="planningDateTimeSlot">
+                </valueSelector>
+            </changeMoveSelector>
+
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="ls2es4">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector id="ls2vs4" variableName="planningDateTimeSlot">
+                </valueSelector>
+            </pillarChangeMoveSelector>
+
+            <tailChainSwapMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter
+                </filterClass>
+                <entitySelector id="ls2es5">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                    </entityClass>
+                </entitySelector>
+                <valueSelector id="ls2vs5" variableName="planningPreviousProducingArrangementOrFactory"/>
+            </tailChainSwapMoveSelector>
+
+            <subChainSwapMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter
+                </filterClass>
+                <entityClass>
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                </entityClass>
+                <subChainSelector>
+                    <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
+                </subChainSelector>
+                <!--ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainReversingSwapMove-->
+                <selectReversingMoveToo>true</selectReversingMoveToo>
+            </subChainSwapMoveSelector>
+
+            <subChainChangeMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainChangeMoveSelectionFilter
+                </filterClass>
+                <entityClass>
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                </entityClass>
+                <subChainSelector>
+                    <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
+                </subChainSelector>
+                <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
+                <selectReversingMoveToo>true</selectReversingMoveToo>
+            </subChainChangeMoveSelector>
+        </unionMoveSelector>
+
     </localSearch>
 
 </solver>
