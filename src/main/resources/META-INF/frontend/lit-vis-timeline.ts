@@ -41,25 +41,36 @@ export class LitVisTimeline
         `;
     }
 
+    protected willUpdate(_changedProperties: PropertyValues) {
+        super.willUpdate(_changedProperties)
+
+        if (this.timeline) {
+            if (_changedProperties.has("datasets")) {
+                this.timeline.setItems(this.datasets);
+            }
+
+            if (_changedProperties.has("groups")) {
+                this.timeline.setGroups(this.groups);
+            }
+
+            if (_changedProperties.has("options")) {
+                this.timeline.setOptions(this.options);
+            }
+        }
+    }
+
+
     protected updated(_changedProperties: PropertyValues) {
         if (this.timeline) {
             this.timeline.redraw();
         }
+
+        super.updated(_changedProperties);
     }
 
     firstUpdated(_changedProperties: PropertyValues) {
         // Create a new Timeline in the vis-container
         this.setupTimeline();
-    }
-
-    private setupTimeline() {
-        this.timeline = new Timeline(
-            this.visContainerElement,
-            this.datasets,
-            this.groups,
-            this.options
-        );
-        this.timeline.setWindow(this.fromDateTime, this.toDateTime);
     }
 
     @property()
@@ -81,4 +92,14 @@ export class LitVisTimeline
     visContainerElement!: HTMLDivElement;
 
     timeline!: Timeline;
+
+    private setupTimeline() {
+        this.timeline = new Timeline(
+            this.visContainerElement,
+            this.datasets,
+            this.groups,
+            this.options
+        );
+        this.timeline.setWindow(this.fromDateTime, this.toDateTime);
+    }
 }

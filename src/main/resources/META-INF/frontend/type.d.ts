@@ -96,21 +96,23 @@ export declare interface SchedulingFactory {
 }
 
 export declare interface BaseProducingArrangement {
-    id: number,
+    id: string,
 
     uuid: string,
 
-    schedulingProduct: SchedulingProduct,
+    product: string,
 
-    schedulingFactory: SchedulingFactory,
+    arrangeFactory: string,
 
-    producingDuration: Duration,
+    arrangeFactoryId: string,
 
-    arrangeDateTime: Date,
+    producingDuration: string,
 
-    producingDateTime: Date,
+    arrangeDateTime: string,
 
-    completedDateTime: Date
+    gameProducingDateTime: string,
+
+    gameCompletedDateTime: string
 }
 
 export declare interface SchedulingFactoryQueueProducingArrangement

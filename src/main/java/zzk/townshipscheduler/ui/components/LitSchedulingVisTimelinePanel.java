@@ -3,15 +3,14 @@ package zzk.townshipscheduler.ui.components;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
-import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingFactoryInstance;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeQueue;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeSlot;
-import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.ui.pojo.ProducingArrangementVO;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Tag("scheduling-vis-timeline-panel")
 @NpmPackage(value = "vis-timeline", version = "7.7.3")
@@ -59,7 +58,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
         );
         setPropertyList(
                 "producingArrangements",
-                new ArrayList<>(townshipSchedulingProblem.getBaseProducingArrangements())
+                toProducingArrangementVo(townshipSchedulingProblem.getBaseProducingArrangements())
         );
 
     }
@@ -78,6 +77,35 @@ public class LitSchedulingVisTimelinePanel extends Component {
         schedulingFactoryInstances.addAll(factoryInstanceTypeSlotList);
         schedulingFactoryInstances.addAll(factoryInstanceTypeQueueList);
         return schedulingFactoryInstances;
+    }
+
+    private List<ProducingArrangementVO> toProducingArrangementVo(List<BaseSchedulingProducingArrangement> baseSchedulingProducingArrangementList) {
+        return baseSchedulingProducingArrangementList.stream()
+                .map(producingArrangement -> {
+                    BaseSchedulingFactoryInstance planningFactoryInstance = producingArrangement.getPlanningFactoryInstance();
+                    return new ProducingArrangementVO(
+                            producingArrangement.getId(),
+                            producingArrangement.getUuid(),
+                            producingArrangement.getSchedulingProduct().getName(),
+                            Optional.ofNullable(planningFactoryInstance)
+                                    .map(baseSchedulingFactoryInstance -> {
+                                        return baseSchedulingFactoryInstance
+                                                       .getCategoryName() + "#" + baseSchedulingFactoryInstance
+                                                       .getSeqNum();
+                                    })
+                                    .orElse("N/A"),
+                            Optional.ofNullable(planningFactoryInstance)
+                                    .map(BaseSchedulingFactoryInstance::getId)
+                                    .map(String::valueOf)
+                                    .orElse("N/A"),
+                            producingArrangement.getProducingDuration().toString(),
+                            producingArrangement.getArrangeDateTime(),
+                            producingArrangement.getProducingDateTime(),
+                            producingArrangement.getCompletedDateTime()
+                    );
+                })
+                .toList();
+
     }
 
     private void setPropertyMap(String name, Map<String, ?> map) {

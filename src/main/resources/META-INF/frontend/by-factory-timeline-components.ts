@@ -34,7 +34,7 @@ export class ByFactoryTimelineComponents
 
             this.schedulingFactory?.map((factory) => {
                 dataGroupItems.push({
-                    id: factory?.categoryName + "#" + factory?.seqNum,
+                    id: factory?.id,
                     content: ` 
                          <h6 class="mb-m">
                             ${(factory?.categoryName ?? "Unknown Factory") + "#" + factory?.seqNum}
@@ -47,29 +47,27 @@ export class ByFactoryTimelineComponents
         }
 
         if (_changedProperties.has('producingArrangements')) {
-            console.log(this.producingArrangements);
-
             const dataSetItems: DataItem[] = [];
             this.producingArrangements
                 ?.filter(arrangement => {
-                    return arrangement.schedulingFactory != null && arrangement.arrangeDateTime != null
+                    return arrangement.arrangeFactory != null && arrangement.arrangeDateTime != null
                 })
                 ?.map(
                     (arrangement) => {
                         dataSetItems.push({
                             id: arrangement?.uuid + "_arrange",
-                            group: arrangement?.schedulingFactory?.categoryName + "#" + arrangement?.schedulingFactory?.seqNum,
-                            content: `<p class="h-auto w-auto text-center">arrange: ${arrangement?.schedulingProduct?.name}</p>`,
+                            group: arrangement?.arrangeFactoryId,
+                            content: `<p class="h-auto w-auto text-center">arrange: ${arrangement?.product}</p>`,
                             start: arrangement?.arrangeDateTime,
                             end: arrangement?.arrangeDateTime
                         });
 
                         dataSetItems.push({
                             id: arrangement?.uuid + "_in_game",
-                            group: arrangement?.schedulingFactory?.categoryName + "#" + arrangement?.schedulingFactory?.seqNum,
-                            content: `<p class="h-auto w-auto text-center">in game: ${arrangement?.schedulingProduct?.name}</p>`,
-                            start: arrangement?.producingDateTime,
-                            end: arrangement?.completedDateTime
+                            group: arrangement?.arrangeFactoryId,
+                            content: `<p class="h-auto w-auto text-center">in game: ${arrangement?.product}</p>`,
+                            start: arrangement?.gameProducingDateTime,
+                            end: arrangement?.gameCompletedDateTime
                         });
                     })
 

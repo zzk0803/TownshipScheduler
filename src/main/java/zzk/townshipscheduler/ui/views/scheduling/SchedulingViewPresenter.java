@@ -96,17 +96,6 @@ public class SchedulingViewPresenter {
                 getSchedulingView().getSchedulingVisTimelinePanel()
                         .updateRemote(townshipSchedulingProblem);
             });
-
-//                            this.ui.access(
-//                                    () -> {
-//                                        Grid<BaseSchedulingProducingArrangement> grid
-//                                                = getSchedulingView().getArrangementGrid();
-//                                        grid.setItems(producingArrangements);
-//                                        grid.getDataProvider().refreshAll();
-//                                        getSchedulingView().getScoreAnalysisParagraph()
-//                                                .setText(scoreAnalysis.toString());
-//                                    }
-//                            );
         };
 
         solverJob = solverManager.solveBuilder()

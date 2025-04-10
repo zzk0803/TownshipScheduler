@@ -1,22 +1,36 @@
 package zzk.townshipscheduler.ui.pojo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Value;
+
+import java.time.LocalDateTime;
 
 @Value
 public class ProducingArrangementVO {
 
-    private String id;
+    int id;
 
-    private String uuid;
+    String uuid;
 
-    private String product;
+    String product;
 
-    private String arrangeFactory;
+    String arrangeFactory;
 
-    private String arrangeDateTime;
+    String arrangeFactoryId;
 
-    private String gameProducingDateTime;
+    String producingDuration;
 
-    private String gameCompletedDateTime;
+    @JsonInclude
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    LocalDateTime arrangeDateTime;
+
+    @JsonInclude
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    LocalDateTime gameProducingDateTime;
+
+    @JsonInclude
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    LocalDateTime gameCompletedDateTime;
 
 }

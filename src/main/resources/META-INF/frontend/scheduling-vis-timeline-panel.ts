@@ -35,15 +35,18 @@ export class SchedulingVisTimelinePanel
                 <div class="flex flex-row flex-wrap m-xs p-xs">
                     ${
                             this.producingArrangements
+                                    .filter(arrangement => {
+                                       return  arrangement.arrangeFactory === "N/A" || arrangement.arrangeDateTime === "N/A";
+                                    })
                                     .map(arrangement => {
                                         return html`
                                         <pre class="border border-contrast-40">
-                                            Item:${arrangement?.schedulingProduct?.name}
+                                            Item:${arrangement?.product}
                                             Duration:${arrangement?.producingDuration}
-                                            Fertile:${arrangement?.schedulingFactory?.categoryName + "#" + arrangement?.schedulingFactory?.seqNum}
+                                            Fertile:${arrangement?.arrangeFactory}
                                             YourMoveArrange:${arrangement?.arrangeDateTime}
-                                            ProducingInGame:${arrangement?.producingDateTime}
-                                            CompletedInGame:${arrangement?.completedDateTime}
+                                            ProducingInGame:${arrangement?.gameProducingDateTime}
+                                            CompletedInGame:${arrangement?.gameCompletedDateTime}
                                         </pre>
                                         `
                                     })
