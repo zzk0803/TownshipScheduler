@@ -22,84 +22,84 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
 
         TownshipSchedulingProblem workingSolution = scoreDirector.getWorkingSolution();
         List<SchedulingDateTimeSlot> dateTimeSlotSet = workingSolution.getSchedulingDateTimeSlots();
-        List<BaseProducingArrangement> producingArrangements = workingSolution.getBaseProducingArrangements();
-        List<SchedulingTypeSlotFactoryInstance> slotFactoryInstanceList = workingSolution.getSchedulingTypeSlotFactoryInstanceList();
-        List<SchedulingTypeQueueFactoryInstance> queueFactoryInstanceList = workingSolution.getSchedulingTypeQueueFactoryInstanceList();
+        List<BaseSchedulingProducingArrangement> producingArrangements = workingSolution.getBaseProducingArrangements();
+        List<SchedulingFactoryInstanceTypeSlot> slotFactoryInstanceList = workingSolution.getSchedulingFactoryInstanceTypeSlotList();
+        List<SchedulingFactoryInstanceTypeQueue> queueFactoryInstanceList = workingSolution.getSchedulingFactoryInstanceTypeQueueList();
 
-        Map<SchedulingTypeQueueFactoryInstance, SchedulingFactoryQueueProducingArrangement> factoryProducingMap = new LinkedHashMap<>();
-        for (BaseProducingArrangement producingArrangement : producingArrangements) {
-            if (producingArrangement instanceof SchedulingFactorySlotProducingArrangement slotProducingArrangement) {
+        Map<SchedulingFactoryInstanceTypeQueue, SchedulingProducingArrangementFactoryTypeQueue> factoryProducingMap = new LinkedHashMap<>();
+        for (BaseSchedulingProducingArrangement producingArrangement : producingArrangements) {
+            if (producingArrangement instanceof SchedulingProducingArrangementFactoryTypeSlot slotProducingArrangement) {
                 scoreDirector.beforeVariableChanged(
                         slotProducingArrangement,
-                        BaseProducingArrangement.PLANNING_DATA_TIME_SLOT
+                        BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
                 );
                 slotProducingArrangement.setPlanningDateTimeSlot(dateTimeSlotSet.getFirst());
                 scoreDirector.afterVariableChanged(
                         slotProducingArrangement,
-                        BaseProducingArrangement.PLANNING_DATA_TIME_SLOT
+                        BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
                 );
                 scoreDirector.triggerVariableListeners();
 
                 SchedulingFactoryInfo requireFactory
                         = slotProducingArrangement.getSchedulingProduct().getRequireFactory();
-                for (SchedulingTypeSlotFactoryInstance slotFactoryInstance : slotFactoryInstanceList) {
+                for (SchedulingFactoryInstanceTypeSlot slotFactoryInstance : slotFactoryInstanceList) {
                     if (slotFactoryInstance.getSchedulingFactoryInfo() == requireFactory) {
                         scoreDirector.beforeVariableChanged(
                                 slotProducingArrangement,
-                                SchedulingFactorySlotProducingArrangement.PLANNING_FACTORY
+                                SchedulingProducingArrangementFactoryTypeSlot.PLANNING_FACTORY
                         );
                         slotProducingArrangement.setPlanningFactory(slotFactoryInstance);
                         scoreDirector.afterVariableChanged(
                                 slotProducingArrangement,
-                                SchedulingFactorySlotProducingArrangement.PLANNING_FACTORY
+                                SchedulingProducingArrangementFactoryTypeSlot.PLANNING_FACTORY
                         );
                         scoreDirector.triggerVariableListeners();
                         break;
                     }
                 }
-            } else if (producingArrangement instanceof SchedulingFactoryQueueProducingArrangement queueProducingArrangement) {
+            } else if (producingArrangement instanceof SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement) {
                 scoreDirector.beforeVariableChanged(
                         queueProducingArrangement,
-                        BaseProducingArrangement.PLANNING_DATA_TIME_SLOT
+                        BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
                 );
                 queueProducingArrangement.setPlanningDateTimeSlot(dateTimeSlotSet.getFirst());
                 scoreDirector.afterVariableChanged(
                         queueProducingArrangement,
-                        BaseProducingArrangement.PLANNING_DATA_TIME_SLOT
+                        BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
                 );
                 scoreDirector.triggerVariableListeners();
 
                 SchedulingFactoryInfo requireFactory
                         = queueProducingArrangement.getSchedulingProduct().getRequireFactory();
-                for (SchedulingTypeQueueFactoryInstance queueFactoryInstance : queueFactoryInstanceList) {
+                for (SchedulingFactoryInstanceTypeQueue queueFactoryInstance : queueFactoryInstanceList) {
                     if (queueFactoryInstance.getSchedulingFactoryInfo() == requireFactory) {
-                        SchedulingFactoryQueueProducingArrangement mayNullFactoryToProducing
+                        SchedulingProducingArrangementFactoryTypeQueue mayNullFactoryToProducing
                                 = factoryProducingMap.get(queueFactoryInstance);
                         if (mayNullFactoryToProducing != null) {
                             scoreDirector.beforeVariableChanged(
                                     queueProducingArrangement,
-                                    SchedulingFactoryQueueProducingArrangement.PLANNING_PREVIOUS
+                                    SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
                             );
                             queueProducingArrangement.setPlanningPreviousProducingArrangementOrFactory(
                                     mayNullFactoryToProducing
                             );
                             scoreDirector.afterVariableChanged(
                                     queueProducingArrangement,
-                                    SchedulingFactoryQueueProducingArrangement.PLANNING_PREVIOUS
+                                    SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
                             );
                             scoreDirector.triggerVariableListeners();
                             factoryProducingMap.put(queueFactoryInstance, queueProducingArrangement);
                         } else {
                             scoreDirector.beforeVariableChanged(
                                     queueProducingArrangement,
-                                    SchedulingFactoryQueueProducingArrangement.PLANNING_PREVIOUS
+                                    SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
                             );
                             queueProducingArrangement.setPlanningPreviousProducingArrangementOrFactory(
                                     queueFactoryInstance
                             );
                             scoreDirector.afterVariableChanged(
                                     queueProducingArrangement,
-                                    SchedulingFactoryQueueProducingArrangement.PLANNING_PREVIOUS
+                                    SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
                             );
                             scoreDirector.triggerVariableListeners();
                             factoryProducingMap.put(queueFactoryInstance, queueProducingArrangement);

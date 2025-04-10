@@ -21,9 +21,7 @@ public class TriggerButton extends Composite<HorizontalLayout> {
         state1Btn = new Button();
         state1Btn.setText(state1BtnLabel);
         state1Btn.addClickListener(buttonClickEvent -> {
-            state1Btn.setDisableOnClick(true);
-            state1Btn.setVisible(false);
-            state2Btn.setVisible(true);
+            fromState1ToState2();
         });
         state1Btn.addClickListener(state1BtnClicked);
 
@@ -31,13 +29,23 @@ public class TriggerButton extends Composite<HorizontalLayout> {
         state2Btn.setVisible(false);
         state2Btn.setText(state2BtnLabel);
         state2Btn.addClickListener(buttonClickEvent -> {
-            state2Btn.setDisableOnClick(true);
-            state1Btn.setVisible(true);
-            state2Btn.setVisible(false);
+            fromState2ToState1();
         });
         state2Btn.addClickListener(state2BtnClicked);
 
         getContent().add(state1Btn, state2Btn);
+    }
+
+    public void fromState1ToState2() {
+        state1Btn.setDisableOnClick(true);
+        state1Btn.setVisible(false);
+        state2Btn.setVisible(true);
+    }
+
+    public void fromState2ToState1() {
+        state2Btn.setDisableOnClick(true);
+        state1Btn.setVisible(true);
+        state2Btn.setVisible(false);
     }
 
     @Override

@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
-class MappingProcess {
+class EntityProblemTransferProcess {
 
     private final TownshipSchedulingRequest townshipSchedulingRequest;
 
@@ -24,21 +24,21 @@ class MappingProcess {
 
     private final List<SchedulingProducingExecutionMode> schedulingProducingExecutionModes;
 
-    private final List<SchedulingTypeQueueFactoryInstance> schedulingTypeQueueFactoryInstances;
+    private final List<SchedulingFactoryInstanceTypeQueue> schedulingFactoryInstanceTypeQueues;
 
-    private final List<SchedulingTypeSlotFactoryInstance> schedulingTypeSlotFactoryInstances;
+    private final List<SchedulingFactoryInstanceTypeSlot> schedulingFactoryInstanceTypeSlots;
 
     private final List<SchedulingOrder> schedulingOrders;
 
     private SchedulingPlayer schedulingPlayer;
 
-    public MappingProcess(TownshipSchedulingRequest townshipSchedulingRequest) {
+    public EntityProblemTransferProcess(TownshipSchedulingRequest townshipSchedulingRequest) {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
         this.idProductMap = new LinkedHashMap<>();
         this.idFactoryTypeMap = new LinkedHashMap<>();
         this.schedulingProducingExecutionModes = new ArrayList<>();
-        this.schedulingTypeQueueFactoryInstances = new ArrayList<>();
-        this.schedulingTypeSlotFactoryInstances = new ArrayList<>();
+        this.schedulingFactoryInstanceTypeQueues = new ArrayList<>();
+        this.schedulingFactoryInstanceTypeSlots = new ArrayList<>();
         this.schedulingOrders = new ArrayList<>();
     }
 
@@ -50,8 +50,8 @@ class MappingProcess {
                 new ArrayList<>(this.idProductMap.values()),
                 new ArrayList<>(this.idFactoryTypeMap.values()),
                 this.schedulingOrders,
-                this.schedulingTypeQueueFactoryInstances,
-                this.schedulingTypeSlotFactoryInstances,
+                this.schedulingFactoryInstanceTypeQueues,
+                this.schedulingFactoryInstanceTypeSlots,
                 this.schedulingPlayer,
                 new SchedulingWorkTimeLimit(
                         LocalDateTime.now().plusMinutes(10),
@@ -142,7 +142,7 @@ class MappingProcess {
                                 FieldFactoryEntity fieldFactoryEntity = fieldFactoryEntities.stream()
                                         .findFirst()
                                         .orElseThrow();
-                                SchedulingTypeSlotFactoryInstance slotFactoryInstance = new SchedulingTypeSlotFactoryInstance();
+                                SchedulingFactoryInstanceTypeSlot slotFactoryInstance = new SchedulingFactoryInstanceTypeSlot();
                                 SchedulingFactoryInfo.Id schedulingFactoryInfoId
                                         = SchedulingFactoryInfo.Id.of(fieldFactoryEntity.getFieldFactoryInfoEntity());
                                 SchedulingFactoryInfo schedulingFactoryInfo
@@ -152,7 +152,7 @@ class MappingProcess {
                                 slotFactoryInstance.setProducingLength(size);
                                 slotFactoryInstance.setReapWindowSize(size);
                                 schedulingFactoryInfo.getFactoryInstances().add(slotFactoryInstance);
-                                this.schedulingTypeSlotFactoryInstances.add(slotFactoryInstance);
+                                this.schedulingFactoryInstanceTypeSlots.add(slotFactoryInstance);
                             } else {
                                 Map<FieldFactoryInfoEntity, List<FieldFactoryEntity>> typeInstamceMap
                                         = fieldFactoryEntities
@@ -170,8 +170,8 @@ class MappingProcess {
                                         FieldFactoryEntity fieldFactoryEntity = instanceList.get(i);
                                         switch (schedulingFactoryInfo.getProducingStructureType()) {
                                             case QUEUE -> {
-                                                SchedulingTypeQueueFactoryInstance typeQueueFactoryInstance
-                                                        = new SchedulingTypeQueueFactoryInstance();
+                                                SchedulingFactoryInstanceTypeQueue typeQueueFactoryInstance
+                                                        = new SchedulingFactoryInstanceTypeQueue();
                                                 typeQueueFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
                                                 typeQueueFactoryInstance.setSeqNum(i + 1);
                                                 typeQueueFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
@@ -179,12 +179,12 @@ class MappingProcess {
                                                 typeQueueFactoryInstance.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
                                                 schedulingFactoryInfo.getFactoryInstances()
                                                         .add(typeQueueFactoryInstance);
-                                                this.schedulingTypeQueueFactoryInstances.add(typeQueueFactoryInstance);
+                                                this.schedulingFactoryInstanceTypeQueues.add(typeQueueFactoryInstance);
                                             }
 
                                             case SLOT -> {
-                                                SchedulingTypeSlotFactoryInstance typeSlotFactoryInstance
-                                                        = new SchedulingTypeSlotFactoryInstance();
+                                                SchedulingFactoryInstanceTypeSlot typeSlotFactoryInstance
+                                                        = new SchedulingFactoryInstanceTypeSlot();
                                                 typeSlotFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
                                                 typeSlotFactoryInstance.setSeqNum(i + 1);
                                                 typeSlotFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
@@ -192,7 +192,7 @@ class MappingProcess {
                                                 typeSlotFactoryInstance.setReapWindowSize(fieldFactoryEntity.getReapWindowSize());
                                                 schedulingFactoryInfo.getFactoryInstances()
                                                         .add(typeSlotFactoryInstance);
-                                                this.schedulingTypeSlotFactoryInstances.add(typeSlotFactoryInstance);
+                                                this.schedulingFactoryInstanceTypeSlots.add(typeSlotFactoryInstance);
                                             }
                                         }
                                     }

@@ -13,7 +13,7 @@ import java.util.function.IntFunction;
 @Builder
 public final class ArrangeConsequence implements Comparable<ArrangeConsequence> {
 
-    private BaseProducingArrangement producingArrangement;
+    private BaseSchedulingProducingArrangement producingArrangement;
 
     private LocalDateTime localDateTime;
 

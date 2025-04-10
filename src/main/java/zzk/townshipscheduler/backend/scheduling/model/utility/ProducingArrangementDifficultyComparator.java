@@ -1,14 +1,14 @@
 package zzk.townshipscheduler.backend.scheduling.model.utility;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
-import zzk.townshipscheduler.backend.scheduling.model.BaseProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingProducingArrangement;
 
 import java.util.Comparator;
 
-public class ProducingArrangementDifficultyComparator implements Comparator<BaseProducingArrangement> {
+public class ProducingArrangementDifficultyComparator implements Comparator<BaseSchedulingProducingArrangement> {
 
     @Override
-    public int compare(BaseProducingArrangement former, BaseProducingArrangement latter) {
+    public int compare(BaseSchedulingProducingArrangement former, BaseSchedulingProducingArrangement latter) {
         return new CompareToBuilder()
                 .append(
                         former.getSupportProducingArrangements().size(),

@@ -32,12 +32,12 @@ public class SchedulingProducingExecutionMode {
     public SchedulingProducingExecutionMode() {
     }
 
-    public List<BaseProducingArrangement> materialsActionsDeep() {
-        ArrayList<BaseProducingArrangement> materialArrangements = new ArrayList<>();
-        LinkedList<BaseProducingArrangement> dealingChain = new LinkedList<>(materialsActions());
+    public List<BaseSchedulingProducingArrangement> materialsActionsDeep() {
+        ArrayList<BaseSchedulingProducingArrangement> materialArrangements = new ArrayList<>();
+        LinkedList<BaseSchedulingProducingArrangement> dealingChain = new LinkedList<>(materialsActions());
 
         while (!dealingChain.isEmpty()) {
-            BaseProducingArrangement currentArrangement = dealingChain.removeFirst();
+            BaseSchedulingProducingArrangement currentArrangement = dealingChain.removeFirst();
 
             Set<SchedulingProducingExecutionMode> executionModes
                     = currentArrangement.getCurrentActionObject().getExecutionModeSet();
@@ -47,7 +47,7 @@ public class SchedulingProducingExecutionMode {
                     .orElseThrow();
             currentArrangement.setProducingExecutionMode(producingExecutionMode);
 
-            List<BaseProducingArrangement> materialsActions = producingExecutionMode.materialsActions();
+            List<BaseSchedulingProducingArrangement> materialsActions = producingExecutionMode.materialsActions();
             materialsActions.forEach(dealingChain::addLast);
 
         }
@@ -55,7 +55,7 @@ public class SchedulingProducingExecutionMode {
         return materialArrangements;
     }
 
-    public List<BaseProducingArrangement> materialsActions() {
+    public List<BaseSchedulingProducingArrangement> materialsActions() {
         return boolAtomicProduct()
                 ? List.of()
                 : materials.entrySet().stream()

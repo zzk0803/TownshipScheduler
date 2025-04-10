@@ -56,11 +56,11 @@ public class TownshipSchedulingProblem {
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider(id = FACTORY_QUEUE_VALUE_RANGE)
-    private List<SchedulingTypeQueueFactoryInstance> schedulingTypeQueueFactoryInstanceList;
+    private List<SchedulingFactoryInstanceTypeQueue> schedulingFactoryInstanceTypeQueueList;
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider(id = FACTORY_SLOT_VALUE_RANGE)
-    private List<SchedulingTypeSlotFactoryInstance> schedulingTypeSlotFactoryInstanceList;
+    private List<SchedulingFactoryInstanceTypeSlot> schedulingFactoryInstanceTypeSlotList;
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider(id = DATE_TIME_SLOT_VALUE_RANGE)
@@ -68,10 +68,10 @@ public class TownshipSchedulingProblem {
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider(id = PRODUCING_ARRANGEMENTS_FACTORY_QUEUE_VALUE_RANGE)
-    private List<SchedulingFactoryQueueProducingArrangement> schedulingFactoryQueueProducingArrangements;
+    private List<SchedulingProducingArrangementFactoryTypeQueue> schedulingProducingArrangementFactoryTypeQueues;
 
     @PlanningEntityCollectionProperty
-    private List<SchedulingFactorySlotProducingArrangement> schedulingFactorySlotProducingArrangements;
+    private List<SchedulingProducingArrangementFactoryTypeSlot> schedulingProducingArrangementFactoryTypeSlots;
 
     @ProblemFactProperty
     private SchedulingWorkTimeLimit schedulingWorkTimeLimit;
@@ -103,8 +103,8 @@ public class TownshipSchedulingProblem {
             List<SchedulingProduct> schedulingProducts,
             List<SchedulingFactoryInfo> schedulingFactoryInfos,
             List<SchedulingOrder> schedulingOrders,
-            List<SchedulingTypeQueueFactoryInstance> schedulingTypeQueueFactoryInstanceList,
-            List<SchedulingTypeSlotFactoryInstance> schedulingTypeSlotFactoryInstanceList,
+            List<SchedulingFactoryInstanceTypeQueue> schedulingFactoryInstanceTypeQueueList,
+            List<SchedulingFactoryInstanceTypeSlot> schedulingFactoryInstanceTypeSlotList,
             SchedulingPlayer schedulingPlayer,
             SchedulingWorkTimeLimit schedulingWorkTimeLimit,
             DateTimeSlotSize slotSize
@@ -116,8 +116,8 @@ public class TownshipSchedulingProblem {
 //                .collect(Collectors.toSet());
         this.schedulingFactoryInfoSet = schedulingFactoryInfos;
         this.schedulingOrderSet = schedulingOrders;
-        this.schedulingTypeQueueFactoryInstanceList = schedulingTypeQueueFactoryInstanceList;
-        this.schedulingTypeSlotFactoryInstanceList = schedulingTypeSlotFactoryInstanceList;
+        this.schedulingFactoryInstanceTypeQueueList = schedulingFactoryInstanceTypeQueueList;
+        this.schedulingFactoryInstanceTypeSlotList = schedulingFactoryInstanceTypeSlotList;
         this.schedulingPlayer = schedulingPlayer;
         this.schedulingWorkTimeLimit = schedulingWorkTimeLimit;
         this.slotSize = slotSize;
@@ -148,33 +148,33 @@ public class TownshipSchedulingProblem {
                 .flatMap(Collection::stream)
                 .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
                 .flatMap(Collection::stream)
-                .peek(BaseProducingArrangement::readyElseThrow)
+                .peek(BaseSchedulingProducingArrangement::readyElseThrow)
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        List<SchedulingFactorySlotProducingArrangement> slotProducingArrangements = new ArrayList<>();
-        List<SchedulingFactoryQueueProducingArrangement> queueProducingArrangements = new ArrayList<>();
+        List<SchedulingProducingArrangementFactoryTypeSlot> slotProducingArrangements = new ArrayList<>();
+        List<SchedulingProducingArrangementFactoryTypeQueue> queueProducingArrangements = new ArrayList<>();
         producingArrangementArrayList.forEach(baseProducingArrangement -> {
-            if (baseProducingArrangement instanceof SchedulingFactorySlotProducingArrangement schedulingFactorySlotProducingArrangement) {
-                slotProducingArrangements.add(schedulingFactorySlotProducingArrangement);
-            } else if (baseProducingArrangement instanceof SchedulingFactoryQueueProducingArrangement schedulingFactoryQueueProducingArrangement) {
-                queueProducingArrangements.add(schedulingFactoryQueueProducingArrangement);
+            if (baseProducingArrangement instanceof SchedulingProducingArrangementFactoryTypeSlot schedulingProducingArrangementFactoryTypeSlot) {
+                slotProducingArrangements.add(schedulingProducingArrangementFactoryTypeSlot);
+            } else if (baseProducingArrangement instanceof SchedulingProducingArrangementFactoryTypeQueue schedulingProducingArrangementFactoryTypeQueue) {
+                queueProducingArrangements.add(schedulingProducingArrangementFactoryTypeQueue);
             } else {
                 Assert.isTrue(true, "another producingArrangement Type?!");
             }
         });
-        setSchedulingFactorySlotProducingArrangements(slotProducingArrangements);
-        setSchedulingFactoryQueueProducingArrangements(queueProducingArrangements);
+        setSchedulingProducingArrangementFactoryTypeSlots(slotProducingArrangements);
+        setSchedulingProducingArrangementFactoryTypeQueues(queueProducingArrangements);
     }
 
-    private ArrayList<BaseProducingArrangement> expandAndSetupIntoMaterials(
+    private ArrayList<BaseSchedulingProducingArrangement> expandAndSetupIntoMaterials(
             ActionIdRoller idRoller,
-            BaseProducingArrangement producingArrangement
+            BaseSchedulingProducingArrangement producingArrangement
     ) {
-        LinkedList<BaseProducingArrangement> dealingChain = new LinkedList<>(List.of(producingArrangement));
-        ArrayList<BaseProducingArrangement> resultArrangementList = new ArrayList<>();
+        LinkedList<BaseSchedulingProducingArrangement> dealingChain = new LinkedList<>(List.of(producingArrangement));
+        ArrayList<BaseSchedulingProducingArrangement> resultArrangementList = new ArrayList<>();
 
         while (!dealingChain.isEmpty()) {
-            BaseProducingArrangement iteratingArrangement
+            BaseSchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
             iteratingArrangement.activate(idRoller, this.schedulingWorkTimeLimit, this.schedulingPlayer);
             resultArrangementList.add(iteratingArrangement);
@@ -187,10 +187,10 @@ public class TownshipSchedulingProblem {
                     .orElseThrow();
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
 
-            List<BaseProducingArrangement> materialsActions
+            List<BaseSchedulingProducingArrangement> materialsActions
                     = producingExecutionMode.materialsActions();
             iteratingArrangement.appendPrerequisiteArrangements(materialsActions);
-            for (BaseProducingArrangement materialsAction : materialsActions) {
+            for (BaseSchedulingProducingArrangement materialsAction : materialsActions) {
                 materialsAction.appendSupportArrangements(List.of(iteratingArrangement));
                 dealingChain.addLast(materialsAction);
             }
@@ -203,30 +203,30 @@ public class TownshipSchedulingProblem {
     private void trimUnrelatedObject() {
         List<SchedulingProduct> relatedSchedulingProduct
                 = getBaseProducingArrangements().stream()
-                .map(BaseProducingArrangement::getSchedulingProduct)
+                .map(BaseSchedulingProducingArrangement::getSchedulingProduct)
                 .toList();
         getSchedulingProductSet().removeIf(product -> !relatedSchedulingProduct.contains(product));
 
         List<SchedulingFactoryInfo> relatedSchedulingFactoryInfo
                 = getBaseProducingArrangements().stream()
-                .map(BaseProducingArrangement::requiredFactoryInfo)
+                .map(BaseSchedulingProducingArrangement::getRequiredFactoryInfo)
                 .toList();
 
         getSchedulingFactoryInfoSet().removeIf(
                 schedulingFactoryInfo -> !relatedSchedulingFactoryInfo.contains(schedulingFactoryInfo)
         );
-        getSchedulingTypeQueueFactoryInstanceList().removeIf(
+        getSchedulingFactoryInstanceTypeQueueList().removeIf(
                 factory -> !relatedSchedulingFactoryInfo.contains(factory.getSchedulingFactoryInfo())
         );
-        getSchedulingTypeSlotFactoryInstanceList().removeIf(
+        getSchedulingFactoryInstanceTypeSlotList().removeIf(
                 factory -> !relatedSchedulingFactoryInfo.contains(factory.getSchedulingFactoryInfo())
         );
     }
 
-    public List<BaseProducingArrangement> getBaseProducingArrangements() {
-        List<BaseProducingArrangement> producingArrangements
-                = new ArrayList<>(getSchedulingFactorySlotProducingArrangements());
-        producingArrangements.addAll(getSchedulingFactoryQueueProducingArrangements());
+    public List<BaseSchedulingProducingArrangement> getBaseProducingArrangements() {
+        List<BaseSchedulingProducingArrangement> producingArrangements
+                = new ArrayList<>(getSchedulingProducingArrangementFactoryTypeSlots());
+        producingArrangements.addAll(getSchedulingProducingArrangementFactoryTypeQueues());
         return producingArrangements;
     }
 

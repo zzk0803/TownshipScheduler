@@ -7,8 +7,8 @@ import ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubC
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainSwapMove;
 import ai.timefold.solver.core.impl.heuristic.selector.value.chained.SubChain;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeQueueFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeQueue;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 public class QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter
@@ -21,27 +21,27 @@ public class QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFi
     ) {
         if (selection instanceof SubChainSwapMove<TownshipSchedulingProblem> subChainChangeMove) {
             SubChain leftSubChain = subChainChangeMove.getLeftSubChain();
-            var leftSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) leftSubChain.getFirstEntity());
+            var leftSubChainFirstEntity = ((SchedulingProducingArrangementFactoryTypeQueue) leftSubChain.getFirstEntity());
             SchedulingFactoryInfo leftProducingRequiredFactoryInfo = leftSubChainFirstEntity.getRequiredFactoryInfo();
-            SchedulingTypeQueueFactoryInstance leftEntityPlanningFactory = leftSubChainFirstEntity.getPlanningAnchorFactory();
+            SchedulingFactoryInstanceTypeQueue leftEntityPlanningFactory = leftSubChainFirstEntity.getPlanningAnchorFactory();
 
             SubChain rightSubChain = subChainChangeMove.getRightSubChain();
-            var rightSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) rightSubChain.getFirstEntity());
+            var rightSubChainFirstEntity = ((SchedulingProducingArrangementFactoryTypeQueue) rightSubChain.getFirstEntity());
             SchedulingFactoryInfo rightProducingRequiredFactoryInfo = rightSubChainFirstEntity.getRequiredFactoryInfo();
-            SchedulingTypeQueueFactoryInstance rightEntityPlanningFactory = rightSubChainFirstEntity.getPlanningAnchorFactory();
+            SchedulingFactoryInstanceTypeQueue rightEntityPlanningFactory = rightSubChainFirstEntity.getPlanningAnchorFactory();
 
             return leftProducingRequiredFactoryInfo == rightEntityPlanningFactory.getSchedulingFactoryInfo()
                    || rightProducingRequiredFactoryInfo == leftEntityPlanningFactory.getSchedulingFactoryInfo();
         } else if (selection instanceof SubChainReversingSwapMove<TownshipSchedulingProblem> subChainReversingChangeMove) {
             SubChain leftSubChain = subChainReversingChangeMove.getLeftSubChain();
-            var leftSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) leftSubChain.getFirstEntity());
+            var leftSubChainFirstEntity = ((SchedulingProducingArrangementFactoryTypeQueue) leftSubChain.getFirstEntity());
             SchedulingFactoryInfo leftProducingRequiredFactoryInfo = leftSubChainFirstEntity.getRequiredFactoryInfo();
-            SchedulingTypeQueueFactoryInstance leftEntityPlanningFactory = leftSubChainFirstEntity.getPlanningAnchorFactory();
+            SchedulingFactoryInstanceTypeQueue leftEntityPlanningFactory = leftSubChainFirstEntity.getPlanningAnchorFactory();
 
             SubChain rightSubChain = subChainReversingChangeMove.getRightSubChain();
-            var rightSubChainFirstEntity = ((SchedulingFactoryQueueProducingArrangement) rightSubChain.getFirstEntity());
+            var rightSubChainFirstEntity = ((SchedulingProducingArrangementFactoryTypeQueue) rightSubChain.getFirstEntity());
             SchedulingFactoryInfo rightProducingRequiredFactoryInfo = rightSubChainFirstEntity.getRequiredFactoryInfo();
-            SchedulingTypeQueueFactoryInstance rightEntityPlanningFactory = rightSubChainFirstEntity.getPlanningAnchorFactory();
+            SchedulingFactoryInstanceTypeQueue rightEntityPlanningFactory = rightSubChainFirstEntity.getPlanningAnchorFactory();
 
             return leftProducingRequiredFactoryInfo == rightEntityPlanningFactory.getSchedulingFactoryInfo()
                    || rightProducingRequiredFactoryInfo == leftEntityPlanningFactory.getSchedulingFactoryInfo();

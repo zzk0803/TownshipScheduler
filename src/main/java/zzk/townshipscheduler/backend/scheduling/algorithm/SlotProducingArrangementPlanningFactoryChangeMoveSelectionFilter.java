@@ -13,8 +13,8 @@ public class SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             ChangeMove<TownshipSchedulingProblem> selection
     ) {
-        var entity = (SchedulingFactorySlotProducingArrangement) selection.getEntity();
-        var toPlanningValue = (SchedulingTypeSlotFactoryInstance ) selection.getToPlanningValue();
+        var entity = (SchedulingProducingArrangementFactoryTypeSlot) selection.getEntity();
+        var toPlanningValue = (SchedulingFactoryInstanceTypeSlot) selection.getToPlanningValue();
         return entity.getRequiredFactoryInfo() == toPlanningValue.getSchedulingFactoryInfo();
     }
 

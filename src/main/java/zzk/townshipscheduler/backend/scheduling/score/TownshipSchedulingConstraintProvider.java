@@ -31,11 +31,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidMismatchQueueFactory(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingFactoryQueueProducingArrangement.class)
+        return constraintFactory.forEach(SchedulingProducingArrangementFactoryTypeQueue.class)
                 .filter(schedulingPlayerProducingArrangement -> {
-                    SchedulingTypeQueueFactoryInstance planningFactoryInstance = schedulingPlayerProducingArrangement.getPlanningFactoryInstance();
+                    SchedulingFactoryInstanceTypeQueue planningFactoryInstance = schedulingPlayerProducingArrangement.getPlanningFactoryInstance();
                     return planningFactoryInstance == null
-                           || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.requiredFactoryInfo();
+                           || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.getRequiredFactoryInfo();
                 })
                 .penalize(
                         BendableScore.ofHard(
@@ -49,11 +49,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidMismatchSlotFactory(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingFactorySlotProducingArrangement.class)
+        return constraintFactory.forEach(SchedulingProducingArrangementFactoryTypeSlot.class)
                 .filter(schedulingPlayerProducingArrangement -> {
-                    SchedulingTypeSlotFactoryInstance planningFactoryInstance = schedulingPlayerProducingArrangement.getPlanningFactoryInstance();
+                    SchedulingFactoryInstanceTypeSlot planningFactoryInstance = schedulingPlayerProducingArrangement.getPlanningFactoryInstance();
                     return planningFactoryInstance == null
-                           || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.requiredFactoryInfo();
+                           || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.getRequiredFactoryInfo();
                 })
                 .penalize(
                         BendableScore.ofHard(
@@ -67,15 +67,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenQueueFactoryAbility(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingTypeQueueFactoryInstance.class)
+        return constraintFactory.forEach(SchedulingFactoryInstanceTypeQueue.class)
                 .join(
-                        SchedulingFactoryQueueProducingArrangement.class,
+                        SchedulingProducingArrangementFactoryTypeQueue.class,
                         Joiners.equal(
                                 Function.identity(),
-                                SchedulingFactoryQueueProducingArrangement::getPlanningFactoryInstance
+                                SchedulingProducingArrangementFactoryTypeQueue::getPlanningFactoryInstance
                         )
                 )
-                .expand((factoryInstance, queueProducingArrangement) -> factoryInstance.remainProducingCapacityAndNextAvailable(
+                .expand((factoryInstance, queueProducingArrangement) -> factoryInstance.remainProducingCapacityAndNextAvailableDuration(
                                 queueProducingArrangement.getPlanningDateTimeSlot()
                         )
                 )
@@ -97,15 +97,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenSlotFactoryAbility(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingTypeSlotFactoryInstance.class)
+        return constraintFactory.forEach(SchedulingFactoryInstanceTypeSlot.class)
                 .join(
-                        SchedulingFactorySlotProducingArrangement.class,
+                        SchedulingProducingArrangementFactoryTypeSlot.class,
                         Joiners.equal(
                                 Function.identity(),
-                                SchedulingFactorySlotProducingArrangement::getPlanningFactoryInstance
+                                SchedulingProducingArrangementFactoryTypeSlot::getPlanningFactoryInstance
                         )
                 )
-                .expand((factoryInstance, queueProducingArrangement) -> factoryInstance.remainProducingCapacityAndNextAvailable(
+                .expand((factoryInstance, queueProducingArrangement) -> factoryInstance.remainProducingCapacityAndNextAvailableDuration(
                                 queueProducingArrangement.getPlanningDateTimeSlot()
                         )
                 )
@@ -127,7 +127,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenPrerequisite(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(BaseProducingArrangement.class)
+        return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
                 .filter(producingArrangement -> {
                             boolean arranged = producingArrangement.getPlanningDateTimeSlot() != null;
                             ProductAmountBill materials = producingArrangement.getProducingExecutionMode().getMaterials();
@@ -135,7 +135,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         }
                 )
                 .join(
-                        constraintFactory.forEach(BaseProducingArrangement.class)
+                        constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
                                 .filter(producingArrangement -> producingArrangement.getCompletedDateTime() != null)
                         ,
                         Joiners.filtering(
@@ -150,7 +150,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .filter((productArrangement, materialArrangement) -> {
 
                     LocalDateTime productArrangeDateTime
-                            = productArrangement.getPlanningDateTimeSlotStartAsLocalDateTime();
+                            = productArrangement.getArrangeDateTime();
                     LocalDateTime materialCompletedDateTime
                             = materialArrangement.getCompletedDateTime();
 
@@ -166,7 +166,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ((productArrangement, materialArrangement) -> {
                             return Math.toIntExact(
                                     Duration.between(
-                                            productArrangement.getPlanningDateTimeSlotStartAsLocalDateTime(),
+                                            productArrangement.getArrangeDateTime(),
                                             materialArrangement.getCompletedDateTime()
                                     ).toMinutes()
                             );
@@ -193,7 +193,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingOrder.class)
                 .filter(SchedulingOrder::boolHasDeadline)
                 .join(
-                        BaseProducingArrangement.class,
+                        BaseSchedulingProducingArrangement.class,
                         Joiners.filtering((schedulingOrder, producingArrangement) -> {
                             return producingArrangement.isOrderDirect();
                         })
@@ -221,10 +221,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint shouldNotArrangeInPlayerSleepTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(BaseProducingArrangement.class)
+        return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
                 .filter(producingArrangement -> producingArrangement.getPlanningDateTimeSlot() != null)
                 .filter(producingArrangement -> {
-                    LocalDateTime arrangeDateTime = producingArrangement.getPlanningDateTimeSlotStartAsLocalDateTime();
+                    LocalDateTime arrangeDateTime = producingArrangement.getArrangeDateTime();
                     LocalTime localTime = arrangeDateTime.toLocalTime();
                     return localTime.isAfter(
                             producingArrangement.getSchedulingPlayer().getSleepStart()
@@ -244,7 +244,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint preferArrangeAsSoonAsPassable(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(BaseProducingArrangement.class)
+        return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
                 .filter(producingArrangement -> {
                     var planningDateTimeSlot = producingArrangement.getPlanningDateTimeSlot();
                     var producingDateTime = producingArrangement.getProducingDateTime();
@@ -262,7 +262,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ),
                         (arrangement) -> {
                             LocalDateTime startDateTime = arrangement.getSchedulingWorkTimeLimit().getStartDateTime();
-                            LocalDateTime arrangementLocalDateTime = arrangement.getPlanningDateTimeSlotStartAsLocalDateTime();
+                            LocalDateTime arrangementLocalDateTime = arrangement.getArrangeDateTime();
                             return Math.toIntExact(Duration.between(startDateTime, arrangementLocalDateTime)
                                     .toMinutes());
                         }

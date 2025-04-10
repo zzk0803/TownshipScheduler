@@ -17,9 +17,10 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.BaseProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
@@ -37,13 +38,15 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private UI ui;
 
-    private Grid<BaseProducingArrangement> actionGrid;
+    private LitSchedulingVisTimelinePanel schedulingVisTimelinePanel;
+
+    private Grid<BaseSchedulingProducingArrangement> arrangementGrid;
 
     private Paragraph scoreAnalysisParagraph;
 
-    public SchedulingView(
-            SchedulingViewPresenter schedulingViewPresenter
-    ) {
+    private TriggerButton triggerButton;
+
+    public SchedulingView(SchedulingViewPresenter schedulingViewPresenter) {
         this.schedulingViewPresenter = schedulingViewPresenter;
         this.schedulingViewPresenter.setSchedulingView(this);
         this.setSizeFull();
@@ -65,45 +68,26 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     }
 
     private void buildUI() {
-        addAndExpand(buildGameActionTabSheetArticle());
-    }
+//        addAndExpand(buildGameActionTabSheetArticle());
+        VerticalLayout schedulingContentLayout = new VerticalLayout();
+        schedulingContentLayout.setSizeFull();
+        addAndExpand(schedulingContentLayout);
 
-    private VerticalLayout buildGameActionTabSheetArticle() {
-        VerticalLayout gameActionArticle = new VerticalLayout();
-        actionGrid = new Grid<>(BaseProducingArrangement.class,false);
-        actionGrid.addColumn(BaseProducingArrangement::getSchedulingProduct)
-                .setResizable(true)
-                .setHeader("Product");
-        actionGrid.addColumn(BaseProducingArrangement::getPlanningFactoryInstance)
-                .setResizable(true)
-                .setHeader("Assign Factory");
-        actionGrid.addColumn(BaseProducingArrangement::getPlanningDateTimeSlotStartAsLocalDateTime)
-                .setResizable(true)
-                .setHeader("Arrange Date Time");
-        actionGrid.addColumn(BaseProducingArrangement::getProducingDateTime)
-                .setResizable(true)
-                .setHeader("Producing Date Time");
-        actionGrid.addColumn(BaseProducingArrangement::getCompletedDateTime)
-                .setResizable(true)
-                .setHeader("Completed Date Time");
-        actionGrid.setSizeFull();
-        schedulingViewPresenter.setupPlayerActionGrid(actionGrid);
-
-//        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));
-        gameActionArticle.add(buildBtnPanel());
-        gameActionArticle.addAndExpand(actionGrid);
-        return gameActionArticle;
+        schedulingContentLayout.add(buildBtnPanel());
+        schedulingContentLayout.addAndExpand(
+                schedulingVisTimelinePanel = new LitSchedulingVisTimelinePanel(schedulingViewPresenter)
+        );
     }
 
     private HorizontalLayout buildBtnPanel() {
         HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
-        TriggerButton triggerButton = new TriggerButton(
+        triggerButton = new TriggerButton(
                 "Start",
-                buttonClickEvent -> {
+                _ -> {
                     this.schedulingViewPresenter.schedulingAndPush();
                 },
                 "Stop",
-                buttonClickEvent1 -> {
+                _ -> {
                     this.schedulingViewPresenter.schedulingAbort();
                 }
         );
@@ -120,6 +104,33 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         scoreAnalysisParagraph = new Paragraph();
         layout.add(new Details("Score Analysis:", scoreAnalysisParagraph));
         return layout;
+    }
+
+    private VerticalLayout buildGameActionTabSheetArticle() {
+        VerticalLayout gameActionArticle = new VerticalLayout();
+        arrangementGrid = new Grid<>(BaseSchedulingProducingArrangement.class, false);
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getSchedulingProduct)
+                .setResizable(true)
+                .setHeader("Product");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getPlanningFactoryInstance)
+                .setResizable(true)
+                .setHeader("Assign Factory");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getArrangeDateTime)
+                .setResizable(true)
+                .setHeader("Arrange Date Time");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getProducingDateTime)
+                .setResizable(true)
+                .setHeader("Producing Date Time");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getCompletedDateTime)
+                .setResizable(true)
+                .setHeader("Completed Date Time");
+        arrangementGrid.setSizeFull();
+        schedulingViewPresenter.setupPlayerActionGrid(arrangementGrid);
+
+//        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));
+        gameActionArticle.add(buildBtnPanel());
+        gameActionArticle.addAndExpand(arrangementGrid);
+        return gameActionArticle;
     }
 
     private VerticalLayout buildOrderCard(Set<SchedulingOrder> orderSet) {
@@ -156,18 +167,27 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     @Override
     protected void onDetach(DetachEvent detachEvent) {
         schedulingViewPresenter.reset();
-        actionGrid = null;
+        arrangementGrid = null;
+    }
+
+    static class ReadonlyDateTimePicker extends DateTimePicker {
+
+        private ReadonlyDateTimePicker(String label, LocalDateTime dateTime) {
+            super(label, dateTime);
+            setReadOnly(true);
+        }
+
     }
 
     class ActionCard extends HorizontalLayout {
 
-        private BaseProducingArrangement producingArrangement;
+        private BaseSchedulingProducingArrangement producingArrangement;
 
-        public ActionCard(BaseProducingArrangement producingArrangement) {
+        public ActionCard(BaseSchedulingProducingArrangement producingArrangement) {
             this();
             this.producingArrangement = producingArrangement;
             var planningFactory = producingArrangement.getPlanningFactoryInstance();
-            LocalDateTime planningPlayerArrangeDateTime = producingArrangement.getPlanningDateTimeSlotStartAsLocalDateTime();
+            LocalDateTime planningPlayerArrangeDateTime = producingArrangement.getArrangeDateTime();
             boolean scheduled = planningFactory != null && planningPlayerArrangeDateTime != null;
 
             VerticalLayout verticalLayout = new VerticalLayout();
@@ -216,21 +236,12 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
             setDefaultHorizontalComponentAlignment(Alignment.CENTER);
         }
 
-        public BaseProducingArrangement getProducingArrangement() {
+        public BaseSchedulingProducingArrangement getProducingArrangement() {
             return producingArrangement;
         }
 
-        public void setProducingArrangement(BaseProducingArrangement producingArrangement) {
+        public void setProducingArrangement(BaseSchedulingProducingArrangement producingArrangement) {
             this.producingArrangement = producingArrangement;
-        }
-
-    }
-
-    class ReadonlyDateTimePicker extends DateTimePicker {
-
-        private ReadonlyDateTimePicker(String label, LocalDateTime dateTime) {
-            super(label, dateTime);
-            setReadOnly(true);
         }
 
     }

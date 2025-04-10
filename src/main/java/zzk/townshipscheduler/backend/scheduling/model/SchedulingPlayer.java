@@ -24,7 +24,7 @@ public class SchedulingPlayer {
 
     private Map<SchedulingProduct, Integer> productAmountMap;
 
-    public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<BaseProducingArrangement> producingArrangements) {
+    public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<BaseSchedulingProducingArrangement> producingArrangements) {
         List<ArrangeConsequence> arrangeConsequenceList = mapToActionProductStockConsequences(producingArrangements);
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);
         for (ArrangeConsequence consequence : arrangeConsequenceList) {
@@ -38,16 +38,16 @@ public class SchedulingPlayer {
         return productStockMap;
     }
 
-    public List<ArrangeConsequence> mapToActionProductStockConsequences(List<BaseProducingArrangement> producingArrangements) {
+    public List<ArrangeConsequence> mapToActionProductStockConsequences(List<BaseSchedulingProducingArrangement> producingArrangements) {
         return producingArrangements.stream()
-                .map(BaseProducingArrangement::calcConsequence)
+                .map(BaseSchedulingProducingArrangement::calcConsequence)
                 .flatMap(Collection::stream)
                 .sorted(Comparator.comparing(ArrangeConsequence::getLocalDateTime))
                 .filter(consequence -> consequence.getResource() instanceof ArrangeConsequence.ProductStock)
                 .toList();
     }
 
-    public boolean remainStockHadIllegal(List<BaseProducingArrangement> producingArrangements) {
+    public boolean remainStockHadIllegal(List<BaseSchedulingProducingArrangement> producingArrangements) {
         List<ArrangeConsequence> arrangeConsequences = mapToActionProductStockConsequences(producingArrangements);
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);
         for (ArrangeConsequence consequence : arrangeConsequences) {

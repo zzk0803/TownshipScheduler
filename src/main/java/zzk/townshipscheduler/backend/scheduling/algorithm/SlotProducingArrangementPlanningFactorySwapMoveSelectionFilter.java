@@ -4,8 +4,8 @@ import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SwapMove;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeSlotFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 public class SlotProducingArrangementPlanningFactorySwapMoveSelectionFilter
@@ -16,15 +16,15 @@ public class SlotProducingArrangementPlanningFactorySwapMoveSelectionFilter
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SwapMove<TownshipSchedulingProblem> selection
     ) {
-        SchedulingFactorySlotProducingArrangement leftEntity
-                = (SchedulingFactorySlotProducingArrangement) selection.getLeftEntity();
+        SchedulingProducingArrangementFactoryTypeSlot leftEntity
+                = (SchedulingProducingArrangementFactoryTypeSlot) selection.getLeftEntity();
         SchedulingFactoryInfo leftProducingRequiredFactoryInfo = leftEntity.getRequiredFactoryInfo();
-        SchedulingTypeSlotFactoryInstance leftEntityPlanningFactory = leftEntity.getPlanningFactory();
+        SchedulingFactoryInstanceTypeSlot leftEntityPlanningFactory = leftEntity.getPlanningFactory();
 
-        SchedulingFactorySlotProducingArrangement rightEntity
-                = (SchedulingFactorySlotProducingArrangement) selection.getRightEntity();
+        SchedulingProducingArrangementFactoryTypeSlot rightEntity
+                = (SchedulingProducingArrangementFactoryTypeSlot) selection.getRightEntity();
         SchedulingFactoryInfo rightProducingRequiredFactoryInfo = rightEntity.getRequiredFactoryInfo();
-        SchedulingTypeSlotFactoryInstance rightEntityPlanningFactory = rightEntity.getPlanningFactory();
+        SchedulingFactoryInstanceTypeSlot rightEntityPlanningFactory = rightEntity.getPlanningFactory();
         return leftProducingRequiredFactoryInfo == rightEntityPlanningFactory.getSchedulingFactoryInfo()
                 || rightProducingRequiredFactoryInfo == leftEntityPlanningFactory.getSchedulingFactoryInfo();
     }

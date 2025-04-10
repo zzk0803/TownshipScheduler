@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import com.fasterxml.jackson.annotation.*;
 import lombok.*;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForScheduling;
@@ -18,6 +19,7 @@ import java.util.Set;
 @ToString(onlyExplicitlyIncluded = true)
 public final class SchedulingProduct implements IGameActionObject {
 
+    @JsonUnwrapped
     @EqualsAndHashCode.Include
     private Id id;
 
@@ -30,8 +32,11 @@ public final class SchedulingProduct implements IGameActionObject {
     private int gainWhenCompleted = 1;
 
     @ToString.Include
+    @JsonManagedReference
     private SchedulingFactoryInfo requireFactory;
 
+    @JsonIgnore
+    @JsonBackReference
     private Set<SchedulingProducingExecutionMode> executionModeSet;
 
     public SchedulingProduct(
@@ -71,16 +76,16 @@ public final class SchedulingProduct implements IGameActionObject {
 //    }
 
     @Override
-    public List<BaseProducingArrangement> calcFactoryActions() {
+    public List<BaseSchedulingProducingArrangement> calcFactoryActions() {
         return calcFactoryActions(this);
     }
 
     @Override
-    public List<BaseProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
+    public List<BaseSchedulingProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
         switch (getRequireFactory().getProducingStructureType()) {
             case QUEUE -> {
                 return List.of(
-                        BaseProducingArrangement.createProducingArrangementFactoryQueue(
+                        BaseSchedulingProducingArrangement.createProducingArrangementFactoryQueue(
                         targetObject,
                                 this
                 )
@@ -89,7 +94,7 @@ public final class SchedulingProduct implements IGameActionObject {
 
             case SLOT -> {
                 return List.of(
-                        BaseProducingArrangement.createProducingArrangementFactorySlot(
+                        BaseSchedulingProducingArrangement.createProducingArrangementFactorySlot(
                         targetObject,
                                 this
                 )
@@ -112,6 +117,7 @@ public final class SchedulingProduct implements IGameActionObject {
     @Value
     public static class Id implements Comparable<Id> {
 
+        @JsonProperty("id")
         @Getter
         private long value;
 

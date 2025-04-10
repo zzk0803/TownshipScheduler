@@ -9,9 +9,9 @@
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <!--    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeQueueFactoryInstance</entityClass>-->
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeSlotFactoryInstance</entityClass>
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement</entityClass>
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement</entityClass>
+    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeSlot</entityClass>
+    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue</entityClass>
+    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot</entityClass>
 
     <scoreDirectorFactory>
         <constraintProviderClass>
@@ -95,7 +95,7 @@
                 </filterClass>
                 <entitySelector id="es1">
                     <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
                     </entityClass>
                     <cacheType>PHASE</cacheType>
                 </entitySelector>
@@ -109,7 +109,7 @@
                 </filterClass>
                 <entitySelector id="es3">
                     <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                     </entityClass>
                 </entitySelector>
                 <valueSelector id="vs3" variableName="planningPreviousProducingArrangementOrFactory"/>
@@ -120,7 +120,7 @@
                     zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter
                 </filterClass>
                 <entityClass>
-                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                 </entityClass>
                 <subChainSelector>
                     <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
@@ -134,7 +134,7 @@
                     zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainChangeMoveSelectionFilter
                 </filterClass>
                 <entityClass>
-                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                 </entityClass>
                 <subChainSelector>
                     <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
@@ -155,7 +155,7 @@
             <changeMoveSelector>
                 <entitySelector id="ls2es1">
                     <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
                     </entityClass>
                 </entitySelector>
                 <valueSelector id="ls2vs1" variableName="planningDateTimeSlot">
@@ -167,7 +167,7 @@
                 <pillarSelector>
                     <entitySelector id="ls2es2">
                         <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingFactorySlotProducingArrangement
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
                         </entityClass>
                     </entitySelector>
                 </pillarSelector>
@@ -179,7 +179,7 @@
             <changeMoveSelector>
                 <entitySelector id="ls2es3">
                     <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                     </entityClass>
                 </entitySelector>
                 <valueSelector id="ls2vs3" variableName="planningDateTimeSlot">
@@ -190,7 +190,7 @@
                 <pillarSelector>
                     <entitySelector id="ls2es4">
                         <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                         </entityClass>
                     </entitySelector>
                 </pillarSelector>
@@ -204,7 +204,7 @@
                 </filterClass>
                 <entitySelector id="ls2es5">
                     <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                     </entityClass>
                 </entitySelector>
                 <valueSelector id="ls2vs5" variableName="planningPreviousProducingArrangementOrFactory"/>
@@ -215,7 +215,7 @@
                     zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter
                 </filterClass>
                 <entityClass>
-                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                 </entityClass>
                 <subChainSelector>
                     <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
@@ -229,7 +229,7 @@
                     zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainChangeMoveSelectionFilter
                 </filterClass>
                 <entityClass>
-                    zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement
+                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
                 </entityClass>
                 <subChainSelector>
                     <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>

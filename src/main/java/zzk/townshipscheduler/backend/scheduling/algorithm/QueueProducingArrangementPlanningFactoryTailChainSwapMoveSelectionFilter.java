@@ -5,7 +5,7 @@ import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.Selectio
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.TailChainSwapMove;
 import zzk.townshipscheduler.backend.scheduling.model.ISchedulingFactoryOrFactoryArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 public class QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter
@@ -16,7 +16,7 @@ public class QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionF
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             TailChainSwapMove<TownshipSchedulingProblem> selection
     ) {
-        var leftEntity = ((SchedulingFactoryQueueProducingArrangement) selection.getLeftEntity());
+        var leftEntity = ((SchedulingProducingArrangementFactoryTypeQueue) selection.getLeftEntity());
         var rightValue = ((ISchedulingFactoryOrFactoryArrangement) selection.getRightValue());
         SchedulingFactoryInfo leftEntityRequiredFactoryInfo = leftEntity.getRequiredFactoryInfo();
         SchedulingFactoryInfo rightValueFactoryInfo = rightValue.getFactoryInfo();

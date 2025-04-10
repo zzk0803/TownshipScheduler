@@ -1,5 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import lombok.*;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import zzk.townshipscheduler.backend.ProducingStructureType;
@@ -15,6 +18,7 @@ import java.util.stream.IntStream;
 @ToString(onlyExplicitlyIncluded = true)
 public class SchedulingFactoryInfo {
 
+    @JsonUnwrapped
     @ToString.Include
     private Id id;
 
@@ -24,8 +28,10 @@ public class SchedulingFactoryInfo {
 
     private int level;
 
+    @JsonBackReference
     private List<SchedulingProduct> portfolio;
 
+    @JsonBackReference
     private List<BaseSchedulingFactoryInstance> factoryInstances;
 
     private ProducingStructureType producingStructureType;
@@ -54,6 +60,7 @@ public class SchedulingFactoryInfo {
     @Value
     public static class Id implements Comparable<Id> {
 
+        @JsonProperty("id")
         @Getter
         private long value;
 

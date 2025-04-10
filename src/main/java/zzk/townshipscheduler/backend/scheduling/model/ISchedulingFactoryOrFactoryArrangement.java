@@ -10,10 +10,10 @@ public interface ISchedulingFactoryOrFactoryArrangement {
 
     String PLANING_NEXT_FACTORY_SEQUENCE = "nextQueueProducingArrangement";
 
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingFactoryQueueProducingArrangement.PLANNING_PREVIOUS)
-    SchedulingFactoryQueueProducingArrangement getNextQueueProducingArrangement();
+    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS)
+    SchedulingProducingArrangementFactoryTypeQueue getNextQueueProducingArrangement();
 
-    void setNextQueueProducingArrangement(SchedulingFactoryQueueProducingArrangement schedulingFactoryQueueProducingArrangement);
+    void setNextQueueProducingArrangement(SchedulingProducingArrangementFactoryTypeQueue schedulingProducingArrangementFactoryTypeQueue);
 
     LocalDateTime getCompletedDateTime();
 

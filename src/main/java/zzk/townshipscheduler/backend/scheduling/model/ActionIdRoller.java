@@ -28,8 +28,8 @@ public final class ActionIdRoller {
         return new ActionIdRoller();
     }
 
-    public void setup(BaseProducingArrangement producingArrangement) {
-        producingArrangement.setActionId(atomicInteger.incrementAndGet());
+    public void setup(BaseSchedulingProducingArrangement producingArrangement) {
+        producingArrangement.setId(atomicInteger.incrementAndGet());
     }
 
 //    public void setup(SchedulingPlayerWarehouseAction warehouseAction) {

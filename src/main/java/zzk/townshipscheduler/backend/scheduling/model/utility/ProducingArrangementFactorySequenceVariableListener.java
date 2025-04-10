@@ -5,21 +5,21 @@ import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import zzk.townshipscheduler.backend.scheduling.model.ISchedulingFactoryOrFactoryArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryQueueProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeQueueFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeQueue;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class ProducingArrangementFactorySequenceVariableListener
-        implements VariableListener<TownshipSchedulingProblem, SchedulingFactoryQueueProducingArrangement> {
+        implements VariableListener<TownshipSchedulingProblem, SchedulingProducingArrangementFactoryTypeQueue> {
 
     @Override
     public void beforeVariableChanged(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             @NonNull
-            SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
     ) {
 
     }
@@ -28,23 +28,23 @@ public class ProducingArrangementFactorySequenceVariableListener
     public void afterVariableChanged(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             @NonNull
-            SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
     ) {
         doUpdate(scoreDirector, queueProducingArrangement);
     }
 
     private void doUpdate(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
     ) {
-        SchedulingTypeQueueFactoryInstance planningFactory
+        SchedulingFactoryInstanceTypeQueue planningFactory
                 = queueProducingArrangement.getPlanningFactoryInstance();
 
-        SchedulingFactoryQueueProducingArrangement previousQueueProducingArrangement = null;
+        SchedulingProducingArrangementFactoryTypeQueue previousQueueProducingArrangement = null;
         ISchedulingFactoryOrFactoryArrangement planningPreviousProducingArrangementOrFactory
                 = queueProducingArrangement.getPlanningPreviousProducingArrangementOrFactory();
-        if (planningPreviousProducingArrangementOrFactory instanceof SchedulingFactoryQueueProducingArrangement) {
-            previousQueueProducingArrangement = ((SchedulingFactoryQueueProducingArrangement) planningPreviousProducingArrangementOrFactory);
+        if (planningPreviousProducingArrangementOrFactory instanceof SchedulingProducingArrangementFactoryTypeQueue) {
+            previousQueueProducingArrangement = ((SchedulingProducingArrangementFactoryTypeQueue) planningPreviousProducingArrangementOrFactory);
         }
 
         LocalDateTime computedProducingDateTime
@@ -53,7 +53,7 @@ public class ProducingArrangementFactorySequenceVariableListener
                 queueProducingArrangement
         );
 
-        SchedulingFactoryQueueProducingArrangement previousIteratingProducingArrangement = null;
+        SchedulingProducingArrangementFactoryTypeQueue previousIteratingProducingArrangement = null;
         while (
                 queueProducingArrangement != null
                 && !Objects.equals(
@@ -63,12 +63,12 @@ public class ProducingArrangementFactorySequenceVariableListener
         ) {
             scoreDirector.beforeVariableChanged(
                     queueProducingArrangement,
-                    SchedulingFactoryQueueProducingArrangement.SHADOW_PRODUCING_DATE_TIME
+                    SchedulingProducingArrangementFactoryTypeQueue.SHADOW_PRODUCING_DATE_TIME
             );
             queueProducingArrangement.setShadowProducingDateTime(computedProducingDateTime);
             scoreDirector.afterVariableChanged(
                     queueProducingArrangement,
-                    SchedulingFactoryQueueProducingArrangement.SHADOW_PRODUCING_DATE_TIME
+                    SchedulingProducingArrangementFactoryTypeQueue.SHADOW_PRODUCING_DATE_TIME
             );
 
             previousIteratingProducingArrangement = queueProducingArrangement;
@@ -83,8 +83,8 @@ public class ProducingArrangementFactorySequenceVariableListener
     }
 
     private LocalDateTime calcProducingDateTime(
-            @Nullable SchedulingFactoryQueueProducingArrangement previousProducingArrangement,
-            SchedulingFactoryQueueProducingArrangement currentProducingArrangement
+            @Nullable SchedulingProducingArrangementFactoryTypeQueue previousProducingArrangement,
+            SchedulingProducingArrangementFactoryTypeQueue currentProducingArrangement
     ) {
         LocalDateTime computedProducingDateTime = null;
         LocalDateTime previousCompletedDateTime =
@@ -92,7 +92,7 @@ public class ProducingArrangementFactorySequenceVariableListener
                         ? null
                         : previousProducingArrangement.getCompletedDateTime();
 
-        LocalDateTime planningDateTime = currentProducingArrangement.getPlanningDateTimeSlotStartAsLocalDateTime();
+        LocalDateTime planningDateTime = currentProducingArrangement.getArrangeDateTime();
         if (planningDateTime == null) {
             return null;
         }
@@ -112,7 +112,7 @@ public class ProducingArrangementFactorySequenceVariableListener
     public void beforeEntityAdded(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             @NonNull
-            SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
     ) {
 
     }
@@ -121,7 +121,7 @@ public class ProducingArrangementFactorySequenceVariableListener
     public void afterEntityAdded(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             @NonNull
-            SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
     ) {
         doUpdate(scoreDirector, queueProducingArrangement);
     }
@@ -130,7 +130,7 @@ public class ProducingArrangementFactorySequenceVariableListener
     public void beforeEntityRemoved(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             @NonNull
-            SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
     ) {
 
     }
@@ -139,7 +139,7 @@ public class ProducingArrangementFactorySequenceVariableListener
     public void afterEntityRemoved(
             @NonNull ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             @NonNull
-            SchedulingFactoryQueueProducingArrangement queueProducingArrangement
+            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
     ) {
         doUpdate(scoreDirector, queueProducingArrangement);
     }

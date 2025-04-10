@@ -13,7 +13,7 @@
     <properties>
         <java.version>23</java.version>
         <vaadin.version>24.7.1</vaadin.version>
-        <timefold-solver.version>1.20.1</timefold-solver.version>
+        <timefold-solver.version>1.21.0</timefold-solver.version>
     </properties>
 
     <parent>
