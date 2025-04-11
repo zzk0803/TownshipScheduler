@@ -24,6 +24,25 @@ public class SchedulingPlayer {
 
     private Map<SchedulingProduct, Integer> productAmountMap;
 
+    public Map<SchedulingProduct, Integer> delatMergeToProductAmountMap(
+            List<BaseSchedulingProducingArrangement> producingArrangements,
+            BaseSchedulingProducingArrangement deltaProducingArrangement
+    ) {
+        Map<SchedulingProduct, Integer> productStockMap
+                = mergeToProductAmountMap(producingArrangements);
+        List<ArrangeConsequence> arrangeConsequences
+                = mapToActionProductStockConsequences(List.of(deltaProducingArrangement));
+        for (ArrangeConsequence consequence : arrangeConsequences) {
+            ArrangeConsequence.ProductStock productStock = (ArrangeConsequence.ProductStock) consequence.getResource();
+            ArrangeConsequence.SchedulingResourceChange resourceChange = consequence.getResourceChange();
+            SchedulingProduct schedulingProduct = productStock.getSchedulingProduct();
+            Integer stock = productStockMap.getOrDefault(schedulingProduct, 0);
+            stock = resourceChange.apply(stock);
+            productStockMap.put(schedulingProduct, stock);
+        }
+        return productStockMap;
+    }
+
     public Map<SchedulingProduct, Integer> mergeToProductAmountMap(List<BaseSchedulingProducingArrangement> producingArrangements) {
         List<ArrangeConsequence> arrangeConsequenceList = mapToActionProductStockConsequences(producingArrangements);
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);

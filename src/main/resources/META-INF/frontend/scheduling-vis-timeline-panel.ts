@@ -40,9 +40,9 @@ export class SchedulingVisTimelinePanel
                                     })
                                     .map(arrangement => {
                                         return html`
-                                            <div class="border   shadow-xs text-l  font-semibold leading-s  text-left ">
-                                                <span>Item:${arrangement?.product}</span>
-                                                <span class="text-secondary"> Duration:${arrangement?.producingDuration}</span>
+                                            <div class="flex flex-col border shadow-xs text-l font-semibold leading-s text-left m-m p-m">
+                                                <span class="text-primary">Item:${arrangement?.product}</span>
+                                                <span class="text-secondary">Duration:${arrangement?.producingDuration}</span>
                                             </div>
                                         `
                                     })

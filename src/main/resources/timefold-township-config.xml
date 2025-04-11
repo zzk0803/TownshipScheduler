@@ -167,6 +167,20 @@
                 </valueSelector>
             </changeMoveSelector>
 
+            <changeMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter
+                </filterClass>
+                <entitySelector id="ls2vs6">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
+                    </entityClass>
+                    <cacheType>PHASE</cacheType>
+                </entitySelector>
+                <valueSelector variableName="planningFactory">
+                </valueSelector>
+            </changeMoveSelector>
+
             <pillarChangeMoveSelector>
                 <pillarSelector>
                     <entitySelector id="ls2es2">
