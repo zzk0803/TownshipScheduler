@@ -1,5 +1,5 @@
 import {css, html, LitElement, PropertyValues} from 'lit';
-import {customElement, property, query} from 'lit/decorators.js';
+import {customElement, property} from 'lit/decorators.js';
 import '@vaadin/vertical-layout';
 import {vaadinStyles, visStyles} from "./external-styles";
 import {DataGroup, DataItem} from "vis-timeline";
@@ -59,7 +59,8 @@ export class ByFactoryTimelineComponents
                             group: arrangement?.arrangeFactoryId,
                             content: `<p class="h-auto w-auto text-center">arrange: ${arrangement?.product}</p>`,
                             start: arrangement?.arrangeDateTime,
-                            end: arrangement?.arrangeDateTime
+                            end: arrangement?.arrangeDateTime,
+                            type: "point",
                         });
 
                         dataSetItems.push({
@@ -67,7 +68,8 @@ export class ByFactoryTimelineComponents
                             group: arrangement?.arrangeFactoryId,
                             content: `<p class="h-auto w-auto text-center">in game: ${arrangement?.product}</p>`,
                             start: arrangement?.gameProducingDateTime,
-                            end: arrangement?.gameCompletedDateTime
+                            end: arrangement?.gameCompletedDateTime,
+                            type: "range"
                         });
                     })
 
@@ -81,18 +83,15 @@ export class ByFactoryTimelineComponents
                     .datasets="${this.dataItems}"
                     .groups="${this.groups}"
                     .options="${{
-                        timeAxis: {scale: "hour"},
+                        timeAxis: {scale: "minute", step: 30},
                         orientation: {axis: "top"},
-                        zoomMin: 1000 * 60 * 60 * 12 // Half day in milliseconds
+                        zoomKey: "ctrlKey"
                     }}"
                     .fromDateTime="${this.dateWindowStartString}"
                     .toDateTime="${this.dateWindowEndString}">
             </lit-vis-timeline>
         `;
     }
-
-    @query('#unassignedJobs')
-    unassignedJobsDiv!: HTMLDivElement;
 
     @property()
     schedulingWorkDateTimeLimit!: SchedulingWorkTimeLimit;

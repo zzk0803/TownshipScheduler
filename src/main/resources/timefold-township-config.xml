@@ -10,8 +10,10 @@
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <!--    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeQueueFactoryInstance</entityClass>-->
     <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeSlot</entityClass>
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue</entityClass>
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot</entityClass>
+    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
+    </entityClass>
+    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
+    </entityClass>
 
     <scoreDirectorFactory>
         <constraintProviderClass>
@@ -159,7 +161,9 @@
                     </entityClass>
                 </entitySelector>
                 <valueSelector id="ls2vs1" variableName="planningDateTimeSlot">
-
+                    <cacheType>PHASE</cacheType>
+                    <selectionOrder>SORTED</selectionOrder>
+                    <sorterManner>INCREASING_STRENGTH_IF_AVAILABLE</sorterManner>
                 </valueSelector>
             </changeMoveSelector>
 
@@ -172,7 +176,9 @@
                     </entitySelector>
                 </pillarSelector>
                 <valueSelector id="ls2vs2" variableName="planningDateTimeSlot">
-
+                    <cacheType>PHASE</cacheType>
+                    <selectionOrder>SORTED</selectionOrder>
+                    <sorterManner>INCREASING_STRENGTH_IF_AVAILABLE</sorterManner>
                 </valueSelector>
             </pillarChangeMoveSelector>
 
@@ -183,6 +189,9 @@
                     </entityClass>
                 </entitySelector>
                 <valueSelector id="ls2vs3" variableName="planningDateTimeSlot">
+                    <cacheType>PHASE</cacheType>
+                    <selectionOrder>SORTED</selectionOrder>
+                    <sorterManner>INCREASING_STRENGTH_IF_AVAILABLE</sorterManner>
                 </valueSelector>
             </changeMoveSelector>
 
@@ -195,6 +204,9 @@
                     </entitySelector>
                 </pillarSelector>
                 <valueSelector id="ls2vs4" variableName="planningDateTimeSlot">
+                    <cacheType>PHASE</cacheType>
+                    <selectionOrder>SORTED</selectionOrder>
+                    <sorterManner>INCREASING_STRENGTH_IF_AVAILABLE</sorterManner>
                 </valueSelector>
             </pillarChangeMoveSelector>
 

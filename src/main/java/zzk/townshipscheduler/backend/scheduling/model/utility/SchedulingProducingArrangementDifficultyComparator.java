@@ -5,7 +5,7 @@ import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingProducingArr
 
 import java.util.Comparator;
 
-public class ProducingArrangementDifficultyComparator implements Comparator<BaseSchedulingProducingArrangement> {
+public class SchedulingProducingArrangementDifficultyComparator implements Comparator<BaseSchedulingProducingArrangement> {
 
     @Override
     public int compare(BaseSchedulingProducingArrangement former, BaseSchedulingProducingArrangement latter) {

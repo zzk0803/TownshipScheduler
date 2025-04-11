@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
+import java.util.stream.IntStream;
 
 public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedulingProblem> {
 

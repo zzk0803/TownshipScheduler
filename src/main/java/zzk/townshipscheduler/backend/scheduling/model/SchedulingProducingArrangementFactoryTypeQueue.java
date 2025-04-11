@@ -8,8 +8,8 @@ import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
-import zzk.townshipscheduler.backend.scheduling.model.utility.ProducingArrangementDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.ProducingArrangementFactorySequenceVariableListener;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactoryTypeQueueDateTimeVariableListener;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 
 import java.time.LocalDateTime;
@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-@PlanningEntity(difficultyComparatorClass = ProducingArrangementDifficultyComparator.class)
+@PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 @JsonIgnoreProperties(allowGetters = true, allowSetters = true)
 public class SchedulingProducingArrangementFactoryTypeQueue
         extends BaseSchedulingProducingArrangement
@@ -56,15 +56,15 @@ public class SchedulingProducingArrangementFactoryTypeQueue
 
     @ShadowVariable(
             sourceVariableName = PLANNING_ANCHOR_FACTORY,
-            variableListenerClass = ProducingArrangementFactorySequenceVariableListener.class
+            variableListenerClass = SchedulingProducingArrangementFactoryTypeQueueDateTimeVariableListener.class
     )
     @ShadowVariable(
             sourceVariableName = PLANNING_PREVIOUS,
-            variableListenerClass = ProducingArrangementFactorySequenceVariableListener.class
+            variableListenerClass = SchedulingProducingArrangementFactoryTypeQueueDateTimeVariableListener.class
     )
     @ShadowVariable(
             sourceVariableName = PLANNING_DATA_TIME_SLOT,
-            variableListenerClass = ProducingArrangementFactorySequenceVariableListener.class
+            variableListenerClass = SchedulingProducingArrangementFactoryTypeQueueDateTimeVariableListener.class
     )
     private LocalDateTime shadowProducingDateTime;
 

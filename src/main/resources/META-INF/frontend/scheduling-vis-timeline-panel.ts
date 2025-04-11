@@ -40,14 +40,10 @@ export class SchedulingVisTimelinePanel
                                     })
                                     .map(arrangement => {
                                         return html`
-                                        <pre class="border border-contrast-40">
-                                            Item:${arrangement?.product}
-                                            Duration:${arrangement?.producingDuration}
-                                            Fertile:${arrangement?.arrangeFactory}
-                                            YourMoveArrange:${arrangement?.arrangeDateTime}
-                                            ProducingInGame:${arrangement?.gameProducingDateTime}
-                                            CompletedInGame:${arrangement?.gameCompletedDateTime}
-                                        </pre>
+                                            <div class="border   shadow-xs text-l  font-semibold leading-s  text-left ">
+                                                <span>Item:${arrangement?.product}</span>
+                                                <span class="text-secondary"> Duration:${arrangement?.producingDuration}</span>
+                                            </div>
                                         `
                                     })
                     }

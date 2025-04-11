@@ -3,12 +3,11 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import zzk.townshipscheduler.backend.scheduling.model.utility.ProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 
 import java.time.LocalDateTime;
@@ -17,7 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-@PlanningEntity(difficultyComparatorClass = ProducingArrangementDifficultyComparator.class)
+@PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 @JsonIgnoreProperties(allowGetters = true, allowSetters = true)
 public class SchedulingProducingArrangementFactoryTypeSlot extends BaseSchedulingProducingArrangement {
 

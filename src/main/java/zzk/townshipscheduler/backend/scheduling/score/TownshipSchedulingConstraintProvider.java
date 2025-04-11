@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
+import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.*;
@@ -23,7 +24,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidBrokenSlotFactoryAbility(constraintFactory),
 //                forbidBrokenStock(constraintFactory),
                 forbidBrokenPrerequisite(constraintFactory),
-//                shouldEveryArrangementAssigned(constraintFactory),
+//                shouldArrangementDateTimeRight(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotArrangeInPlayerSleepTime(constraintFactory),
                 preferArrangeAsSoonAsPassable(constraintFactory)
@@ -124,6 +125,35 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         }
                 )
                 .asConstraint("forbidBrokenSlotFactoryAbility");
+    }
+
+    private Constraint shouldArrangementDateTimeRight(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangementFactoryTypeQueue.class)
+                .filter(schedulingProducingArrangementFactoryTypeQueue -> schedulingProducingArrangementFactoryTypeQueue.getArrangeDateTime() != null)
+                .join(
+                        constraintFactory.forEach(SchedulingProducingArrangementFactoryTypeQueue.class)
+                                .filter(schedulingProducingArrangementFactoryTypeQueue -> schedulingProducingArrangementFactoryTypeQueue.getArrangeDateTime() != null),
+                        Joiners.equal(SchedulingProducingArrangementFactoryTypeQueue::getPlanningAnchorFactory),
+                        Joiners.filtering((former, latter) -> {
+                            return former.getNextQueueProducingArrangement() == latter
+                                   && latter.getArrangeDateTime().isBefore(former.getArrangeDateTime());
+                        })
+                )
+                .penalize(
+                        BendableScore.ofSoft(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_MIDDLE,
+                                1
+                        ),
+                        ((former, latter) -> {
+                            LocalDateTime formerArrangeDateTime = former.getArrangeDateTime();
+                            LocalDateTime latterArrangeDateTime = latter.getArrangeDateTime();
+                            long minutes = Duration.between(latterArrangeDateTime, formerArrangeDateTime).toMinutes();
+                            return Math.toIntExact(minutes);
+                        })
+                )
+                .asConstraint("shouldArrangementDateTimeRight");
     }
 
     private Constraint forbidBrokenPrerequisite(@NonNull ConstraintFactory constraintFactory) {
@@ -271,9 +301,9 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
 //    private Constraint forbidBrokenStock(@NonNull ConstraintFactory constraintFactory) {
-//         constraintFactory.forEach(BaseProducingArrangement.class)
+//         constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
 //                .groupBy(
-//                        BaseProducingArrangement::getSchedulingPlayer,
+//                        BaseSchedulingProducingArrangement::getSchedulingPlayer,
 //                        ConstraintCollectors.toList()
 //                )
 //                .filter(SchedulingPlayer::remainStockHadIllegal)

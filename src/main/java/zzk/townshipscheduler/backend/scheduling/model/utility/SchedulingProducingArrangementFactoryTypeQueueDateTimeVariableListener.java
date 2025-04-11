@@ -12,7 +12,7 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public class ProducingArrangementFactorySequenceVariableListener
+public class SchedulingProducingArrangementFactoryTypeQueueDateTimeVariableListener
         implements VariableListener<TownshipSchedulingProblem, SchedulingProducingArrangementFactoryTypeQueue> {
 
     @Override
