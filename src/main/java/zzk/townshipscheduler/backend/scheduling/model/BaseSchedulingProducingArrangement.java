@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.aspectj.internal.lang.annotation.ajcDeclareAnnotation;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -97,14 +96,14 @@ public abstract class BaseSchedulingProducingArrangement {
         return producingArrangement;
     }
 
-    @JsonProperty("schedulingProduct")
-    public SchedulingProduct getSchedulingProduct() {
-        return (SchedulingProduct) getCurrentActionObject();
-    }
-
     @JsonIgnore
     public SchedulingFactoryInfo getRequiredFactoryInfo() {
         return getSchedulingProduct().getRequireFactory();
+    }
+
+    @JsonProperty("schedulingProduct")
+    public SchedulingProduct getSchedulingProduct() {
+        return (SchedulingProduct) getCurrentActionObject();
     }
 
     @JsonIgnore
@@ -233,24 +232,6 @@ public abstract class BaseSchedulingProducingArrangement {
     @JsonProperty("producingDuration")
     public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();
-    }
-
-    public boolean boolRightfulFactory() {
-        return getPlanningFactoryInstance().getSchedulingFactoryInfo() == getSchedulingProduct().getRequireFactory();
-    }
-
-    public boolean boolEquivalent(BaseSchedulingProducingArrangement that) {
-        SchedulingProduct thisProducing = this.getSchedulingProduct();
-        SchedulingProduct thatProducing = that.getSchedulingProduct();
-        if (thisProducing == null || thatProducing == null) {
-            return false;
-        } else {
-            return thisProducing.equals(thatProducing);
-        }
-    }
-
-    public boolean boolCompositeProductProducing() {
-        return getProducingExecutionMode().boolCompositeProduct();
     }
 
     public <T extends BaseSchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {

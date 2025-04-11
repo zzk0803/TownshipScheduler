@@ -2,7 +2,10 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
-import ai.timefold.solver.core.api.score.stream.*;
+import ai.timefold.solver.core.api.score.stream.Constraint;
+import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
+import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
+import ai.timefold.solver.core.api.score.stream.Joiners;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 
@@ -21,7 +24,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidMismatchSlotFactory(constraintFactory),
                 forbidBrokenQueueFactoryAbility(constraintFactory),
                 forbidBrokenSlotFactoryAbility(constraintFactory),
-                forbidBrokenPrerequisite(constraintFactory),
+                forbidBrokenPrerequisiteStock(constraintFactory),
                 shouldArrangementDateTimeInQueueLegal(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotArrangeInPlayerSleepTime(constraintFactory),
@@ -126,7 +129,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidBrokenSlotFactoryAbility");
     }
 
-    private Constraint forbidBrokenPrerequisite(@NonNull ConstraintFactory constraintFactory) {
+    private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
                 .filter(producingArrangement -> {
                             boolean arranged = producingArrangement.getPlanningDateTimeSlot() != null;
@@ -143,25 +146,33 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                     ProductAmountBill materials
                                             = compositeProducingArrangement.getProducingExecutionMode().getMaterials();
                                     SchedulingProduct schedulingProduct = materialProducingArrangement.getSchedulingProduct();
-                                    return materials.containsKey(schedulingProduct);
+                                    return materials.containsKey(schedulingProduct) || compositeProducingArrangement.getPrerequisiteProducingArrangements()
+                                            .contains(materialProducingArrangement);
                                 }
                         )
                 )
-                .filter((productArrangement, materialArrangement) -> {
+                .filter((compositeProducingArrangement, materialProducingArrangement) -> {
+                    ProductAmountBill materials
+                            = compositeProducingArrangement.getProducingExecutionMode().getMaterials();
+                    SchedulingProduct schedulingProduct = materialProducingArrangement.getSchedulingProduct();
+                    var b = materials.containsKey(schedulingProduct)
+                            || compositeProducingArrangement.getPrerequisiteProducingArrangements()
+                                    .contains(materialProducingArrangement);
 
                     LocalDateTime productArrangeDateTime
-                            = productArrangement.getArrangeDateTime();
+                            = compositeProducingArrangement.getArrangeDateTime();
                     LocalDateTime materialCompletedDateTime
-                            = materialArrangement.getCompletedDateTime();
+                            = materialProducingArrangement.getCompletedDateTime();
 
-                    return productArrangeDateTime.isBefore(materialCompletedDateTime);
+                    return b && (productArrangeDateTime.isBefore(materialCompletedDateTime)
+                                 || productArrangeDateTime.isEqual(materialCompletedDateTime));
                 })
                 .penalize(
                         BendableScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_STOCK,
-                                1
+                                TownshipSchedulingProblem.HARD_BROKEN_PREREQUISITE_OR_STOCK,
+                                5
                         ),
                         ((productArrangement, materialArrangement) -> {
                             return Math.toIntExact(
@@ -172,22 +183,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                             );
                         })
                 )
-                .asConstraint("forbidBrokenPrerequisite");
+                .asConstraint("forbidBrokenPrerequisiteStock");
     }
-
-//    private Constraint shouldEveryArrangementAssigned(@NonNull ConstraintFactory constraintFactory) {
-//        return constraintFactory.forEach(BaseProducingArrangement.class)
-//                .filter(producingArrangement -> producingArrangement.getProducingDateTime() == null || producingArrangement.getCompletedDateTime() == null)
-//                .penalize(
-//                        BendableScore.ofSoft(
-//                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-//                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-//                                TownshipSchedulingProblem.SOFT_AS_MIDDLE_ASSIGN,
-//                                1
-//                        )
-//                )
-//                .asConstraint("shouldArrangementClear");
-//    }
 
     private Constraint shouldArrangementDateTimeInQueueLegal(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangementFactoryTypeQueue.class)
@@ -251,13 +248,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint shouldNotArrangeInPlayerSleepTime(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
-                .filter(producingArrangement -> producingArrangement.getPlanningDateTimeSlot() != null)
+                .filter(producingArrangement -> producingArrangement.getArrangeDateTime() != null)
                 .filter(producingArrangement -> {
                     LocalDateTime arrangeDateTime = producingArrangement.getArrangeDateTime();
                     LocalTime localTime = arrangeDateTime.toLocalTime();
                     return localTime.isAfter(
                             producingArrangement.getSchedulingPlayer().getSleepStart()
-                    ) && localTime.isBefore(
+                    ) || localTime.isBefore(
                             producingArrangement.getSchedulingPlayer().getSleepEnd()
                     );
                 })

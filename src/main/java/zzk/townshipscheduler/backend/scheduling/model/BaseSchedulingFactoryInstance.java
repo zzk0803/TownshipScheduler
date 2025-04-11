@@ -37,6 +37,10 @@ public abstract class BaseSchedulingFactoryInstance {
         return this.schedulingFactoryInfo.getCategoryName() + "#" + this.getSeqNum() + ",size=" + this.getProducingLength();
     }
 
+    public String getReadableIdentifier() {
+        return this.schedulingFactoryInfo.getCategoryName() + "#" + this.getSeqNum();
+    }
+
     public Pair<Integer, Duration> remainProducingCapacityAndNextAvailableDuration(SchedulingDateTimeSlot schedulingDateTimeSlot) {
         var filteredArrangeConsequences = useFilteredArrangeConsequences();
         Duration firstCapacityIncreaseDuration

@@ -12,11 +12,15 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
+import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
+import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
@@ -25,6 +29,7 @@ import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 @Route("/scheduling")
@@ -38,13 +43,13 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private UI ui;
 
-    private LitSchedulingVisTimelinePanel schedulingVisTimelinePanel;
-
-    private Grid<BaseSchedulingProducingArrangement> arrangementGrid;
+    private TriggerButton triggerButton;
 
     private Paragraph scoreAnalysisParagraph;
 
-    private TriggerButton triggerButton;
+    private LitSchedulingVisTimelinePanel arrangementTimelinePanel;
+
+    private Grid<BaseSchedulingProducingArrangement> arrangementGrid;
 
     public SchedulingView(SchedulingViewPresenter schedulingViewPresenter) {
         this.schedulingViewPresenter = schedulingViewPresenter;
@@ -74,9 +79,12 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         addAndExpand(schedulingContentLayout);
 
         schedulingContentLayout.add(buildBtnPanel());
-        schedulingContentLayout.addAndExpand(
-                schedulingVisTimelinePanel = new LitSchedulingVisTimelinePanel(schedulingViewPresenter)
-        );
+        TabSheet tabSheet = new TabSheet();
+        tabSheet.setWidthFull();
+        tabSheet.add("Grid", buildProducingArrangementsGrid());
+        tabSheet.add("Timeline", arrangementTimelinePanel = new LitSchedulingVisTimelinePanel(schedulingViewPresenter));
+        schedulingContentLayout.addAndExpand(tabSheet);
+
     }
 
     private HorizontalLayout buildBtnPanel() {
@@ -97,6 +105,47 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         return schedulingBtnPanel;
     }
 
+    private VerticalLayout buildProducingArrangementsGrid() {
+        VerticalLayout gameActionArticle = new VerticalLayout();
+        arrangementGrid = new Grid<>(BaseSchedulingProducingArrangement.class, false);
+        arrangementGrid.addColumn(producingArrangement -> producingArrangement.getSchedulingProduct().getName())
+                .setResizable(true)
+                .setHeader("Product");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getPlanningFactoryInstance)
+                .setRenderer(new TextRenderer<>(producingArrangement -> Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
+                        .map(BaseSchedulingFactoryInstance::getReadableIdentifier)
+                        .orElse("N/A")
+                ))
+                .setResizable(true)
+                .setHeader("Assign Factory");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getArrangeDateTime)
+                .setRenderer(new LocalDateTimeRenderer<>(
+                        BaseSchedulingProducingArrangement::getArrangeDateTime,
+                        "yyyy-MM-dd HH:mm:ss"
+                ))
+                .setResizable(true)
+                .setHeader("Arrange Date Time");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getProducingDateTime)
+                .setRenderer(new LocalDateTimeRenderer<>(
+                        BaseSchedulingProducingArrangement::getProducingDateTime,
+                        "yyyy-MM-dd HH:mm:ss"
+                ))
+                .setResizable(true)
+                .setHeader("Producing Date Time");
+        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getCompletedDateTime)
+                .setRenderer(new LocalDateTimeRenderer<>(
+                        BaseSchedulingProducingArrangement::getCompletedDateTime,
+                        "yyyy-MM-dd HH:mm:ss"
+                ))
+                .setResizable(true)
+                .setHeader("Completed Date Time");
+        arrangementGrid.setSizeFull();
+        schedulingViewPresenter.setupPlayerActionGrid(arrangementGrid);
+
+        gameActionArticle.addAndExpand(arrangementGrid);
+        return gameActionArticle;
+    }
+
     private HorizontalLayout buildScorePanel() {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
@@ -104,33 +153,6 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         scoreAnalysisParagraph = new Paragraph();
         layout.add(new Details("Score Analysis:", scoreAnalysisParagraph));
         return layout;
-    }
-
-    private VerticalLayout buildGameActionTabSheetArticle() {
-        VerticalLayout gameActionArticle = new VerticalLayout();
-        arrangementGrid = new Grid<>(BaseSchedulingProducingArrangement.class, false);
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getSchedulingProduct)
-                .setResizable(true)
-                .setHeader("Product");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getPlanningFactoryInstance)
-                .setResizable(true)
-                .setHeader("Assign Factory");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getArrangeDateTime)
-                .setResizable(true)
-                .setHeader("Arrange Date Time");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getProducingDateTime)
-                .setResizable(true)
-                .setHeader("Producing Date Time");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getCompletedDateTime)
-                .setResizable(true)
-                .setHeader("Completed Date Time");
-        arrangementGrid.setSizeFull();
-        schedulingViewPresenter.setupPlayerActionGrid(arrangementGrid);
-
-//        gameActionArticle.add(buildOrderCard(this.schedulingViewPresenter.getSchedulingOrder()));
-        gameActionArticle.add(buildBtnPanel());
-        gameActionArticle.addAndExpand(arrangementGrid);
-        return gameActionArticle;
     }
 
     private VerticalLayout buildOrderCard(Set<SchedulingOrder> orderSet) {
@@ -167,7 +189,6 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     @Override
     protected void onDetach(DetachEvent detachEvent) {
         schedulingViewPresenter.reset();
-        arrangementGrid = null;
     }
 
     static class ReadonlyDateTimePicker extends DateTimePicker {

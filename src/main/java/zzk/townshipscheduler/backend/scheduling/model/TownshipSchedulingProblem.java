@@ -25,7 +25,7 @@ public class TownshipSchedulingProblem {
 
     public static final int HARD_BROKEN_CAPACITY = 1;
 
-    public static final int HARD_BROKEN_STOCK = 2;
+    public static final int HARD_BROKEN_PREREQUISITE_OR_STOCK = 2;
 
     public static final int SOFT_MIDDLE = 0;
 

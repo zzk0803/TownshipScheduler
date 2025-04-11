@@ -59,7 +59,6 @@ export class ByFactoryTimelineComponents
                             group: arrangement?.arrangeFactoryId,
                             content: `<p class="h-auto w-auto text-center">arrange: ${arrangement?.product}</p>`,
                             start: arrangement?.arrangeDateTime,
-                            end: arrangement?.arrangeDateTime,
                             type: "point",
                         });
 

@@ -20,7 +20,6 @@ import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
 import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
-import zzk.townshipscheduler.ui.views.orders.OrderListView;
 
 import java.util.List;
 import java.util.UUID;
@@ -93,7 +92,9 @@ public class SchedulingViewPresenter {
             this.ui.access(() -> {
                 getSchedulingView().getScoreAnalysisParagraph()
                         .setText(scoreAnalysis.toString());
-                getSchedulingView().getSchedulingVisTimelinePanel()
+                getSchedulingView().getArrangementGrid().setItems(producingArrangements);
+                getSchedulingView().getArrangementGrid().getListDataView().refreshAll();
+                getSchedulingView().getArrangementTimelinePanel()
                         .updateRemote(townshipSchedulingProblem);
             });
         };
