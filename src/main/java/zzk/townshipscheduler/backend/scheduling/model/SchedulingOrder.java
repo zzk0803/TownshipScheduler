@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public final class SchedulingOrder implements IGameActionObject {
+public final class SchedulingOrder implements IGameArrangeObject {
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -82,7 +82,7 @@ public final class SchedulingOrder implements IGameActionObject {
     }
 
     @Override
-    public List<BaseSchedulingProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
+    public List<BaseSchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
          return this.getProductAmountBill().entrySet()
                 .stream()
                 .flatMap(entry -> {

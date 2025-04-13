@@ -24,7 +24,6 @@ public class SchedulingPlayer {
 
     private Map<SchedulingProduct, Integer> productAmountMap;
 
-
     public Map<SchedulingProduct, Integer> toProductAmountMap(List<ArrangeConsequence> arrangeConsequenceList) {
         Map<SchedulingProduct, Integer> productStockMap = new LinkedHashMap<>(productAmountMap);
         for (ArrangeConsequence consequence : arrangeConsequenceList) {

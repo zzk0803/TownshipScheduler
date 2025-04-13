@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
+import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.ProducingStructureType;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -48,50 +48,54 @@ class TownshipDataHardcodeHotfixProcessor {
         );
 
         String[] threeInstanceFarmingPart = {"Cowshed", "Chicken Coop"};
-        Arrays.stream(threeInstanceFarmingPart).map(categoryString -> {
-            FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
-            fieldFactoryInfo.setCategory(categoryString);
-            fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
-            fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
-            fieldFactoryInfo.setDefaultInstanceAmount(1);
-            fieldFactoryInfo.setDefaultProducingCapacity(3);
-            fieldFactoryInfo.setDefaultReapWindowCapacity(3);
-            fieldFactoryInfo.setMaxInstanceAmount(3);
-            fieldFactoryInfo.setMaxProducingCapacity(6);
-            fieldFactoryInfo.setMaxReapWindowCapacity(6);
-            return fieldFactoryInfo;
-        }).forEach(fieldFactoryInfoEntity -> {
-            String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
-            transactionTemplate.executeWithoutResult(transactionStatus -> {
-                FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
-                        fieldFactoryInfoEntity);
-                Arrays.stream(strings).map(productEntityRepository::findByName)
-                        .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
-            });
-        });
+        Arrays.stream(threeInstanceFarmingPart)
+                .map(categoryString -> {
+                    FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
+                    fieldFactoryInfo.setCategory(categoryString);
+                    fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
+                    fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
+                    fieldFactoryInfo.setDefaultInstanceAmount(1);
+                    fieldFactoryInfo.setDefaultProducingCapacity(3);
+                    fieldFactoryInfo.setDefaultReapWindowCapacity(3);
+                    fieldFactoryInfo.setMaxInstanceAmount(3);
+                    fieldFactoryInfo.setMaxProducingCapacity(6);
+                    fieldFactoryInfo.setMaxReapWindowCapacity(6);
+                    return fieldFactoryInfo;
+                })
+                .forEach(fieldFactoryInfoEntity -> {
+                    String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
+                    transactionTemplate.executeWithoutResult(transactionStatus -> {
+                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
+                                fieldFactoryInfoEntity);
+                        Arrays.stream(strings).map(productEntityRepository::findByName)
+                                .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
+                    });
+                });
 
         String[] twoInstanceFarmingPart = {"Sheep Farm", "Apiary", "Pig Farm"};
-        Arrays.stream(twoInstanceFarmingPart).map(categoryString -> {
-            FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
-            fieldFactoryInfo.setCategory(categoryString);
-            fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
-            fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
-            fieldFactoryInfo.setDefaultInstanceAmount(1);
-            fieldFactoryInfo.setDefaultProducingCapacity(3);
-            fieldFactoryInfo.setDefaultReapWindowCapacity(3);
-            fieldFactoryInfo.setMaxInstanceAmount(3);
-            fieldFactoryInfo.setMaxProducingCapacity(6);
-            fieldFactoryInfo.setMaxReapWindowCapacity(6);
-            return fieldFactoryInfo;
-        }).forEach(fieldFactoryInfoEntity -> {
-            String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
-            transactionTemplate.executeWithoutResult(transactionStatus -> {
-                FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
-                        fieldFactoryInfoEntity);
-                Arrays.stream(strings).map(productEntityRepository::findByName)
-                        .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
-            });
-        });
+        Arrays.stream(twoInstanceFarmingPart)
+                .map(categoryString -> {
+                    FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
+                    fieldFactoryInfo.setCategory(categoryString);
+                    fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
+                    fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
+                    fieldFactoryInfo.setDefaultInstanceAmount(1);
+                    fieldFactoryInfo.setDefaultProducingCapacity(3);
+                    fieldFactoryInfo.setDefaultReapWindowCapacity(3);
+                    fieldFactoryInfo.setMaxInstanceAmount(3);
+                    fieldFactoryInfo.setMaxProducingCapacity(6);
+                    fieldFactoryInfo.setMaxReapWindowCapacity(6);
+                    return fieldFactoryInfo;
+                })
+                .forEach(fieldFactoryInfoEntity -> {
+                    String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
+                    transactionTemplate.executeWithoutResult(transactionStatus -> {
+                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
+                                fieldFactoryInfoEntity);
+                        Arrays.stream(strings).map(productEntityRepository::findByName)
+                                .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
+                    });
+                });
 
         FieldFactoryInfoEntity duckFeeder = new FieldFactoryInfoEntity();
         duckFeeder.setCategory("Duck Feeder");

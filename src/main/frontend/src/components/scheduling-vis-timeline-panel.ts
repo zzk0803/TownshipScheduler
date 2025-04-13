@@ -30,8 +30,8 @@ export class SchedulingVisTimelinePanel
     }
 
     render() {
-        return html`
-            <vaadin-details class="flex flex-wrap w-full h-auto" summary="Unsigned Arrangement">
+        /*
+                    <vaadin-details class="flex flex-wrap w-full h-auto" summary="Unsigned Arrangement">
                 <div class="flex flex-row flex-wrap m-xs p-xs">
                     ${
                             this.producingArrangements
@@ -49,7 +49,8 @@ export class SchedulingVisTimelinePanel
                     }
                 </div>
             </vaadin-details>
-
+         */
+        return html`
             <by-factory-timeline-components
                     .schedulingFactory="${this.schedulingFactory}"
                     .producingArrangements="${this.producingArrangements}"

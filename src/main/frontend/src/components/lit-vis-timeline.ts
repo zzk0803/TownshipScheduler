@@ -21,11 +21,6 @@ export class LitVisTimeline
             #vis-container {
                 flex: 1 1 auto;
             }
-
-            .vis-time-axis .vis-grid.vis-saturday,
-            .vis-time-axis .vis-grid.vis-sunday {
-                background: #D3D7CFFF;
-            }
         `
     ]
 

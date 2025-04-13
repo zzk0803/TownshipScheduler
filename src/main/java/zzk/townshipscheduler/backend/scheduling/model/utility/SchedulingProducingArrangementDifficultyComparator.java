@@ -11,12 +11,12 @@ public class SchedulingProducingArrangementDifficultyComparator implements Compa
     public int compare(BaseSchedulingProducingArrangement former, BaseSchedulingProducingArrangement latter) {
         return new CompareToBuilder()
                 .append(
-                        former.getSupportProducingArrangements().size(),
-                        latter.getSupportProducingArrangements().size()
-                )
-                .append(
                         former.getPrerequisiteProducingArrangements().size(),
                         latter.getPrerequisiteProducingArrangements().size()
+                )
+                .append(
+                        former.getSupportProducingArrangements().size(),
+                        latter.getSupportProducingArrangements().size()
                 )
                 .toComparison();
     }

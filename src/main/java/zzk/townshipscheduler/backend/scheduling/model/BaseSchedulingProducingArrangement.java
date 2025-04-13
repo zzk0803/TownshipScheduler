@@ -1,11 +1,14 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
+import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -39,19 +42,21 @@ public abstract class BaseSchedulingProducingArrangement {
     protected String uuid;
 
     @JsonIgnore
-    protected IGameActionObject targetActionObject;
+    protected IGameArrangeObject targetActionObject;
 
     @JsonIgnore
     @ToString.Include
-    protected IGameActionObject currentActionObject;
+    protected IGameArrangeObject currentActionObject;
 
     @JsonIgnore
     protected boolean orderDirect;
 
     @JsonIgnore
+    @DeepPlanningClone
     protected List<BaseSchedulingProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
 
     @JsonIgnore
+    @DeepPlanningClone
     protected List<BaseSchedulingProducingArrangement> supportProducingArrangements = new ArrayList<>();
 
     @JsonIgnore
@@ -64,16 +69,16 @@ public abstract class BaseSchedulingProducingArrangement {
     protected SchedulingProducingExecutionMode producingExecutionMode;
 
     public BaseSchedulingProducingArrangement(
-            IGameActionObject targetActionObject,
-            IGameActionObject currentActionObject
+            IGameArrangeObject targetActionObject,
+            IGameArrangeObject currentActionObject
     ) {
         this.targetActionObject = targetActionObject;
         this.currentActionObject = currentActionObject;
     }
 
     public static SchedulingProducingArrangementFactoryTypeQueue createProducingArrangementFactoryQueue(
-            IGameActionObject targetActionObject,
-            IGameActionObject currentActionObject
+            IGameArrangeObject targetActionObject,
+            IGameArrangeObject currentActionObject
     ) {
         SchedulingProducingArrangementFactoryTypeQueue producingArrangement
                 = new SchedulingProducingArrangementFactoryTypeQueue(
@@ -85,8 +90,8 @@ public abstract class BaseSchedulingProducingArrangement {
     }
 
     public static SchedulingProducingArrangementFactoryTypeSlot createProducingArrangementFactorySlot(
-            IGameActionObject targetActionObject,
-            IGameActionObject currentActionObject
+            IGameArrangeObject targetActionObject,
+            IGameArrangeObject currentActionObject
     ) {
         SchedulingProducingArrangementFactoryTypeSlot producingArrangement = new SchedulingProducingArrangementFactoryTypeSlot(
                 targetActionObject,
@@ -109,10 +114,6 @@ public abstract class BaseSchedulingProducingArrangement {
     @JsonIgnore
     public SchedulingOrder getSchedulingOrder() {
         return ((SchedulingOrder) getTargetActionObject());
-    }
-
-    public <T extends IGameActionObject> T asGameObject(Class<T> gameObjectClass) {
-        return gameObjectClass.cast(this);
     }
 
     public void readyElseThrow() {
@@ -228,6 +229,8 @@ public abstract class BaseSchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public abstract LocalDateTime getArrangeDateTime();
+
+    public abstract void setPlanningDateTimeSlot(SchedulingDateTimeSlot computedDataTimeSlot);
 
     @JsonProperty("producingDuration")
     public Duration getProducingDuration() {

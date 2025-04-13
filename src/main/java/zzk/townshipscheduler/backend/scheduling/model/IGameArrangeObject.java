@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public sealed interface IGameActionObject
+public sealed interface IGameArrangeObject
         permits SchedulingOrder, SchedulingProduct {
 
     Long longIdentity();
@@ -18,7 +18,7 @@ public sealed interface IGameActionObject
 
     List<? extends BaseSchedulingProducingArrangement>  calcFactoryActions();
 
-    List<? extends BaseSchedulingProducingArrangement> calcFactoryActions(IGameActionObject targetObject);
+    List<? extends BaseSchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject);
 
     Set<SchedulingProducingExecutionMode> getExecutionModeSet();
 

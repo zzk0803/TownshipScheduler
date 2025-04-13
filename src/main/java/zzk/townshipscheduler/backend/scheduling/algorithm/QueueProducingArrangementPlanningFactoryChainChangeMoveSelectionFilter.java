@@ -17,7 +17,7 @@ public class QueueProducingArrangementPlanningFactoryChainChangeMoveSelectionFil
     ) {
         var entity = (SchedulingProducingArrangementFactoryTypeQueue) selection.getEntity();
         var toPlanningValue = (SchedulingFactoryInstanceTypeQueue) selection.getToPlanningValue();
-        return entity.getRequiredFactoryInfo() == toPlanningValue.getFactoryInfo();
+        return entity.getRequiredFactoryInfo() .typeEqual(toPlanningValue.getFactoryInfo());
     }
 
 }

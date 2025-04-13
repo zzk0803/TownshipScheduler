@@ -56,19 +56,22 @@ export class ByFactoryTimelineComponents
                     (arrangement) => {
                         dataSetItems.push({
                             id: arrangement?.uuid + "_arrange",
+                            className: 'arrange',
                             group: arrangement?.arrangeFactoryId,
-                            content: `<p class="h-auto w-auto text-center">arrange: ${arrangement?.product}</p>`,
+                            content: `<p class="h-auto w-auto text-center">arrange: ${arrangement?.product + "(" + arrangement.id + ")"}</p>`,
                             start: arrangement?.arrangeDateTime,
                             type: "point",
+                            subgroup: arrangement?.uuid
                         });
 
                         dataSetItems.push({
                             id: arrangement?.uuid + "_in_game",
                             group: arrangement?.arrangeFactoryId,
-                            content: `<p class="h-auto w-auto text-center">in game: ${arrangement?.product}</p>`,
+                            content: `<p class="h-auto w-auto text-center"> ${arrangement.id}</p>`,
                             start: arrangement?.gameProducingDateTime,
                             end: arrangement?.gameCompletedDateTime,
-                            type: "range"
+                            type: "range",
+                            subgroup: arrangement?.uuid
                         });
                     })
 
@@ -82,9 +85,33 @@ export class ByFactoryTimelineComponents
                     .datasets="${this.dataItems}"
                     .groups="${this.groups}"
                     .options="${{
-                        timeAxis: {scale: "minute", step: 30},
+                        timeAxis: {scale: "minute", step: 20},
                         orientation: {axis: "top"},
-                        zoomKey: "ctrlKey"
+                        zoomKey: "ctrlKey",
+                        stackSubgroups: false,
+                        stack: false,
+                        tooltip: {
+                            followMouse: true,
+                            template: function (originalItemData: any, parsedItemData: any) {
+                                let start = originalItemData.start;
+                                let resultTemplate = `
+                                        <div style="display: flex;flex-direction: column;border: 1px solid black">
+                                            <div style="display: flex">Arrange:${start}</div>
+                                        </div>
+                                        `;
+                                if (originalItemData.end) {
+                                    let end = originalItemData.end;
+                                    resultTemplate =
+                                            `
+                                        <div style="display: flex;flex-direction: column;border: 1px solid black">
+                                            <div style="display: flex">Producing:${start}</div>
+                                            <div style="display: flex">Completed:${end}</div>
+                                        </div>
+                                    `
+                                }
+                                return resultTemplate;
+                            },
+                        }
                     }}"
                     .fromDateTime="${this.dateWindowStartString}"
                     .toDateTime="${this.dateWindowEndString}">

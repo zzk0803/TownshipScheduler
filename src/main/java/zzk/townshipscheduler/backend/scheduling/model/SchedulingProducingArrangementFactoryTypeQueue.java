@@ -8,9 +8,9 @@ import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactoryTypeQueueDateTimeVariableListener;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 
 import java.time.LocalDateTime;
 
@@ -72,8 +72,8 @@ public class SchedulingProducingArrangementFactoryTypeQueue
 //    private LocalDateTime shadowCompletedDateTime;
 
     public SchedulingProducingArrangementFactoryTypeQueue(
-            IGameActionObject targetActionObject,
-            IGameActionObject currentActionObject
+            IGameArrangeObject targetActionObject,
+            IGameArrangeObject currentActionObject
     ) {
         super(targetActionObject, currentActionObject);
     }

@@ -32,8 +32,8 @@ public class SchedulingProducingArrangementFactoryTypeSlot extends BaseSchedulin
     private SchedulingFactoryInstanceTypeSlot planningFactory;
 
     public SchedulingProducingArrangementFactoryTypeSlot(
-            IGameActionObject targetActionObject,
-            IGameActionObject currentActionObject
+            IGameArrangeObject targetActionObject,
+            IGameArrangeObject currentActionObject
     ) {
         super(targetActionObject, currentActionObject);
     }

@@ -4,14 +4,14 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import lombok.*;
-import org.apache.commons.lang3.builder.CompareToBuilder;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.select.*;
 
-import java.util.*;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -20,6 +20,7 @@ public class SchedulingFactoryInfo {
 
     @JsonUnwrapped
     @ToString.Include
+    @EqualsAndHashCode.Include
     private Id id;
 
     @ToString.Include
@@ -55,6 +56,10 @@ public class SchedulingFactoryInfo {
 
     public void appendPortfolioProduct(SchedulingProduct schedulingProduct) {
         this.portfolio.add(schedulingProduct);
+    }
+
+    public boolean typeEqual(SchedulingFactoryInfo that) {
+        return this.getCategoryName().equals(that.getCategoryName());
     }
 
     @Value

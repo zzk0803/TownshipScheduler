@@ -15,9 +15,9 @@ import java.util.Optional;
 @Tag("scheduling-vis-timeline-panel")
 @NpmPackage(value = "vis-timeline", version = "7.7.3")
 @NpmPackage(value = "@js-joda/core", version = "5.6.3")
-@JsModule("./scheduling-vis-timeline-panel.ts")
-@JsModule("./by-factory-timeline-components.ts")
-@JsModule("./lit-vis-timeline.ts")
+@JsModule("./src/components/scheduling-vis-timeline-panel.ts")
+@JsModule("./src/components/by-factory-timeline-components.ts")
+@JsModule("./src/components/lit-vis-timeline.ts")
 public class LitSchedulingVisTimelinePanel extends Component {
 
     private SchedulingViewPresenter schedulingViewPresenter;

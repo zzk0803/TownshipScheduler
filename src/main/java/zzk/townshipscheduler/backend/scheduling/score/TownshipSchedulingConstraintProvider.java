@@ -11,7 +11,6 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -27,7 +26,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidBrokenPrerequisiteStock(constraintFactory),
                 shouldArrangementDateTimeInQueueLegal(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
-                shouldNotArrangeInPlayerSleepTime(constraintFactory),
+//                shouldNotArrangeInPlayerSleepTime(constraintFactory),
                 preferArrangeAsSoonAsPassable(constraintFactory),
                 preferMinimizeMakeSpan(constraintFactory)
         };
@@ -38,7 +37,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .filter(schedulingPlayerProducingArrangement -> {
                     SchedulingFactoryInstanceTypeQueue planningFactoryInstance = schedulingPlayerProducingArrangement.getPlanningFactoryInstance();
                     return planningFactoryInstance == null
-                           || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.getRequiredFactoryInfo();
+                           || !planningFactoryInstance.getSchedulingFactoryInfo().typeEqual( schedulingPlayerProducingArrangement.getRequiredFactoryInfo());
                 })
                 .penalize(
                         BendableScore.ofHard(
@@ -56,7 +55,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .filter(schedulingPlayerProducingArrangement -> {
                     SchedulingFactoryInstanceTypeSlot planningFactoryInstance = schedulingPlayerProducingArrangement.getPlanningFactoryInstance();
                     return planningFactoryInstance == null
-                           || planningFactoryInstance.getSchedulingFactoryInfo() != schedulingPlayerProducingArrangement.getRequiredFactoryInfo();
+                           || !planningFactoryInstance.getSchedulingFactoryInfo().typeEqual( schedulingPlayerProducingArrangement.getRequiredFactoryInfo());
                 })
                 .penalize(
                         BendableScore.ofHard(
@@ -89,7 +88,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         BendableScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_CAPACITY,
+                                TownshipSchedulingProblem.HARD_BROKEN_ARRANGEMENT_DATE_TIME,
                                 1
                         ),
                         (factoryInstance, arrangement, integerDurationPair) -> {
@@ -119,7 +118,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         BendableScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_CAPACITY,
+                                TownshipSchedulingProblem.HARD_BROKEN_ARRANGEMENT_DATE_TIME,
                                 1
                         ),
                         (factoryInstance, arrangement, integerDurationPair) -> {
@@ -171,7 +170,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         BendableScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_PREREQUISITE_OR_STOCK,
+                                TownshipSchedulingProblem.HARD_BROKEN_ARRANGEMENT_DATE_TIME,
                                 5
                         ),
                         ((productArrangement, materialArrangement) -> {
@@ -194,15 +193,20 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 .filter(schedulingProducingArrangementFactoryTypeQueue -> schedulingProducingArrangementFactoryTypeQueue.getArrangeDateTime() != null),
                         Joiners.equal(SchedulingProducingArrangementFactoryTypeQueue::getPlanningAnchorFactory),
                         Joiners.filtering((former, latter) -> {
-                            return former.getNextQueueProducingArrangement() == latter
-                                   && latter.getArrangeDateTime().isBefore(former.getArrangeDateTime());
+                            boolean adjacent
+                                    = former.getNextQueueProducingArrangement() == latter
+                                      || latter.getPlanningPreviousProducingArrangementOrFactory() == former;
+                            boolean legal
+                                    = former.getArrangeDateTime().isBefore(latter.getArrangeDateTime())
+                                      || former.getArrangeDateTime().isEqual(latter.getArrangeDateTime());
+                            return adjacent && !legal;
                         })
                 )
                 .penalize(
-                        BendableScore.ofSoft(
+                        BendableScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_MIDDLE,
+                                TownshipSchedulingProblem.HARD_BROKEN_ARRANGEMENT_DATE_TIME,
                                 1
                         ),
                         ((former, latter) -> {
@@ -233,7 +237,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_MIDDLE,
+                                TownshipSchedulingProblem.SOFT_ORDER_DEAD_LINE,
                                 1000
                         ),
                         ((schedulingOrder, producingArrangement) -> {
@@ -246,28 +250,28 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("shouldNotBrokenDeadlineOrder");
     }
 
-    private Constraint shouldNotArrangeInPlayerSleepTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
-                .filter(producingArrangement -> producingArrangement.getArrangeDateTime() != null)
-                .filter(producingArrangement -> {
-                    LocalDateTime arrangeDateTime = producingArrangement.getArrangeDateTime();
-                    LocalTime localTime = arrangeDateTime.toLocalTime();
-                    return localTime.isAfter(
-                            producingArrangement.getSchedulingPlayer().getSleepStart()
-                    ) || localTime.isBefore(
-                            producingArrangement.getSchedulingPlayer().getSleepEnd()
-                    );
-                })
-                .penalize(
-                        BendableScore.ofSoft(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_MIDDLE,
-                                100
-                        )
-                )
-                .asConstraint("shouldNotArrangeInPlayerSleepTime");
-    }
+//    private Constraint shouldNotArrangeInPlayerSleepTime(@NonNull ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)
+//                .filter(producingArrangement -> producingArrangement.getArrangeDateTime() != null)
+//                .filter(producingArrangement -> {
+//                    LocalDateTime arrangeDateTime = producingArrangement.getArrangeDateTime();
+//                    LocalTime localTime = arrangeDateTime.toLocalTime();
+//                    return localTime.isAfter(
+//                            producingArrangement.getSchedulingPlayer().getSleepStart()
+//                    ) || localTime.isBefore(
+//                            producingArrangement.getSchedulingPlayer().getSleepEnd()
+//                    );
+//                })
+//                .penalize(
+//                        BendableScore.ofSoft(
+//                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+//                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+//                                TownshipSchedulingProblem.SOFT_ORDER_DEAD_LINE,
+//                                100
+//                        )
+//                )
+//                .asConstraint("shouldNotArrangeInPlayerSleepTime");
+//    }
 
     private Constraint preferArrangeAsSoonAsPassable(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(BaseSchedulingProducingArrangement.class)

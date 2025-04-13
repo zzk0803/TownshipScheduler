@@ -104,7 +104,9 @@ public class SchedulingViewPresenter {
                 .withProblem(townshipSchedulingProblem)
                 .withBestSolutionConsumer(solutionConsumer)
                 .withFinalBestSolutionConsumer(solutionConsumer.andThen((_) -> {
-                    getSchedulingView().getTriggerButton().fromState2ToState1();
+                    this.ui.access(() -> {
+                        getSchedulingView().getTriggerButton().fromState2ToState1();
+                    });
                 }))
                 .withExceptionHandler((uuid, throwable) -> {
                     throwable.printStackTrace();

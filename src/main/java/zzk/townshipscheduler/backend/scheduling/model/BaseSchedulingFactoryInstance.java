@@ -77,4 +77,8 @@ public abstract class BaseSchedulingFactoryInstance {
         return schedulingFactoryInfo.getCategoryName();
     }
 
+    public boolean typeEqual(BaseSchedulingFactoryInstance that) {
+        return this.getSchedulingFactoryInfo().typeEqual(that.getSchedulingFactoryInfo());
+    }
+
 }

@@ -25,8 +25,8 @@ public class SlotProducingArrangementPlanningFactorySwapMoveSelectionFilter
                 = (SchedulingProducingArrangementFactoryTypeSlot) selection.getRightEntity();
         SchedulingFactoryInfo rightProducingRequiredFactoryInfo = rightEntity.getRequiredFactoryInfo();
         SchedulingFactoryInstanceTypeSlot rightEntityPlanningFactory = rightEntity.getPlanningFactory();
-        return leftProducingRequiredFactoryInfo == rightEntityPlanningFactory.getSchedulingFactoryInfo()
-                || rightProducingRequiredFactoryInfo == leftEntityPlanningFactory.getSchedulingFactoryInfo();
+        return leftProducingRequiredFactoryInfo .typeEqual(rightEntityPlanningFactory.getSchedulingFactoryInfo())
+                || rightProducingRequiredFactoryInfo .typeEqual(leftEntityPlanningFactory.getSchedulingFactoryInfo());
     }
 
 }

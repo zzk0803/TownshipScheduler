@@ -3,12 +3,9 @@ package zzk.townshipscheduler.backend.scheduling.algorithm;
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.TailChainSwapMove;
-import zzk.townshipscheduler.backend.scheduling.model.ISchedulingFactoryOrFactoryArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue;
-import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 
-public class QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter
+public class ArrangeDateTimePhaseQueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter
         implements SelectionFilter<TownshipSchedulingProblem, TailChainSwapMove<TownshipSchedulingProblem>> {
 
     @Override
@@ -20,7 +17,7 @@ public class QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionF
         var rightValue = ((ISchedulingFactoryOrFactoryArrangement) selection.getRightValue());
         SchedulingFactoryInfo leftEntityRequiredFactoryInfo = leftEntity.getRequiredFactoryInfo();
         SchedulingFactoryInfo rightValueFactoryInfo = rightValue.getFactoryInfo();
-        return leftEntityRequiredFactoryInfo.typeEqual(rightValueFactoryInfo);
+        return leftEntityRequiredFactoryInfo.typeEqual(rightValueFactoryInfo) && rightValue instanceof SchedulingFactoryInstanceTypeQueue;
     }
 
 }

@@ -17,7 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-public final class SchedulingProduct implements IGameActionObject {
+public final class SchedulingProduct implements IGameArrangeObject {
 
     @JsonUnwrapped
     @EqualsAndHashCode.Include
@@ -81,7 +81,7 @@ public final class SchedulingProduct implements IGameActionObject {
     }
 
     @Override
-    public List<BaseSchedulingProducingArrangement> calcFactoryActions(IGameActionObject targetObject) {
+    public List<BaseSchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
         switch (getRequireFactory().getProducingStructureType()) {
             case QUEUE -> {
                 return List.of(

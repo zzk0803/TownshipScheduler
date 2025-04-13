@@ -4,11 +4,12 @@ import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import ai.timefold.solver.core.api.solver.phase.PhaseCommand;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
-import java.util.stream.IntStream;
 
 public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedulingProblem> {
 
@@ -26,15 +27,29 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         List<BaseSchedulingProducingArrangement> producingArrangements = workingSolution.getBaseProducingArrangements();
         List<SchedulingFactoryInstanceTypeSlot> slotFactoryInstanceList = workingSolution.getSchedulingFactoryInstanceTypeSlotList();
         List<SchedulingFactoryInstanceTypeQueue> queueFactoryInstanceList = workingSolution.getSchedulingFactoryInstanceTypeQueueList();
+        LocalDateTime startDateTime = workingSolution.getSchedulingWorkTimeLimit().getStartDateTime();
 
         Map<SchedulingFactoryInstanceTypeQueue, SchedulingProducingArrangementFactoryTypeQueue> factoryProducingMap = new LinkedHashMap<>();
         for (BaseSchedulingProducingArrangement producingArrangement : producingArrangements) {
+
             if (producingArrangement instanceof SchedulingProducingArrangementFactoryTypeSlot slotProducingArrangement) {
+                Duration approximateDelay
+                        = producingArrangement.getPrerequisiteProducingArrangements()
+                        .stream()
+                        .map(BaseSchedulingProducingArrangement::getProducingDuration)
+                        .max(Duration::compareTo)
+                        .orElse(Duration.ZERO);
+                SchedulingDateTimeSlot computedDataTimeSlot
+                        = SchedulingDateTimeSlot.fromRangeCeil(
+                        dateTimeSlotSet,
+                        startDateTime.plus(approximateDelay)
+                ).orElse(dateTimeSlotSet.getLast());
+
                 scoreDirector.beforeVariableChanged(
                         slotProducingArrangement,
                         BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
                 );
-                slotProducingArrangement.setPlanningDateTimeSlot(dateTimeSlotSet.getFirst());
+                producingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
                 scoreDirector.afterVariableChanged(
                         slotProducingArrangement,
                         BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
@@ -44,7 +59,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 SchedulingFactoryInfo requireFactory
                         = slotProducingArrangement.getSchedulingProduct().getRequireFactory();
                 for (SchedulingFactoryInstanceTypeSlot slotFactoryInstance : slotFactoryInstanceList) {
-                    if (slotFactoryInstance.getSchedulingFactoryInfo() == requireFactory) {
+                    if (requireFactory.typeEqual(slotFactoryInstance.getSchedulingFactoryInfo())) {
                         scoreDirector.beforeVariableChanged(
                                 slotProducingArrangement,
                                 SchedulingProducingArrangementFactoryTypeSlot.PLANNING_FACTORY
@@ -59,11 +74,23 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                     }
                 }
             } else if (producingArrangement instanceof SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement) {
+                Duration approximateDelay
+                        = producingArrangement.getPrerequisiteProducingArrangements()
+                        .stream()
+                        .map(BaseSchedulingProducingArrangement::getProducingDuration)
+                        .max(Duration::compareTo)
+                        .orElse(Duration.ZERO);
+                SchedulingDateTimeSlot computedDataTimeSlot
+                        = SchedulingDateTimeSlot.fromRangeCeil(
+                        dateTimeSlotSet,
+                        startDateTime.plus(approximateDelay)
+                ).orElse(dateTimeSlotSet.getLast());
+
                 scoreDirector.beforeVariableChanged(
                         queueProducingArrangement,
                         BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
                 );
-                queueProducingArrangement.setPlanningDateTimeSlot(dateTimeSlotSet.getFirst());
+                queueProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
                 scoreDirector.afterVariableChanged(
                         queueProducingArrangement,
                         BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT

@@ -17,9 +17,7 @@ public class SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter
     ) {
         var entity = (SchedulingProducingArrangementFactoryTypeSlot) selection.getEntity();
         var toPlanningValue = (SchedulingFactoryInstanceTypeSlot) selection.getToPlanningValue();
-        return entity.getRequiredFactoryInfo() == toPlanningValue.getSchedulingFactoryInfo()
-               && entity.getPlanningFactory() != toPlanningValue
-                ;
+        return entity.getRequiredFactoryInfo().typeEqual(toPlanningValue.getSchedulingFactoryInfo());
     }
 
 }

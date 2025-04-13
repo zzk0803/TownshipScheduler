@@ -9,6 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
@@ -41,6 +42,26 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     ) {
         return (formerDateTime.isEqual(dateTime) || formerDateTime.isBefore(dateTime))
                && latterDateTime.isAfter(dateTime);
+    }
+
+    public static Optional<SchedulingDateTimeSlot> fromRangeCeil(
+            List<SchedulingDateTimeSlot> range,
+            LocalDateTime localDateTime
+    ) {
+        if (range == null || range.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
+        if (localDateTime.isAfter(range.getLast().getStart())) {
+            return Optional.empty();
+        }
+
+        return range.stream()
+                .limit(1)
+                .dropWhile(iteratingSlot -> localDateTime.isBefore(iteratingSlot.getStart()))
+                .takeWhile(iteratingSlot -> localDateTime.isEqual(iteratingSlot.getStart()) || localDateTime.isAfter(
+                        iteratingSlot.getStart()))
+                .findFirst();
     }
 
     public static List<SchedulingDateTimeSlot> toValueRange(
