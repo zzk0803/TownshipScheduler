@@ -9,9 +9,11 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
 @JsonIgnoreType
 public class SchedulingFactoryInstanceTypeQueue
@@ -40,6 +42,22 @@ public class SchedulingFactoryInstanceTypeQueue
     @Override
     public SchedulingFactoryInfo getFactoryInfo() {
         return super.getSchedulingFactoryInfo();
+    }
+
+    @JsonIgnore
+    public List<SchedulingProducingArrangementFactoryTypeQueue> getFlattenProducingArrangements() {
+        SchedulingProducingArrangementFactoryTypeQueue firstArrangement
+                = this.getNextQueueProducingArrangement();
+
+        if (Objects.isNull(firstArrangement)) {
+            return List.of();
+        }
+
+        return Stream.iterate(
+                firstArrangement,
+                (arrangement) -> arrangement.getNextQueueProducingArrangement() != null,
+                SchedulingProducingArrangementFactoryTypeQueue::getNextQueueProducingArrangement
+        ).toList();
     }
 
     @Override

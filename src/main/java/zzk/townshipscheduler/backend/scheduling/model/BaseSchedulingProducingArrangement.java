@@ -2,20 +2,17 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 
 @Data
@@ -110,6 +107,18 @@ public abstract class BaseSchedulingProducingArrangement {
     public SchedulingProduct getSchedulingProduct() {
         return (SchedulingProduct) getCurrentActionObject();
     }
+
+    @JsonIgnore
+    public boolean isFactoryMatch() {
+        return Objects.nonNull(getPlanningFactoryInstance())
+               && getPlanningFactoryInstance().getSchedulingFactoryInfo()
+                       .typeEqual(getSchedulingProduct().getRequireFactory());
+    }
+
+    @JsonProperty("schedulingFactory")
+    @JsonManagedReference
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public abstract BaseSchedulingFactoryInstance getPlanningFactoryInstance();
 
     @JsonIgnore
     public SchedulingOrder getSchedulingOrder() {
@@ -213,11 +222,6 @@ public abstract class BaseSchedulingProducingArrangement {
     @JsonIgnore
     public abstract SchedulingDateTimeSlot getPlanningDateTimeSlot();
 
-    @JsonProperty("schedulingFactory")
-    @JsonManagedReference
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    public abstract BaseSchedulingFactoryInstance getPlanningFactoryInstance();
-
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -231,6 +235,34 @@ public abstract class BaseSchedulingProducingArrangement {
     public abstract LocalDateTime getArrangeDateTime();
 
     public abstract void setPlanningDateTimeSlot(SchedulingDateTimeSlot computedDataTimeSlot);
+
+    public List<BaseSchedulingProducingArrangement> getDeepPrerequisiteProducingArrangements() {
+        LinkedList<BaseSchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
+        Set<BaseSchedulingProducingArrangement> visited = new HashSet<>();
+        List<BaseSchedulingProducingArrangement> result = new ArrayList<>();
+
+        while (!queue.isEmpty()) {
+            BaseSchedulingProducingArrangement current = queue.removeFirst();
+
+            if (!visited.add(current)) {
+                continue;
+            }
+
+            List<BaseSchedulingProducingArrangement> prerequisites =
+                    current.getPrerequisiteProducingArrangements();
+
+            if (prerequisites != null) {
+                for (BaseSchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
+                    if (iteratingSingleArrangement != null) {
+                        result.add(iteratingSingleArrangement);
+                        queue.add(iteratingSingleArrangement);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
 
     @JsonProperty("producingDuration")
     public Duration getProducingDuration() {

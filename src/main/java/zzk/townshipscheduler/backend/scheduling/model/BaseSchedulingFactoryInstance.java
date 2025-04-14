@@ -45,8 +45,7 @@ public abstract class BaseSchedulingFactoryInstance {
         var filteredArrangeConsequences = useFilteredArrangeConsequences();
         Duration firstCapacityIncreaseDuration
                 = filteredArrangeConsequences.stream()
-                .filter(arrangeConsequence -> arrangeConsequence.getLocalDateTime()
-                        .isAfter(schedulingDateTimeSlot.getStart()))
+                .filter(arrangeConsequence -> arrangeConsequence.getLocalDateTime().isAfter(schedulingDateTimeSlot.getStart()))
                 .filter(arrangeConsequence -> arrangeConsequence.getResourceChange() instanceof ArrangeConsequence.Increase)
                 .findFirst()
                 .map(arrangeConsequence -> Duration.between(

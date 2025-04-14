@@ -34,7 +34,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
 
             if (producingArrangement instanceof SchedulingProducingArrangementFactoryTypeSlot slotProducingArrangement) {
                 Duration approximateDelay
-                        = producingArrangement.getPrerequisiteProducingArrangements()
+                        = producingArrangement.getDeepPrerequisiteProducingArrangements()
                         .stream()
                         .map(BaseSchedulingProducingArrangement::getProducingDuration)
                         .max(Duration::compareTo)

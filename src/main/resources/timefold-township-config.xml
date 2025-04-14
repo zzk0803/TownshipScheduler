@@ -5,9 +5,9 @@
 >
 
     <environmentMode>PHASE_ASSERT</environmentMode>
+    <randomSeed>42</randomSeed>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
-    <!--    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeQueueFactoryInstance</entityClass>-->
     <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeSlot</entityClass>
     <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
     </entityClass>
@@ -27,43 +27,43 @@
     </customPhase>
 
     <!--region not work-->
-    <!--    <constructionHeuristic>-->
-    <!--        <queuedEntityPlacer>-->
-    <!--            <entitySelector id="ches1">-->
-    <!--                <entityClass>-->
-    <!--                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot-->
-    <!--                </entityClass>-->
-    <!--                <cacheType>PHASE</cacheType>-->
-    <!--                <selectionOrder>SORTED</selectionOrder>-->
-    <!--                <sorterManner>DECREASING_DIFFICULTY_IF_AVAILABLE</sorterManner>-->
-    <!--            </entitySelector>-->
-    <!--            <cartesianProductMoveSelector>-->
-    <!--                <changeMoveSelector>-->
-    <!--                    <filterClass>-->
-    <!--                        zzk.townshipscheduler.backend.scheduling.algorithm.SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
-    <!--                    </filterClass>-->
-    <!--                    <entitySelector mimicSelectorRef="ches1"/>-->
-    <!--                    <valueSelector variableName="planningFactory">-->
-    <!--                        <downcastEntityClass>-->
-    <!--                            zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeSlotFactoryInstance-->
-    <!--                        </downcastEntityClass>-->
-    <!--                    </valueSelector>-->
-    <!--                </changeMoveSelector>-->
+    <!--        <constructionHeuristic>-->
+    <!--            <queuedEntityPlacer>-->
+    <!--                <entitySelector id="ches1">-->
+    <!--                    <entityClass>-->
+    <!--                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot-->
+    <!--                    </entityClass>-->
+    <!--                    <cacheType>PHASE</cacheType>-->
+    <!--                    <selectionOrder>SORTED</selectionOrder>-->
+    <!--                    <sorterManner>DECREASING_DIFFICULTY_IF_AVAILABLE</sorterManner>-->
+    <!--                </entitySelector>-->
+    <!--                <cartesianProductMoveSelector>-->
+    <!--                    <changeMoveSelector>-->
+    <!--                        <filterClass>-->
+    <!--                            zzk.townshipscheduler.backend.scheduling.algorithm.SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
+    <!--                        </filterClass>-->
+    <!--                        <entitySelector mimicSelectorRef="ches1"/>-->
+    <!--                        <valueSelector variableName="planningFactory">-->
+    <!--                            <downcastEntityClass>-->
+    <!--                                zzk.townshipscheduler.backend.scheduling.model.SchedulingTypeSlotFactoryInstance-->
+    <!--                            </downcastEntityClass>-->
+    <!--                        </valueSelector>-->
+    <!--                    </changeMoveSelector>-->
 
-    <!--                <changeMoveSelector>-->
-    <!--                    <valueSelector variableName="planningDateTimeSlot">-->
-    <!--                        <cacheType>PHASE</cacheType>-->
-    <!--                        <selectionOrder>SORTED</selectionOrder>-->
-    <!--                        <sorterManner>INCREASING_STRENGTH_IF_AVAILABLE</sorterManner>-->
-    <!--                    </valueSelector>-->
-    <!--                </changeMoveSelector>-->
-    <!--            </cartesianProductMoveSelector>-->
-    <!--        </queuedEntityPlacer>-->
+    <!--                    <changeMoveSelector>-->
+    <!--                        <valueSelector variableName="planningDateTimeSlot">-->
+    <!--                            <cacheType>PHASE</cacheType>-->
+    <!--                            <selectionOrder>SORTED</selectionOrder>-->
+    <!--                            <sorterManner>INCREASING_STRENGTH_IF_AVAILABLE</sorterManner>-->
+    <!--                        </valueSelector>-->
+    <!--                    </changeMoveSelector>-->
+    <!--                </cartesianProductMoveSelector>-->
+    <!--            </queuedEntityPlacer>-->
 
-    <!--        <forager>-->
-    <!--            <pickEarlyType>FIRST_FEASIBLE_SCORE</pickEarlyType>-->
-    <!--        </forager>-->
-    <!--    </constructionHeuristic>-->
+    <!--            <forager>-->
+    <!--                <pickEarlyType>FIRST_FEASIBLE_SCORE</pickEarlyType>-->
+    <!--            </forager>-->
+    <!--        </constructionHeuristic>-->
 
     <!--    <constructionHeuristic>-->
     <!--        <queuedEntityPlacer>-->
@@ -276,7 +276,7 @@
                     <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
                 </subChainSelector>
                 <!--ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainReversingSwapMove-->
-                <selectReversingMoveToo>true</selectReversingMoveToo>
+                <selectReversingMoveToo>false</selectReversingMoveToo>
             </subChainSwapMoveSelector>
 
             <subChainChangeMoveSelector>
@@ -291,14 +291,14 @@
                 </subChainSelector>
                 <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
                 <!--ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainReversingChangeMove-->
-                <selectReversingMoveToo>true</selectReversingMoveToo>
+                <selectReversingMoveToo>false</selectReversingMoveToo>
             </subChainChangeMoveSelector>
 
         </unionMoveSelector>
 
         <acceptor>
             <valueTabuSize>32</valueTabuSize>
-            <simulatedAnnealingStartingTemperature>[1/1]hard/[1/1]soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>[1000/500/100]hard/[1000/5]soft</simulatedAnnealingStartingTemperature>
         </acceptor>
 
         <forager>

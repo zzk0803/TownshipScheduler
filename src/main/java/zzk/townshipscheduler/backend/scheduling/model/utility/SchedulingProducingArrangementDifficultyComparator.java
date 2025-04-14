@@ -15,8 +15,8 @@ public class SchedulingProducingArrangementDifficultyComparator implements Compa
                         latter.getPrerequisiteProducingArrangements().size()
                 )
                 .append(
-                        former.getSupportProducingArrangements().size(),
-                        latter.getSupportProducingArrangements().size()
+                        former.getProducingDuration(),
+                        latter.getProducingDuration()
                 )
                 .toComparison();
     }
