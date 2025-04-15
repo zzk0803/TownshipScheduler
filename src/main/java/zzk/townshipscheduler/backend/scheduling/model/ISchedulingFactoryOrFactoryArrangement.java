@@ -13,7 +13,7 @@ public interface ISchedulingFactoryOrFactoryArrangement {
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS)
     SchedulingProducingArrangementFactoryTypeQueue getNextQueueProducingArrangement();
 
-    void setNextQueueProducingArrangement(SchedulingProducingArrangementFactoryTypeQueue schedulingProducingArrangementFactoryTypeQueue);
+    void setNextQueueProducingArrangement(SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement);
 
     LocalDateTime getCompletedDateTime();
 
