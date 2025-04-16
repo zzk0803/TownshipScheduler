@@ -106,7 +106,7 @@ public final class SchedulingOrder implements IGameArrangeObject {
     }
 
     public boolean boolHasDeadline() {
-        return optionalDeadline().isEmpty();
+        return optionalDeadline().isPresent();
     }
 
     @Value

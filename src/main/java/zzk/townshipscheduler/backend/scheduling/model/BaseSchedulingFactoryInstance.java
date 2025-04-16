@@ -1,7 +1,9 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.javatuples.Pair;
@@ -41,18 +43,14 @@ public abstract class BaseSchedulingFactoryInstance {
         return this.schedulingFactoryInfo.getCategoryName() + "#" + this.getSeqNum();
     }
 
-    public Pair<Integer, Duration> remainProducingCapacityAndNextAvailableDuration(SchedulingDateTimeSlot schedulingDateTimeSlot) {
+    public Pair<Integer, List<ArrangeConsequence>> remainProducingCapacityAndRecoveryArrangeConsequence(SchedulingDateTimeSlot schedulingDateTimeSlot) {
         var filteredArrangeConsequences = useFilteredArrangeConsequences();
-        Duration firstCapacityIncreaseDuration
-                = filteredArrangeConsequences.stream()
-                .filter(arrangeConsequence -> arrangeConsequence.getLocalDateTime().isAfter(schedulingDateTimeSlot.getStart()))
+        var recoveryConsequences = filteredArrangeConsequences.stream()
+                .filter(arrangeConsequence -> arrangeConsequence.getLocalDateTime()
+                                                      .isAfter(schedulingDateTimeSlot.getStart()) || arrangeConsequence.getLocalDateTime()
+                                                      .isEqual(schedulingDateTimeSlot.getStart()))
                 .filter(arrangeConsequence -> arrangeConsequence.getResourceChange() instanceof ArrangeConsequence.Increase)
-                .findFirst()
-                .map(arrangeConsequence -> Duration.between(
-                        schedulingDateTimeSlot.getStart(),
-                        arrangeConsequence.getLocalDateTime()
-                ))
-                .orElse(null);
+                .toList();
 
         int remain = filteredArrangeConsequences.stream()
                 .filter(arrangeConsequence -> arrangeConsequence.getLocalDateTime()
@@ -65,7 +63,7 @@ public abstract class BaseSchedulingFactoryInstance {
                         Integer::sum
                 );
 
-        return Pair.with(remain, remain > 0 ? Duration.ZERO : firstCapacityIncreaseDuration);
+        return Pair.with(remain, recoveryConsequences);
 
     }
 

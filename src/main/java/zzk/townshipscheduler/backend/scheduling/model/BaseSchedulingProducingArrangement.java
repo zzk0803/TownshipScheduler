@@ -8,8 +8,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -46,15 +44,8 @@ public abstract class BaseSchedulingProducingArrangement {
     protected IGameArrangeObject currentActionObject;
 
     @JsonIgnore
-    protected boolean orderDirect;
-
-    @JsonIgnore
     @DeepPlanningClone
     protected List<BaseSchedulingProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
-
-    @JsonIgnore
-    @DeepPlanningClone
-    protected List<BaseSchedulingProducingArrangement> supportProducingArrangements = new ArrayList<>();
 
     @JsonIgnore
     protected SchedulingPlayer schedulingPlayer;
@@ -64,6 +55,9 @@ public abstract class BaseSchedulingProducingArrangement {
 
     @JsonIgnore
     protected SchedulingProducingExecutionMode producingExecutionMode;
+
+    @JsonIgnore
+    private int arrangePathLevel = 1;
 
     public BaseSchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -155,9 +149,9 @@ public abstract class BaseSchedulingProducingArrangement {
 
     public List<ArrangeConsequence> calcConsequence() {
         if (
-                this.getPlanningDateTimeSlot() == null
-                || this.getPlanningFactoryInstance() == null
-                || this.getCompletedDateTime() == null
+                getArrangeDateTime() == null
+                || getPlanningFactoryInstance() == null
+                || getCompletedDateTime() == null
         ) {
             return List.of();
         }
@@ -219,8 +213,11 @@ public abstract class BaseSchedulingProducingArrangement {
         return arrangeConsequenceList;
     }
 
-    @JsonIgnore
-    public abstract SchedulingDateTimeSlot getPlanningDateTimeSlot();
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public abstract LocalDateTime getArrangeDateTime();
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -228,11 +225,8 @@ public abstract class BaseSchedulingProducingArrangement {
     @ToString.Include
     public abstract LocalDateTime getCompletedDateTime();
 
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public abstract LocalDateTime getArrangeDateTime();
+    @JsonIgnore
+    public abstract SchedulingDateTimeSlot getPlanningDateTimeSlot();
 
     public abstract void setPlanningDateTimeSlot(SchedulingDateTimeSlot computedDataTimeSlot);
 
@@ -273,14 +267,14 @@ public abstract class BaseSchedulingProducingArrangement {
         this.prerequisiteProducingArrangements.addAll(prerequisiteArrangements);
     }
 
-    public <T extends BaseSchedulingProducingArrangement> void appendSupportArrangements(List<T> supportProducingArrangements) {
-        this.supportProducingArrangements.addAll(supportProducingArrangements);
-    }
-
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public abstract LocalDateTime getProducingDateTime();
+
+    public boolean isOrderDirect() {
+        return getTargetActionObject() instanceof SchedulingOrder;
+    }
 
 }

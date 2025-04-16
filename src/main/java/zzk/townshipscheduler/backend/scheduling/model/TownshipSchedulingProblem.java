@@ -76,15 +76,6 @@ public class TownshipSchedulingProblem {
     @ProblemFactProperty
     private SchedulingWorkTimeLimit schedulingWorkTimeLimit;
 
-//    @ProblemFactCollectionProperty
-//    @ValueRangeProvider(id = "producingExecutionMode")
-//    private Set<SchedulingProducingExecutionMode> schedulingProducingExecutionModeSet;
-
-    //    @PlanningEntityCollectionProperty
-//    @ValueRangeProvider(id = "warehouseActions")
-//    private List<SchedulingPlayerWarehouseAction> schedulingPlayerWarehouseActions;
-//
-//
     @ProblemFactProperty
     private SchedulingPlayer schedulingPlayer;
 
@@ -111,9 +102,6 @@ public class TownshipSchedulingProblem {
     ) {
         this.uuid = uuid;
         this.schedulingProductSet = schedulingProducts;
-//        this.schedulingProducingExecutionModeSet = schedulingProducts.stream()
-//                .flatMap(schedulingProduct -> schedulingProduct.getExecutionModeSet().stream())
-//                .collect(Collectors.toSet());
         this.schedulingFactoryInfoSet = schedulingFactoryInfos;
         this.schedulingOrderSet = schedulingOrders;
         this.schedulingFactoryInstanceTypeQueueList = schedulingFactoryInstanceTypeQueueList;
@@ -133,7 +121,7 @@ public class TownshipSchedulingProblem {
                 = SchedulingDateTimeSlot.toValueRange(
                 startDateTime,
                 endDateTime,
-                slotSize.minute
+                slotSize.getMinute()
         );
         setSchedulingDateTimeSlots(schedulingDateTimeSlots);
     }
@@ -191,7 +179,6 @@ public class TownshipSchedulingProblem {
                     = producingExecutionMode.materialsActions();
             iteratingArrangement.appendPrerequisiteArrangements(materialsActions);
             for (BaseSchedulingProducingArrangement materialsAction : materialsActions) {
-                materialsAction.appendSupportArrangements(List.of(iteratingArrangement));
                 dealingChain.addLast(materialsAction);
             }
 
@@ -239,19 +226,6 @@ public class TownshipSchedulingProblem {
 //                    ChronoUnit.MINUTES
 //            );
 //        }
-
-    public enum DateTimeSlotSize {
-        SMALL(10),
-        HALF_HOUR(30),
-        HOUR(60),
-        BIG(180);
-
-        private final int minute;
-
-        DateTimeSlotSize(int minute) {
-            this.minute = minute;
-        }
-    }
 
 
 }

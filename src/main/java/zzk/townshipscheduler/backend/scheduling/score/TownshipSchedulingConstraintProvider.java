@@ -58,12 +58,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 BaseSchedulingProducingArrangement::getPlanningFactoryInstance
                         )
                 )
-                .expand((factoryInstance, producingArrangement) -> factoryInstance.remainProducingCapacityAndNextAvailableDuration(
+                .expand((factoryInstance, producingArrangement) -> factoryInstance.remainProducingCapacityAndRecoveryArrangeConsequence(
                                 producingArrangement.getPlanningDateTimeSlot()
                         )
                 )
-                .filter((factoryInstance, arrangement, integerDurationPair) -> {
-                    return integerDurationPair != null && integerDurationPair.getValue0() < 0;
+                .filter((factoryInstance, arrangement, remainAndRecoveryConsequences) -> {
+                    return remainAndRecoveryConsequences != null && remainAndRecoveryConsequences.getValue0() < 0;
                 })
                 .penalize(
                         BendableScore.ofHard(
@@ -72,8 +72,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.HARD_BROKEN_ARRANGEMENT_DATE_TIME,
                                 1
                         ),
-                        (factoryInstance, arrangement, integerDurationPair) -> {
-                            return Math.toIntExact(integerDurationPair.getValue1().toMinutes());
+                        (factoryInstance, arrangement, remainAndRecoveryConsequences) -> {
+                            List<ArrangeConsequence> consequences = remainAndRecoveryConsequences.getValue1();
+                            LocalDateTime capacityRecoveryDateTime = consequences.stream()
+                                    .map(ArrangeConsequence::getLocalDateTime)
+                                    .min(LocalDateTime::compareTo)
+                                    .orElse(arrangement.getSchedulingWorkTimeLimit().getEndDateTime());
+                            long minutes = Duration.between(arrangement.getArrangeDateTime(), capacityRecoveryDateTime)
+                                    .toMinutes();
+                            return Math.toIntExact(minutes);
                         }
                 )
                 .asConstraint("forbidBrokenFactoryAbility");
@@ -180,7 +187,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .filter((schedulingOrder, producingArrangement) -> {
                     LocalDateTime deadline = schedulingOrder.getDeadline();
                     LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
-                    return completedDateTime.isAfter(deadline);
+                    return completedDateTime == null || completedDateTime.isAfter(deadline);
                 })
                 .penalize(
                         BendableScore.ofSoft(
@@ -192,8 +199,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ((schedulingOrder, producingArrangement) -> {
                             LocalDateTime deadline = schedulingOrder.getDeadline();
                             LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
-                            Duration between = Duration.between(deadline, completedDateTime);
-                            return Math.toIntExact(between.toMinutes());
+                            return completedDateTime == null
+                                    ? Math.toIntExact(Duration.between(
+                                            producingArrangement.getSchedulingWorkTimeLimit().getStartDateTime(),
+                                            producingArrangement.getSchedulingWorkTimeLimit().getEndDateTime()
+                                    ).toMinutes())
+                                    : Math.toIntExact(Duration.between(deadline, completedDateTime).toMinutes());
                         })
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");

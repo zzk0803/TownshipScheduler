@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -62,20 +62,13 @@ public class SchedulingFactoryInstanceTypeQueue
 
     @Override
     public List<ArrangeConsequence> useFilteredArrangeConsequences() {
-        List<ArrangeConsequence> arrangeConsequences = new ArrayList<>();
-        SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement
-                = this.nextQueueProducingArrangement;
-        while (queueProducingArrangement != null) {
-            arrangeConsequences.addAll(queueProducingArrangement.calcConsequence());
-            queueProducingArrangement = queueProducingArrangement.getNextQueueProducingArrangement();
-        }
-
-        return arrangeConsequences.stream()
+        return getFlattenProducingArrangements().stream()
+                .map(BaseSchedulingProducingArrangement::calcConsequence)
+                .flatMap(Collection::stream)
                 .filter(consequence -> consequence.getResource().getRoot() == this)
                 .filter(consequence -> consequence.getResource() instanceof ArrangeConsequence.FactoryProducingLength)
                 .sorted()
                 .toList();
     }
-
 
 }

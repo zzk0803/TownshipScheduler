@@ -44,7 +44,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
                && latterDateTime.isAfter(dateTime);
     }
 
-    public static Optional<SchedulingDateTimeSlot> fromRangeCeil(
+    public static Optional<SchedulingDateTimeSlot> fromRangeJumpCeil(
             List<SchedulingDateTimeSlot> range,
             LocalDateTime localDateTime
     ) {
@@ -57,11 +57,9 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         }
 
         return range.stream()
-                .limit(1)
-                .dropWhile(iteratingSlot -> localDateTime.isBefore(iteratingSlot.getStart()))
-                .takeWhile(iteratingSlot -> localDateTime.isEqual(iteratingSlot.getStart()) || localDateTime.isAfter(
-                        iteratingSlot.getStart()))
-                .findFirst();
+                .filter(iteratingSlot -> iteratingSlot.getStart().isAfter(localDateTime))
+                .limit(3)
+                .findAny();
     }
 
     public static List<SchedulingDateTimeSlot> toValueRange(

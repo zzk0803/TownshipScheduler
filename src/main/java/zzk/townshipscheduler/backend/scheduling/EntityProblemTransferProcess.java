@@ -57,7 +57,7 @@ class EntityProblemTransferProcess {
                         LocalDateTime.now().plusMinutes(10),
                         LocalDateTime.now().plusDays(2)
                 ),
-                TownshipSchedulingProblem.DateTimeSlotSize.HOUR
+                DateTimeSlotSize.HOUR
         );
 
         return schedulingProblem;
