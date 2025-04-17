@@ -9,8 +9,6 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
@@ -44,25 +42,9 @@ public class SchedulingFactoryInstanceTypeQueue
         return super.getSchedulingFactoryInfo();
     }
 
-    @JsonIgnore
-    public List<SchedulingProducingArrangementFactoryTypeQueue> getFlattenProducingArrangements() {
-        SchedulingProducingArrangementFactoryTypeQueue firstArrangement
-                = this.getNextQueueProducingArrangement();
-
-        if (Objects.isNull(firstArrangement)) {
-            return List.of();
-        }
-
-        return Stream.iterate(
-                firstArrangement,
-                (arrangement) -> arrangement.getNextQueueProducingArrangement() != null,
-                SchedulingProducingArrangementFactoryTypeQueue::getNextQueueProducingArrangement
-        ).toList();
-    }
-
     @Override
     public List<ArrangeConsequence> useFilteredArrangeConsequences() {
-        return getFlattenProducingArrangements().stream()
+        return getForwardArrangements().stream()
                 .map(BaseSchedulingProducingArrangement::calcConsequence)
                 .flatMap(Collection::stream)
                 .filter(consequence -> consequence.getResource().getRoot() == this)

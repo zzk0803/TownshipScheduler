@@ -56,9 +56,6 @@ public abstract class BaseSchedulingProducingArrangement {
     @JsonIgnore
     protected SchedulingProducingExecutionMode producingExecutionMode;
 
-    @JsonIgnore
-    private int arrangePathLevel = 1;
-
     public BaseSchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
             IGameArrangeObject currentActionObject

@@ -58,9 +58,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 BaseSchedulingProducingArrangement::getPlanningFactoryInstance
                         )
                 )
-                .expand((factoryInstance, producingArrangement) -> factoryInstance.remainProducingCapacityAndRecoveryArrangeConsequence(
-                                producingArrangement.getPlanningDateTimeSlot()
-                        )
+                .expand((factoryInstance, producingArrangement) -> {
+                            return factoryInstance.remainProducingCapacityAndRecoveryArrangeConsequence(
+                                    producingArrangement.getPlanningDateTimeSlot()
+                            );
+                        }
                 )
                 .filter((factoryInstance, arrangement, remainAndRecoveryConsequences) -> {
                     return remainAndRecoveryConsequences != null && remainAndRecoveryConsequences.getValue0() < 0;
@@ -309,7 +311,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         )
                 )
                 .filter((factory, dateTimeArrangementListTreeMap) -> {
-                    List<SchedulingProducingArrangementFactoryTypeQueue> producingArrangements = factory.getFlattenProducingArrangements();
+                    List<SchedulingProducingArrangementFactoryTypeQueue> producingArrangements = factory.getForwardArrangements();
                     Set<Map.Entry<LocalDateTime, List<SchedulingProducingArrangementFactoryTypeQueue>>> entries = dateTimeArrangementListTreeMap.entrySet();
 
                     for (Map.Entry<LocalDateTime, List<SchedulingProducingArrangementFactoryTypeQueue>> entry : entries) {

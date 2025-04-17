@@ -20,10 +20,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingFactoryInstance;
-import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
@@ -108,6 +105,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
     private VerticalLayout buildProducingArrangementsGrid() {
         VerticalLayout gameActionArticle = new VerticalLayout();
         arrangementGrid = new Grid<>(BaseSchedulingProducingArrangement.class, false);
+        arrangementGrid.setMultiSort(true);
         arrangementGrid.addColumn(producingArrangement -> producingArrangement.getSchedulingProduct().getName())
                 .setResizable(true)
                 .setHeader("Product");
@@ -116,13 +114,25 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                         .map(BaseSchedulingFactoryInstance::getReadableIdentifier)
                         .orElse("N/A")
                 ))
+                .setSortable(true)
                 .setResizable(true)
                 .setHeader("Assign Factory");
+        arrangementGrid.addColumn(producingArrangement -> {
+                    if (producingArrangement instanceof SchedulingProducingArrangementFactoryTypeQueue arrangementFactoryTypeQueue) {
+                        return arrangementFactoryTypeQueue.getShadowFactoryArrangementSequence();
+                    } else {
+                        return "N/A";
+                    }
+                })
+                .setSortable(true)
+                .setResizable(true)
+                .setHeader("Assign Factory Sequence");
         arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getArrangeDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         BaseSchedulingProducingArrangement::getArrangeDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
+                .setSortable(true)
                 .setResizable(true)
                 .setHeader("Arrange Date Time");
         arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getProducingDateTime)

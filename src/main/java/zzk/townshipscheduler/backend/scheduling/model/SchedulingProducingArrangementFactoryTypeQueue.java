@@ -1,10 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.variable.AnchorShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariableGraphType;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
@@ -29,6 +26,8 @@ public class SchedulingProducingArrangementFactoryTypeQueue
     public static final String PLANNING_PREVIOUS = "planningPreviousProducingArrangementOrFactory";
 
     public static final String SHADOW_PRODUCING_DATE_TIME = "shadowProducingDateTime";
+
+    public static final String SHADOW_FACTORY_ARRANGEMENT_SEQUENCE = "shadowFactoryArrangementSequence";
 
     @PlanningVariable(
             valueRangeProviderRefs = TownshipSchedulingProblem.DATE_TIME_SLOT_VALUE_RANGE,
@@ -68,8 +67,8 @@ public class SchedulingProducingArrangementFactoryTypeQueue
     )
     private LocalDateTime shadowProducingDateTime;
 
-//    @PiggybackShadowVariable(shadowVariableName = SHADOW_PRODUCING_DATE_TIME)
-//    private LocalDateTime shadowCompletedDateTime;
+    @PiggybackShadowVariable(shadowVariableName = SHADOW_PRODUCING_DATE_TIME)
+    private Integer shadowFactoryArrangementSequence;
 
     public SchedulingProducingArrangementFactoryTypeQueue(
             IGameArrangeObject targetActionObject,
@@ -90,6 +89,14 @@ public class SchedulingProducingArrangementFactoryTypeQueue
     }
 
     @Override
+    public LocalDateTime getArrangeDateTime() {
+        SchedulingDateTimeSlot dateTimeSlot = this.getPlanningDateTimeSlot();
+        return dateTimeSlot != null
+                ? dateTimeSlot.getStart()
+                : null;
+    }
+
+    @Override
     public LocalDateTime getCompletedDateTime() {
         return this.getShadowCompletedDateTime();
     }
@@ -99,14 +106,6 @@ public class SchedulingProducingArrangementFactoryTypeQueue
             return null;
         }
         return shadowProducingDateTime.plus(getProducingDuration());
-    }
-
-    @Override
-    public LocalDateTime getArrangeDateTime() {
-        SchedulingDateTimeSlot dateTimeSlot = this.getPlanningDateTimeSlot();
-        return dateTimeSlot != null
-                ? dateTimeSlot.getStart()
-                : null;
     }
 
     @Override
