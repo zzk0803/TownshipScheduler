@@ -1,10 +1,11 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 public enum DateTimeSlotSize {
-    SMALL(10),
+    TEN_MINUTES(10),
     HALF_HOUR(30),
     HOUR(60),
-    BIG(180);
+    TWO_HOUR(120),
+    THREE_HOUR(180);
 
     private final int minute;
 

@@ -33,7 +33,7 @@ public class SchedulingFactoryInfo {
     private List<SchedulingProduct> portfolio;
 
     @JsonBackReference
-    private List<BaseSchedulingFactoryInstance> factoryInstances;
+    private List<SchedulingFactoryInstance> factoryInstances;
 
     private ProducingStructureType producingStructureType;
 

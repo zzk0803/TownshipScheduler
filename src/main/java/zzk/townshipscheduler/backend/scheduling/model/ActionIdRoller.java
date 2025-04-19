@@ -28,7 +28,7 @@ public final class ActionIdRoller {
         return new ActionIdRoller();
     }
 
-    public void setup(BaseSchedulingProducingArrangement producingArrangement) {
+    public void setup(SchedulingProducingArrangement producingArrangement) {
         producingArrangement.setId(atomicInteger.incrementAndGet());
     }
 

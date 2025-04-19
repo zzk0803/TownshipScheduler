@@ -46,7 +46,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private LitSchedulingVisTimelinePanel arrangementTimelinePanel;
 
-    private Grid<BaseSchedulingProducingArrangement> arrangementGrid;
+    private Grid<SchedulingProducingArrangement> arrangementGrid;
 
     public SchedulingView(SchedulingViewPresenter schedulingViewPresenter) {
         this.schedulingViewPresenter = schedulingViewPresenter;
@@ -104,47 +104,37 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private VerticalLayout buildProducingArrangementsGrid() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        arrangementGrid = new Grid<>(BaseSchedulingProducingArrangement.class, false);
+        arrangementGrid = new Grid<>(SchedulingProducingArrangement.class, false);
         arrangementGrid.setMultiSort(true);
         arrangementGrid.addColumn(producingArrangement -> producingArrangement.getSchedulingProduct().getName())
                 .setResizable(true)
                 .setHeader("Product");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getPlanningFactoryInstance)
+        arrangementGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 .setRenderer(new TextRenderer<>(producingArrangement -> Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
-                        .map(BaseSchedulingFactoryInstance::getReadableIdentifier)
+                        .map(SchedulingFactoryInstance::getReadableIdentifier)
                         .orElse("N/A")
                 ))
                 .setSortable(true)
                 .setResizable(true)
                 .setHeader("Assign Factory");
-        arrangementGrid.addColumn(producingArrangement -> {
-                    if (producingArrangement instanceof SchedulingProducingArrangementFactoryTypeQueue arrangementFactoryTypeQueue) {
-                        return arrangementFactoryTypeQueue.getShadowFactoryArrangementSequence();
-                    } else {
-                        return "N/A";
-                    }
-                })
-                .setSortable(true)
-                .setResizable(true)
-                .setHeader("Assign Factory Sequence");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getArrangeDateTime)
+        arrangementGrid.addColumn(SchedulingProducingArrangement::getArrangeDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
-                        BaseSchedulingProducingArrangement::getArrangeDateTime,
+                        SchedulingProducingArrangement::getArrangeDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setSortable(true)
                 .setResizable(true)
                 .setHeader("Arrange Date Time");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getProducingDateTime)
+        arrangementGrid.addColumn(SchedulingProducingArrangement::getProducingDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
-                        BaseSchedulingProducingArrangement::getProducingDateTime,
+                        SchedulingProducingArrangement::getProducingDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setResizable(true)
                 .setHeader("Producing Date Time");
-        arrangementGrid.addColumn(BaseSchedulingProducingArrangement::getCompletedDateTime)
+        arrangementGrid.addColumn(SchedulingProducingArrangement::getCompletedDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
-                        BaseSchedulingProducingArrangement::getCompletedDateTime,
+                        SchedulingProducingArrangement::getCompletedDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setResizable(true)
@@ -212,9 +202,9 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     class ActionCard extends HorizontalLayout {
 
-        private BaseSchedulingProducingArrangement producingArrangement;
+        private SchedulingProducingArrangement producingArrangement;
 
-        public ActionCard(BaseSchedulingProducingArrangement producingArrangement) {
+        public ActionCard(SchedulingProducingArrangement producingArrangement) {
             this();
             this.producingArrangement = producingArrangement;
             var planningFactory = producingArrangement.getPlanningFactoryInstance();
@@ -267,11 +257,11 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
             setDefaultHorizontalComponentAlignment(Alignment.CENTER);
         }
 
-        public BaseSchedulingProducingArrangement getProducingArrangement() {
+        public SchedulingProducingArrangement getProducingArrangement() {
             return producingArrangement;
         }
 
-        public void setProducingArrangement(BaseSchedulingProducingArrangement producingArrangement) {
+        public void setProducingArrangement(SchedulingProducingArrangement producingArrangement) {
             this.producingArrangement = producingArrangement;
         }
 

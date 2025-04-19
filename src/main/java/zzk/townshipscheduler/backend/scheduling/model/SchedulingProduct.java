@@ -76,37 +76,18 @@ public final class SchedulingProduct implements IGameArrangeObject {
 //    }
 
     @Override
-    public List<BaseSchedulingProducingArrangement> calcFactoryActions() {
+    public List<SchedulingProducingArrangement> calcFactoryActions() {
         return calcFactoryActions(this);
     }
 
     @Override
-    public List<BaseSchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
-        switch (getRequireFactory().getProducingStructureType()) {
-            case QUEUE -> {
-                return List.of(
-                        BaseSchedulingProducingArrangement.createProducingArrangementFactoryQueue(
+    public List<SchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
+        return List.of(
+                SchedulingProducingArrangement.createProducingArrangement(
                         targetObject,
-                                this
+                        this
                 )
-                );
-            }
-
-            case SLOT -> {
-                return List.of(
-                        BaseSchedulingProducingArrangement.createProducingArrangementFactorySlot(
-                        targetObject,
-                                this
-                )
-                );
-            }
-
-            case null, default -> {
-                throw new IllegalStateException(
-                        "getRequireFactory().getProducingStructureType() not queue or slot either,so that error"
-                );
-            }
-        }
+        );
     }
 
     @Override

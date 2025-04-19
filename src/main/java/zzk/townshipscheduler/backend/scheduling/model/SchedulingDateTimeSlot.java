@@ -1,19 +1,21 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Value;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@PlanningEntity
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
@@ -29,11 +31,12 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     private int durationInMinute;
 
-//    @ShadowVariable(
-//            sourceVariableName = PLANNING_ACTIONS,
-//            variableListenerClass = DataTimeSlotRollingAndPushVariableListener.class
-//    )
-//    private Long shadowRollingChange = 0L;
+    private SchedulingDateTimeSlot previous;
+
+    private SchedulingDateTimeSlot next;
+
+    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT)
+    private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
 
     private static boolean isDateTimeBetween(
             LocalDateTime dateTime,
@@ -58,8 +61,8 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
         return range.stream()
                 .filter(iteratingSlot -> iteratingSlot.getStart().isAfter(localDateTime))
-                .limit(3)
-                .findAny();
+                .limit(1)
+                .findFirst();
     }
 
     public static List<SchedulingDateTimeSlot> toValueRange(
@@ -75,13 +78,20 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         LocalDateTime slotEnd = startInclusive.plusMinutes(durationInMinute);
         AtomicInteger idRoller = new AtomicInteger(0);
         SchedulingDateTimeSlot schedulingDateTimeSlot;
+        SchedulingDateTimeSlot previous = null;
         for (long i = 0; i < slot; i++) {
             schedulingDateTimeSlot = new SchedulingDateTimeSlot();
             schedulingDateTimeSlot.setId(idRoller.incrementAndGet());
             schedulingDateTimeSlot.setStart(slotStart);
             schedulingDateTimeSlot.setEnd(slotEnd);
             schedulingDateTimeSlot.setDurationInMinute(durationInMinute);
+
             result.add(schedulingDateTimeSlot);
+            if (Objects.nonNull(previous)) {
+                previous.setNext(schedulingDateTimeSlot);
+                schedulingDateTimeSlot.setPrevious(previous);
+            }
+            previous = schedulingDateTimeSlot;
 
             slotStart = slotStart.plusMinutes(durationInMinute);
             slotEnd = slotEnd.plusMinutes(durationInMinute);
@@ -101,6 +111,30 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     public Comparator<SchedulingDateTimeSlot> getDateTimeSlotComparator() {
         return DATE_TIME_SLOT_COMPARATOR;
+    }
+
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+    @Value
+    public static class FactoryProcessSequence {
+
+        @EqualsAndHashCode.Include
+        LocalDateTime arrangeDateTime;
+
+        @EqualsAndHashCode.Include
+        Integer arrangementId;
+
+        Duration producingDuration;
+
+        int slotGapDuration;
+
+        public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
+            SchedulingDateTimeSlot planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
+            this.arrangeDateTime = planningDateTimeSlot.getStart();
+            this.producingDuration = schedulingProducingArrangement.getProducingDuration();
+            this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
+            this.arrangementId = schedulingProducingArrangement.getId();
+        }
+
     }
 
 }

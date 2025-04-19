@@ -77,12 +77,12 @@ public final class SchedulingOrder implements IGameArrangeObject {
 //    }
 
     @Override
-    public List<BaseSchedulingProducingArrangement> calcFactoryActions() {
+    public List<SchedulingProducingArrangement> calcFactoryActions() {
         return this.calcFactoryActions(this);
     }
 
     @Override
-    public List<BaseSchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
+    public List<SchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
          return this.getProductAmountBill().entrySet()
                 .stream()
                 .flatMap(entry -> {

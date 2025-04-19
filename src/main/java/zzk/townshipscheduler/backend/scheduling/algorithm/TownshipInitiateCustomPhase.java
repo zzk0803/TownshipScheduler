@@ -8,7 +8,9 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
@@ -28,57 +30,42 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 = scoreDirector.getWorkingSolution();
         List<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
                 = workingSolution.getSchedulingDateTimeSlots();
-        List<BaseSchedulingProducingArrangement> producingArrangements
-                = workingSolution.getBaseProducingArrangements();
-        List<SchedulingFactoryInstanceTypeSlot> slotFactoryInstanceValueRange
-                = workingSolution.getSchedulingFactoryInstanceTypeSlotList();
-        List<SchedulingFactoryInstanceTypeQueue> queueFactoryInstanceValueRange
-                = workingSolution.getSchedulingFactoryInstanceTypeQueueList();
-        LocalDateTime startDateTime = workingSolution.getSchedulingWorkTimeLimit().getStartDateTime();
+        List<SchedulingProducingArrangement> producingArrangements
+                = workingSolution.getSchedulingProducingArrangementList();
+        List<SchedulingFactoryInstance> queueFactoryInstanceValueRange
+                = workingSolution.getSchedulingFactoryInstanceList();
+        LocalDateTime startDateTime = workingSolution.getSchedulingWorkCalendar().getStartDateTime();
 
-        var queueArrangeFactoryAnchorMap = new LinkedHashMap<SchedulingFactoryInstanceTypeQueue, SchedulingProducingArrangementFactoryTypeQueue>();
 
-        List<SchedulingDateTimeSlot> sortedDataTimeSlotValueRange = dateTimeSlotSetValueRange.stream().sorted().toList();
-        List<BaseSchedulingProducingArrangement> difficultySortedProducingArrangements
+        List<SchedulingDateTimeSlot> sortedDataTimeSlotValueRange = dateTimeSlotSetValueRange.stream()
+                .sorted()
+                .toList();
+        List<SchedulingProducingArrangement> difficultySortedProducingArrangements
                 = producingArrangements.stream()
                 .sorted(new SchedulingProducingArrangementDifficultyComparator())
                 .toList();
-        ArrayDeque<BaseSchedulingProducingArrangement> initiatingDeque
+        ArrayDeque<SchedulingProducingArrangement> initiatingDeque
                 = new ArrayDeque<>(difficultySortedProducingArrangements);
 
         while (!initiatingDeque.isEmpty()) {
-            BaseSchedulingProducingArrangement arrangement = initiatingDeque.removeFirst();
+            SchedulingProducingArrangement arrangement = initiatingDeque.removeFirst();
             if (shouldInitiating(arrangement)) {
-                if (arrangement instanceof SchedulingProducingArrangementFactoryTypeSlot slotProducingArrangement) {
-                    setupSlotArrangement(
-                            scoreDirector,
-                            slotProducingArrangement,
-                            sortedDataTimeSlotValueRange,
-                            slotFactoryInstanceValueRange,
-                            startDateTime
-                    );
-                } else if (arrangement instanceof SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement) {
-                    setupQueueArrangement(
-                            scoreDirector,
-                            queueProducingArrangement,
-                            sortedDataTimeSlotValueRange,
-                            queueFactoryInstanceValueRange,
-                            startDateTime,
-                            queueArrangeFactoryAnchorMap
-                    );
-                } else {
-                    throw new IllegalStateException();
-                }
-
+                setupArrangement(
+                        scoreDirector,
+                        arrangement,
+                        sortedDataTimeSlotValueRange,
+                        queueFactoryInstanceValueRange,
+                        startDateTime
+                );
             }
         }
 
     }
 
-    private boolean shouldInitiating(BaseSchedulingProducingArrangement arrangement) {
+    private boolean shouldInitiating(SchedulingProducingArrangement arrangement) {
         SchedulingDateTimeSlot planningDateTimeSlot = arrangement.getPlanningDateTimeSlot();
         LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
-        BaseSchedulingFactoryInstance planningFactoryInstance = arrangement.getPlanningFactoryInstance();
+        SchedulingFactoryInstance planningFactoryInstance = arrangement.getPlanningFactoryInstance();
         LocalDateTime producingDateTime = arrangement.getProducingDateTime();
         LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
 
@@ -91,142 +78,58 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         ).anyMatch(Objects::isNull);
     }
 
-    private void setupSlotArrangement(
+    private void setupArrangement(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            SchedulingProducingArrangementFactoryTypeSlot slotProducingArrangement,
+            SchedulingProducingArrangement schedulingProducingArrangement,
             List<SchedulingDateTimeSlot> dateTimeSlotSet,
-            List<SchedulingFactoryInstanceTypeSlot> slotFactoryInstanceList,
+            List<SchedulingFactoryInstance> factoryInstanceList,
             LocalDateTime startDateTime
     ) {
         SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
-                slotProducingArrangement,
+                schedulingProducingArrangement,
                 dateTimeSlotSet,
                 startDateTime
         );
-
-        scoreDirector.beforeVariableChanged(
-                slotProducingArrangement,
-                BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
-        );
-        slotProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
-        scoreDirector.afterVariableChanged(
-                slotProducingArrangement,
-                BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
-        );
-        scoreDirector.triggerVariableListeners();
-
         SchedulingFactoryInfo requireFactory
-                = slotProducingArrangement.getSchedulingProduct().getRequireFactory();
-        slotFactoryInstanceList.stream()
+                = schedulingProducingArrangement.getSchedulingProduct().getRequireFactory();
+        SchedulingFactoryInstance schedulingFactoryInstance
+                = factoryInstanceList.stream()
                 .filter(slotFactoryInstance -> requireFactory.typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
                 .findAny()
-                .ifPresentOrElse(
-                        schedulingFactoryInstanceTypeSlot -> {
-                            scoreDirector.beforeVariableChanged(
-                                    slotProducingArrangement,
-                                    SchedulingProducingArrangementFactoryTypeSlot.PLANNING_FACTORY
-                            );
-                            slotProducingArrangement.setPlanningFactory(schedulingFactoryInstanceTypeSlot);
-                            scoreDirector.afterVariableChanged(
-                                    slotProducingArrangement,
-                                    SchedulingProducingArrangementFactoryTypeSlot.PLANNING_FACTORY
-                            );
-                            scoreDirector.triggerVariableListeners();
-                        }, () -> {
-                        }
-                );
-
-    }
-
-    private void setupQueueArrangement(
-            ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            SchedulingProducingArrangementFactoryTypeQueue queueProducingArrangement,
-            List<SchedulingDateTimeSlot> dateTimeSlotSet,
-            List<SchedulingFactoryInstanceTypeQueue> queueFactoryInstanceList,
-            LocalDateTime startDateTime,
-            Map<SchedulingFactoryInstanceTypeQueue, SchedulingProducingArrangementFactoryTypeQueue> queueArrangeFactoryAnchorMap
-    ) {
-        SchedulingDateTimeSlot computedDataTimeSlot
-                = calcApproximateArrangeDateTimeSlot(
-                queueProducingArrangement,
-                dateTimeSlotSet,
-                startDateTime
-        );
+                .get();
 
         scoreDirector.beforeVariableChanged(
-                queueProducingArrangement,
-                BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
+                schedulingProducingArrangement,
+                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
         );
-        queueProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
+        schedulingProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
         scoreDirector.afterVariableChanged(
-                queueProducingArrangement,
-                BaseSchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
+                schedulingProducingArrangement,
+                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
         );
         scoreDirector.triggerVariableListeners();
 
-        SchedulingFactoryInfo requireFactory
-                = queueProducingArrangement.getSchedulingProduct().getRequireFactory();
-        queueFactoryInstanceList.stream()
-                .filter(schedulingFactoryInstanceTypeQueue -> schedulingFactoryInstanceTypeQueue.getSchedulingFactoryInfo()
-                        .typeEqual(requireFactory))
-                .findAny()
-                .ifPresentOrElse(
-                        schedulingFactoryInstanceTypeQueue -> {
-
-                            SchedulingProducingArrangementFactoryTypeQueue mayNullFactoryToProducing
-                                    = queueArrangeFactoryAnchorMap.get(schedulingFactoryInstanceTypeQueue);
-                            if (mayNullFactoryToProducing != null) {
-                                scoreDirector.beforeVariableChanged(
-                                        queueProducingArrangement,
-                                        SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
-                                );
-                                queueProducingArrangement.setPlanningPreviousProducingArrangementOrFactory(
-                                        mayNullFactoryToProducing
-                                );
-                                scoreDirector.afterVariableChanged(
-                                        queueProducingArrangement,
-                                        SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
-                                );
-
-                                queueArrangeFactoryAnchorMap.put(
-                                        schedulingFactoryInstanceTypeQueue,
-                                        queueProducingArrangement
-                                );
-                            } else {
-                                scoreDirector.beforeVariableChanged(
-                                        queueProducingArrangement,
-                                        SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
-                                );
-                                queueProducingArrangement.setPlanningPreviousProducingArrangementOrFactory(
-                                        schedulingFactoryInstanceTypeQueue
-                                );
-                                scoreDirector.afterVariableChanged(
-                                        queueProducingArrangement,
-                                        SchedulingProducingArrangementFactoryTypeQueue.PLANNING_PREVIOUS
-                                );
-                                queueArrangeFactoryAnchorMap.put(
-                                        schedulingFactoryInstanceTypeQueue,
-                                        queueProducingArrangement
-                                );
-                            }
-                            scoreDirector.triggerVariableListeners();
-                        }, () -> {
-                        }
-                );
-
+        scoreDirector.beforeVariableChanged(
+                schedulingProducingArrangement,
+                SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
+        );
+        schedulingProducingArrangement.setPlanningFactoryInstance(schedulingFactoryInstance);
+        scoreDirector.afterVariableChanged(
+                schedulingProducingArrangement,
+                SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
+        );
         scoreDirector.triggerVariableListeners();
-
     }
 
     private SchedulingDateTimeSlot calcApproximateArrangeDateTimeSlot(
-            BaseSchedulingProducingArrangement producingArrangement,
+            SchedulingProducingArrangement producingArrangement,
             List<SchedulingDateTimeSlot> dateTimeSlotSet,
             LocalDateTime startDateTime
     ) {
         SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
 
-        List<BaseSchedulingProducingArrangement> prerequisiteProducingArrangements
+        List<SchedulingProducingArrangement> prerequisiteProducingArrangements
                 = producingArrangement.getDeepPrerequisiteProducingArrangements();
 
         Duration approximateDelay = Duration.ZERO;
@@ -234,13 +137,13 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         if (!prerequisiteProducingArrangements.isEmpty()) {
             SchedulingDateTimeSlot schedulingDateTimeSlot_A = prerequisiteProducingArrangements.stream()
                     .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
-                    .map(BaseSchedulingProducingArrangement::getPlanningDateTimeSlot)
+                    .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                     .max(SchedulingDateTimeSlot::compareTo)
                     .orElse(result);
             schedulingDateTimeSlot_A = SchedulingDateTimeSlot.fromRangeJumpCeil(
                     dateTimeSlotSet, prerequisiteProducingArrangements.stream()
                             .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
-                            .map(BaseSchedulingProducingArrangement::getPlanningDateTimeSlot)
+                            .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                             .max(SchedulingDateTimeSlot::compareTo)
                             .orElse(result).getStart()
             ).orElse(schedulingDateTimeSlot_A);
@@ -248,7 +151,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
             SchedulingDateTimeSlot schedulingDateTimeSlot_B = SchedulingDateTimeSlot.fromRangeJumpCeil(
                     dateTimeSlotSet,
                     startDateTime.plus(prerequisiteProducingArrangements.stream()
-                            .map(BaseSchedulingProducingArrangement::getProducingDuration)
+                            .map(SchedulingProducingArrangement::getProducingDuration)
                             .distinct()
                             .reduce(approximateDelay, Duration::plus))
             ).orElse(dateTimeSlotSet.getLast());
@@ -260,5 +163,6 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
 
         return result;
     }
+
 
 }

@@ -8,10 +8,14 @@
     <randomSeed>42</randomSeed>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceTypeSlot</entityClass>
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
+    <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
     </entityClass>
-    <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
+    <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot
+    </entityClass>
+    <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
 
     <scoreDirectorFactory>
@@ -106,85 +110,26 @@
         <unionMoveSelector>
             <changeMoveSelector>
                 <filterClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.SlotProducingArrangementPlanningFactoryChangeMoveSelectionFilter
+                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter
                 </filterClass>
                 <entitySelector id="localSearch_changeMoveSelector_es_TypeSlot_planningFactory">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                </entitySelector>
+                <valueSelector variableName="planningFactoryInstance">
+                </valueSelector>
+            </changeMoveSelector>
+
+            <changeMoveSelector>
+                <entitySelector id="localSearch_changeMoveSelector_es_TypeSlot_planningDateTimeSlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
                     </entityClass>
                 </entitySelector>
-                <valueSelector variableName="planningFactory">
+                <valueSelector variableName="planningDateTimeSlot">
                 </valueSelector>
             </changeMoveSelector>
-
-            <unionMoveSelector>
-                <fixedProbabilityWeight>3.0</fixedProbabilityWeight>
-                <changeMoveSelector>
-                    <entitySelector id="localSearch_changeMoveSelector_es_TypeSlot_planningDateTimeSlot">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
-                        </entityClass>
-                    </entitySelector>
-                    <valueSelector id="localSearch_changeMoveSelector_vs_TypeSlot_planningDateTimeSlot"
-                                   variableName="planningDateTimeSlot">
-                    </valueSelector>
-                </changeMoveSelector>
-
-                <changeMoveSelector>
-                    <entitySelector id="localSearch_changeMoveSelector_es_TypeQueue_planningDateTimeSlot">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
-                        </entityClass>
-                    </entitySelector>
-                    <valueSelector id="localSearch_changeMoveSelector_vs__planningDateTimeSlot"
-                                   variableName="planningDateTimeSlot">
-                    </valueSelector>
-                </changeMoveSelector>
-            </unionMoveSelector>
-
-            <tailChainSwapMoveSelector>
-                <filterClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactoryTailChainSwapMoveSelectionFilter
-                </filterClass>
-                <entitySelector id="localSearch_tailChainSwapMoveSelector_es_TypeQueue_planningDateTimeSlot">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
-                    </entityClass>
-                </entitySelector>
-                <valueSelector id="localSearch_tailChainSwapMoveSelector_vs_TypeQueue_planningDateTimeSlot+"
-                               variableName="planningPreviousProducingArrangementOrFactory"/>
-            </tailChainSwapMoveSelector>
-
-            <subChainSwapMoveSelector>
-                <filterClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainSwapMoveSelectionFilter
-                </filterClass>
-                <entityClass>
-                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
-                </entityClass>
-                <subChainSelector>
-                    <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
-                </subChainSelector>
-                <!--ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainReversingSwapMove-->
-                <selectReversingMoveToo>true</selectReversingMoveToo>
-            </subChainSwapMoveSelector>
-
-            <subChainChangeMoveSelector>
-                <filterClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.QueueProducingArrangementPlanningFactorySubChainChangeMoveSelectionFilter
-                </filterClass>
-                <entityClass>
-                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeQueue
-                </entityClass>
-                <subChainSelector>
-                    <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
-                    <minimumSubChainSize>1</minimumSubChainSize>
-                </subChainSelector>
-                <valueSelector variableName="planningPreviousProducingArrangementOrFactory"/>
-                <!--ai.timefold.solver.core.impl.heuristic.selector.move.generic.chained.SubChainReversingChangeMove-->
-                <selectReversingMoveToo>true</selectReversingMoveToo>
-            </subChainChangeMoveSelector>
-
         </unionMoveSelector>
 
         <acceptor>
@@ -199,7 +144,6 @@
 
         <forager>
             <acceptedCountLimit>1</acceptedCountLimit>
-            <finalistPodiumType>STRATEGIC_OSCILLATION_BY_LEVEL_ON_BEST_SCORE</finalistPodiumType>
         </forager>
     </localSearch>
 

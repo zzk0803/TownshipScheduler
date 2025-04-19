@@ -2,11 +2,12 @@ package zzk.townshipscheduler.ui.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Value;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 
 import java.io.Serializable;
 
 /**
- * DTO for {@link zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingFactoryInstance}
+ * DTO for {@link SchedulingFactoryInstance}
  */
 @Value
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -7,7 +7,6 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.pojo.ProducingArrangementVO;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,19 +45,19 @@ public class LitSchedulingVisTimelinePanel extends Component {
     public void updateRemote(TownshipSchedulingProblem townshipSchedulingProblem) {
         setPropertyList(
                 "schedulingOrder",
-                new ArrayList<>(townshipSchedulingProblem.getSchedulingOrderSet())
+                townshipSchedulingProblem.getSchedulingOrderList()
         );
         setPropertyList(
                 "schedulingProduct",
-                new ArrayList<>(townshipSchedulingProblem.getSchedulingProductSet())
+                townshipSchedulingProblem.getSchedulingProductList()
         );
         setPropertyList(
                 "schedulingFactory",
-                getSchedulingFactoryInstances(townshipSchedulingProblem)
+                townshipSchedulingProblem.getSchedulingFactoryInstanceList()
         );
         setPropertyList(
                 "producingArrangements",
-                toProducingArrangementVo(townshipSchedulingProblem.getBaseProducingArrangements())
+                toProducingArrangementVo(townshipSchedulingProblem.getSchedulingProducingArrangementList())
         );
 
     }
@@ -67,22 +66,10 @@ public class LitSchedulingVisTimelinePanel extends Component {
         getElement().setPropertyList(name, listObject);
     }
 
-    private List<BaseSchedulingFactoryInstance> getSchedulingFactoryInstances(TownshipSchedulingProblem townshipSchedulingProblem) {
-        List<SchedulingFactoryInstanceTypeSlot> factoryInstanceTypeSlotList
-                = townshipSchedulingProblem.getSchedulingFactoryInstanceTypeSlotList();
-        List<SchedulingFactoryInstanceTypeQueue> factoryInstanceTypeQueueList
-                = townshipSchedulingProblem.getSchedulingFactoryInstanceTypeQueueList();
-        List<BaseSchedulingFactoryInstance> schedulingFactoryInstances
-                = new ArrayList<>(factoryInstanceTypeSlotList.size() + factoryInstanceTypeQueueList.size());
-        schedulingFactoryInstances.addAll(factoryInstanceTypeSlotList);
-        schedulingFactoryInstances.addAll(factoryInstanceTypeQueueList);
-        return schedulingFactoryInstances;
-    }
-
-    private List<ProducingArrangementVO> toProducingArrangementVo(List<BaseSchedulingProducingArrangement> baseSchedulingProducingArrangementList) {
-        return baseSchedulingProducingArrangementList.stream()
+    private List<ProducingArrangementVO> toProducingArrangementVo(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
+        return schedulingProducingArrangementList.stream()
                 .map(producingArrangement -> {
-                    BaseSchedulingFactoryInstance planningFactoryInstance = producingArrangement.getPlanningFactoryInstance();
+                    SchedulingFactoryInstance planningFactoryInstance = producingArrangement.getPlanningFactoryInstance();
                     return new ProducingArrangementVO(
                             producingArrangement.getId(),
                             producingArrangement.getUuid(),
@@ -95,7 +82,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
                                     })
                                     .orElse("N/A"),
                             Optional.ofNullable(planningFactoryInstance)
-                                    .map(BaseSchedulingFactoryInstance::getId)
+                                    .map(SchedulingFactoryInstance::getId)
                                     .map(String::valueOf)
                                     .orElse("N/A"),
                             producingArrangement.getProducingDuration().toString(),

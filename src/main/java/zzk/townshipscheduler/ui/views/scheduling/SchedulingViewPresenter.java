@@ -17,7 +17,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
-import zzk.townshipscheduler.backend.scheduling.model.BaseSchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
@@ -59,8 +59,8 @@ public class SchedulingViewPresenter {
     @Setter
     private SchedulingView schedulingView;
 
-    public void setupPlayerActionGrid(Grid<BaseSchedulingProducingArrangement> grid) {
-        grid.setItems(findCurrentProblem().getBaseProducingArrangements());
+    public void setupPlayerActionGrid(Grid<SchedulingProducingArrangement> grid) {
+        grid.setItems(findCurrentProblem().getSchedulingProducingArrangementList());
     }
 
     public TownshipSchedulingProblem findCurrentProblem() {
@@ -76,14 +76,14 @@ public class SchedulingViewPresenter {
     }
 
     public List<SchedulingOrder> getSchedulingOrder() {
-        return findCurrentProblem().getSchedulingOrderSet();
+        return findCurrentProblem().getSchedulingOrderList();
     }
 
     public void schedulingAndPush() {
         Consumer<TownshipSchedulingProblem> solutionConsumer = townshipSchedulingProblem -> {
             SchedulingViewPresenter.this.setTownshipSchedulingProblem(townshipSchedulingProblem);
-            List<BaseSchedulingProducingArrangement> producingArrangements
-                    = townshipSchedulingProblem.getBaseProducingArrangements();
+            List<SchedulingProducingArrangement> producingArrangements
+                    = townshipSchedulingProblem.getSchedulingProducingArrangementList();
             ScoreAnalysis<BendableScore> scoreAnalysis
                     = solutionManager.analyze(
                     townshipSchedulingProblem

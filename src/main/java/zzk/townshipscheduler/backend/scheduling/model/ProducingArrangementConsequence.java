@@ -1,42 +1,66 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
+import java.util.UUID;
 import java.util.function.IntFunction;
 
 @Data
 @Builder
-public final class ArrangeConsequence implements Comparable<ArrangeConsequence> {
+public final class ProducingArrangementConsequence {
 
-    private BaseSchedulingProducingArrangement producingArrangement;
+    @EqualsAndHashCode.Include
+    private String uuid;
 
-    private LocalDateTime localDateTime;
+    @DeepPlanningClone
+    private SchedulingProducingArrangement producingArrangement;
 
     private SchedulingResource resource;
 
     private SchedulingResourceChange resourceChange;
 
-    @Override
-    public int compareTo(ArrangeConsequence that) {
-        return Comparator.comparing(ArrangeConsequence::getLocalDateTime).compare(this, that);
+    {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    @EqualsAndHashCode.Include
+    public Integer getId() {
+        return producingArrangement.getId();
+    }
+
+    public LocalDateTime getArrangeDateTime() {
+        return producingArrangement.getArrangeDateTime();
+    }
+
+    public LocalDateTime getProducingDateTime() {
+        return producingArrangement.getProducingDateTime();
+    }
+
+    public LocalDateTime getProductReapDateTime() {
+        return getCompletedDateTime();
+    }
+
+    public LocalDateTime getCompletedDateTime() {
+        return producingArrangement.getCompletedDateTime();
+    }
+
+    public LocalDateTime getFactorySlotOrQueueRestoreDateTime() {
+        return getCompletedDateTime();
     }
 
     public interface SchedulingResource {
-
-        public Object getRoot();
 
         static ProductStock productStock(SchedulingProduct product) {
             return new ProductStock(product);
         }
 
-        static FactoryProducingLength factoryWaitQueue(BaseSchedulingFactoryInstance factoryInstance) {
+        static FactoryProducingLength factoryWaitQueue(SchedulingFactoryInstance factoryInstance) {
             return new FactoryProducingLength(factoryInstance);
         }
+
+        public Object getRoot();
 
     }
 
@@ -83,10 +107,10 @@ public final class ArrangeConsequence implements Comparable<ArrangeConsequence> 
     @AllArgsConstructor
     public static class FactoryProducingLength implements SchedulingResource {
 
-        private BaseSchedulingFactoryInstance factoryInstance;
+        private SchedulingFactoryInstance factoryInstance;
 
         @Override
-        public BaseSchedulingFactoryInstance getRoot() {
+        public SchedulingFactoryInstance getRoot() {
             return factoryInstance;
         }
 
