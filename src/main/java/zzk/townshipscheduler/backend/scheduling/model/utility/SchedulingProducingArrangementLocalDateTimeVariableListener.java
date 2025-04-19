@@ -14,8 +14,10 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.function.BiConsumer;
 
-public class SchedulingProducingArrangementVariableListener
+public class SchedulingProducingArrangementLocalDateTimeVariableListener
         implements VariableListener<TownshipSchedulingProblem, SchedulingProducingArrangement> {
+
+
 
     @Override
     public void beforeVariableChanged(
@@ -39,38 +41,44 @@ public class SchedulingProducingArrangementVariableListener
     ) {
         SchedulingFactoryInstance planningFactoryInstance
                 = schedulingProducingArrangement.getPlanningFactoryInstance();
-        SchedulingDateTimeSlot planningDateTimeSlot
-                = schedulingProducingArrangement.getPlanningDateTimeSlot();
-        SchedulingDateTimeSlot.FactoryProcessSequence oldFactoryProcessSequence
+        SchedulingDateTimeSlot.FactoryProcessSequence shadowFactoryProcessSequence
                 = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        if (Objects.isNull(planningFactoryInstance) || Objects.isNull(planningDateTimeSlot)) {
+        if (Objects.isNull(planningFactoryInstance) || Objects.isNull(shadowFactoryProcessSequence)) {
             doShadowVariableUpdate(
                     scoreDirector,
                     schedulingProducingArrangement,
                     null,
                     SchedulingProducingArrangement::setShadowFactoryProcessSequence,
-                    SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
+                    SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
+            );
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    null,
+                    SchedulingProducingArrangement::setShadowFactoryProcessSequence,
+                    SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
             );
             return;
         }
 
-        SortedSet<SchedulingDateTimeSlot.FactoryProcessSequence> shadowFactorySequenceSet
-                = planningFactoryInstance.getShadowFactorySequenceSet();
-        SchedulingDateTimeSlot.FactoryProcessSequence newFactoryProcessSequence
-                = new SchedulingDateTimeSlot.FactoryProcessSequence(schedulingProducingArrangement);
-        if (Objects.nonNull(oldFactoryProcessSequence)) {
-            shadowFactorySequenceSet.remove(oldFactoryProcessSequence);
-        }
-
-        shadowFactorySequenceSet.add(newFactoryProcessSequence);
+        Pair<LocalDateTime, LocalDateTime> localDateTimePair
+                = planningFactoryInstance.queryProducingAndCompletedPair(schedulingProducingArrangement);
+        LocalDateTime producingDateTime = localDateTimePair.getValue0();
+        LocalDateTime completedDateTime = localDateTimePair.getValue1();
         doShadowVariableUpdate(
                 scoreDirector,
                 schedulingProducingArrangement,
-                newFactoryProcessSequence,
-                SchedulingProducingArrangement::setShadowFactoryProcessSequence,
-                SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
+                producingDateTime,
+                SchedulingProducingArrangement::setComputedShadowProducingDateTime,
+                SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
         );
-
+        doShadowVariableUpdate(
+                scoreDirector,
+                schedulingProducingArrangement,
+                completedDateTime,
+                SchedulingProducingArrangement::setComputedShadowCompletedDateTime,
+                SchedulingProducingArrangement.SHADOW_COMPLETED_DATE_TIME
+        );
     }
 
     private <E, V> void doShadowVariableUpdate(
@@ -116,5 +124,7 @@ public class SchedulingProducingArrangementVariableListener
     ) {
 
     }
+
+
 
 }

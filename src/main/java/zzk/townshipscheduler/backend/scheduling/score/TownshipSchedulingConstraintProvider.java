@@ -20,13 +20,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     @Override
     public Constraint @NonNull [] defineConstraints(@NonNull ConstraintFactory constraintFactory) {
         return new Constraint[]{
-                forbidMismatchFactory(constraintFactory),
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteStock(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotArrangeInPlayerSleepTime(constraintFactory),
-                preferArrangeAsSoonAsPassable(constraintFactory),
-                preferMinimizeMakeSpan(constraintFactory)
+                preferArrangeAsSoonAsPassable(constraintFactory)
         };
     }
 
@@ -211,8 +209,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         (arrangement) -> {
                             LocalDateTime startDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
                             LocalDateTime arrangementLocalDateTime = arrangement.getArrangeDateTime();
-                            return Math.toIntExact(Duration.between(startDateTime, arrangementLocalDateTime)
-                                    .toMinutes());
+                            return Math.toIntExact(Duration.between(startDateTime, arrangementLocalDateTime).toMinutes());
                         }
                 )
                 .asConstraint("preferArrangeAsSoonAsPassable");

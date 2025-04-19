@@ -3,6 +3,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
+import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementLocalDateTimeVariableListener;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementVariableListener;
 
 import java.time.Duration;
@@ -33,7 +35,11 @@ public class SchedulingProducingArrangement {
 
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
 
-    public static final String SHADOW_DATE_TIME_SEQUENCE = "shadowFactoryProcessSequence";
+    public static final String SHADOW_FACTORY_PROCESS_SEQUENCE = "shadowFactoryProcessSequence";
+
+    public static final String SHADOW_PRODUCING_DATE_TIME = "computedShadowProducingDateTime";
+
+    public static final String SHADOW_COMPLETED_DATE_TIME = "computedShadowCompletedDateTime";
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -83,8 +89,17 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot.FactoryProcessSequence shadowFactoryProcessSequence;
 
+    @ShadowVariable(
+            sourceVariableName = PLANNING_FACTORY_INSTANCE,
+            variableListenerClass = SchedulingProducingArrangementVariableListener.class
+    )
+    @ShadowVariable(
+            sourceVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE,
+            variableListenerClass = SchedulingProducingArrangementLocalDateTimeVariableListener.class
+    )
     private LocalDateTime computedShadowProducingDateTime;
 
+    @PiggybackShadowVariable(shadowVariableName = SHADOW_PRODUCING_DATE_TIME)
     private LocalDateTime computedShadowCompletedDateTime;
 
     public SchedulingProducingArrangement(
@@ -105,11 +120,6 @@ public class SchedulingProducingArrangement {
         );
         producingArrangement.setUuid(UUID.randomUUID().toString());
         return producingArrangement;
-    }
-
-    public void invalidComputedShadowProperty() {
-        this.computedShadowProducingDateTime = null;
-        this.computedShadowCompletedDateTime = null;
     }
 
     @JsonIgnore
@@ -220,12 +230,12 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getCompletedDateTime() {
-
-        LocalDateTime producingDateTime = getProducingDateTime();
-
-        return producingDateTime != null
-                ? producingDateTime.plus(getProducingDuration())
-                : null;
+        return getComputedShadowCompletedDateTime();
+//        LocalDateTime producingDateTime = getProducingDateTime();
+//
+//        return producingDateTime != null
+//                ? producingDateTime.plus(getProducingDuration())
+//                : null;
     }
 
     @JsonProperty("producingDateTime")
@@ -233,31 +243,16 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getProducingDateTime() {
-        if (weatherFactoryProducingTypeIsQueue()) {
-            SchedulingFactoryInstance factoryInstance
-                    = getPlanningFactoryInstance();
-            return factoryInstance == null
-                    ? null
-                    : factoryInstance.queryProducingDateTime(this);
-
-//            if (Objects.nonNull(this.computedShadowProducingDateTime)) {
-//                return this.computedShadowProducingDateTime;
-//            }
-//
+        return getComputedShadowProducingDateTime();
+//        if (weatherFactoryProducingTypeIsQueue()) {
 //            SchedulingFactoryInstance factoryInstance
 //                    = getPlanningFactoryInstance();
-//            LocalDateTime computed
-//                    = factoryInstance == null
+//            return factoryInstance == null
 //                    ? null
-//                    : factoryInstance.queryProducingDateTime(this);
-//            if (Objects.nonNull(computed)) {
-//                return this.computedShadowProducingDateTime = computed;
-//            } else {
-//                return null;
-//            }
-        } else {
-            return getArrangeDateTime();
-        }
+//                    : factoryInstance.queryProducingAndCompletedPair(this).getValue0();
+//        } else {
+//            return getArrangeDateTime();
+//        }
     }
 
     @JsonProperty("producingDuration")

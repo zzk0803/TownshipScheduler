@@ -36,7 +36,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     private SchedulingDateTimeSlot next;
 
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT)
-    private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
+    private List<SchedulingProducingArrangement> planningDateTimeSlotProducingArrangements = new ArrayList<>();
 
     private static boolean isDateTimeBetween(
             LocalDateTime dateTime,
