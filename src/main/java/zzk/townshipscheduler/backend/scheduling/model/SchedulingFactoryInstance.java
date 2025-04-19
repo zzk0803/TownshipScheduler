@@ -76,31 +76,16 @@ public class SchedulingFactoryInstance {
                         .thenComparingInt(SchedulingDateTimeSlot.FactoryProcessSequence::getArrangementId)
         );
 
-        for (
-                SchedulingDateTimeSlot.FactoryProcessSequence currentFactoryProcessSequence
-                : sortedSet
-        ) {
-            Duration producingDuration = currentFactoryProcessSequence.getProducingDuration();
-            LocalDateTime arrangeDateTime = currentFactoryProcessSequence.getArrangeDateTime();
-
-//            SchedulingDateTimeSlot.FactoryProcessSequence floorOfCurrent
-//                    = computingProducingCompletedMap.floorKey(currentFactoryProcessSequence);
+        for (SchedulingDateTimeSlot.FactoryProcessSequence current : sortedSet) {
+            Duration producingDuration = current.getProducingDuration();
+            LocalDateTime arrangeDateTime = current.getArrangeDateTime();
 
             LocalDateTime previousAlmostCompletedDateTime
-                    = computingProducingCompletedMap.headMap(currentFactoryProcessSequence, false)
+                    = computingProducingCompletedMap.headMap(current, false)
                     .values().stream()
                     .map(Pair::getValue1)
                     .max(LocalDateTime::compareTo)
                     .orElse(null);
-
-//            DateTimeRange previousDateTimeRange
-//                    = floorOfCurrent != null
-//                    ? computingProducingCompletedMap.get(floorOfCurrent)
-//                    : null;
-//            LocalDateTime previousCompletedDateTime
-//                    = previousDateTimeRange != null
-//                    ? previousDateTimeRange.endDateTime
-//                    : null;
 
             LocalDateTime producingDateTime;
             if (previousAlmostCompletedDateTime == null) {
@@ -108,22 +93,22 @@ public class SchedulingFactoryInstance {
             } else {
                 if (arrangeDateTime.isAfter(previousAlmostCompletedDateTime)) {
                     producingDateTime = arrangeDateTime;
-                } else {
+                } else if(arrangeDateTime.isBefore(previousAlmostCompletedDateTime)){
                     producingDateTime = previousAlmostCompletedDateTime;
+                }else {
+                    producingDateTime = arrangeDateTime;
                 }
             }
             LocalDateTime completedDateTime = producingDateTime.plus(producingDuration);
 
             computingProducingCompletedMap.put(
-                    currentFactoryProcessSequence,
+                    current,
                     new Pair<>(producingDateTime, completedDateTime)
             );
 
         }
 
-        Pair<LocalDateTime, LocalDateTime> dateTimePair
-                = computingProducingCompletedMap.get(shadowFactoryProcessSequence);
-        return dateTimePair;
+        return computingProducingCompletedMap.get(shadowFactoryProcessSequence);
     }
 
     @Override

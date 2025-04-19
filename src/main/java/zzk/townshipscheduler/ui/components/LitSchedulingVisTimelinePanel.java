@@ -3,8 +3,11 @@ package zzk.townshipscheduler.ui.components;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.ui.pojo.ProducingArrangementVO;
+import zzk.townshipscheduler.ui.pojo.SchedulingFactoryInstanceVO;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
 import java.util.List;
@@ -53,7 +56,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
         );
         setPropertyList(
                 "schedulingFactory",
-                townshipSchedulingProblem.getSchedulingFactoryInstanceList()
+                toFactoryInstanceVo(townshipSchedulingProblem.getSchedulingFactoryInstanceList())
         );
         setPropertyList(
                 "producingArrangements",
@@ -64,6 +67,26 @@ public class LitSchedulingVisTimelinePanel extends Component {
 
     private void setPropertyList(String name, List<?> listObject) {
         getElement().setPropertyList(name, listObject);
+    }
+
+    private List<SchedulingFactoryInstanceVO> toFactoryInstanceVo(List<SchedulingFactoryInstance> schedulingFactoryInstanceList) {
+        return schedulingFactoryInstanceList.stream()
+                .map(schedulingFactoryInstance -> {
+                    Integer id = schedulingFactoryInstance.getId();
+                    String categoryName = schedulingFactoryInstance.getCategoryName();
+                    int seqNum = schedulingFactoryInstance.getSeqNum();
+                    int producingLength = schedulingFactoryInstance.getProducingLength();
+                    int reapWindowSize = schedulingFactoryInstance.getReapWindowSize();
+
+                    return new SchedulingFactoryInstanceVO(
+                            id,
+                            categoryName,
+                            seqNum,
+                            producingLength,
+                            reapWindowSize
+                    );
+                })
+                .toList();
     }
 
     private List<ProducingArrangementVO> toProducingArrangementVo(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {

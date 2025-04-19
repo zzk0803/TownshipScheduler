@@ -137,7 +137,7 @@
             <valueTabuSize>7</valueTabuSize>
             <moveTabuSize>7</moveTabuSize>
             <undoMoveTabuSize>7</undoMoveTabuSize>
-            <simulatedAnnealingStartingTemperature>[100/500/100]hard/[10/1]soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>[1000/500/100]hard/[10/1]soft</simulatedAnnealingStartingTemperature>
             <!--            <greatDelugeWaterLevelIncrementRatio>0.0000000618</greatDelugeWaterLevelIncrementRatio>-->
             <!--            <lateAcceptanceSize>4096</lateAcceptanceSize>-->
         </acceptor>

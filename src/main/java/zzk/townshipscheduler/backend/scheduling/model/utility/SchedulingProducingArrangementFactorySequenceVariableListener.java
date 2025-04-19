@@ -2,19 +2,17 @@ package zzk.townshipscheduler.backend.scheduling.model.utility;
 
 import ai.timefold.solver.core.api.domain.variable.VariableListener;
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
-import org.javatuples.Pair;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.function.BiConsumer;
 
-public class SchedulingProducingArrangementVariableListener
+public class SchedulingProducingArrangementFactorySequenceVariableListener
         implements VariableListener<TownshipSchedulingProblem, SchedulingProducingArrangement> {
 
     @Override

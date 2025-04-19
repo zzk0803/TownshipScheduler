@@ -17,7 +17,7 @@ import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementLocalDateTimeVariableListener;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementVariableListener;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -81,17 +81,17 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     @ShadowVariable(
             sourceVariableName = PLANNING_FACTORY_INSTANCE,
-            variableListenerClass = SchedulingProducingArrangementVariableListener.class
+            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
     )
     @ShadowVariable(
             sourceVariableName = PLANNING_DATA_TIME_SLOT,
-            variableListenerClass = SchedulingProducingArrangementVariableListener.class
+            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
     )
     private SchedulingDateTimeSlot.FactoryProcessSequence shadowFactoryProcessSequence;
 
     @ShadowVariable(
             sourceVariableName = PLANNING_FACTORY_INSTANCE,
-            variableListenerClass = SchedulingProducingArrangementVariableListener.class
+            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
     )
     @ShadowVariable(
             sourceVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE,
@@ -231,11 +231,6 @@ public class SchedulingProducingArrangement {
     @ToString.Include
     public LocalDateTime getCompletedDateTime() {
         return getComputedShadowCompletedDateTime();
-//        LocalDateTime producingDateTime = getProducingDateTime();
-//
-//        return producingDateTime != null
-//                ? producingDateTime.plus(getProducingDuration())
-//                : null;
     }
 
     @JsonProperty("producingDateTime")
@@ -244,15 +239,6 @@ public class SchedulingProducingArrangement {
     @ToString.Include
     public LocalDateTime getProducingDateTime() {
         return getComputedShadowProducingDateTime();
-//        if (weatherFactoryProducingTypeIsQueue()) {
-//            SchedulingFactoryInstance factoryInstance
-//                    = getPlanningFactoryInstance();
-//            return factoryInstance == null
-//                    ? null
-//                    : factoryInstance.queryProducingAndCompletedPair(this).getValue0();
-//        } else {
-//            return getArrangeDateTime();
-//        }
     }
 
     @JsonProperty("producingDuration")
