@@ -108,28 +108,78 @@
 
     <localSearch>
         <unionMoveSelector>
+
             <changeMoveSelector>
                 <filterClass>
                     zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter
                 </filterClass>
-                <entitySelector id="localSearch_changeMoveSelector_es_TypeSlot_planningFactory">
+                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
                 </entitySelector>
-                <valueSelector variableName="planningFactoryInstance">
+                <valueSelector variableName="planningFactoryInstance" id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
                 </valueSelector>
             </changeMoveSelector>
 
             <changeMoveSelector>
-                <entitySelector id="localSearch_changeMoveSelector_es_TypeSlot_planningDateTimeSlot">
+                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangementFactoryTypeSlot
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
                 </entitySelector>
-                <valueSelector variableName="planningDateTimeSlot">
+                <valueSelector variableName="planningDateTimeSlot" id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
                 </valueSelector>
             </changeMoveSelector>
+
+            <swapMoveSelector>
+                <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                </entitySelector>
+                <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                </secondaryEntitySelector>
+                <variableNameIncludes>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                </variableNameIncludes>
+            </swapMoveSelector>
+
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector variableName="planningDateTimeSlot" id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">
+                </valueSelector>
+            </pillarChangeMoveSelector>
+
+            <pillarSwapMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <secondaryPillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </secondaryPillarSelector>
+                <variableNameIncludes>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                </variableNameIncludes>
+            </pillarSwapMoveSelector>
+
         </unionMoveSelector>
 
         <acceptor>
@@ -137,9 +187,7 @@
             <valueTabuSize>7</valueTabuSize>
             <moveTabuSize>7</moveTabuSize>
             <undoMoveTabuSize>7</undoMoveTabuSize>
-            <simulatedAnnealingStartingTemperature>[1000/500/100]hard/[10/1]soft</simulatedAnnealingStartingTemperature>
-            <!--            <greatDelugeWaterLevelIncrementRatio>0.0000000618</greatDelugeWaterLevelIncrementRatio>-->
-            <!--            <lateAcceptanceSize>4096</lateAcceptanceSize>-->
+            <simulatedAnnealingStartingTemperature>[1000/100/100]hard/[1000/50]soft</simulatedAnnealingStartingTemperature>
         </acceptor>
 
         <forager>
