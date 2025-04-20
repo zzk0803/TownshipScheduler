@@ -5,13 +5,16 @@ import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.common.*;
 import org.jspecify.annotations.NonNull;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.Collection;
+import java.util.Objects;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
 
@@ -28,7 +31,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint forbidBrokenFactoryAbility(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
+                .filter(schedulingProducingArrangement ->
+                        Objects.nonNull(schedulingProducingArrangement.getProducingDateTime())
+                        && Objects.nonNull(schedulingProducingArrangement.getCompletedDateTime())
+                )
                 .groupBy(
                         SchedulingProducingArrangement::getPlanningFactoryInstance,
                         ConstraintCollectors.toConnectedTemporalRanges(

@@ -50,8 +50,6 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
 
         FactoryProcessSequence newFactoryProcessSequence
                 = new FactoryProcessSequence(schedulingProducingArrangement);
-
-
         if (!Objects.equals(oldFactoryProcessSequence, newFactoryProcessSequence)) {
             if (Objects.nonNull(oldFactoryProcessSequence)) {
                 planningFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);

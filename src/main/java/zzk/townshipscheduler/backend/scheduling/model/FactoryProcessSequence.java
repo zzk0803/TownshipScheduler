@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -18,6 +19,8 @@ public class FactoryProcessSequence {
 
     String factoryInstanceId;
 
+    boolean sequenced;
+
     Duration producingDuration;
 
     int slotGapDuration;
@@ -29,6 +32,9 @@ public class FactoryProcessSequence {
         this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
         this.factoryInstanceId = schedulingProducingArrangement.getPlanningFactoryInstance().getReadableIdentifier();
+        this.sequenced = schedulingProducingArrangement.getPlanningFactoryInstance()
+                                 .getSchedulingFactoryInfo()
+                                 .getProducingStructureType() == ProducingStructureType.QUEUE;
     }
 
     public FactoryProcessSequence(
@@ -40,6 +46,9 @@ public class FactoryProcessSequence {
         this.arrangementId = schedulingProducingArrangement.getId();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.factoryInstanceId = schedulingProducingArrangement.getPlanningFactoryInstance().getReadableIdentifier();
+        this.sequenced = schedulingProducingArrangement.getPlanningFactoryInstance()
+                                 .getSchedulingFactoryInfo()
+                                 .getProducingStructureType() == ProducingStructureType.QUEUE;
     }
 
 }

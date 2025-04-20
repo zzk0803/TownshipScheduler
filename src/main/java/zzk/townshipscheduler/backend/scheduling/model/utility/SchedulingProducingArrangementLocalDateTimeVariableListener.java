@@ -11,6 +11,7 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.SortedMap;
 import java.util.function.BiConsumer;
 
 public class SchedulingProducingArrangementLocalDateTimeVariableListener
@@ -59,15 +60,18 @@ public class SchedulingProducingArrangementLocalDateTimeVariableListener
             return;
         }
 
-        doUpdateDateTime(scoreDirector, schedulingProducingArrangement, planningFactoryInstance);
+        SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> preparedProducingAndCompletedMap
+                = planningFactoryInstance.prepareProducingAndCompletedMap();
+        doUpdateDateTime(scoreDirector, schedulingProducingArrangement, preparedProducingAndCompletedMap);
 
         scoreDirector.getWorkingSolution()
                 .getSchedulingProducingArrangementList()
                 .stream()
                 .filter(streamIterating -> streamIterating.getPlanningFactoryInstance() == planningFactoryInstance)
                 .filter(streamIterating -> streamIterating != schedulingProducingArrangement)
+                .filter(streamIterating -> Objects.nonNull(streamIterating.getShadowFactoryProcessSequence()))
                 .forEach(streamIterating -> {
-                    doUpdateDateTime(scoreDirector, streamIterating, planningFactoryInstance);
+                    doUpdateDateTime(scoreDirector, streamIterating, preparedProducingAndCompletedMap);
                 });
     }
 
@@ -81,6 +85,57 @@ public class SchedulingProducingArrangementLocalDateTimeVariableListener
         scoreDirector.beforeVariableChanged(entity, shadowVariableName);
         setterFunction.accept(entity, value);
         scoreDirector.afterVariableChanged(entity, shadowVariableName);
+    }
+
+    private void doUpdateDateTime(
+            ScoreDirector<TownshipSchedulingProblem> scoreDirector,
+            SchedulingProducingArrangement schedulingProducingArrangement,
+            SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> preparedProducingAndCompletedMap
+    ) {
+        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
+        LocalDateTime oldProducingDateTime = schedulingProducingArrangement.getComputedShadowProducingDateTime();
+        LocalDateTime oldCompletedDateTime = schedulingProducingArrangement.getComputedShadowCompletedDateTime();
+        Pair<LocalDateTime, LocalDateTime> localDateTimePair
+                = preparedProducingAndCompletedMap.get(factoryProcessSequence);
+        if (localDateTimePair == null) {
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    null,
+                    SchedulingProducingArrangement::setComputedShadowProducingDateTime,
+                    SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
+            );
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    null,
+                    SchedulingProducingArrangement::setComputedShadowCompletedDateTime,
+                    SchedulingProducingArrangement.SHADOW_COMPLETED_DATE_TIME
+            );
+            return;
+        }
+
+        LocalDateTime producingDateTime = localDateTimePair.getValue0();
+        LocalDateTime completedDateTime = localDateTimePair.getValue1();
+        if (!(
+                Objects.equals(oldProducingDateTime, producingDateTime)
+                && Objects.equals(oldCompletedDateTime, completedDateTime)
+        )) {
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    producingDateTime,
+                    SchedulingProducingArrangement::setComputedShadowProducingDateTime,
+                    SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
+            );
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    completedDateTime,
+                    SchedulingProducingArrangement::setComputedShadowCompletedDateTime,
+                    SchedulingProducingArrangement.SHADOW_COMPLETED_DATE_TIME
+            );
+        }
     }
 
     private void doUpdateDateTime(
