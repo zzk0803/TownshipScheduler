@@ -139,17 +139,20 @@ class EntityProblemTransferProcess {
                                 FieldFactoryEntity fieldFactoryEntity = fieldFactoryEntities.stream()
                                         .findFirst()
                                         .orElseThrow();
-                                SchedulingFactoryInstance slotFactoryInstance = new SchedulingFactoryInstance();
+                                SchedulingFactoryInstance fieldInstance = new SchedulingFactoryInstance();
                                 SchedulingFactoryInfo.Id schedulingFactoryInfoId
                                         = SchedulingFactoryInfo.Id.of(fieldFactoryEntity.getFieldFactoryInfoEntity());
                                 SchedulingFactoryInfo schedulingFactoryInfo
                                         = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
-                                slotFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
-                                slotFactoryInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
-                                slotFactoryInstance.setProducingLength(size);
-                                slotFactoryInstance.setReapWindowSize(size);
-                                schedulingFactoryInfo.getFactoryInstances().add(slotFactoryInstance);
-                                this.schedulingFactoryInstances.add(slotFactoryInstance);
+                                int factoryInstanceId = factoryInstanceIdRoller.getAndIncrement();
+                                fieldInstance.setId(factoryInstanceId);
+                                fieldInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
+                                fieldInstance.setProducingLength(size);
+                                fieldInstance.setReapWindowSize(size);
+                                fieldInstance.setSeqNum(1);
+                                fieldInstance.setReadableIdentifier(schedulingFactoryInfo.getCategoryName() + "#" + 1);
+                                schedulingFactoryInfo.getFactoryInstances().add(fieldInstance);
+                                this.schedulingFactoryInstances.add(fieldInstance);
                             } else {
                                 Map<FieldFactoryInfoEntity, List<FieldFactoryEntity>> typeInstamceMap
                                         = fieldFactoryEntities
@@ -163,24 +166,27 @@ class EntityProblemTransferProcess {
                                             = SchedulingFactoryInfo.Id.of(type);
                                     SchedulingFactoryInfo schedulingFactoryInfo
                                             = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
+                                    String categoryName = schedulingFactoryInfo.getCategoryName();
                                     for (int i = 0; i < size; i++) {
                                         FieldFactoryEntity fieldFactoryEntity = instanceList.get(i);
-                                        SchedulingFactoryInstance typeSlotFactoryInstance
+                                        SchedulingFactoryInstance factoryInstance
                                                 = new SchedulingFactoryInstance();
-                                        typeSlotFactoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
-                                        typeSlotFactoryInstance.setSeqNum(i + 1);
-                                        typeSlotFactoryInstance.setSchedulingFactoryInfo(
+                                        factoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
+                                        int seqNum = i + 1;
+                                        factoryInstance.setSeqNum(seqNum);
+                                        factoryInstance.setSchedulingFactoryInfo(
                                                 schedulingFactoryInfo
                                         );
-                                        typeSlotFactoryInstance.setProducingLength(
+                                        factoryInstance.setProducingLength(
                                                 fieldFactoryEntity.getProducingLength()
                                         );
-                                        typeSlotFactoryInstance.setReapWindowSize(
+                                        factoryInstance.setReapWindowSize(
                                                 fieldFactoryEntity.getReapWindowSize()
                                         );
+                                        factoryInstance.setReadableIdentifier(categoryName + "#" + seqNum);
                                         schedulingFactoryInfo.getFactoryInstances()
-                                                .add(typeSlotFactoryInstance);
-                                        this.schedulingFactoryInstances.add(typeSlotFactoryInstance);
+                                                .add(factoryInstance);
+                                        this.schedulingFactoryInstances.add(factoryInstance);
                                     }
                                 }
                             }

@@ -16,17 +16,15 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TownshipSchedulingProblem {
 
-    public static final int BENDABLE_SCORE_HARD_SIZE = 3;
+    public static final int BENDABLE_SCORE_HARD_SIZE = 2;
 
     public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
 
-    public static final int HARD_BROKEN_FACTORY = 0;
+    public static final int HARD_BROKEN_FACTORY_ABILITY = 0;
 
-    public static final int HARD_BROKEN_ARRANGEMENT_DATE_TIME = 1;
+    public static final int HARD_BROKEN_PRODUCE_PREREQUISITE = 1;
 
-    public static final int HARD_QUEUE_DATETIME_SEQUENCE_CHAOS = 2;
-
-    public static final int SOFT_ORDER_DEAD_LINE = 0;
+    public static final int SOFT_TOLERANCE = 0;
 
     public static final int SOFT_BATTER = 1;
 
@@ -47,12 +45,10 @@ public class TownshipSchedulingProblem {
     private List<SchedulingOrder> schedulingOrderList;
 
     @PlanningEntityCollectionProperty
-//    @ProblemFactCollectionProperty
     @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @PlanningEntityCollectionProperty
-//    @ProblemFactCollectionProperty
     @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
@@ -178,6 +174,21 @@ public class TownshipSchedulingProblem {
 
         return resultArrangementList;
     }
+
+//    @ProblemFactCollectionProperty
+//    public List<FactoryProcessSequence> cacheFactoryProcessSequence() {
+//        List<SchedulingProducingArrangement> producingArrangements = getSchedulingProducingArrangementList();
+//        List<SchedulingDateTimeSlot> dateTimeSlots = getSchedulingDateTimeSlots();
+//        return producingArrangements.stream()
+//                .flatMap(schedulingProducingArrangement ->
+//                        dateTimeSlots.stream()
+//                                .map(schedulingDateTimeSlot -> new FactoryProcessSequence(
+//                                        schedulingProducingArrangement,
+//                                        schedulingDateTimeSlot
+//                                ))
+//                )
+//                .toList();
+//    }
 
 //    @ProblemFactCollectionProperty
 //    public List<ProducingArrangementConsequence> cacheFactProducingArrangementConsequenceList() {

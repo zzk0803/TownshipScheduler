@@ -12,10 +12,7 @@ import org.javatuples.Pair;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -26,35 +23,45 @@ public class SchedulingFactoryInstance {
 
     @PlanningId
     @EqualsAndHashCode.Include
-    protected Integer id;
+    private Integer id;
 
     @JsonIgnore
-    protected SchedulingFactoryInfo schedulingFactoryInfo;
+    private SchedulingFactoryInfo schedulingFactoryInfo;
 
-    protected int seqNum;
+    private int seqNum;
 
-    protected int producingLength;
+    private int producingLength;
 
-    protected int reapWindowSize;
+    private int reapWindowSize;
+
+    private String readableIdentifier;
 
     @JsonIgnore
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
+    public boolean addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
+        return shadowFactorySequenceSet.add(factoryProcessSequence);
+    }
+
+    public boolean removeFactoryProcessSequence(Object o) {
+        return shadowFactorySequenceSet.remove(o);
+    }
+
     @JsonIgnore
     @DeepPlanningClone
-    private SortedSet<SchedulingDateTimeSlot.FactoryProcessSequence> shadowFactorySequenceSet
+    private SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
             = new ConcurrentSkipListSet<>(
-            Comparator.comparing(SchedulingDateTimeSlot.FactoryProcessSequence::getArrangeDateTime)
-                    .thenComparingInt(SchedulingDateTimeSlot.FactoryProcessSequence::getArrangementId)
+            Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
+                    .thenComparingInt(FactoryProcessSequence::getArrangementId)
     );
 
     public Pair<LocalDateTime, LocalDateTime> queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
         if (schedulingProducingArrangement.weatherFactoryProducingTypeIsQueue()) {
-            return prepareAndGet(
-                    this.shadowFactorySequenceSet,
-                    schedulingProducingArrangement.getShadowFactoryProcessSequence()
-            );
+            FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
+            SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> processSequenceDateTimePairMap
+                    = prepareProducingAndCompletedMap();
+            return processSequenceDateTimePairMap.get(factoryProcessSequence);
         } else {
             LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
             return new Pair<>(
@@ -66,22 +73,19 @@ public class SchedulingFactoryInstance {
         }
     }
 
-    private Pair<LocalDateTime, LocalDateTime> prepareAndGet(
-            SortedSet<SchedulingDateTimeSlot.FactoryProcessSequence> sortedSet,
-            SchedulingDateTimeSlot.FactoryProcessSequence shadowFactoryProcessSequence
-    ) {
-        ConcurrentSkipListMap<SchedulingDateTimeSlot.FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> computingProducingCompletedMap
+    public SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> prepareProducingAndCompletedMap() {
+        SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> computingProducingCompletedMap
                 = new ConcurrentSkipListMap<>(
-                Comparator.comparing(SchedulingDateTimeSlot.FactoryProcessSequence::getArrangeDateTime)
-                        .thenComparingInt(SchedulingDateTimeSlot.FactoryProcessSequence::getArrangementId)
+                Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
+                        .thenComparingInt(FactoryProcessSequence::getArrangementId)
         );
 
-        for (SchedulingDateTimeSlot.FactoryProcessSequence current : sortedSet) {
+        for (FactoryProcessSequence current : this.shadowFactorySequenceSet) {
             Duration producingDuration = current.getProducingDuration();
             LocalDateTime arrangeDateTime = current.getArrangeDateTime();
 
             LocalDateTime previousAlmostCompletedDateTime
-                    = computingProducingCompletedMap.headMap(current, false)
+                    = computingProducingCompletedMap.headMap(current)
                     .values().stream()
                     .map(Pair::getValue1)
                     .max(LocalDateTime::compareTo)
@@ -93,9 +97,9 @@ public class SchedulingFactoryInstance {
             } else {
                 if (arrangeDateTime.isAfter(previousAlmostCompletedDateTime)) {
                     producingDateTime = arrangeDateTime;
-                } else if(arrangeDateTime.isBefore(previousAlmostCompletedDateTime)){
+                } else if (arrangeDateTime.isBefore(previousAlmostCompletedDateTime)) {
                     producingDateTime = previousAlmostCompletedDateTime;
-                }else {
+                } else {
                     producingDateTime = arrangeDateTime;
                 }
             }
@@ -108,16 +112,16 @@ public class SchedulingFactoryInstance {
 
         }
 
-        return computingProducingCompletedMap.get(shadowFactoryProcessSequence);
+        return computingProducingCompletedMap;
     }
 
     @Override
     public String toString() {
-        return this.schedulingFactoryInfo.getCategoryName() + "#" + this.getSeqNum() + ",size=" + this.getProducingLength();
-    }
-
-    public String getReadableIdentifier() {
-        return this.schedulingFactoryInfo.getCategoryName() + "#" + this.getSeqNum();
+        return "SchedulingFactoryInstance{" +
+               "readableIdentifier='" + readableIdentifier + '\'' +
+               ", producingLength=" + producingLength +
+               ", reapWindowSize=" + reapWindowSize +
+               '}';
     }
 
     @JsonProperty

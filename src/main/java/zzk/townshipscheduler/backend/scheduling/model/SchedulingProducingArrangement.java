@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementLocalDateTimeVariableListener;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementLocalDateTimeVariableListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -30,6 +30,8 @@ import java.util.*;
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
+
+//    public static final String VALUE_RANGE_FOR_FACTORIES_IN_ARRANGEMENT = "valueRangeForFactoriesInArrangement";
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
@@ -87,7 +89,7 @@ public class SchedulingProducingArrangement {
             sourceVariableName = PLANNING_DATA_TIME_SLOT,
             variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
     )
-    private SchedulingDateTimeSlot.FactoryProcessSequence shadowFactoryProcessSequence;
+    private FactoryProcessSequence shadowFactoryProcessSequence;
 
     @ShadowVariable(
             sourceVariableName = PLANNING_FACTORY_INSTANCE,
@@ -171,59 +173,61 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    public List<ProducingArrangementConsequence> calcConsequence() {
-        List<ProducingArrangementConsequence> producingArrangementConsequenceList = new ArrayList<>(5);
-        SchedulingProducingExecutionMode executionMode = getProducingExecutionMode();
-        //when arrange,materials was consumed
-        if (executionMode.boolCompositeProduct()) {
-            ProductAmountBill materials = executionMode.getMaterials();
-            materials.forEach((material, amount) -> {
-                ProducingArrangementConsequence consequence = ProducingArrangementConsequence.builder()
-                        .producingArrangement(this)
-                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(material))
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease(amount))
-                        .build();
-                producingArrangementConsequenceList.add(consequence);
-            });
-        }
-
-        //when arrange,factory wait queue was consumed
-        producingArrangementConsequenceList.add(
-                ProducingArrangementConsequence.builder()
-                        .producingArrangement(this)
-                        .resource(
-                                ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
-                                        getPlanningFactoryInstance()
-                                )
-                        )
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease())
-                        .build()
-        );
-
-        //when completed ,factory wait queue was release
-        producingArrangementConsequenceList.add(
-                ProducingArrangementConsequence.builder()
-                        .producingArrangement(this)
-                        .resource(ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
-                                        getPlanningFactoryInstance()
-                                )
-                        )
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
-                        .build()
-        );
-
-        //when completed ,product stock was increase
-        producingArrangementConsequenceList.add(
-                ProducingArrangementConsequence.builder()
-                        .producingArrangement(this)
-                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(getSchedulingProduct()))
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
-                        .build()
-        );
-
-
-        return producingArrangementConsequenceList;
-    }
+    //<editor-fold desc="DEPRECATED">
+    //    public List<ProducingArrangementConsequence> calcConsequence() {
+    //        List<ProducingArrangementConsequence> producingArrangementConsequenceList = new ArrayList<>(5);
+    //        SchedulingProducingExecutionMode executionMode = getProducingExecutionMode();
+    //        //when arrange,materials was consumed
+    //        if (executionMode.boolCompositeProduct()) {
+    //            ProductAmountBill materials = executionMode.getMaterials();
+    //            materials.forEach((material, amount) -> {
+    //                ProducingArrangementConsequence consequence = ProducingArrangementConsequence.builder()
+    //                        .producingArrangement(this)
+    //                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(material))
+    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease(amount))
+    //                        .build();
+    //                producingArrangementConsequenceList.add(consequence);
+    //            });
+    //        }
+    //
+    //        //when arrange,factory wait queue was consumed
+    //        producingArrangementConsequenceList.add(
+    //                ProducingArrangementConsequence.builder()
+    //                        .producingArrangement(this)
+    //                        .resource(
+    //                                ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
+    //                                        getPlanningFactoryInstance()
+    //                                )
+    //                        )
+    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease())
+    //                        .build()
+    //        );
+    //
+    //        //when completed ,factory wait queue was release
+    //        producingArrangementConsequenceList.add(
+    //                ProducingArrangementConsequence.builder()
+    //                        .producingArrangement(this)
+    //                        .resource(ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
+    //                                        getPlanningFactoryInstance()
+    //                                )
+    //                        )
+    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
+    //                        .build()
+    //        );
+    //
+    //        //when completed ,product stock was increase
+    //        producingArrangementConsequenceList.add(
+    //                ProducingArrangementConsequence.builder()
+    //                        .producingArrangement(this)
+    //                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(getSchedulingProduct()))
+    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
+    //                        .build()
+    //        );
+    //
+    //
+    //        return producingArrangementConsequenceList;
+    //    }
+    //</editor-fold>
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -250,15 +254,6 @@ public class SchedulingProducingArrangement {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
 
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getArrangeDateTime() {
-        SchedulingDateTimeSlot dateTimeSlot = getPlanningDateTimeSlot();
-        return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
-    }
-
     public ProducingStructureType getFactoryProducingType() {
         return getRequiredFactoryInfo().getProducingStructureType();
     }
@@ -266,6 +261,15 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     public SchedulingFactoryInfo getRequiredFactoryInfo() {
         return getSchedulingProduct().getRequireFactory();
+    }
+
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getArrangeDateTime() {
+        SchedulingDateTimeSlot dateTimeSlot = getPlanningDateTimeSlot();
+        return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
     }
 
     public List<SchedulingProducingArrangement> getDeepPrerequisiteProducingArrangements() {

@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import lombok.*;
 
@@ -11,6 +12,7 @@ import java.util.function.IntFunction;
 @Builder
 public final class ProducingArrangementConsequence {
 
+    @PlanningId
     @EqualsAndHashCode.Include
     private String uuid;
 

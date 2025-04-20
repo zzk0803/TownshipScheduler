@@ -3,13 +3,9 @@ package zzk.townshipscheduler.backend.scheduling.model.utility;
 import ai.timefold.solver.core.api.domain.variable.VariableListener;
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import org.jspecify.annotations.NonNull;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.util.Objects;
-import java.util.SortedSet;
 import java.util.function.BiConsumer;
 
 public class SchedulingProducingArrangementFactorySequenceVariableListener
@@ -39,7 +35,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                 = schedulingProducingArrangement.getPlanningFactoryInstance();
         SchedulingDateTimeSlot planningDateTimeSlot
                 = schedulingProducingArrangement.getPlanningDateTimeSlot();
-        SchedulingDateTimeSlot.FactoryProcessSequence oldFactoryProcessSequence
+        FactoryProcessSequence oldFactoryProcessSequence
                 = schedulingProducingArrangement.getShadowFactoryProcessSequence();
         if (Objects.isNull(planningFactoryInstance) || Objects.isNull(planningDateTimeSlot)) {
             doShadowVariableUpdate(
@@ -52,22 +48,23 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
             return;
         }
 
-        SortedSet<SchedulingDateTimeSlot.FactoryProcessSequence> shadowFactorySequenceSet
-                = planningFactoryInstance.getShadowFactorySequenceSet();
-        SchedulingDateTimeSlot.FactoryProcessSequence newFactoryProcessSequence
-                = new SchedulingDateTimeSlot.FactoryProcessSequence(schedulingProducingArrangement);
-        if (Objects.nonNull(oldFactoryProcessSequence)) {
-            shadowFactorySequenceSet.remove(oldFactoryProcessSequence);
-        }
+        FactoryProcessSequence newFactoryProcessSequence
+                = new FactoryProcessSequence(schedulingProducingArrangement);
 
-        shadowFactorySequenceSet.add(newFactoryProcessSequence);
-        doShadowVariableUpdate(
-                scoreDirector,
-                schedulingProducingArrangement,
-                newFactoryProcessSequence,
-                SchedulingProducingArrangement::setShadowFactoryProcessSequence,
-                SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
-        );
+
+        if (!Objects.equals(oldFactoryProcessSequence, newFactoryProcessSequence)) {
+            if (Objects.nonNull(oldFactoryProcessSequence)) {
+                planningFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
+            }
+            planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    newFactoryProcessSequence,
+                    SchedulingProducingArrangement::setShadowFactoryProcessSequence,
+                    SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
+            );
+        }
 
     }
 

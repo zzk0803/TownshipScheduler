@@ -113,28 +113,4 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         return DATE_TIME_SLOT_COMPARATOR;
     }
 
-    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-    @Value
-    public static class FactoryProcessSequence {
-
-        @EqualsAndHashCode.Include
-        LocalDateTime arrangeDateTime;
-
-        @EqualsAndHashCode.Include
-        Integer arrangementId;
-
-        Duration producingDuration;
-
-        int slotGapDuration;
-
-        public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
-            SchedulingDateTimeSlot planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
-            this.arrangeDateTime = planningDateTimeSlot.getStart();
-            this.producingDuration = schedulingProducingArrangement.getProducingDuration();
-            this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
-            this.arrangementId = schedulingProducingArrangement.getId();
-        }
-
-    }
-
 }
