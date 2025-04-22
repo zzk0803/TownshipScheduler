@@ -44,11 +44,11 @@ public class TownshipSchedulingProblem {
     @ProblemFactCollectionProperty
     private List<SchedulingOrder> schedulingOrderList;
 
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
     @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
     @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
@@ -135,10 +135,27 @@ public class TownshipSchedulingProblem {
                 .toList();
 
         getSchedulingFactoryInfoList().removeIf(
-                schedulingFactoryInfo -> !relatedSchedulingFactoryInfo.contains(schedulingFactoryInfo)
+                schedulingFactoryInfo -> {
+                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
+                            .anyMatch(streamIterating -> {
+                                boolean categoryEqual = streamIterating.getCategoryName()
+                                        .equals(schedulingFactoryInfo.getCategoryName());
+                                return categoryEqual;
+                            });
+                    return !anyMatch;
+                }
         );
         getSchedulingFactoryInstanceList().removeIf(
-                factory -> !relatedSchedulingFactoryInfo.contains(factory.getSchedulingFactoryInfo())
+                factory -> {
+                    SchedulingFactoryInfo schedulingFactoryInfo = factory.getSchedulingFactoryInfo();
+                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
+                            .anyMatch(streamIterating -> {
+                                boolean categoryEqual = streamIterating.getCategoryName()
+                                        .equals(schedulingFactoryInfo.getCategoryName());
+                                return categoryEqual;
+                            });
+                    return !anyMatch;
+                }
         );
     }
 
@@ -173,6 +190,19 @@ public class TownshipSchedulingProblem {
         }
 
         return resultArrangementList;
+    }
+
+    public List<SchedulingProducingArrangement> lookupProducingArrangements(SchedulingFactoryInstance schedulingFactoryInstance) {
+        return getSchedulingProducingArrangementList().stream()
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance() == schedulingFactoryInstance)
+                .toList();
+    }
+
+    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryReadableIdentifier factoryReadableIdentifier) {
+        return getSchedulingFactoryInstanceList().stream()
+                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
+                        .equals(factoryReadableIdentifier))
+                .findFirst();
     }
 
 //    @ProblemFactCollectionProperty

@@ -130,30 +130,35 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
 
         List<SchedulingProducingArrangement> prerequisiteProducingArrangements
-                = producingArrangement.getDeepPrerequisiteProducingArrangements();
+                = producingArrangement.calcDeepPrerequisiteProducingArrangements();
 
         Duration approximateDelay = Duration.ZERO;
 
         if (!prerequisiteProducingArrangements.isEmpty()) {
-            SchedulingDateTimeSlot schedulingDateTimeSlot_A = prerequisiteProducingArrangements.stream()
+            SchedulingDateTimeSlot schedulingDateTimeSlot_A
+                    = prerequisiteProducingArrangements.stream()
                     .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
                     .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                     .max(SchedulingDateTimeSlot::compareTo)
                     .orElse(result);
             schedulingDateTimeSlot_A = SchedulingDateTimeSlot.fromRangeJumpCeil(
-                    dateTimeSlotSet, prerequisiteProducingArrangements.stream()
+                    dateTimeSlotSet,
+                    prerequisiteProducingArrangements.stream()
                             .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
                             .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                             .max(SchedulingDateTimeSlot::compareTo)
                             .orElse(result).getStart()
             ).orElse(schedulingDateTimeSlot_A);
 
-            SchedulingDateTimeSlot schedulingDateTimeSlot_B = SchedulingDateTimeSlot.fromRangeJumpCeil(
+            SchedulingDateTimeSlot schedulingDateTimeSlot_B
+                    = SchedulingDateTimeSlot.fromRangeJumpCeil(
                     dateTimeSlotSet,
-                    startDateTime.plus(prerequisiteProducingArrangements.stream()
-                            .map(SchedulingProducingArrangement::getProducingDuration)
-                            .distinct()
-                            .reduce(approximateDelay, Duration::plus))
+                    startDateTime.plus(
+                            prerequisiteProducingArrangements.stream()
+                                    .map(SchedulingProducingArrangement::getProducingDuration)
+                                    .distinct()
+                                    .reduce(approximateDelay, Duration::plus)
+                    )
             ).orElse(dateTimeSlotSet.getLast());
 
             result = schedulingDateTimeSlot_A.compareTo(schedulingDateTimeSlot_B) > 0

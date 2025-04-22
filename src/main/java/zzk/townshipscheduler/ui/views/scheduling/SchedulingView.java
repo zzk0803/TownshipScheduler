@@ -20,7 +20,9 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
@@ -110,9 +112,12 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                 .setResizable(true)
                 .setHeader("Product");
         arrangementGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
-                .setRenderer(new TextRenderer<>(producingArrangement -> Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
-                        .map(SchedulingFactoryInstance::getReadableIdentifier)
-                        .orElse("N/A")
+                .setRenderer(new TextRenderer<>(producingArrangement -> {
+                    return Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
+                            .map(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
+                                    .toString())
+                            .orElse("N/A");
+                }
                 ))
                 .setSortable(true)
                 .setResizable(true)

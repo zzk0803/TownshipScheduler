@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -56,27 +57,6 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
         addToDrawer(header, scroller, createFooter());
     }
 
-    private SideNav createNavigation() {
-        SideNav nav = new SideNav();
-
-        List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
-        menuEntries.forEach(entry -> {
-            if (entry.icon() != null) {
-                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
-            } else {
-                nav.addItem(new SideNavItem(entry.title(), entry.path()));
-            }
-        });
-
-        return nav;
-    }
-
-    private Footer createFooter() {
-        Footer footer = new Footer();
-
-        return footer;
-    }
-
     private void addHeaderContent() {
         DrawerToggle toggle = new DrawerToggle();
         toggle.setAriaLabel("Menu toggle");
@@ -91,9 +71,11 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
         viewTitle = new H1();
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
         headerWrapper.add(viewTitle);
-        Button configButton = new Button(VaadinIcon.COG.create(), click -> {
+        Button configButton = new Button(
+                VaadinIcon.COG.create(), click -> {
             Notification.show("todo");
-        });
+        }
+        );
         configButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_SMALL);
         rightWrapper.add(configButton);
         authenticationContext.getAuthenticatedUser(AccountEntity.class).ifPresentOrElse(
@@ -122,7 +104,13 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
                     rightWrapper.add(userMenu);
 
                 }, () -> {
-                    rightWrapper.add(new Anchor("login", "Sign in"));
+                    Button loginButton = new Button("Sign In");
+                    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                    loginButton.addClickListener(buttonClickEvent -> {
+                        UI.getCurrent().navigate("login");
+                    });
+                    loginButton.getStyle().setMarginRight("2px");
+                    rightWrapper.add(loginButton);
                 }
         );
 
@@ -130,6 +118,27 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
 
         headerWrapper.add(rightWrapper);
         addToNavbar(true, toggle, headerWrapper);
+    }
+
+    private SideNav createNavigation() {
+        SideNav nav = new SideNav();
+
+        List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
+        menuEntries.forEach(entry -> {
+            if (entry.icon() != null) {
+                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
+            } else {
+                nav.addItem(new SideNavItem(entry.title(), entry.path()));
+            }
+        });
+
+        return nav;
+    }
+
+    private Footer createFooter() {
+        Footer footer = new Footer();
+
+        return footer;
     }
 
     @Override

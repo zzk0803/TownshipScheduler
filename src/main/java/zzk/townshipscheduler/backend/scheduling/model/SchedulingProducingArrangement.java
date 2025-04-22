@@ -17,7 +17,6 @@ import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementLocalDateTimeVariableListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -43,34 +42,36 @@ public class SchedulingProducingArrangement {
 
     public static final String SHADOW_COMPLETED_DATE_TIME = "computedShadowCompletedDateTime";
 
+    public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "factoryComputedDataTimePair";
+
     @EqualsAndHashCode.Include
     @ToString.Include
-    protected Integer id;
+    private Integer id;
 
     @EqualsAndHashCode.Include
     @ToString.Include
     @PlanningId
-    protected String uuid;
+    private String uuid;
 
     @JsonIgnore
-    protected IGameArrangeObject targetActionObject;
+    private IGameArrangeObject targetActionObject;
 
     @JsonIgnore
     @ToString.Include
-    protected IGameArrangeObject currentActionObject;
+    private IGameArrangeObject currentActionObject;
 
     @JsonIgnore
     @DeepPlanningClone
-    protected List<SchedulingProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
+    private List<SchedulingProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
 
     @JsonIgnore
-    protected SchedulingPlayer schedulingPlayer;
+    private SchedulingPlayer schedulingPlayer;
 
     @JsonIgnore
-    protected SchedulingWorkCalendar schedulingWorkCalendar;
+    private SchedulingWorkCalendar schedulingWorkCalendar;
 
     @JsonIgnore
-    protected SchedulingProducingExecutionMode producingExecutionMode;
+    private SchedulingProducingExecutionMode producingExecutionMode;
 
     @JsonIgnore
     @PlanningVariable(valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_FACTORIES})
@@ -91,18 +92,8 @@ public class SchedulingProducingArrangement {
     )
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
-    @ShadowVariable(
-            sourceVariableName = PLANNING_FACTORY_INSTANCE,
-            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
-    )
-    @ShadowVariable(
-            sourceVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE,
-            variableListenerClass = SchedulingProducingArrangementLocalDateTimeVariableListener.class
-    )
-    private LocalDateTime computedShadowProducingDateTime;
-
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_PRODUCING_DATE_TIME)
-    private LocalDateTime computedShadowCompletedDateTime;
+    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    private FactoryComputedDataTimePair factoryComputedDataTimePair;
 
     public SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -234,7 +225,12 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getCompletedDateTime() {
-        return getComputedShadowCompletedDateTime();
+        FactoryComputedDataTimePair computedDataTimePair = getFactoryComputedDataTimePair();
+        if (computedDataTimePair == null) {
+            return null;
+        } else {
+            return computedDataTimePair.completedDateTime();
+        }
     }
 
     @JsonProperty("producingDateTime")
@@ -242,7 +238,12 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getProducingDateTime() {
-        return getComputedShadowProducingDateTime();
+        FactoryComputedDataTimePair computedDataTimePair = getFactoryComputedDataTimePair();
+        if (computedDataTimePair == null) {
+            return null;
+        } else {
+            return computedDataTimePair.producingDateTime();
+        }
     }
 
     @JsonProperty("producingDuration")
@@ -272,22 +273,20 @@ public class SchedulingProducingArrangement {
         return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
     }
 
-    public List<SchedulingProducingArrangement> getDeepPrerequisiteProducingArrangements() {
+    public List<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
         LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
         Set<SchedulingProducingArrangement> visited = new HashSet<>();
         List<SchedulingProducingArrangement> result = new ArrayList<>();
 
         while (!queue.isEmpty()) {
             SchedulingProducingArrangement current = queue.removeFirst();
-
             if (!visited.add(current)) {
                 continue;
             }
 
             List<SchedulingProducingArrangement> prerequisites =
                     current.getPrerequisiteProducingArrangements();
-
-            if (prerequisites != null) {
+            if (prerequisites != null ) {
                 for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
                     if (iteratingSingleArrangement != null) {
                         result.add(iteratingSingleArrangement);

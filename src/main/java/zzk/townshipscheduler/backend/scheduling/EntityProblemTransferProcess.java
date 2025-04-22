@@ -150,7 +150,7 @@ class EntityProblemTransferProcess {
                                 fieldInstance.setProducingLength(size);
                                 fieldInstance.setReapWindowSize(size);
                                 fieldInstance.setSeqNum(1);
-                                fieldInstance.setReadableIdentifier(schedulingFactoryInfo.getCategoryName() + "#" + 1);
+                                fieldInstance.setupFactoryReadableIdentifier();
                                 schedulingFactoryInfo.getFactoryInstances().add(fieldInstance);
                                 this.schedulingFactoryInstances.add(fieldInstance);
                             } else {
@@ -183,9 +183,9 @@ class EntityProblemTransferProcess {
                                         factoryInstance.setReapWindowSize(
                                                 fieldFactoryEntity.getReapWindowSize()
                                         );
-                                        factoryInstance.setReadableIdentifier(categoryName + "#" + seqNum);
                                         schedulingFactoryInfo.getFactoryInstances()
                                                 .add(factoryInstance);
+                                        factoryInstance.setupFactoryReadableIdentifier();
                                         this.schedulingFactoryInstances.add(factoryInstance);
                                     }
                                 }

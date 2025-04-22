@@ -2,14 +2,18 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Value
-public class FactoryProcessSequence {
+public class FactoryProcessSequence implements Comparable<FactoryProcessSequence> {
+
+    public static final Comparator<FactoryProcessSequence> COMPARATOR
+            = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
+            .thenComparingInt(FactoryProcessSequence::getArrangementId);
 
     @EqualsAndHashCode.Include
     LocalDateTime arrangeDateTime;
@@ -17,9 +21,8 @@ public class FactoryProcessSequence {
     @EqualsAndHashCode.Include
     Integer arrangementId;
 
-    String factoryInstanceId;
-
-    boolean sequenced;
+    @EqualsAndHashCode.Include
+    FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
 
     Duration producingDuration;
 
@@ -31,10 +34,8 @@ public class FactoryProcessSequence {
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
-        this.factoryInstanceId = schedulingProducingArrangement.getPlanningFactoryInstance().getReadableIdentifier();
-        this.sequenced = schedulingProducingArrangement.getPlanningFactoryInstance()
-                                 .getSchedulingFactoryInfo()
-                                 .getProducingStructureType() == ProducingStructureType.QUEUE;
+        this.schedulingFactoryInstanceReadableIdentifier
+                = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
     }
 
     public FactoryProcessSequence(
@@ -45,10 +46,13 @@ public class FactoryProcessSequence {
         this.slotGapDuration = schedulingDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
-        this.factoryInstanceId = schedulingProducingArrangement.getPlanningFactoryInstance().getReadableIdentifier();
-        this.sequenced = schedulingProducingArrangement.getPlanningFactoryInstance()
-                                 .getSchedulingFactoryInfo()
-                                 .getProducingStructureType() == ProducingStructureType.QUEUE;
+        this.schedulingFactoryInstanceReadableIdentifier
+                = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
+    }
+
+    @Override
+    public int compareTo(FactoryProcessSequence that) {
+        return COMPARATOR.compare(this, that);
     }
 
 }

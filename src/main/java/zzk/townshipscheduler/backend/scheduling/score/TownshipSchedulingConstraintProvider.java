@@ -81,7 +81,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ,
                         Joiners.filtering(
                                 (compositeProducingArrangement, materialProducingArrangement) -> {
-                                    return compositeProducingArrangement.getDeepPrerequisiteProducingArrangements()
+                                    return compositeProducingArrangement.calcDeepPrerequisiteProducingArrangements()
                                             .contains(materialProducingArrangement);
                                 }
                         )

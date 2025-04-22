@@ -6,16 +6,13 @@ import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.javatuples.Pair;
+import lombok.*;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -27,6 +24,7 @@ public class SchedulingFactoryInstance {
     private Integer id;
 
     @JsonIgnore
+    @EqualsAndHashCode.Include
     private SchedulingFactoryInfo schedulingFactoryInfo;
 
     private int seqNum;
@@ -35,7 +33,8 @@ public class SchedulingFactoryInstance {
 
     private int reapWindowSize;
 
-    private String readableIdentifier;
+    @Setter(AccessLevel.PRIVATE)
+    private FactoryReadableIdentifier factoryReadableIdentifier;
 
     @JsonIgnore
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
@@ -43,11 +42,17 @@ public class SchedulingFactoryInstance {
 
     @JsonIgnore
     @DeepPlanningClone
-    private SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
-            = new ConcurrentSkipListSet<>(
-            Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
-                    .thenComparingInt(FactoryProcessSequence::getArrangementId)
-    );
+    private Set<FactoryProcessSequence> shadowFactorySequenceSet
+            = new LinkedHashSet<>();
+
+    public void setupFactoryReadableIdentifier() {
+        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+    }
+
+    @JsonProperty
+    public String getCategoryName() {
+        return schedulingFactoryInfo.getCategoryName();
+    }
 
     public boolean addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
         return shadowFactorySequenceSet.add(factoryProcessSequence);
@@ -57,15 +62,15 @@ public class SchedulingFactoryInstance {
         return shadowFactorySequenceSet.remove(o);
     }
 
-    public Pair<LocalDateTime, LocalDateTime> queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
+    public FactoryComputedDataTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
         FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> processSequenceDateTimePairMap
+        SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> processSequenceDateTimePairMap
                 = prepareProducingAndCompletedMap();
         return processSequenceDateTimePairMap.get(factoryProcessSequence);
     }
 
-    public SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> prepareProducingAndCompletedMap() {
-        return this.useComputeStrategy().prepareProducingAndCompletedMap(this.shadowFactorySequenceSet);
+    public SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap() {
+        return this.useComputeStrategy().prepareProducingAndCompletedMap(new TreeSet<>(getShadowFactorySequenceSet()));
     }
 
     public ProducingAndCompletedDateTimeComputeStrategy useComputeStrategy() {
@@ -86,15 +91,10 @@ public class SchedulingFactoryInstance {
     @Override
     public String toString() {
         return "SchedulingFactoryInstance{" +
-               "readableIdentifier='" + readableIdentifier + '\'' +
+               "readableIdentifier='" + factoryReadableIdentifier + '\'' +
                ", producingLength=" + producingLength +
                ", reapWindowSize=" + reapWindowSize +
                '}';
-    }
-
-    @JsonProperty
-    public String getCategoryName() {
-        return schedulingFactoryInfo.getCategoryName();
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
@@ -103,7 +103,7 @@ public class SchedulingFactoryInstance {
 
     private interface ProducingAndCompletedDateTimeComputeStrategy {
 
-        SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> prepareProducingAndCompletedMap(
+        SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap(
                 SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
         );
 
@@ -113,45 +113,36 @@ public class SchedulingFactoryInstance {
             implements ProducingAndCompletedDateTimeComputeStrategy {
 
         @Override
-        public SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> prepareProducingAndCompletedMap(
+        public SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap(
                 SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
         ) {
 
-            SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> computingProducingCompletedMap
-                    = new ConcurrentSkipListMap<>(
-                    Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
-                            .thenComparingInt(FactoryProcessSequence::getArrangementId)
-            );
+            TreeMap<FactoryProcessSequence, FactoryComputedDataTimePair> computingProducingCompletedMap
+                    = new TreeMap<>();
 
             for (FactoryProcessSequence current : shadowFactorySequenceSet) {
                 Duration producingDuration = current.getProducingDuration();
                 LocalDateTime arrangeDateTime = current.getArrangeDateTime();
-                boolean sequenced = current.isSequenced();
 
-                LocalDateTime previousAlmostCompletedDateTime
-                        = computingProducingCompletedMap.headMap(current)
-                        .values().stream()
-                        .map(Pair::getValue1)
-                        .max(LocalDateTime::compareTo)
+                LocalDateTime previousCompletedDateTime
+                        = Optional.ofNullable(computingProducingCompletedMap.lowerKey(current))
+                        .map(computingProducingCompletedMap::get)
+                        .map(FactoryComputedDataTimePair::completedDateTime)
                         .orElse(null);
 
                 LocalDateTime producingDateTime;
-                if (previousAlmostCompletedDateTime == null) {
+                if (previousCompletedDateTime == null) {
                     producingDateTime = arrangeDateTime;
                 } else {
-                    if (arrangeDateTime.isAfter(previousAlmostCompletedDateTime)) {
-                        producingDateTime = arrangeDateTime;
-                    } else if (arrangeDateTime.isBefore(previousAlmostCompletedDateTime)) {
-                        producingDateTime = previousAlmostCompletedDateTime;
-                    } else {
-                        producingDateTime = arrangeDateTime;
-                    }
+                    producingDateTime = arrangeDateTime.isAfter(previousCompletedDateTime)
+                            ? arrangeDateTime
+                            : previousCompletedDateTime;
                 }
                 LocalDateTime completedDateTime = producingDateTime.plus(producingDuration);
 
                 computingProducingCompletedMap.put(
                         current,
-                        new Pair<>(producingDateTime, completedDateTime)
+                        new FactoryComputedDataTimePair(producingDateTime, completedDateTime)
                 );
 
             }
@@ -166,11 +157,11 @@ public class SchedulingFactoryInstance {
             implements ProducingAndCompletedDateTimeComputeStrategy {
 
         @Override
-        public SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> prepareProducingAndCompletedMap(
+        public SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap(
                 SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
         ) {
 
-            SortedMap<FactoryProcessSequence, Pair<LocalDateTime, LocalDateTime>> computingProducingCompletedMap
+            SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> computingProducingCompletedMap
                     = new ConcurrentSkipListMap<>(
                     Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
                             .thenComparingInt(FactoryProcessSequence::getArrangementId)
@@ -183,7 +174,7 @@ public class SchedulingFactoryInstance {
 
                 computingProducingCompletedMap.put(
                         current,
-                        new Pair<>(arrangeDateTime, completedDateTime)
+                        new FactoryComputedDataTimePair(arrangeDateTime, completedDateTime)
                 );
 
             }
