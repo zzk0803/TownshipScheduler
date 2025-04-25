@@ -17,6 +17,10 @@ public interface ProductEntityRepository
     @EntityGraph(value = "products.g.full")
     <T> Set<T> findBy(Class<T> projectionClass, Sort sort);
 
+    @EntityGraph(value = "products.g.full")
+    @Query("select p from ProductEntity p where p.id=:id")
+    Optional<ProductEntity> queryById(Long id);
+
     Optional<ProductEntity> findByName(String name);
 
     @Query("from ProductEntity as pe join  pe.fieldFactoryInfo  as ffe  select distinct pe.fieldFactoryInfo")

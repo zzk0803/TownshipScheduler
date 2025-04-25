@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.persistence.select.OrderEntityDto;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -113,10 +112,6 @@ public final class SchedulingOrder implements IGameArrangeObject {
     public static class Id {
 
         private long value;
-
-        public static Id of(OrderEntityDto orderEntityDto) {
-            return of(orderEntityDto.getId());
-        }
 
         public static Id of(long value) {
             return new Id(value);

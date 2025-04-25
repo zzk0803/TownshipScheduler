@@ -23,7 +23,7 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
-import zzk.townshipscheduler.ui.components.GoodsCategoriesPanel;
+import zzk.townshipscheduler.ui.components.ProductCategoriesPanel;
 import zzk.townshipscheduler.ui.eventbus.UiEventBus;
 
 import java.io.ByteArrayInputStream;
@@ -40,12 +40,12 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
     public PlayerWarehouseArticle(
             PlayerEntity playerEntity,
             PlayerService playerService,
-            GoodsCategoriesPanel goodsCategoriesPanel
+            ProductCategoriesPanel productCategoriesPanel
     ) {
         this.currentPlayer = playerEntity;
         this.playerService = playerService;
 
-        setupMenuBar(goodsCategoriesPanel);
+        setupMenuBar(productCategoriesPanel);
         grid = new Grid<>();
         grid.addColumn(new ComponentRenderer<>(productEntityIntegerEntry -> {
             HorizontalLayout result = new HorizontalLayout();
@@ -75,7 +75,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
         getContent().addAndExpand(grid);
     }
 
-    public void setupMenuBar(GoodsCategoriesPanel goodsCategoriesPanel) {
+    public void setupMenuBar(ProductCategoriesPanel productCategoriesPanel) {
         MenuBar menuBar = new MenuBar();
         menuBar.setWidthFull();
         menuBar.addThemeVariants(
@@ -85,7 +85,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
 
         MenuItem menuItem = menuBar.addItem(VaadinIcon.PLUS.create());
         menuItem.addSingleClickListener(menuItemClickEvent -> {
-            Dialog dialog = new Dialog(goodsCategoriesPanel);
+            Dialog dialog = new Dialog(productCategoriesPanel);
             dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
             dialog.setSizeFull();
 
@@ -103,7 +103,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
                     new Button(
                             "Ok",
                             okClickEvent -> {
-                                goodsCategoriesPanel.consumeSelected(productEntity -> {
+                                productCategoriesPanel.consumeSelected(productEntity -> {
                                     WarehouseEntity updatedWarehouse = playerService.updateWarehouseStock(
                                             playerService.findWarehouseEntityByPlayerEntity(currentPlayer),
                                             productEntity,

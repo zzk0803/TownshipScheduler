@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.*;
-import zzk.townshipscheduler.backend.persistence.select.*;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.Duration;
@@ -323,112 +322,6 @@ class EntityProblemTransferProcess {
                 }
         );
         return productAmountBill;
-    }
-
-    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntityProjectionForScheduling fieldFactoryInfoEntityDto) {
-        SchedulingFactoryInfo schedulingFactoryInfo
-                = buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntityDto));
-        schedulingFactoryInfo.setCategoryName(fieldFactoryInfoEntityDto.getCategory());
-        schedulingFactoryInfo.setLevel(fieldFactoryInfoEntityDto.getLevel());
-        return schedulingFactoryInfo;
-    }
-
-    private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
-            ProductEntityProjectionForScheduling productDto,
-            SchedulingProduct schedulingProduct
-    ) {
-        AtomicInteger idRoller = new AtomicInteger(1);
-        Set<ProductManufactureInfoEntityProjection> productManufactureInfos = productDto.getManufactureInfoEntities();
-        if (productManufactureInfos != null && !productManufactureInfos.isEmpty()) {
-            Set<SchedulingProducingExecutionMode> executionModes = new LinkedHashSet<>();
-            productManufactureInfos.forEach(productManufactureInfo -> {
-                SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();
-                executionMode.setId(idRoller.getAndIncrement());
-                executionMode.setProduct(schedulingProduct);
-                Duration producingDuration = productManufactureInfo.getProducingDuration();
-                executionMode.setExecuteDuration(producingDuration);
-                ProductAmountBill productAmountBill = new ProductAmountBill();
-                executionMode.setMaterials(productAmountBill);
-                Set<ProductMaterialsRelationProjection> productMaterialsRelations = productManufactureInfo.getProductMaterialsRelations();
-                if (productMaterialsRelations != null && !productMaterialsRelations.isEmpty()) {
-                    productMaterialsRelations.forEach(productMaterialsRelation -> {
-                        ProductEntityProjectionJustId productId = productMaterialsRelation.getMaterial();
-                        Integer amount = productMaterialsRelation.getAmount();
-                        SchedulingProduct material
-                                = buildOrGetSchedulingProduct(
-                                SchedulingProduct.Id.of(productId)
-                        );
-                        productAmountBill.put(material, amount);
-                    });
-                }
-                executionModes.add(executionMode);
-            });
-            return executionModes;
-        } else {
-            SchedulingProducingExecutionMode defaultProducingExecutionMode = new SchedulingProducingExecutionMode();
-            defaultProducingExecutionMode.setId(idRoller.getAndIncrement());
-            defaultProducingExecutionMode.setProduct(schedulingProduct);
-            return Set.of(defaultProducingExecutionMode);
-        }
-    }
-
-    private SchedulingProduct buildOrGetSchedulingProduct(ProductEntityProjectionForScheduling productDto) {
-        SchedulingProduct.Id productId = SchedulingProduct.Id.of(Objects.requireNonNull(productDto.getId()));
-        SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productId);
-        schedulingProduct.setName(productDto.getName());
-        schedulingProduct.setLevel(productDto.getLevel());
-        return schedulingProduct;
-    }
-
-    private SchedulingProduct buildOrGetSchedulingProduct(ProductEntityProjectionJustId dk) {
-        return buildOrGetSchedulingProduct(SchedulingProduct.Id.of(dk));
-    }
-
-    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntityDto fieldFactoryInfoEntityDto) {
-        SchedulingFactoryInfo schedulingFactoryInfo
-                = buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntityDto));
-        schedulingFactoryInfo.setCategoryName(fieldFactoryInfoEntityDto.getCategory());
-        schedulingFactoryInfo.setLevel(fieldFactoryInfoEntityDto.getLevel());
-        return schedulingFactoryInfo;
-    }
-
-    private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
-            ProductEntityDtoForScheduling productDto,
-            SchedulingProduct schedulingProduct
-    ) {
-        //deal producing info
-        Set<SchedulingProducingExecutionMode> producingExecutionModes = new LinkedHashSet<>();
-        Set<ProductManufactureInfoEntityDtoForScheduling> productManufactureInfoSet = productDto.getManufactureInfoEntities();
-        for (ProductManufactureInfoEntityDtoForScheduling manufactureInfo : productManufactureInfoSet) {
-            SchedulingProducingExecutionMode producingExecutionMode
-                    = new SchedulingProducingExecutionMode();
-            producingExecutionMode.setProduct(schedulingProduct);
-            producingExecutionMode.setExecuteDuration(manufactureInfo.getProducingDuration());
-
-            //deal materials info
-            ProductAmountBill productAmountBill = new ProductAmountBill();
-            Set<ProductMaterialsRelationDtoForScheduling> materialRelationSet = manufactureInfo.getProductMaterialsRelations();
-            for (ProductMaterialsRelationDtoForScheduling materialRelation : materialRelationSet) {
-                ProductEntityDtoJustId productEntityDtoJustId = materialRelation.getMaterial();
-                Integer amount = materialRelation.getAmount();
-                productAmountBill.put(
-                        buildOrGetSchedulingProduct(SchedulingProduct.Id.of(productEntityDtoJustId)),
-                        amount
-                );
-            }
-            producingExecutionMode.setMaterials(productAmountBill);
-            producingExecutionModes.add(producingExecutionMode);
-            this.schedulingProducingExecutionModes.addAll(producingExecutionModes);
-        }
-        return producingExecutionModes;
-    }
-
-    private SchedulingProduct buildOrGetSchedulingProduct(ProductEntityDtoForScheduling productDto) {
-        SchedulingProduct.Id productId = SchedulingProduct.Id.of(productDto.getId());
-        SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productId);
-        schedulingProduct.setName(productDto.getName());
-        schedulingProduct.setLevel(productDto.getLevel());
-        return schedulingProduct;
     }
 
 }

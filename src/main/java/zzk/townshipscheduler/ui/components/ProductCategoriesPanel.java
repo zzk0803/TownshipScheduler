@@ -31,24 +31,24 @@ import java.util.function.Consumer;
 
 @SpringComponent
 @UIScope
-public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
+public class ProductCategoriesPanel extends Composite<VerticalLayout> {
 
     private final RadioButtonGroup<FieldFactoryInfoEntity> categoryRadioGroup;
 
-    private final GoodsCategoriesPanelPresenter presenter;
+    private final ProductCategoriesPanelPresenter presenter;
 
-    private final Grid<ProductEntity> goodsGrid;
+    private final Grid<ProductEntity> productsGrid;
 
     private final TextField searchField;
 
-    public GoodsCategoriesPanel(GoodsCategoriesPanelPresenter presenter) {
+    public ProductCategoriesPanel(ProductCategoriesPanelPresenter presenter) {
         this.presenter = presenter;
         this.presenter.setGroupByCategoryGrid(this);
         this.presenter.queryAndCache();
 
         searchField = createSearchField(this.presenter);
         categoryRadioGroup = createCategoryRadioGroup(this.presenter);
-        goodsGrid = createGrid(this.presenter);
+        productsGrid = createGrid(this.presenter);
 
         Scroller scrollerForListBox = new Scroller();
         scrollerForListBox.setContent(this.categoryRadioGroup);
@@ -59,7 +59,7 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
         wrapper.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.STRETCH);
         wrapper.add(scrollerForListBox);
         wrapper.setFlexShrink(0, scrollerForListBox);
-        wrapper.add(goodsGrid);
+        wrapper.add(productsGrid);
 
         HorizontalLayout searchWrapper = new HorizontalLayout(
                 searchField,
@@ -69,7 +69,7 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
                             presenter.reset();
                             searchField.clear();
                             categoryRadioGroup.clear();
-                            goodsGrid.getDataProvider().refreshAll();
+                            productsGrid.getDataProvider().refreshAll();
                             categoryRadioGroup.getDataProvider().refreshAll();
                         }
                 )
@@ -80,10 +80,10 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
         getContent().addAndExpand(wrapper);
     }
 
-    private TextField createSearchField(GoodsCategoriesPanelPresenter presenter) {
+    private TextField createSearchField(ProductCategoriesPanelPresenter presenter) {
         TextField textField = new TextField();
         textField.setPlaceholder("Search...");
-        textField.setValueChangeMode(ValueChangeMode.ON_CHANGE);
+        textField.setValueChangeMode(ValueChangeMode.LAZY);
         textField.setWidthFull();
         textField.addValueChangeListener(valueChange -> {
             String criteria = valueChange.getValue();
@@ -92,7 +92,7 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
         return textField;
     }
 
-    private RadioButtonGroup<FieldFactoryInfoEntity> createCategoryRadioGroup(GoodsCategoriesPanelPresenter presenter) {
+    private RadioButtonGroup<FieldFactoryInfoEntity> createCategoryRadioGroup(ProductCategoriesPanelPresenter presenter) {
         final RadioButtonGroup<FieldFactoryInfoEntity> categoryRadioGroup;
         categoryRadioGroup = new RadioButtonGroup<>();
         categoryRadioGroup.setItemLabelGenerator(FieldFactoryInfoEntity::getCategory);
@@ -106,7 +106,7 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
         return categoryRadioGroup;
     }
 
-    private Grid<ProductEntity> createGrid(GoodsCategoriesPanelPresenter presenter) {
+    private Grid<ProductEntity> createGrid(ProductCategoriesPanelPresenter presenter) {
         final Grid<ProductEntity> grid;
         grid = new Grid<>(ProductEntity.class, false);
         grid.setId("goods-categories-grid");
@@ -207,7 +207,7 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
 
     public void refreshImgBtnClickDone(ProductEntity productEntity) {
         UI.getCurrent().access(() -> {
-            goodsGrid.getGenericDataView().refreshItem(productEntity);
+            productsGrid.getGenericDataView().refreshItem(productEntity);
         });
     }
 
@@ -218,7 +218,7 @@ public class GoodsCategoriesPanel extends Composite<VerticalLayout> {
 
     public void forceReloadingData() {
         this.presenter.queryAndCache();
-        this.goodsGrid.getDataProvider().refreshAll();
+        this.productsGrid.getDataProvider().refreshAll();
         this.categoryRadioGroup.getDataProvider().refreshAll();
     }
 

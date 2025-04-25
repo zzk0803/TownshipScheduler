@@ -8,7 +8,7 @@ import zzk.townshipscheduler.backend.persistence.ProductEntity;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public final class BillItem {
+public  class BillItem {
 
     private int serial;
 

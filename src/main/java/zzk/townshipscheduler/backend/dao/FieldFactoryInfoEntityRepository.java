@@ -26,6 +26,24 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
     @Query("select f from FieldFactoryInfoEntity f")
     Set<FieldFactoryInfoEntity> queryForPrepareScheduling();
 
+    @EntityGraph(
+            attributePaths = {
+                    "portfolioGoods",
+                    "portfolioGoods.crawledAsImage.imageBytes"
+            }
+    )
+    @Query("select ffie from FieldFactoryInfoEntity ffie")
+    Set<FieldFactoryInfoEntity> queryForFactoryProductSelection();
+
+    @EntityGraph(
+            attributePaths = {
+                    "portfolioGoods",
+                    "portfolioGoods.crawledAsImage.imageBytes"
+            }
+    )
+    @Query("select ffie from FieldFactoryInfoEntity ffie")
+    Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Sort sort);
+
     /*
     SELECT fffi.*
     FROM FieldFactoryInfoEntity fffi

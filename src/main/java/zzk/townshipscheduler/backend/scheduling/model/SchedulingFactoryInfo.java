@@ -7,7 +7,6 @@ import lombok.*;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.select.*;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -69,28 +68,8 @@ public class SchedulingFactoryInfo {
         @Getter
         private long value;
 
-        public static Id of(FieldFactoryInfoEntityDtoJustId factoryDto) {
-            return of(factoryDto.getId());
-        }
-
         public static Id of(long value) {
             return new Id(value);
-        }
-
-        public static Id of(FieldFactoryInfoEntityDtoForScheduling factoryInfoDto) {
-            return of(factoryInfoDto.getId());
-        }
-
-        public static Id of(FieldFactoryInfoEntityDto fieldFactoryInfoEntityDto) {
-            return of(fieldFactoryInfoEntityDto.getId());
-        }
-
-        public static Id of(FieldFactoryInfoEntityProjectionForScheduling fieldFactoryInfoEntityProjectionForScheduling) {
-            return of(fieldFactoryInfoEntityProjectionForScheduling.getId());
-        }
-
-        public static Id of(FieldFactoryEntityProjection fieldFactoryEntityProjection) {
-            return of(fieldFactoryEntityProjection.getId());
         }
 
         public static Id of(FieldFactoryEntity fieldFactoryEntity) {

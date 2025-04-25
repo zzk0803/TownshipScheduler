@@ -10,7 +10,6 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.grid.ColumnRendering;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
@@ -37,8 +36,10 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.components.BillDurationField;
-import zzk.townshipscheduler.ui.components.GoodsCategoriesPanel;
+import zzk.townshipscheduler.ui.components.ProductsCategoriesSelectionPanel;
+import zzk.townshipscheduler.ui.eventbus.UiEventBus;
 import zzk.townshipscheduler.ui.pojo.BillItem;
+import zzk.townshipscheduler.ui.pojo.FactoryProductsDto;
 
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
@@ -51,26 +52,27 @@ public class OrderFormView extends VerticalLayout {
 
     private final OrderFormPresenter presenter;
 
-    private final GoodsCategoriesPanel goodsCategoriesPanel;
+    private final ProductsCategoriesSelectionPanel productsCategoriesSelectionPanel;
+
+    //    private final ProductCategoriesPanel productCategoriesPanel;
 
     private Grid<BillItem> billItemGrid;
 
     public OrderFormView(
             OrderFormPresenter orderFormPresenter,
-            GoodsCategoriesPanel goodsCategoriesPanel,
+//            ProductCategoriesPanel productCategoriesPanel,
             TownshipAuthenticationContext townshipAuthenticationContext
     ) {
         this.presenter = orderFormPresenter;
-        this.goodsCategoriesPanel = goodsCategoriesPanel;
+//        this.productCategoriesPanel = productCategoriesPanel;
         this.presenter.setOrderFormView(this);
         this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
-
-        addClassName("bill-form");
-        addClassNames(
-                LumoUtility.Overflow.SCROLL,
-                LumoUtility.Width.FULL
+        this.productsCategoriesSelectionPanel
+                = new ProductsCategoriesSelectionPanel(
+                presenter.getFactoryProductsSupplier()
         );
-        setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+
+        style();
 
         add(assembleBillForm());
 
@@ -79,6 +81,32 @@ public class OrderFormView extends VerticalLayout {
         add(assembleItemAppendBtn());
 
         add(assembleFooterPanel());
+
+        UiEventBus.subscribe(
+                this,
+                ProductsCategoriesSelectionPanel.ProductCardSelectionAmountEvent.class,
+                componentEvent -> {
+                    var selectProduct = componentEvent.getProduct();
+                    int amount = componentEvent.getAmount();
+
+                    BillItem billItem = new BillItem(
+                            presenter.getGridBillItemsCounter().incrementAndGet(),
+                            selectProduct,
+                            amount
+                    );
+                    presenter.addBillItem(billItem);
+                    presenter.setupDataProviderForItems(billItemGrid);
+                }
+        );
+    }
+
+    private void style() {
+        addClassName("bill-form");
+        addClassNames(
+                LumoUtility.Overflow.SCROLL,
+                LumoUtility.Width.FULL
+        );
+        setDefaultHorizontalComponentAlignment(Alignment.CENTER);
     }
 
     private FormLayout assembleBillForm() {
@@ -108,6 +136,13 @@ public class OrderFormView extends VerticalLayout {
         RadioButtonGroup<String> billTypeGroup = new RadioButtonGroup<>();
         billTypeGroup.setItems(Arrays.stream(OrderType.values()).map(Enum::name).toList());
         billTypeGroup.setValue(OrderType.HELICOPTER.name());
+        billTypeGroup.addValueChangeListener(valueChangeEvent -> {
+            String changedIntoValue = valueChangeEvent.getValue();
+            if (OrderType.AIRPLANE.name().equalsIgnoreCase(changedIntoValue)) {
+                boolDeadlineCheckbox.setValue(true);
+                durationCountdownField.setValue(Duration.ofHours(15));
+            }
+        });
 
         settingBinder(billTypeGroup, boolDeadlineCheckbox, deadlinePicker, durationCountdownField);
 
@@ -144,19 +179,11 @@ public class OrderFormView extends VerticalLayout {
         addItemButton.addClickListener(_ -> {
             Dialog dialog = new Dialog("Select Goods...");
             dialog.setSizeFull();
-            dialog.addComponentAsFirst(goodsCategoriesPanel);
+            dialog.addComponentAsFirst(this.productsCategoriesSelectionPanel);
 
             Button button = new Button("OK");
             button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
             button.addClickListener(_ -> {
-                goodsCategoriesPanel.consumeSelected(goods -> {
-                    BillItem billItem = new BillItem(
-                            presenter.getGridBillItemsCounter().incrementAndGet(),
-                            goods,
-                            1
-                    );
-                    presenter.addBillItem(billItem);
-                });
                 dialog.close();
                 presenter.setupDataProviderForItems(billItemGrid);
             });
@@ -168,7 +195,7 @@ public class OrderFormView extends VerticalLayout {
     }
 
     private Component assembleFooterPanel() {
-        HorizontalLayout footer = buildFooterComponent();
+        HorizontalLayout footerLayout = new HorizontalLayout();
 
         Button submit = new Button("Submit");
         submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -181,10 +208,10 @@ public class OrderFormView extends VerticalLayout {
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
         cancel.addClickListener(_ -> UI.getCurrent().navigate(OrderListView.class));
 
-        footer.add(submit, cancel);
-        footer.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        footer.setAlignItems(Alignment.BASELINE);
-        return footer;
+        footerLayout.add(submit, cancel);
+        footerLayout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        footerLayout.setAlignItems(Alignment.BASELINE);
+        return footerLayout;
     }
 
     private static void settingDeadlineFieldGroupAvailableStatus(
@@ -293,10 +320,6 @@ public class OrderFormView extends VerticalLayout {
             });
             return integerField;
         };
-    }
-
-    private HorizontalLayout buildFooterComponent() {
-        return new HorizontalLayout();
     }
 
     private Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {

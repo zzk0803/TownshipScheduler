@@ -18,7 +18,7 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
-import zzk.townshipscheduler.ui.components.GoodsCategoriesPanel;
+import zzk.townshipscheduler.ui.components.ProductCategoriesPanel;
 
 import java.util.List;
 import java.util.Map;
@@ -32,18 +32,18 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
 
     private final TownshipAuthenticationContext townshipAuthenticationContext;
 
-    private final GoodsCategoriesPanel goodsCategoriesPanel;
+    private final ProductCategoriesPanel productCategoriesPanel;
 
     private final PlayerService playerService;
 
 
     public PlayerView(
             TownshipAuthenticationContext townshipAuthenticationContext,
-            GoodsCategoriesPanel goodsCategoriesPanel,
+            ProductCategoriesPanel productCategoriesPanel,
             PlayerService playerService
     ) {
         this.townshipAuthenticationContext = townshipAuthenticationContext;
-        this.goodsCategoriesPanel = goodsCategoriesPanel;
+        this.productCategoriesPanel = productCategoriesPanel;
         this.playerService = playerService;
         setWidthFull();
     }
@@ -91,7 +91,7 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
                     warehouseTab, new PlayerWarehouseArticle(
                             playerEntity,
                             playerService,
-                            goodsCategoriesPanel
+                            productCategoriesPanel
                     )
             );
             Tabs articlesTabs = new Tabs();

@@ -8,9 +8,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForBuildUp;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
+import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForBuildUp;
 
 import java.time.Duration;
 import java.util.*;

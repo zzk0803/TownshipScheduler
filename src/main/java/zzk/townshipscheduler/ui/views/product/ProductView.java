@@ -4,20 +4,20 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import zzk.townshipscheduler.ui.components.GoodsCategoriesPanel;
+import zzk.townshipscheduler.ui.components.ProductCategoriesPanel;
 
 @Route("/product")
 @Menu
 @AnonymousAllowed
 public class ProductView extends VerticalLayout {
 
-    private final GoodsCategoriesPanel goodsCategoriesPanel;
+    private final ProductCategoriesPanel productCategoriesPanel;
 
-    public ProductView(GoodsCategoriesPanel goodsCategoriesPanel) {
-        this.goodsCategoriesPanel = goodsCategoriesPanel;
+    public ProductView(ProductCategoriesPanel productCategoriesPanel) {
+        this.productCategoriesPanel = productCategoriesPanel;
         setSizeFull();
         setPadding(false);
-        addAndExpand(this.goodsCategoriesPanel);
+        addAndExpand(this.productCategoriesPanel);
     }
 
 }

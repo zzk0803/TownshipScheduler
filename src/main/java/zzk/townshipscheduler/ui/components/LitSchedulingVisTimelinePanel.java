@@ -6,7 +6,7 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
-import zzk.townshipscheduler.ui.pojo.ProducingArrangementVO;
+import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
 import zzk.townshipscheduler.ui.pojo.SchedulingFactoryInstanceVO;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
@@ -89,11 +89,11 @@ public class LitSchedulingVisTimelinePanel extends Component {
                 .toList();
     }
 
-    private List<ProducingArrangementVO> toProducingArrangementVo(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
+    private List<SchedulingProducingArrangementVO> toProducingArrangementVo(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         return schedulingProducingArrangementList.stream()
                 .map(producingArrangement -> {
                     SchedulingFactoryInstance planningFactoryInstance = producingArrangement.getPlanningFactoryInstance();
-                    return new ProducingArrangementVO(
+                    return new SchedulingProducingArrangementVO(
                             producingArrangement.getId(),
                             producingArrangement.getUuid(),
                             producingArrangement.getSchedulingProduct().getName(),

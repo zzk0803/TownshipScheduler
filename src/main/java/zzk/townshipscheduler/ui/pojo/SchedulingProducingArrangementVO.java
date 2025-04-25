@@ -7,7 +7,7 @@ import lombok.Value;
 import java.time.LocalDateTime;
 
 @Value
-public class ProducingArrangementVO {
+public class SchedulingProducingArrangementVO {
 
     int id;
 

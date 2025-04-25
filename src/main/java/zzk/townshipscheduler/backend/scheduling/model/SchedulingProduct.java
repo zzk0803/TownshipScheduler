@@ -3,9 +3,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForScheduling;
-import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoJustId;
-import zzk.townshipscheduler.backend.persistence.select.ProductEntityProjectionJustId;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -102,20 +99,8 @@ public final class SchedulingProduct implements IGameArrangeObject {
         @Getter
         private long value;
 
-        public static Id of(ProductEntityDtoForScheduling productDto) {
-            return of(productDto.getId());
-        }
-
         public static Id of(long value) {
             return new Id(value);
-        }
-
-        public static Id of(ProductEntityDtoJustId productDto) {
-            return of(productDto.getId());
-        }
-
-        public static Id of(ProductEntityProjectionJustId productEntityDtoJustId) {
-            return of(productEntityDtoJustId.getId());
         }
 
         public static Id of(ProductEntity productEntity) {
