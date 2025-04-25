@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.support.RetryTemplate;
@@ -31,6 +32,7 @@ import java.util.concurrent.Executors;
 @EnableAsync
 @EnableRetry
 @EnableScheduling
+@EnableCaching
 public class Application {
 
     public static void main(String[] args) {
@@ -87,13 +89,6 @@ public class Application {
                 .retryOn(Exception.class)
                 .build();
     }
-
-//    @Bean(name = "java8EnhancedObjectMapper")
-//    public ObjectMapper java8EnhancedObjectMapper() {
-//        ObjectMapper objectMapper = new ObjectMapper();
-//        objectMapper.registerModule(new JavaTimeModule());
-//        return objectMapper;
-//    }
 
     @Bean
     public TaskScheduler taskScheduler() {

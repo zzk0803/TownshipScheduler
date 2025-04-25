@@ -35,7 +35,7 @@ public interface ProductEntityRepository
                     "manufactureInfoEntities.productMaterialsRelations.productManufactureInfo"
             }
     )
-    @Query("select p from ProductEntity p")
-    Set<ProductEntity> queryForPrepareScheduling();
+    @Query("select p from ProductEntity p where p.level<=:level")
+    Set<ProductEntity> queryForPrepareScheduling(Integer level);
 
 }

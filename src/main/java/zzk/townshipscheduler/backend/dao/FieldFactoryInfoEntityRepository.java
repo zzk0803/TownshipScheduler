@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.dao;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,8 +24,8 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
     List<FieldFactoryInfoEntity> queryFactoryInfoByLevelLessThanOrEqual(Integer level);
 
     @EntityGraph(attributePaths = {"portfolioGoods.fieldFactoryInfo"})
-    @Query("select f from FieldFactoryInfoEntity f")
-    Set<FieldFactoryInfoEntity> queryForPrepareScheduling();
+    @Query("select f from FieldFactoryInfoEntity f where f.level<=:level")
+    Set<FieldFactoryInfoEntity> queryForPrepareScheduling(Integer level);
 
     @EntityGraph(
             attributePaths = {
@@ -42,7 +43,18 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
             }
     )
     @Query("select ffie from FieldFactoryInfoEntity ffie")
+    @Cacheable(cacheNames = {"cache::factoryProducts"})
     Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Sort sort);
+
+    @EntityGraph(
+            attributePaths = {
+                    "portfolioGoods",
+                    "portfolioGoods.crawledAsImage.imageBytes"
+            }
+    )
+    @Query("select ffie from FieldFactoryInfoEntity ffie where ffie.level<=:level ")
+    @Cacheable(cacheNames = {"cache::factoryProducts:level"}, key = "#level")
+    Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Integer level, Sort sort);
 
     /*
     SELECT fffi.*

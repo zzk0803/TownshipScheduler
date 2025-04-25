@@ -13,10 +13,7 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.AccountEntity;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.OrderEntity;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.ui.pojo.BillItem;
 
 import java.time.LocalDateTime;
@@ -147,9 +144,16 @@ public class OrderFormPresenter {
     }
 
     public Supplier<Collection<FieldFactoryInfoEntity>> getFactoryProductsSupplier() {
-        return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+        Optional<PlayerEntity> playerEntity = townshipAuthenticationContext.getPlayerEntity();
+        return playerEntity.<Supplier<Collection<FieldFactoryInfoEntity>>>map(entity -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                entity.getLevel(),
                 Sort.by(Sort.Direction.ASC, "level")
-        );
+        )).orElseGet(() -> {
+            log.error("player should present,but return full entity...");
+            return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                    Sort.by(Sort.Direction.ASC, "level")
+            );
+        });
     }
 
     public ProductEntity queryProductById(Long id) {

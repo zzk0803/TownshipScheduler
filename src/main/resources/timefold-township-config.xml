@@ -4,6 +4,8 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
+    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
+
     <environmentMode>PHASE_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
@@ -22,7 +24,6 @@
             zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider
         </constraintProviderClass>
         <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
-        <!--        <initializingScoreTrend>[ONLY_DOWN/ONLY_DOWN]/[ONLY_DOWN/ONLY_DOWN]</initializingScoreTrend>-->
     </scoreDirectorFactory>
 
     <customPhase>
@@ -72,8 +73,8 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowMinutes>1</slidingWindowMinutes>
-                <minimumImprovementRatio>0.3</minimumImprovementRatio>
+                <slidingWindowSeconds>30</slidingWindowSeconds>
+                <minimumImprovementRatio>0.05</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 
@@ -162,7 +163,7 @@
         <!--        </ruinRecreateMoveSelector>-->
 
         <acceptor>
-            <simulatedAnnealingStartingTemperature>[128/64]hard/[512/256]soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>[128/256]hard/[1024/128]soft</simulatedAnnealingStartingTemperature>
         </acceptor>
 
         <forager>
@@ -171,11 +172,13 @@
 
     </localSearch>
 
-
     <localSearch>
 
         <termination>
-            <unimprovedMinutesSpentLimit>1</unimprovedMinutesSpentLimit>
+            <diminishedReturns>
+                <slidingWindowMinutes>3</slidingWindowMinutes>
+                <minimumImprovementRatio>0.01</minimumImprovementRatio>
+            </diminishedReturns>
         </termination>
 
         <unionMoveSelector>
@@ -224,7 +227,8 @@
         </unionMoveSelector>
 
         <acceptor>
-            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>
+            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
+            <lateAcceptanceSize>7</lateAcceptanceSize>
         </acceptor>
 
         <forager>

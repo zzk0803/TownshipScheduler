@@ -80,7 +80,7 @@ class TownshipDataHardcodeHotfixProcessor {
                     fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
                     fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
                     fieldFactoryInfo.setDefaultInstanceAmount(1);
-                    fieldFactoryInfo.setDefaultProducingCapacity(3);
+                    fieldFactoryInfo.setDefaultProducingCapacity(2);
                     fieldFactoryInfo.setDefaultReapWindowCapacity(3);
                     fieldFactoryInfo.setMaxInstanceAmount(3);
                     fieldFactoryInfo.setMaxProducingCapacity(6);
@@ -104,7 +104,7 @@ class TownshipDataHardcodeHotfixProcessor {
         duckFeeder.setDefaultInstanceAmount(1);
         duckFeeder.setDefaultProducingCapacity(3);
         duckFeeder.setDefaultReapWindowCapacity(3);
-        duckFeeder.setMaxInstanceAmount(2);
+        duckFeeder.setMaxInstanceAmount(1);
         duckFeeder.setMaxProducingCapacity(3);
         duckFeeder.setMaxReapWindowCapacity(3);
         String[] duckFeederProducts = farmingProductMap.get(duckFeeder.getCategory());

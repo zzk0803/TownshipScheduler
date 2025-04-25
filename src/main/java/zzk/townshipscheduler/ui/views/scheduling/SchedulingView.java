@@ -4,6 +4,8 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
@@ -88,16 +90,13 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private HorizontalLayout buildBtnPanel() {
         HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
-        triggerButton = new TriggerButton(
-                "Start",
-                _ -> {
-                    this.schedulingViewPresenter.schedulingAndPush();
-                },
-                "Stop",
-                _ -> {
-                    this.schedulingViewPresenter.schedulingAbort();
-                }
-        );
+        Button startButon = new Button("Start");
+        startButon.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+        startButon.addClickListener(_ -> this.schedulingViewPresenter.schedulingAndPush());
+        Button stopButton = new Button("Stop");
+        stopButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        stopButton.addClickListener(_ -> this.schedulingViewPresenter.schedulingAbort());
+        this.triggerButton = new TriggerButton(startButon, stopButton);
         schedulingBtnPanel.setWidthFull();
         schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.BETWEEN);
         schedulingBtnPanel.add(buildScorePanel(), triggerButton);

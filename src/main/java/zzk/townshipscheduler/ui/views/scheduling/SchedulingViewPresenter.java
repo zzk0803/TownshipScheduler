@@ -103,6 +103,17 @@ public class SchedulingViewPresenter {
                 .withProblemId(UUID.fromString(currentProblemId))
                 .withProblem(townshipSchedulingProblem)
                 .withBestSolutionConsumer(solutionConsumer)
+                .withFinalBestSolutionConsumer(solutionConsumer.andThen(_->{
+                    this.ui.access(() -> {
+                        getSchedulingView().getTriggerButton().fromState2ToState1();
+                        Notification notification = new Notification();
+                        notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        notification.setText("Scheduling Done");
+                        notification.setPosition(Notification.Position.MIDDLE);
+                        notification.setDuration(3000);
+                        notification.open();
+                    });
+                }))
                 .withExceptionHandler((uuid, throwable) -> {
                     throwable.printStackTrace();
                     this.ui.access(() -> {

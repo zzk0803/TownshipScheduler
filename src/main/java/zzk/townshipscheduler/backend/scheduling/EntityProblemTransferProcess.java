@@ -262,7 +262,7 @@ class EntityProblemTransferProcess {
                 executionMode.setId(idRoller.getAndIncrement());
                 executionMode.setProduct(schedulingProduct);
                 Duration producingDuration = productManufactureInfo.getProducingDuration();
-                executionMode.setExecuteDuration(producingDuration);
+                executionMode.setExecuteDuration(producingDuration != null ? producingDuration : Duration.ZERO);
                 ProductAmountBill productAmountBill = new ProductAmountBill();
                 executionMode.setMaterials(productAmountBill);
                 Set<ProductMaterialsRelation> productMaterialsRelations = productManufactureInfo.getProductMaterialsRelations();

@@ -92,6 +92,8 @@ public class ProductService {
         }
         if (duration != null) {
             productManufactureInfoEntity.setProducingDuration(duration);
+        }else {
+            productManufactureInfoEntity.setProducingDuration(Duration.ZERO);
         }
         return productManufactureInfoEntity;
     }

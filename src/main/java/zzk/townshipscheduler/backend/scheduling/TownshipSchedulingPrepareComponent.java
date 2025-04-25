@@ -37,26 +37,23 @@ public class TownshipSchedulingPrepareComponent {
 //                = playerEntityRepository.findPlayerById(playerEntity.getId());
 
         final Set<FieldFactoryInfoEntity> factoryInfos
-                = fieldFactoryInfoEntityRepository.queryForPrepareScheduling();
+                = fieldFactoryInfoEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
 //                = fieldFactoryInfoEntityRepository.findBy(FieldFactoryInfoEntity.class, Sort.by("id"));
 
         final Set<ProductEntity> products
-                = productEntityRepository.queryForPrepareScheduling();
+                = productEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
 //                = productEntityRepository.findBy(ProductEntity.class, Sort.by("id"));
 
-        TownshipSchedulingRequest request = optionalPlayerForScheduling
-                .map(playerEntityProjection -> {
-                    return TownshipSchedulingRequest.builder()
-                            .productEntities(products)
-                            .fieldFactoryInfoEntities(factoryInfos)
-                            .playerEntityOrderEntities(playerEntityProjection.getOrderEntities())
-                            .playerEntityFieldFactoryEntities(playerEntityProjection.getFieldFactoryEntities())
-                            .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
-                            .build();
-                })
+        return optionalPlayerForScheduling
+                .map(playerEntityProjection -> TownshipSchedulingRequest.builder()
+                        .productEntities(products)
+                        .fieldFactoryInfoEntities(factoryInfos)
+                        .playerEntityOrderEntities(playerEntityProjection.getOrderEntities())
+                        .playerEntityFieldFactoryEntities(playerEntityProjection.getFieldFactoryEntities())
+                        .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
+                        .build()
+                )
                 .orElseThrow();
-
-        return request;
 
     }
 

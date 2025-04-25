@@ -29,6 +29,7 @@ import com.vaadin.flow.data.validator.DateTimeRangeValidator;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.OrderType;
@@ -48,6 +49,7 @@ import java.util.Arrays;
 
 @Route
 @PermitAll
+@UIScope
 public class OrderFormView extends VerticalLayout {
 
     private final OrderFormPresenter presenter;
@@ -135,7 +137,7 @@ public class OrderFormView extends VerticalLayout {
 
         RadioButtonGroup<String> billTypeGroup = new RadioButtonGroup<>();
         billTypeGroup.setItems(Arrays.stream(OrderType.values()).map(Enum::name).toList());
-        billTypeGroup.setValue(OrderType.HELICOPTER.name());
+        billTypeGroup.setValue(OrderType.TRAIN.name());
         billTypeGroup.addValueChangeListener(valueChangeEvent -> {
             String changedIntoValue = valueChangeEvent.getValue();
             if (OrderType.AIRPLANE.name().equalsIgnoreCase(changedIntoValue)) {
