@@ -145,7 +145,7 @@ public class SchedulingProducingArrangement {
     }
 
     public void activate(
-            ActionIdRoller idRoller,
+            ArrangementIdRoller idRoller,
             SchedulingWorkCalendar workTimeLimit,
             SchedulingPlayer schedulingPlayer
     ) {

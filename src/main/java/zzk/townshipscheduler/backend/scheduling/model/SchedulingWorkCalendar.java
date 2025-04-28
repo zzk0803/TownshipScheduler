@@ -13,4 +13,8 @@ public class SchedulingWorkCalendar {
 
     private final LocalDateTime endDateTime;
 
+    public static SchedulingWorkCalendar with(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        return new SchedulingWorkCalendar(startDateTime, endDateTime);
+    }
+
 }

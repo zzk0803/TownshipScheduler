@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 @Slf4j
 class EntityProblemTransferProcess {
 
+    public static final int MINUTE_GRAIN = 5;
+
     private final TownshipSchedulingRequest townshipSchedulingRequest;
 
     private final Map<SchedulingProduct.Id, SchedulingProduct> idProductMap;
@@ -41,6 +43,12 @@ class EntityProblemTransferProcess {
 
     public TownshipSchedulingProblem buildProblem() {
         doMapping();
+
+        LocalDateTime calendarStart = calcCalendarStart();
+        LocalDateTime calendarEnd = calendarStart.plusDays(3);
+        SchedulingWorkCalendar schedulingWorkCalendar
+                = SchedulingWorkCalendar.with(calendarStart, calendarEnd);
+
         TownshipSchedulingProblem schedulingProblem
                 = new TownshipSchedulingProblem(
                 UUID.randomUUID().toString(),
@@ -49,16 +57,12 @@ class EntityProblemTransferProcess {
                 this.schedulingOrders,
                 this.schedulingFactoryInstances,
                 this.schedulingPlayer,
-                new SchedulingWorkCalendar(
-                        LocalDateTime.now().plusMinutes(10),
-                        LocalDateTime.now().plusDays(2)
-                ),
+                schedulingWorkCalendar,
                 DateTimeSlotSize.HOUR
         );
 
         return schedulingProblem;
     }
-
 
     private void doMapping() {
         fetchAndMapToSchedulingProduct();
@@ -66,6 +70,14 @@ class EntityProblemTransferProcess {
         fetchAndMapToSchedulingFactoryInstance();
         fetchAndMapToSchedulingWarehouse();
         fetchAndMapToSchedulingOrder();
+    }
+
+    public LocalDateTime calcCalendarStart() {
+        LocalDateTime localDateTimeNow = LocalDateTime.now();
+        LocalDateTime after30Mins = localDateTimeNow.plusMinutes(30);
+        int i1 = after30Mins.getMinute() % MINUTE_GRAIN;
+        int i2 = MINUTE_GRAIN - i1;
+        return after30Mins.plusMinutes(i2);
     }
 
     private void fetchAndMapToSchedulingProduct() {

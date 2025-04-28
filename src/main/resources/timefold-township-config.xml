@@ -69,6 +69,7 @@
     <!--    </constructionHeuristic>-->
     <!--endregion-->
 
+    <!--region local search A::SimulatedAnnealing-->
     <localSearch>
 
         <termination>
@@ -95,6 +96,9 @@
             </changeMoveSelector>
 
             <changeMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningDataTimeSlotChangeMoveSelectionFilter
+                </filterClass>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
@@ -156,14 +160,8 @@
 
         </unionMoveSelector>
 
-        <!--Ruin and Recreate move selector currently only supports 1 planning variable.-->
-        <!--        <ruinRecreateMoveSelector>-->
-        <!--            <minimumRuinedPercentage>0.125</minimumRuinedPercentage>-->
-        <!--            <maximumRuinedPercentage>0.5</maximumRuinedPercentage>-->
-        <!--        </ruinRecreateMoveSelector>-->
-
         <acceptor>
-            <simulatedAnnealingStartingTemperature>[128/256]hard/[1024/128]soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>[64/64]hard/[512/32]soft</simulatedAnnealingStartingTemperature>
         </acceptor>
 
         <forager>
@@ -171,7 +169,9 @@
         </forager>
 
     </localSearch>
+    <!--endregion-->
 
+    <!--region local search B::LateAcceptance-->
     <localSearch>
 
         <termination>
@@ -198,6 +198,9 @@
             </changeMoveSelector>
 
             <changeMoveSelector>
+                <filterClass>
+                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningDataTimeSlotChangeMoveSelectionFilter
+                </filterClass>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
@@ -224,6 +227,40 @@
                 </variableNameIncludes>
             </swapMoveSelector>
 
+
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector variableName="planningDateTimeSlot"
+                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">
+                </valueSelector>
+            </pillarChangeMoveSelector>
+
+            <pillarSwapMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <secondaryPillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </secondaryPillarSelector>
+                <variableNameIncludes>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                </variableNameIncludes>
+            </pillarSwapMoveSelector>
+
         </unionMoveSelector>
 
         <acceptor>
@@ -236,6 +273,6 @@
         </forager>
 
     </localSearch>
-
+    <!--endregion-->
 
 </solver>

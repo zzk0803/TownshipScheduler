@@ -4,28 +4,28 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class ActionIdRoller {
+public final class ArrangementIdRoller {
 
-    private static final Map<String, ActionIdRoller> HOLDER_MAPPING = new LinkedHashMap<>();
+    private static final Map<String, ArrangementIdRoller> HOLDER_MAPPING = new LinkedHashMap<>();
 
     private final AtomicInteger atomicInteger;
 
-    ActionIdRoller() {
+    ArrangementIdRoller() {
         atomicInteger = new AtomicInteger(0);
     }
 
-    public static ActionIdRoller forProblem(String uuid) {
+    public static ArrangementIdRoller forProblem(String uuid) {
         if (HOLDER_MAPPING.containsKey(uuid)) {
             return HOLDER_MAPPING.get(uuid);
         }
 
-        ActionIdRoller idRoller = createIdRoller();
+        ArrangementIdRoller idRoller = createIdRoller();
         HOLDER_MAPPING.put(uuid, idRoller);
         return idRoller;
     }
 
-    private static ActionIdRoller createIdRoller() {
-        return new ActionIdRoller();
+    private static ArrangementIdRoller createIdRoller() {
+        return new ArrangementIdRoller();
     }
 
     public void setup(SchedulingProducingArrangement producingArrangement) {

@@ -107,7 +107,7 @@ public class TownshipSchedulingProblem {
     }
 
     public void setupGameActions() {
-        ActionIdRoller idRoller = ActionIdRoller.forProblem(getUuid());
+        ArrangementIdRoller idRoller = ArrangementIdRoller.forProblem(getUuid());
 
         var producingArrangementArrayList
                 = this.schedulingOrderList
@@ -160,7 +160,7 @@ public class TownshipSchedulingProblem {
     }
 
     private ArrayList<SchedulingProducingArrangement> expandAndSetupIntoMaterials(
-            ActionIdRoller idRoller,
+            ArrangementIdRoller idRoller,
             SchedulingProducingArrangement producingArrangement
     ) {
         LinkedList<SchedulingProducingArrangement> dealingChain = new LinkedList<>(List.of(producingArrangement));
