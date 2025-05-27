@@ -13,7 +13,7 @@ import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
-import zzk.townshipscheduler.ui.eventbus.UiEventBus;
+import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 @Slf4j
 class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {

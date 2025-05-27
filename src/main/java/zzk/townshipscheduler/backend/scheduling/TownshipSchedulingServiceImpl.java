@@ -10,10 +10,10 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.util.Map;
 import java.util.Objects;
-import java.lang.String;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Slf4j
 @Service
@@ -91,6 +91,10 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     @Override
     public void abort(String problemId) {
+        if (Objects.isNull(problemId) || problemId.isBlank()) {
+            return;
+        }
+
         solverManager.terminateEarly(problemId);
     }
 
@@ -109,6 +113,18 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         }
 
         return idProblemMap.containsKey(uuid);
+    }
+
+    public void schedulingWithSolverManager(
+            Function<
+                    SolverManager<TownshipSchedulingProblem, String>,
+                    SolverJob<TownshipSchedulingProblem, String>
+            > solverManagerConsumer
+    ) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob
+                = solverManagerConsumer.apply(this.solverManager);
+        String problemId = solverJob.getProblemId();
+        idSolverJobMap.put(problemId, solverJob);
     }
 
 }

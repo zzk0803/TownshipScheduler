@@ -6,13 +6,12 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
-import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
 import zzk.townshipscheduler.ui.pojo.SchedulingFactoryInstanceVO;
+import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Tag("scheduling-vis-timeline-panel")
 @NpmPackage(value = "vis-timeline", version = "7.7.3")
@@ -22,10 +21,13 @@ import java.util.Optional;
 @JsModule("./src/components/lit-vis-timeline.ts")
 public class LitSchedulingVisTimelinePanel extends Component {
 
+    private final Queue<TownshipSchedulingProblem> pushingQueue;
+
     private SchedulingViewPresenter schedulingViewPresenter;
 
     public LitSchedulingVisTimelinePanel(SchedulingViewPresenter schedulingViewPresenter) {
         this.schedulingViewPresenter = schedulingViewPresenter;
+        this.pushingQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -40,12 +42,22 @@ public class LitSchedulingVisTimelinePanel extends Component {
 
     @ClientCallable
     public void pullScheduleResult() {
-        var townshipSchedulingProblem
-                = schedulingViewPresenter.findCurrentProblem();
-        updateRemote(townshipSchedulingProblem);
+        offerSolvingResult(schedulingViewPresenter.findCurrentProblem());
+        updateRemote();
     }
 
-    public void updateRemote(TownshipSchedulingProblem townshipSchedulingProblem) {
+    public void offerSolvingResult(TownshipSchedulingProblem townshipSchedulingProblem) {
+        this.pushingQueue.offer(townshipSchedulingProblem);
+    }
+
+    public void updateRemote() {
+        TownshipSchedulingProblem townshipSchedulingProblem = this.pushingQueue.poll();
+        if (Objects.nonNull(townshipSchedulingProblem)) {
+            updateRemote(townshipSchedulingProblem);
+        }
+    }
+
+    private void updateRemote(TownshipSchedulingProblem townshipSchedulingProblem) {
         setPropertyList(
                 "schedulingOrder",
                 townshipSchedulingProblem.getSchedulingOrderList()
@@ -116,6 +128,10 @@ public class LitSchedulingVisTimelinePanel extends Component {
                 })
                 .toList();
 
+    }
+
+    public void cleanPushQueue() {
+        this.pushingQueue.clear();
     }
 
     private void setPropertyMap(String name, Map<String, ?> map) {

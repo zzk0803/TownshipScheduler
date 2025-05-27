@@ -11,15 +11,15 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>23</java.version>
-        <vaadin.version>24.7.2</vaadin.version>
-        <timefold-solver.version>1.22.0</timefold-solver.version>
+        <java.version>24</java.version>
+        <vaadin.version>24.7.5</vaadin.version>
+        <timefold-solver.version>1.22.1</timefold-solver.version>
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.5</version>
+        <version>3.5.0</version>
     </parent>
 
     <dependencyManagement>
@@ -146,6 +146,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>zzk.townshipscheduler.Application</mainClass>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>

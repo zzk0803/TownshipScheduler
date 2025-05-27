@@ -7,14 +7,17 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
@@ -22,7 +25,7 @@ import zzk.townshipscheduler.ui.components.BillCard;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Arrays;
 
 @Route("/orders")
 @Menu
@@ -45,7 +48,7 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
 
         grid.setSelectionMode(Grid.SelectionMode.NONE);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-        grid.addComponentColumn(this::buildBillCard);
+        grid.addComponentColumn(this::buildBillCard).setFlexGrow(1);
         addAndExpand(grid);
 
         Button schedulingButton = new Button(VaadinIcon.TIMER.create());
@@ -80,20 +83,49 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
             dateTimePicker.setLabel("Dead Line");
             dateTimePicker.setReadOnly(true);
-            card.add(new VerticalLayout(strAsSpan(orderView.getOrderType().name()), dateTimePicker));
+
+            card.add(
+                    createCardInnerDiv(
+                            strAsSpan(orderView.getOrderType().name()),
+                            dateTimePicker
+                    )
+            );
         } else {
-            card.add(new VerticalLayout(strAsSpan(orderView.getOrderType().name()), strAsSpan("No Deadline")));
+            card.add(
+                    createCardInnerDiv(
+                            strAsSpan(orderView.getOrderType().name()),
+                            strAsSpan("No Deadline")
+                    )
+            );
         }
 
-        card.add(new BillCard(orderView));
+        Scroller scroller = new Scroller(new BillCard(orderView));
+        scroller.setWidthFull();
+        scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
+        card.addAndExpand(scroller);
 
-        card.add(new Button(
-                VaadinIcon.CLOSE.create(), click -> {
-            presenter.onBillDeleteClick(orderView);
-        }
-        ));
+        card.add(
+                new Button(
+                        VaadinIcon.CLOSE.create(),
+                        click -> {
+                            presenter.onBillDeleteClick(orderView);
+                        }
+                )
+        );
 
         return card;
+    }
+
+    public Div createCardInnerDiv(Component... components) {
+        Div div = new Div();
+        div.addClassNames(
+                LumoUtility.Width.AUTO,
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.Gap.MEDIUM
+        );
+        Arrays.stream(components).forEach(div::add);
+        return div;
     }
 
     public Span strAsSpan(String content) {

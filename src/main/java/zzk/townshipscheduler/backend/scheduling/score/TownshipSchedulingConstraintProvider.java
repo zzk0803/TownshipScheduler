@@ -7,6 +7,7 @@ import ai.timefold.solver.core.api.score.stream.common.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingWorkCalendar;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
@@ -14,7 +15,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
 
@@ -25,7 +28,9 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidBrokenPrerequisiteStock(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotArrangeInPlayerSleepTime(constraintFactory),
-                preferArrangeAsSoonAsPassable(constraintFactory)
+                shouldNotBrokenCalendarEnd(constraintFactory),
+                preferArrangeAsSoonAsPassable(constraintFactory),
+                preferMinimizeMakeSpan(constraintFactory)
         };
     }
 
@@ -127,7 +132,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
 
-
     private Constraint shouldNotBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingOrder.class)
                 .filter(SchedulingOrder::boolHasDeadline)
@@ -186,9 +190,26 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("shouldNotArrangeInPlayerSleepTime");
     }
 
+    private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getCompletedDateTime() == null
+                                                          || schedulingProducingArrangement.getCompletedDateTime()
+                                                                  .isAfter(
+                                                                          schedulingProducingArrangement.getSchedulingWorkCalendar()
+                                                                                  .getEndDateTime()
+                                                                  )
+                )
+                .penalize(BendableScore.ofSoft(
+                        TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                        TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                        TownshipSchedulingProblem.SOFT_TOLERANCE,
+                        10000
+                ))
+                .asConstraint("shouldNotBrokenCalendarEnd");
+    }
+
     private Constraint preferArrangeAsSoonAsPassable(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .penalize(
                         BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -208,7 +229,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint preferMinimizeMakeSpan(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
+                .filter(SchedulingProducingArrangement::isOrderDirect)
                 .penalize(
                         BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,

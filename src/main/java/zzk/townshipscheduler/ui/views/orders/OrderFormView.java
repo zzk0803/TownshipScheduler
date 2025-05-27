@@ -37,10 +37,10 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.components.BillDurationField;
-import zzk.townshipscheduler.ui.components.ProductsCategoriesSelectionPanel;
-import zzk.townshipscheduler.ui.eventbus.UiEventBus;
+import zzk.townshipscheduler.ui.components.ProductsSelectionPanel;
 import zzk.townshipscheduler.ui.pojo.BillItem;
 import zzk.townshipscheduler.ui.pojo.FactoryProductsDto;
+import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
@@ -54,7 +54,7 @@ public class OrderFormView extends VerticalLayout {
 
     private final OrderFormPresenter presenter;
 
-    private final ProductsCategoriesSelectionPanel productsCategoriesSelectionPanel;
+    private final ProductsSelectionPanel productsSelectionPanel;
 
     //    private final ProductCategoriesPanel productCategoriesPanel;
 
@@ -69,24 +69,20 @@ public class OrderFormView extends VerticalLayout {
 //        this.productCategoriesPanel = productCategoriesPanel;
         this.presenter.setOrderFormView(this);
         this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
-        this.productsCategoriesSelectionPanel
-                = new ProductsCategoriesSelectionPanel(
+        this.productsSelectionPanel
+                = new ProductsSelectionPanel(
                 presenter.getFactoryProductsSupplier()
         );
 
         style();
-
         add(assembleBillForm());
-
         addAndExpand(assembleBillItemGrid());
-
         add(assembleItemAppendBtn());
-
         add(assembleFooterPanel());
 
         UiEventBus.subscribe(
                 this,
-                ProductsCategoriesSelectionPanel.ProductCardSelectionAmountEvent.class,
+                ProductsSelectionPanel.ProductCardSelectionAmountEvent.class,
                 componentEvent -> {
                     var selectProduct = componentEvent.getProduct();
                     int amount = componentEvent.getAmount();
@@ -181,7 +177,7 @@ public class OrderFormView extends VerticalLayout {
         addItemButton.addClickListener(_ -> {
             Dialog dialog = new Dialog("Select Goods...");
             dialog.setSizeFull();
-            dialog.addComponentAsFirst(this.productsCategoriesSelectionPanel);
+            dialog.addComponentAsFirst(this.productsSelectionPanel);
 
             Button button = new Button("OK");
             button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);

@@ -2,11 +2,16 @@ import {Duration} from "@js-joda/core";
 
 export declare type ScoreAnalysisFetchPolicy = "FETCH_ALL" | "FETCH_SHALLOW";
 
+export declare interface IVisTimeLineRemote{
+    pullScheduleResult(): void;
+}
+
 export declare interface SchedulingWorkTimeLimit {
 
     startDateTime: string;
 
     endDateTime: string;
+
 }
 
 // export declare type Product = {
@@ -134,38 +139,3 @@ export declare type BendableScore = {
 }
 
 export type SolverStatus = "SOLVING_SCHEDULED" | "SOLVING_ACTIVE" | "NOT_SOLVING";
-
-// export declare type Job = {
-//     id: string;
-//     name: string;
-//     product: Product;
-//     duration: number;
-//     minStartTime: string;
-//     idealEndTime: string;
-//     maxEndTime: string;
-//     priority: number;
-//     pinned: boolean;
-//     line: Line;
-//     previousJob: Job;
-//     nextJob: Job;
-//     startCleaningDateTime: string;
-//     startProductionDateTime: string;
-//     endDateTime: string;
-// }
-
-// export declare type Line = {
-//     id: string;
-//     name: string;
-//     operator: number;
-//     startDateTime: Date;
-//     jobs: Array<Job>;
-// }
-
-// export declare type PackagingSchedule = {
-//     workCalendar: WorkCalendar;
-//     products: Array<Product>;
-//     lines: Array<Line>;
-//     jobs: Array<Job>;
-//     score: HardMediumSoftLongScore;
-//     solverStatus: SolverStatus;
-// }

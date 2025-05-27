@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.ui.eventbus;
+package zzk.townshipscheduler.ui.utility;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;

@@ -24,7 +24,7 @@ import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
 import zzk.townshipscheduler.ui.components.ProductCategoriesPanel;
-import zzk.townshipscheduler.ui.eventbus.UiEventBus;
+import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 import java.io.ByteArrayInputStream;
 import java.util.Map;

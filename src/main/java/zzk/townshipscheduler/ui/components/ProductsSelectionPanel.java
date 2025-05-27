@@ -2,10 +2,9 @@ package zzk.townshipscheduler.ui.components;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
@@ -16,20 +15,18 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.ui.eventbus.UiEventBus;
-import zzk.townshipscheduler.ui.pojo.FactoryProductsDto;
+import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 import java.io.ByteArrayInputStream;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.function.Supplier;
 
-public class ProductsCategoriesSelectionPanel extends Composite<VerticalLayout> {
+public class ProductsSelectionPanel extends Composite<VerticalLayout> {
 
-    public ProductsCategoriesSelectionPanel(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
+    public ProductsSelectionPanel(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
         Grid<FieldFactoryInfoEntity> factoryProductsGrid = createGrid(factoryProductsSupplier);
         getContent().addAndExpand(factoryProductsGrid);
     }
@@ -76,6 +73,14 @@ public class ProductsCategoriesSelectionPanel extends Composite<VerticalLayout> 
             getContent().add(factoryHeaderLayout, productsGridLayoutScroller);
         }
 
+        @Override
+        protected VerticalLayout initContent() {
+            VerticalLayout verticalLayout = super.initContent();
+            verticalLayout.setSpacing(2.0f, Unit.PIXELS);
+            verticalLayout.setMinWidth(95.0f,Unit.VW);
+            return verticalLayout;
+        }
+
     }
 
 
@@ -89,14 +94,13 @@ public class ProductsCategoriesSelectionPanel extends Composite<VerticalLayout> 
         }
 
         private static Image createImage(ProductEntity productEntity) {
-            Image image = new Image(
+            return new Image(
                     new StreamResource(
                             productEntity.getName(),
                             () -> new ByteArrayInputStream(productEntity.getCrawledAsImage().getImageBytes())
                     ),
                     productEntity.getName()
             );
-            return image;
         }
 
         private IntegerField createAmountField(ProductEntity productEntity) {

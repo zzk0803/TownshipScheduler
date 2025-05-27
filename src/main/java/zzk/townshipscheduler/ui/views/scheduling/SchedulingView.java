@@ -52,6 +52,8 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private Grid<SchedulingProducingArrangement> arrangementGrid;
 
+    private TabSheet tabSheet;
+
     public SchedulingView(SchedulingViewPresenter schedulingViewPresenter) {
         this.schedulingViewPresenter = schedulingViewPresenter;
         this.schedulingViewPresenter.setSchedulingView(this);
@@ -80,7 +82,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         addAndExpand(schedulingContentLayout);
 
         schedulingContentLayout.add(buildBtnPanel());
-        TabSheet tabSheet = new TabSheet();
+        tabSheet = new TabSheet();
         tabSheet.setWidthFull();
         tabSheet.add("Grid", buildProducingArrangementsGrid());
         tabSheet.add("Timeline", arrangementTimelinePanel = new LitSchedulingVisTimelinePanel(schedulingViewPresenter));
@@ -92,10 +94,10 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
         HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
         Button startButon = new Button("Start");
         startButon.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
-        startButon.addClickListener(_ -> this.schedulingViewPresenter.schedulingAndPush());
+        startButon.addClickListener(_ -> this.schedulingViewPresenter.onStartButton());
         Button stopButton = new Button("Stop");
         stopButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        stopButton.addClickListener(_ -> this.schedulingViewPresenter.schedulingAbort());
+        stopButton.addClickListener(_ -> this.schedulingViewPresenter.onStopButton());
         this.triggerButton = new TriggerButton(startButon, stopButton);
         schedulingBtnPanel.setWidthFull();
         schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.BETWEEN);
@@ -192,6 +194,7 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     @Override
     protected void onDetach(DetachEvent detachEvent) {
+        this.schedulingViewPresenter.setUi(null);
         schedulingViewPresenter.reset();
     }
 

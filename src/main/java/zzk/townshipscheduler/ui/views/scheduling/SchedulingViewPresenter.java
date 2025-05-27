@@ -13,16 +13,23 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import com.vaadin.flow.spring.annotation.RouteScopeOwner;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import jakarta.annotation.Resource;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import org.springframework.scheduling.TaskScheduler;
+import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingServiceImpl;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 @SpringComponent
@@ -31,17 +38,11 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class SchedulingViewPresenter {
 
-    private final ITownshipSchedulingService schedulingService;
+    public static final int UPDATE_FREQUENCY = 3;
 
-    private final SolverFactory<TownshipSchedulingProblem> solverFactory;
-
-    private final SolverManager<TownshipSchedulingProblem, UUID> solverManager;
+    private final TownshipSchedulingServiceImpl schedulingService;
 
     private final SolutionManager<TownshipSchedulingProblem, BendableScore> solutionManager;
-
-    @Getter
-    @Setter
-    private SolverJob<TownshipSchedulingProblem, UUID> solverJob;
 
     @Getter
     @Setter
@@ -59,13 +60,18 @@ public class SchedulingViewPresenter {
     @Setter
     private SchedulingView schedulingView;
 
+    private ScheduledFuture<?> springScheduledFuture;
+
+    @Resource(name = "townshipTaskScheduler")
+    private TaskScheduler taskScheduler;
+
     public void setupPlayerActionGrid(Grid<SchedulingProducingArrangement> grid) {
         grid.setItems(findCurrentProblem().getSchedulingProducingArrangementList());
     }
 
     public TownshipSchedulingProblem findCurrentProblem() {
         if (getTownshipSchedulingProblem() == null) {
-            setTownshipSchedulingProblem(schedulingService.getSchedule(getCurrentProblemId()));
+            setTownshipSchedulingProblem(this.schedulingService.getSchedule(getCurrentProblemId()));
         }
         return getTownshipSchedulingProblem();
     }
@@ -79,7 +85,7 @@ public class SchedulingViewPresenter {
         return findCurrentProblem().getSchedulingOrderList();
     }
 
-    public void schedulingAndPush() {
+    public void onStartButton() {
         Consumer<TownshipSchedulingProblem> solutionConsumer = townshipSchedulingProblem -> {
             SchedulingViewPresenter.this.setTownshipSchedulingProblem(townshipSchedulingProblem);
             List<SchedulingProducingArrangement> producingArrangements
@@ -89,48 +95,85 @@ public class SchedulingViewPresenter {
                     townshipSchedulingProblem
             );
 
-            this.ui.access(() -> {
-                getSchedulingView().getScoreAnalysisParagraph()
-                        .setText(scoreAnalysis.toString());
-                getSchedulingView().getArrangementGrid().setItems(producingArrangements);
-                getSchedulingView().getArrangementGrid().getListDataView().refreshAll();
-                getSchedulingView().getArrangementTimelinePanel()
-                        .updateRemote(townshipSchedulingProblem);
-            });
+            this.ui.access(
+                    () -> {
+                        getSchedulingView().getScoreAnalysisParagraph()
+                                .setText(scoreAnalysis.toString());
+                        getSchedulingView().getArrangementGrid().setItems(producingArrangements);
+                        getSchedulingView().getArrangementGrid().getListDataView().refreshAll();
+                    }
+            );
         };
 
-        solverJob = solverManager.solveBuilder()
-                .withProblemId(UUID.fromString(currentProblemId))
-                .withProblem(townshipSchedulingProblem)
-                .withBestSolutionConsumer(solutionConsumer)
-                .withFinalBestSolutionConsumer(solutionConsumer.andThen(_->{
-                    this.ui.access(() -> {
-                        getSchedulingView().getTriggerButton().fromState2ToState1();
-                        Notification notification = new Notification();
-                        notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                        notification.setText("Scheduling Done");
-                        notification.setPosition(Notification.Position.MIDDLE);
-                        notification.setDuration(3000);
-                        notification.open();
-                    });
-                }))
-                .withExceptionHandler((uuid, throwable) -> {
-                    throwable.printStackTrace();
-                    this.ui.access(() -> {
-                        getSchedulingView().getTriggerButton().fromState2ToState1();
-                        Notification notification = new Notification();
-                        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        notification.setText(throwable.toString());
-                        notification.setPosition(Notification.Position.MIDDLE);
-                        notification.setDuration(3000);
-                        notification.open();
-                    });
-                })
-                .run();
+        springScheduledFuture = taskScheduler.scheduleAtFixedRate(
+                () -> this.ui.access(
+                        () -> getSchedulingView().getArrangementTimelinePanel().pullScheduleResult()
+                ),
+                Instant.now().plusSeconds(1),
+                Duration.ofSeconds(UPDATE_FREQUENCY)
+        );
+
+        schedulingService.schedulingWithSolverManager(
+                solverManager -> solverManager.solveBuilder()
+                        .withProblemId(currentProblemId)
+                        .withProblem(townshipSchedulingProblem)
+                        .withBestSolutionConsumer(solutionConsumer)
+                        .withFinalBestSolutionConsumer(
+                                solutionConsumer.andThen(_ -> {
+                                            this.ui.access(
+                                                    () -> {
+                                                        getSchedulingView().getTriggerButton().fromState2ToState1();
+                                                        Notification notification = new Notification();
+                                                        notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                                                        notification.setText("Scheduling Done");
+                                                        notification.setPosition(Notification.Position.MIDDLE);
+                                                        notification.setDuration(3000);
+                                                        notification.open();
+                                                    }
+                                            );
+                                        })
+                                        .andThen(finalTownshipProblemResult -> {
+                                            this.ui.access(() -> {
+                                                SchedulingReportArticle reportArticle
+                                                        = new SchedulingReportArticle(finalTownshipProblemResult);
+                                                this.schedulingView.getTabSheet().add("Report", reportArticle);
+                                            });
+                                        })
+                                        .andThen(_ -> {
+                                            springScheduledFuture.cancel(true);
+                                            getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
+                                        })
+                        )
+                        .withExceptionHandler((uuid, throwable) -> {
+                            throwable.printStackTrace();
+                            this.ui.access(() -> {
+                                getSchedulingView().getTriggerButton().fromState2ToState1();
+                                Notification notification = new Notification();
+                                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                notification.setText(throwable.toString());
+                                notification.setPosition(Notification.Position.MIDDLE);
+                                notification.setDuration(3000);
+                                notification.open();
+                            });
+                            springScheduledFuture.cancel(true);
+                            getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
+                        })
+                        .run()
+        );
+
+        ui.addDetachListener(detachEvent -> {
+            springScheduledFuture.cancel(true);
+            getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
+            schedulingService.abort(currentProblemId);
+        });
     }
 
-    public void schedulingAbort() {
-        solverManager.terminateEarly(UUID.fromString(currentProblemId));
+    public void onStopButton() {
+        if (springScheduledFuture != null) {
+            springScheduledFuture.cancel(true);
+        }
+        getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
+        schedulingService.abort(currentProblemId);
     }
 
     public boolean validProblemId(String parameter) {

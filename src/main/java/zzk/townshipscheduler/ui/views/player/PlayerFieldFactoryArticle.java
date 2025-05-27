@@ -13,11 +13,10 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.dom.ElementFactory;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
-import zzk.townshipscheduler.ui.eventbus.UiEventBus;
+import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
 

@@ -90,7 +90,7 @@ public class Application {
                 .build();
     }
 
-    @Bean
+    @Bean("townshipTaskScheduler")
     public TaskScheduler taskScheduler() {
         SimpleAsyncTaskSchedulerBuilder taskSchedulerBuilder = new SimpleAsyncTaskSchedulerBuilder();
         return taskSchedulerBuilder

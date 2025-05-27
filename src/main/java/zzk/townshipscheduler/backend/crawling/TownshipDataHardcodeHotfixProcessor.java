@@ -82,7 +82,7 @@ class TownshipDataHardcodeHotfixProcessor {
                     fieldFactoryInfo.setDefaultInstanceAmount(1);
                     fieldFactoryInfo.setDefaultProducingCapacity(2);
                     fieldFactoryInfo.setDefaultReapWindowCapacity(3);
-                    fieldFactoryInfo.setMaxInstanceAmount(3);
+                    fieldFactoryInfo.setMaxInstanceAmount(2);
                     fieldFactoryInfo.setMaxProducingCapacity(6);
                     fieldFactoryInfo.setMaxReapWindowCapacity(6);
                     return fieldFactoryInfo;
