@@ -7,7 +7,6 @@ import ai.timefold.solver.core.api.score.stream.common.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingWorkCalendar;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
@@ -15,9 +14,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.function.Function;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
 
@@ -136,10 +134,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingOrder.class)
                 .filter(SchedulingOrder::boolHasDeadline)
                 .join(
-                        SchedulingProducingArrangement.class,
-                        Joiners.filtering((schedulingOrder, producingArrangement) -> {
-                            return producingArrangement.isOrderDirect();
-                        })
+                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+                                .filter(SchedulingProducingArrangement::isOrderDirect),
+                        Joiners.equal(
+                                Function.identity(),
+                                SchedulingProducingArrangement::getSchedulingOrder
+                        )
                 )
                 .filter((schedulingOrder, producingArrangement) -> {
                     LocalDateTime deadline = schedulingOrder.getDeadline();

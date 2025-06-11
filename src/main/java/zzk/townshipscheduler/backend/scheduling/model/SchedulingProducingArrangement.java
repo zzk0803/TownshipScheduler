@@ -133,7 +133,12 @@ public class SchedulingProducingArrangement {
 
     @JsonIgnore
     public SchedulingOrder getSchedulingOrder() {
-        return ((SchedulingOrder) getTargetActionObject());
+        IGameArrangeObject iGameArrangeObject = getTargetActionObject();
+        if (iGameArrangeObject instanceof SchedulingOrder) {
+            return ((SchedulingOrder) iGameArrangeObject);
+        }else{
+            return null;
+        }
     }
 
     public void readyElseThrow() {
