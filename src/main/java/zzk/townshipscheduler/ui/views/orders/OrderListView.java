@@ -51,17 +51,12 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
         grid.addComponentColumn(this::buildBillCard).setFlexGrow(1);
         addAndExpand(grid);
 
-        Button schedulingButton = new Button(VaadinIcon.TIMER.create());
-        schedulingButton.addClickListener(click -> {
-            var uuid = presenter.backendPrepareTownshipScheduling(townshipAuthenticationContext);
-            UI.getCurrent().navigate(SchedulingView.class, uuid);
-        });
 
         Button addBillButton = new Button(VaadinIcon.PLUS.create());
         addBillButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
         addBillButton.setWidth("5rem");
         addBillButton.addClickListener(addBillClicked -> UI.getCurrent().navigate(OrderFormView.class));
-        HorizontalLayout horizontalLayout = new HorizontalLayout(addBillButton, schedulingButton);
+        HorizontalLayout horizontalLayout = new HorizontalLayout(addBillButton);
         horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
         add(horizontalLayout);
     }

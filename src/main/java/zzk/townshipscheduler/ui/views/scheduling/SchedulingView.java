@@ -6,14 +6,17 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
@@ -22,10 +25,14 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
+import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
+import zzk.townshipscheduler.backend.persistence.OrderEntity;
+import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
 import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
+import zzk.townshipscheduler.ui.components.OrderGrid;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 
 import java.time.LocalDateTime;
@@ -54,9 +61,13 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
 
     private TabSheet tabSheet;
 
-    public SchedulingView(SchedulingViewPresenter schedulingViewPresenter) {
+    public SchedulingView(
+            SchedulingViewPresenter schedulingViewPresenter,
+            TownshipAuthenticationContext townshipAuthenticationContext
+    ) {
         this.schedulingViewPresenter = schedulingViewPresenter;
         this.schedulingViewPresenter.setSchedulingView(this);
+        this.schedulingViewPresenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
         this.setSizeFull();
         this.add(new H1("Scheduling View"));
     }
@@ -69,9 +80,52 @@ public class SchedulingView extends VerticalLayout implements HasUrlParameter<St
                 && this.schedulingViewPresenter.validProblemId(parameter)
         ) {
             this.schedulingViewPresenter.setCurrentProblemId(parameter);
+            removeAll();
+
             buildUI();
         } else {
-            Notification.show("FIXME");
+            removeAll();
+
+            OrderGrid orderGrid = new OrderGrid(schedulingViewPresenter.allOrder(),false);
+            orderGrid.setSelectionMode(Grid.SelectionMode.MULTI);
+            addAndExpand(orderGrid);
+
+            Button submitButton = new Button("Start",VaadinIcon.CALENDAR.create());
+            submitButton.addThemeVariants(
+                    ButtonVariant.LUMO_PRIMARY,
+                    ButtonVariant.LUMO_LARGE
+            );
+            submitButton.addClickListener(click -> {
+                Dialog dialog = new Dialog("Before Scheduler Start...");
+                VerticalLayout dialogWrapper = new VerticalLayout();
+                Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
+                slotSizeSelect.setLabel("Scheduling Time Slot");
+                slotSizeSelect.setNoVerticalOverlap(true);
+                slotSizeSelect.setItems(DateTimeSlotSize.values());
+                slotSizeSelect.setValue(DateTimeSlotSize.HOUR);
+                dialogWrapper.add(slotSizeSelect);
+                dialog.add(dialogWrapper);
+
+                Dialog.DialogFooter footer = dialog.getFooter();
+                footer.add(
+                        new Button(
+                                "OK",
+                                footerBtnClicked -> {
+                                    Set<OrderEntity> selectedOrder = orderGrid.getSelectedItems();
+                                    DateTimeSlotSize dateTimeSlotSize = slotSizeSelect.getValue();
+                                    String uuid = schedulingViewPresenter.backendPrepareTownshipScheduling(
+                                            selectedOrder,
+                                            dateTimeSlotSize
+                                    );
+
+                                    dialog.close();
+                                    UI.getCurrent().navigate(SchedulingView.class, uuid);
+                                }
+                        )
+                );
+                dialog.open();
+            });
+            add(submitButton);
         }
     }
 

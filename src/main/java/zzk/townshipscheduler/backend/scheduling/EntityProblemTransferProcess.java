@@ -25,15 +25,19 @@ class EntityProblemTransferProcess {
 
     private final List<SchedulingProducingExecutionMode> schedulingProducingExecutionModes;
 
-
     private final List<SchedulingFactoryInstance> schedulingFactoryInstances;
 
     private final List<SchedulingOrder> schedulingOrders;
 
+    private final DateTimeSlotSize dateTimeSlotSize;
+
     private SchedulingPlayer schedulingPlayer;
 
-    public EntityProblemTransferProcess(TownshipSchedulingRequest townshipSchedulingRequest) {
+    public EntityProblemTransferProcess(
+            TownshipSchedulingRequest townshipSchedulingRequest
+    ) {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
+        this.dateTimeSlotSize = townshipSchedulingRequest.getDateTimeSlotSize();
         this.idProductMap = new LinkedHashMap<>();
         this.idFactoryTypeMap = new LinkedHashMap<>();
         this.schedulingProducingExecutionModes = new ArrayList<>();
@@ -58,7 +62,7 @@ class EntityProblemTransferProcess {
                 this.schedulingFactoryInstances,
                 this.schedulingPlayer,
                 schedulingWorkCalendar,
-                DateTimeSlotSize.HOUR
+                dateTimeSlotSize
         );
 
         return schedulingProblem;
@@ -81,7 +85,7 @@ class EntityProblemTransferProcess {
     }
 
     private void fetchAndMapToSchedulingProduct() {
-        Set<ProductEntity> productDtoList = townshipSchedulingRequest.getProductEntities();
+        Collection<ProductEntity> productDtoList = townshipSchedulingRequest.getProductEntities();
         SchedulingProduct schedulingProduct = null;
         for (ProductEntity productDto : productDtoList) {
             schedulingProduct = buildOrGetSchedulingProduct(productDto);
@@ -102,7 +106,7 @@ class EntityProblemTransferProcess {
     }
 
     private void fetchAndMapToSchedulingFactoryInfo() {
-        Set<FieldFactoryInfoEntity> factoryInfoEntities
+        Collection<FieldFactoryInfoEntity> factoryInfoEntities
                 = townshipSchedulingRequest.getFieldFactoryInfoEntities();
 //            Set<FieldFactoryInfoEntityDto> factoryInfoEntities = townshipSchedulingRequest.getFieldFactoryInfoEntities();
         for (FieldFactoryInfoEntity fieldFactoryInfo : factoryInfoEntities) {

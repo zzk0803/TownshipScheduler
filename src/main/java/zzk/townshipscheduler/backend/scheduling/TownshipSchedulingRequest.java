@@ -3,26 +3,30 @@ package zzk.townshipscheduler.backend.scheduling;
 import lombok.Builder;
 import lombok.Value;
 import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
 
+import java.util.Collection;
 import java.util.Set;
 
 @Value
 @Builder
 public class TownshipSchedulingRequest {
 
-    Set<ProductEntity> productEntities;
+    Collection<ProductEntity> productEntities;
 //    Set<ProductEntityDtoForScheduling> productEntities;
 
-    Set<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
+    Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
 //    Set<FieldFactoryInfoEntityDto> fieldFactoryInfoEntities;
 
-    Set<OrderEntity> playerEntityOrderEntities;
+    Collection<OrderEntity> playerEntityOrderEntities;
 //    Set<OrderEntityDto> playerEntityOrderEntities;
 
-    Set<FieldFactoryEntity> playerEntityFieldFactoryEntities;
+    Collection<FieldFactoryEntity> playerEntityFieldFactoryEntities;
 //    Set<FieldFactoryEntityDto> playerEntityFieldFactoryEntities;
 
     WarehouseEntity playerEntityWarehouseEntity;
 //    WarehouseEntityDto playerEntityWarehouseEntity;
+
+    DateTimeSlotSize dateTimeSlotSize;
 
 }
