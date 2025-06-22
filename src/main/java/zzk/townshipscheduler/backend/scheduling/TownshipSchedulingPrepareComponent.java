@@ -13,6 +13,8 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 
 @Component
@@ -29,7 +31,9 @@ public class TownshipSchedulingPrepareComponent {
     public TownshipSchedulingRequest buildTownshipSchedulingRequest(
             PlayerEntity playerEntity,
             Collection<OrderEntity> orderEntityList,
-            DateTimeSlotSize dateTimeSlotSize
+            DateTimeSlotSize dateTimeSlotSize,
+            LocalDateTime workCalendarStart,
+            LocalDateTime workCalendarEnd
     ) {
 
         final Optional<PlayerEntity> optionalPlayerForScheduling
@@ -52,6 +56,8 @@ public class TownshipSchedulingPrepareComponent {
                         .playerEntityFieldFactoryEntities(playerEntityProjection.getFieldFactoryEntities())
                         .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
                         .dateTimeSlotSize(dateTimeSlotSize)
+                        .workCalendarStart(workCalendarStart)
+                        .workCalendarEnd(workCalendarEnd)
                         .build()
                 )
                 .orElseThrow();

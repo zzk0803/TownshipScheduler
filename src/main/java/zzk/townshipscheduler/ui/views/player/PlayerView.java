@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Route("/player")
-@Menu
+@Menu(title = "Player", order = 4.00d)
 @AnonymousAllowed
 public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
 

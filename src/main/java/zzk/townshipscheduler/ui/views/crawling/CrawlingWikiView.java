@@ -15,7 +15,7 @@ import lombok.Setter;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
 
 @Route(value = "crawling")
-@Menu
+@Menu(title = "Wiki Crawling", order = 2.00d)
 @AnonymousAllowed
 public class CrawlingWikiView extends VerticalLayout {
 

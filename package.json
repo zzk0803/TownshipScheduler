@@ -3,7 +3,7 @@
   "license": "UNLICENSED",
   "type": "module",
   "dependencies": {
-    "@js-joda/core": "5.6.3",
+    "@js-joda/core": "5.6.5",
     "@polymer/polymer": "3.5.2",
     "@vaadin/bundles": "24.8.0",
     "@vaadin/common-frontend": "0.0.19",
@@ -20,7 +20,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router": "7.6.1",
-    "vis-timeline": "7.7.3"
+    "vis-timeline": "7.7.4"
   },
   "devDependencies": {
     "@babel/preset-react": "7.27.1",
@@ -66,7 +66,7 @@
   },
   "vaadin": {
     "dependencies": {
-      "@js-joda/core": "5.6.3",
+      "@js-joda/core": "5.6.5",
       "@polymer/polymer": "3.5.2",
       "@vaadin/bundles": "24.8.0",
       "@vaadin/common-frontend": "0.0.19",
@@ -83,7 +83,7 @@
       "react": "18.3.1",
       "react-dom": "18.3.1",
       "react-router": "7.6.1",
-      "vis-timeline": "7.7.3"
+      "vis-timeline": "7.7.4"
     },
     "devDependencies": {
       "@babel/preset-react": "7.27.1",
@@ -107,6 +107,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "164ef9ae44bccd5b8f7609781067251519529615ecd1a565b5f5d6113210d70b"
+    "hash": "314a92da0f78de20eb74b7ed38ede61fc958b9def389d8254e193f02bc6e41a2"
   }
 }

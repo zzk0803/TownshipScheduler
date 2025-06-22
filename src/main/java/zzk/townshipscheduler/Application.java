@@ -1,8 +1,5 @@
 package zzk.townshipscheduler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,13 +14,14 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.dao.AppUserEntityRepository;
 import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
 import zzk.townshipscheduler.backend.dao.WarehouseEntityRepository;
+import zzk.townshipscheduler.backend.persistence.AccountEntity;
+import zzk.townshipscheduler.backend.persistence.PlayerEntity;
+import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
 
-import java.net.http.HttpConnectTimeoutException;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,8 +43,7 @@ public class Application {
             PlayerEntityRepository playerEntityRepository,
             WarehouseEntityRepository warehouseEntityRepository,
             PasswordEncoder passwordEncoder,
-            TransactionTemplate transactionTemplate,
-            PlayerService playerService
+            TransactionTemplate transactionTemplate
     ) {
 
         return (applicationArguments) -> {
@@ -67,8 +64,6 @@ public class Application {
                     appUserEntityRepository.save(accountEntity);
                     playerEntityRepository.save(playerEntity);
                     warehouseEntityRepository.save(warehouseEntity);
-
-//                    playerService.playerFactoryToCorrespondedLevelInBatch(playerEntity);
                 });
 
             }

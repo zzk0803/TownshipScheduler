@@ -17,11 +17,6 @@ public class SchedulingPlayer {
     @ToString.Include
     private String id = "test";
 
-    private LocalTime sleepStart = LocalTime.of(22, 30);
-
-    private LocalTime sleepEnd = LocalTime.of(7, 30);
-
     private Map<SchedulingProduct, Integer> productAmountMap;
-
 
 }

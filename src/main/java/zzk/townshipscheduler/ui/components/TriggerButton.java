@@ -18,20 +18,18 @@ public class TriggerButton extends Composite<HorizontalLayout> {
 
         this.state1Btn.setVisible(true);
         this.state2Btn.setVisible(false);
-        this.state1Btn.addClickListener(_ -> fromState1ToState2());
-        this.state2Btn.addClickListener(_ -> fromState2ToState1());
+        this.state1Btn.addClickListener(_ -> setToState2());
+        this.state2Btn.addClickListener(_ -> setToState1());
 
         getContent().add(this.state1Btn, this.state2Btn);
     }
 
-    public void fromState1ToState2() {
-        state1Btn.setDisableOnClick(true);
+    public void setToState2() {
         state1Btn.setVisible(false);
         state2Btn.setVisible(true);
     }
 
-    public void fromState2ToState1() {
-        state2Btn.setDisableOnClick(true);
+    public void setToState1() {
         state1Btn.setVisible(true);
         state2Btn.setVisible(false);
     }
@@ -45,7 +43,7 @@ public class TriggerButton extends Composite<HorizontalLayout> {
         state1Btn = new Button();
         state1Btn.setText(state1BtnLabel);
         state1Btn.addClickListener(buttonClickEvent -> {
-            fromState1ToState2();
+            setToState1();
         });
         state1Btn.addClickListener(state1BtnClicked);
 
@@ -53,7 +51,7 @@ public class TriggerButton extends Composite<HorizontalLayout> {
         state2Btn.setVisible(false);
         state2Btn.setText(state2BtnLabel);
         state2Btn.addClickListener(buttonClickEvent -> {
-            fromState2ToState1();
+            setToState2();
         });
         state2Btn.addClickListener(state2BtnClicked);
 

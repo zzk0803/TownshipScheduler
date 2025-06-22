@@ -5,8 +5,9 @@ import lombok.Value;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collection;
-import java.util.Set;
 
 @Value
 @Builder
@@ -28,5 +29,9 @@ public class TownshipSchedulingRequest {
 //    WarehouseEntityDto playerEntityWarehouseEntity;
 
     DateTimeSlotSize dateTimeSlotSize;
+
+    LocalDateTime workCalendarStart;
+
+    LocalDateTime workCalendarEnd;
 
 }

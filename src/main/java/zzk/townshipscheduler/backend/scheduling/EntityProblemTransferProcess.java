@@ -8,6 +8,7 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -31,6 +32,10 @@ class EntityProblemTransferProcess {
 
     private final DateTimeSlotSize dateTimeSlotSize;
 
+    private final LocalDateTime workCalendarStart;
+
+    private final LocalDateTime workCalendarEnd;
+
     private SchedulingPlayer schedulingPlayer;
 
     public EntityProblemTransferProcess(
@@ -38,6 +43,8 @@ class EntityProblemTransferProcess {
     ) {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
         this.dateTimeSlotSize = townshipSchedulingRequest.getDateTimeSlotSize();
+        this.workCalendarStart = townshipSchedulingRequest.getWorkCalendarStart();
+        this.workCalendarEnd = townshipSchedulingRequest.getWorkCalendarEnd();
         this.idProductMap = new LinkedHashMap<>();
         this.idFactoryTypeMap = new LinkedHashMap<>();
         this.schedulingProducingExecutionModes = new ArrayList<>();
@@ -48,24 +55,20 @@ class EntityProblemTransferProcess {
     public TownshipSchedulingProblem buildProblem() {
         doMapping();
 
-        LocalDateTime calendarStart = calcCalendarStart();
-        LocalDateTime calendarEnd = calendarStart.plusDays(3);
         SchedulingWorkCalendar schedulingWorkCalendar
-                = SchedulingWorkCalendar.with(calendarStart, calendarEnd);
+                = SchedulingWorkCalendar.with(workCalendarStart, workCalendarEnd);
 
-        TownshipSchedulingProblem schedulingProblem
-                = new TownshipSchedulingProblem(
-                UUID.randomUUID().toString(),
-                new ArrayList<>(this.idProductMap.values()),
-                new ArrayList<>(this.idFactoryTypeMap.values()),
-                this.schedulingOrders,
-                this.schedulingFactoryInstances,
-                this.schedulingPlayer,
-                schedulingWorkCalendar,
-                dateTimeSlotSize
-        );
 
-        return schedulingProblem;
+        return TownshipSchedulingProblem.builder()
+                .uuid()
+                .schedulingProductList(new ArrayList<>(this.idProductMap.values()))
+                .schedulingFactoryInfoList(new ArrayList<>(this.idFactoryTypeMap.values()))
+                .schedulingOrderList(new ArrayList<>(this.schedulingOrders))
+                .schedulingFactoryInstanceList(new ArrayList<>(this.schedulingFactoryInstances))
+                .schedulingPlayer(this.schedulingPlayer)
+                .schedulingWorkCalendar(schedulingWorkCalendar)
+                .dateTimeSlotSize(this.dateTimeSlotSize)
+                .build();
     }
 
     private void doMapping() {

@@ -7,13 +7,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -127,4 +131,15 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         idSolverJobMap.put(problemId, solverJob);
     }
 
+    public Collection<SchedulingProblemVo> allSchedulingProblem() {
+       return this.idProblemMap.entrySet()
+                .stream()
+                .map(entry -> {
+                    SchedulingProblemVo schedulingProblemVo = new SchedulingProblemVo();
+                    schedulingProblemVo.setUuid(entry.getKey());
+                    schedulingProblemVo.setSolverStatus(solverManager.getSolverStatus(entry.getKey()));
+                    return schedulingProblemVo;
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
 }

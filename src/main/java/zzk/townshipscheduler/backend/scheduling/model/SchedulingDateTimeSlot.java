@@ -5,13 +5,13 @@ import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Value;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -111,6 +111,25 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     public Comparator<SchedulingDateTimeSlot> getDateTimeSlotComparator() {
         return DATE_TIME_SLOT_COMPARATOR;
+    }
+
+    public Collection<SchedulingProducingArrangement> previousArrangements() {
+        return previousArrangements(true);
+    }
+
+    public Collection<SchedulingProducingArrangement> previousArrangements(boolean includeThisSlot) {
+        ArrayList<SchedulingProducingArrangement> producingArrangements = Stream.iterate(
+                        this,
+                        schedulingDateTimeSlot -> schedulingDateTimeSlot.getPrevious() != null,
+                        SchedulingDateTimeSlot::getPrevious
+                )
+                .map(SchedulingDateTimeSlot::getPlanningDateTimeSlotProducingArrangements)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toCollection(ArrayList::new));
+        if (includeThisSlot) {
+            producingArrangements.addAll(this.getPlanningDateTimeSlotProducingArrangements());
+        }
+        return producingArrangements;
     }
 
 }

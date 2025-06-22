@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 
 @Route("/orders")
-@Menu
+@Menu(title = "Orders", order = 5.00d)
 @PermitAll
 public class OrderListView extends VerticalLayout implements AfterNavigationObserver {
 

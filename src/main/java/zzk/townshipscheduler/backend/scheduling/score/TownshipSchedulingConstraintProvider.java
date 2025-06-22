@@ -3,7 +3,7 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.stream.*;
-import ai.timefold.solver.core.api.score.stream.common.*;
+import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
@@ -11,9 +11,6 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.chrono.ChronoLocalDateTime;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -25,7 +22,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteStock(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
-                shouldNotArrangeInPlayerSleepTime(constraintFactory),
                 shouldNotBrokenCalendarEnd(constraintFactory),
                 preferArrangeAsSoonAsPassable(constraintFactory),
                 preferMinimizeMakeSpan(constraintFactory)
@@ -47,13 +43,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .flattenLast(ConnectedRangeChain::getConnectedRanges)
                 .filter((schedulingFactoryInstance, producingArrangementChronoLocalDateTimeDurationConnectedRange) -> {
-                    Duration length = producingArrangementChronoLocalDateTimeDurationConnectedRange.getLength();
-                    ChronoLocalDateTime<?> start = producingArrangementChronoLocalDateTimeDurationConnectedRange.getStart();
-                    ChronoLocalDateTime<?> end = producingArrangementChronoLocalDateTimeDurationConnectedRange.getEnd();
-                    int minimumOverlap = producingArrangementChronoLocalDateTimeDurationConnectedRange.getMinimumOverlap();
-                    int maximumOverlap = producingArrangementChronoLocalDateTimeDurationConnectedRange.getMaximumOverlap();
                     int containedRangeCount = producingArrangementChronoLocalDateTimeDurationConnectedRange.getContainedRangeCount();
-                    boolean hasOverlap = producingArrangementChronoLocalDateTimeDurationConnectedRange.hasOverlap();
                     return containedRangeCount > schedulingFactoryInstance.getProducingLength();
                 })
                 .penalize(
@@ -79,9 +69,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(producingArrangement -> !producingArrangement.getPrerequisiteProducingArrangements().isEmpty())
                 .join(
-                        constraintFactory.forEach(SchedulingProducingArrangement.class)
-                                .filter(producingArrangement -> producingArrangement.getCompletedDateTime() != null)
-                        ,
+                        SchedulingProducingArrangement.class,
                         Joiners.filtering(
                                 (compositeProducingArrangement, materialProducingArrangement) -> {
                                     return compositeProducingArrangement.calcDeepPrerequisiteProducingArrangements()
@@ -108,15 +96,14 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     LocalDateTime productArrangeDateTime
                             = compositeProducingArrangement.getArrangeDateTime();
 
-                    return (productArrangeDateTime.isBefore(materialProducingArrangementsCompletedDateTime)
-                            || productArrangeDateTime.isEqual(materialProducingArrangementsCompletedDateTime));
+                    return productArrangeDateTime.isBefore(materialProducingArrangementsCompletedDateTime);
                 })
                 .penalize(
                         BendableScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
-                                5
+                                1
                         ),
                         ((productArrangement, materialProducingArrangementsCompletedDateTime) -> {
                             return Math.toIntExact(
@@ -151,7 +138,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_TOLERANCE,
-                                1000
+                                1
                         ),
                         ((schedulingOrder, producingArrangement) -> {
                             LocalDateTime deadline = schedulingOrder.getDeadline();
@@ -165,29 +152,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         })
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");
-    }
-
-    private Constraint shouldNotArrangeInPlayerSleepTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                .filter(producingArrangement -> {
-                    LocalDateTime arrangeDateTime = producingArrangement.getArrangeDateTime();
-                    LocalTime localTime = arrangeDateTime.toLocalTime();
-                    return localTime.isAfter(
-                            producingArrangement.getSchedulingPlayer().getSleepStart()
-                    ) || localTime.isBefore(
-                            producingArrangement.getSchedulingPlayer().getSleepEnd()
-                    );
-                })
-                .penalize(
-                        BendableScore.ofSoft(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_BATTER,
-                                1000
-                        )
-                )
-                .asConstraint("shouldNotArrangeInPlayerSleepTime");
     }
 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
@@ -249,91 +213,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         }
                 )
                 .asConstraint("preferMinimizeMakeSpan");
-    }
-
-
-    Constraint testConsecutive1(ConstraintFactory constraintFactory) {
-        constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .groupBy(
-                        SchedulingProducingArrangement::getPlanningFactoryInstance,
-                        ConstraintCollectors.toConsecutiveSequences(SchedulingProducingArrangement::getId)
-                )
-                .filter((baseSchedulingFactoryInstance, baseSchedulingProducingArrangementIntegerSequenceChain) -> {
-                    //ai.timefold.solver.core.api.score.stream.common.SequenceChain
-                    return true;
-                })
-                .flattenLast(producingArrangementIdSequenceChain -> {
-                    Collection<Sequence<SchedulingProducingArrangement, Integer>> consecutiveSequences = producingArrangementIdSequenceChain.getConsecutiveSequences();
-                    Collection<Break<SchedulingProducingArrangement, Integer>> breaks = producingArrangementIdSequenceChain.getBreaks();
-                    Sequence<SchedulingProducingArrangement, Integer> firstSequence = producingArrangementIdSequenceChain.getFirstSequence();
-                    Sequence<SchedulingProducingArrangement, Integer> lastSequence = producingArrangementIdSequenceChain.getLastSequence();
-                    Break<SchedulingProducingArrangement, Integer> firstBreak = producingArrangementIdSequenceChain.getFirstBreak();
-                    Break<SchedulingProducingArrangement, Integer> lastBreak = producingArrangementIdSequenceChain.getLastBreak();
-                    return consecutiveSequences;
-                })
-                .filter((baseSchedulingFactoryInstance, producingArrangementIdSequence) -> {
-                    int count = producingArrangementIdSequence.getCount();
-                    Collection<SchedulingProducingArrangement> items = producingArrangementIdSequence.getItems();
-                    Integer length = producingArrangementIdSequence.getLength();
-                    SchedulingProducingArrangement firstItem = producingArrangementIdSequence.getFirstItem();
-                    SchedulingProducingArrangement lastItem = producingArrangementIdSequence.getLastItem();
-                    Break<SchedulingProducingArrangement, Integer> nextBreak = producingArrangementIdSequence.getNextBreak();
-                    Break<SchedulingProducingArrangement, Integer> previousBreak = producingArrangementIdSequence.getPreviousBreak();
-                    return count > baseSchedulingFactoryInstance.getProducingLength();
-                })
-                .penalize(
-                        BendableScore.ofHard(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
-                                1
-                        ),
-                        (baseSchedulingFactoryInstance, producingArrangementIdSequence) -> {
-                            return 1;
-                        }
-                )
-                .asConstraint("testConsecutive");
-        return null;
-    }
-
-    Constraint testConsecutive2(ConstraintFactory constraintFactory) {
-        constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .groupBy(
-                        SchedulingProducingArrangement::getPlanningFactoryInstance,
-                        ConstraintCollectors.toConnectedTemporalRanges(
-                                SchedulingProducingArrangement::getArrangeDateTime,
-                                SchedulingProducingArrangement::getCompletedDateTime
-                        )
-                )
-                .flattenLast(producingArrangementOccupyLocalDateTimeConnectedRangeChain -> {
-                    Iterable<RangeGap<ChronoLocalDateTime<?>, Duration>> gaps = producingArrangementOccupyLocalDateTimeConnectedRangeChain.getGaps();
-                    Iterable<ConnectedRange<SchedulingProducingArrangement, ChronoLocalDateTime<?>, Duration>> connectedRanges
-                            = producingArrangementOccupyLocalDateTimeConnectedRangeChain.getConnectedRanges();
-                    return connectedRanges;
-                })
-                .filter((baseSchedulingFactoryInstance, baseSchedulingProducingArrangements) -> {
-                    Duration length = baseSchedulingProducingArrangements.getLength();
-                    ChronoLocalDateTime<?> start = baseSchedulingProducingArrangements.getStart();
-                    ChronoLocalDateTime<?> end = baseSchedulingProducingArrangements.getEnd();
-                    int minimumOverlap = baseSchedulingProducingArrangements.getMinimumOverlap();
-                    int maximumOverlap = baseSchedulingProducingArrangements.getMaximumOverlap();
-                    int containedRangeCount = baseSchedulingProducingArrangements.getContainedRangeCount();
-                    boolean hasOverlap = baseSchedulingProducingArrangements.hasOverlap();
-                    return containedRangeCount > baseSchedulingFactoryInstance.getProducingLength();
-                })
-                .penalize(
-                        BendableScore.ofHard(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
-                                1
-                        ),
-                        (baseSchedulingFactoryInstance, producingArrangementIdSequence) -> {
-                            return 1;
-                        }
-                )
-                .asConstraint("testConsecutive2");
-        return null;
     }
 
 }

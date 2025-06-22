@@ -7,6 +7,7 @@ import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -72,9 +73,10 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
         headerWrapper.add(viewTitle);
         Button configButton = new Button(
-                VaadinIcon.COG.create(), click -> {
-            Notification.show("todo");
-        }
+                VaadinIcon.COG.create(),
+                click -> {
+                    Notification.show("todo");
+                }
         );
         configButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_SMALL);
         rightWrapper.add(configButton);
@@ -95,8 +97,10 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
                     div.getElement().getStyle().set("align-items", "center");
                     div.getElement().getStyle().set("gap", "var(--lumo-space-s)");
                     userName.add(div);
-                    userName.getSubMenu().addItem(
-                            "Sign out", e -> {
+                    SubMenu userNameSubMenu = userName.getSubMenu();
+                    userNameSubMenu.addItem(
+                            "Sign out",
+                            clickEvent -> {
                                 authenticationContext.logout();
                             }
                     );

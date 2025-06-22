@@ -3,6 +3,7 @@ package zzk.townshipscheduler.ui.views.scheduling;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
+import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
@@ -28,9 +29,12 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
+import zzk.townshipscheduler.ui.components.TriggerButton;
+import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +45,8 @@ import java.util.function.Consumer;
 @RouteScope
 @RouteScopeOwner(SchedulingView.class)
 @RequiredArgsConstructor
+@Setter
+@Getter
 public class SchedulingViewPresenter {
 
     public static final int UPDATE_FREQUENCY = 3;
@@ -55,24 +61,14 @@ public class SchedulingViewPresenter {
 
     private final TransactionTemplate transactionTemplate;
 
-    @Setter
-    @Getter
     private TownshipAuthenticationContext townshipAuthenticationContext;
 
-    @Getter
-    @Setter
     private String currentProblemId;
 
-    @Getter
-    @Setter
     private TownshipSchedulingProblem townshipSchedulingProblem;
 
-    @Getter
-    @Setter
     private UI ui;
 
-    @Getter
-    @Setter
     private SchedulingView schedulingView;
 
     private ScheduledFuture<?> springScheduledFuture;
@@ -89,11 +85,6 @@ public class SchedulingViewPresenter {
             setTownshipSchedulingProblem(this.schedulingService.getSchedule(getCurrentProblemId()));
         }
         return getTownshipSchedulingProblem();
-    }
-
-    public void reset() {
-        setTownshipSchedulingProblem(null);
-        setCurrentProblemId(null);
     }
 
     public List<SchedulingOrder> getSchedulingOrder() {
@@ -137,7 +128,7 @@ public class SchedulingViewPresenter {
                                 solutionConsumer.andThen(_ -> {
                                             this.ui.access(
                                                     () -> {
-                                                        getSchedulingView().getTriggerButton().fromState2ToState1();
+                                                        getSchedulingView().getTriggerButton().setToState1();
                                                         Notification notification = new Notification();
                                                         notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                                                         notification.setText("Scheduling Done");
@@ -162,7 +153,7 @@ public class SchedulingViewPresenter {
                         .withExceptionHandler((uuid, throwable) -> {
                             throwable.printStackTrace();
                             this.ui.access(() -> {
-                                getSchedulingView().getTriggerButton().fromState2ToState1();
+                                getSchedulingView().getTriggerButton().setToState2();
                                 Notification notification = new Notification();
                                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                                 notification.setText(throwable.toString());
@@ -204,7 +195,9 @@ public class SchedulingViewPresenter {
 
     public String backendPrepareTownshipScheduling(
             Collection<OrderEntity> orderEntityList,
-            DateTimeSlotSize dateTimeSlotSize
+            DateTimeSlotSize dateTimeSlotSize,
+            LocalDateTime workCalendarStart,
+            LocalDateTime workCalendarEnd
     ) {
         PlayerEntity playerEntity = townshipAuthenticationContext.getPlayerEntity().orElseThrow();
 
@@ -213,11 +206,29 @@ public class SchedulingViewPresenter {
                     = townshipSchedulingPrepareComponent.buildTownshipSchedulingRequest(
                     playerEntity,
                     orderEntityList,
-                    dateTimeSlotSize
+                    dateTimeSlotSize,
+                    workCalendarStart,
+                    workCalendarEnd
             );
             TownshipSchedulingProblem problem
                     = schedulingService.prepareScheduling(townshipSchedulingRequest);
             return problem.getUuid();
+        });
+    }
+
+    public Collection<SchedulingProblemVo> allSchedulingProblem() {
+        return this.schedulingService.allSchedulingProblem();
+    }
+
+    public void setButtonState(TriggerButton triggerButton) {
+        getUi().access(() -> {
+            TownshipSchedulingProblem currentProblem = this.findCurrentProblem();
+            SolverStatus solverStatus = currentProblem.getSolverStatus();
+            if (solverStatus == SolverStatus.NOT_SOLVING) {
+                triggerButton.setToState1();
+            } else {
+                triggerButton.setToState2();
+            }
         });
     }
 

@@ -15,6 +15,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 
@@ -78,7 +79,10 @@ public class SchedulingProducingArrangement {
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT})
+    @PlanningVariable(
+            valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT},
+            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
+    )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
     @JsonIgnore
@@ -136,7 +140,7 @@ public class SchedulingProducingArrangement {
         IGameArrangeObject iGameArrangeObject = getTargetActionObject();
         if (iGameArrangeObject instanceof SchedulingOrder) {
             return ((SchedulingOrder) iGameArrangeObject);
-        }else{
+        } else {
             return null;
         }
     }
@@ -170,59 +174,60 @@ public class SchedulingProducingArrangement {
     }
 
     //<editor-fold desc="DEPRECATED">
-    //    public List<ProducingArrangementConsequence> calcConsequence() {
-    //        List<ProducingArrangementConsequence> producingArrangementConsequenceList = new ArrayList<>(5);
-    //        SchedulingProducingExecutionMode executionMode = getProducingExecutionMode();
-    //        //when arrange,materials was consumed
-    //        if (executionMode.boolCompositeProduct()) {
-    //            ProductAmountBill materials = executionMode.getMaterials();
-    //            materials.forEach((material, amount) -> {
-    //                ProducingArrangementConsequence consequence = ProducingArrangementConsequence.builder()
-    //                        .producingArrangement(this)
-    //                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(material))
-    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease(amount))
-    //                        .build();
-    //                producingArrangementConsequenceList.add(consequence);
-    //            });
-    //        }
-    //
-    //        //when arrange,factory wait queue was consumed
-    //        producingArrangementConsequenceList.add(
-    //                ProducingArrangementConsequence.builder()
-    //                        .producingArrangement(this)
-    //                        .resource(
-    //                                ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
-    //                                        getPlanningFactoryInstance()
-    //                                )
-    //                        )
-    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease())
-    //                        .build()
-    //        );
-    //
-    //        //when completed ,factory wait queue was release
-    //        producingArrangementConsequenceList.add(
-    //                ProducingArrangementConsequence.builder()
-    //                        .producingArrangement(this)
-    //                        .resource(ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
-    //                                        getPlanningFactoryInstance()
-    //                                )
-    //                        )
-    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
-    //                        .build()
-    //        );
-    //
-    //        //when completed ,product stock was increase
-    //        producingArrangementConsequenceList.add(
-    //                ProducingArrangementConsequence.builder()
-    //                        .producingArrangement(this)
-    //                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(getSchedulingProduct()))
-    //                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
-    //                        .build()
-    //        );
-    //
-    //
-    //        return producingArrangementConsequenceList;
-    //    }
+    public List<ProducingArrangementConsequence> calcConsequence() {
+        List<ProducingArrangementConsequence> producingArrangementConsequenceList = new ArrayList<>(5);
+        SchedulingProducingArrangement producingArrangement = this;
+        SchedulingProducingExecutionMode executionMode = producingArrangement.getProducingExecutionMode();
+        //when arrange,materials was consumed
+        if (executionMode.boolCompositeProduct()) {
+            ProductAmountBill materials = executionMode.getMaterials();
+            materials.forEach((material, amount) -> {
+                ProducingArrangementConsequence consequence = ProducingArrangementConsequence.builder()
+                        .producingArrangement(producingArrangement)
+                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(material))
+                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease(amount))
+                        .build();
+                producingArrangementConsequenceList.add(consequence);
+            });
+        }
+
+        //when arrange,factory wait queue was consumed
+        producingArrangementConsequenceList.add(
+                ProducingArrangementConsequence.builder()
+                        .producingArrangement(producingArrangement)
+                        .resource(
+                                ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
+                                        getPlanningFactoryInstance()
+                                )
+                        )
+                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease())
+                        .build()
+        );
+
+        //when completed ,factory wait queue was release
+        producingArrangementConsequenceList.add(
+                ProducingArrangementConsequence.builder()
+                        .producingArrangement(producingArrangement)
+                        .resource(ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
+                                        getPlanningFactoryInstance()
+                                )
+                        )
+                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
+                        .build()
+        );
+
+        //when completed ,product stock was increase
+        producingArrangementConsequenceList.add(
+                ProducingArrangementConsequence.builder()
+                        .producingArrangement(producingArrangement)
+                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(getSchedulingProduct()))
+                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
+                        .build()
+        );
+
+
+        return producingArrangementConsequenceList;
+    }
     //</editor-fold>
 
     @JsonProperty("completedDateTime")
@@ -291,7 +296,7 @@ public class SchedulingProducingArrangement {
 
             List<SchedulingProducingArrangement> prerequisites =
                     current.getPrerequisiteProducingArrangements();
-            if (prerequisites != null ) {
+            if (prerequisites != null) {
                 for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
                     if (iteratingSingleArrangement != null) {
                         result.add(iteratingSingleArrangement);
