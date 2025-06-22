@@ -72,7 +72,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         SchedulingProducingArrangement.class,
                         Joiners.filtering(
                                 (compositeProducingArrangement, materialProducingArrangement) -> {
-                                    return compositeProducingArrangement.calcDeepPrerequisiteProducingArrangements()
+                                    return compositeProducingArrangement.getDeepPrerequisiteProducingArrangements()
                                             .contains(materialProducingArrangement);
                                 }
                         )
@@ -167,7 +167,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                         TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                         TownshipSchedulingProblem.SOFT_TOLERANCE,
-                        10000
+                        1000
                 ))
                 .asConstraint("shouldNotBrokenCalendarEnd");
     }
@@ -207,7 +207,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                             var completedDateTime = arrangement.getCompletedDateTime();
                             return Math.toIntExact(Duration.between(
                                             startDateTime,
-                                            completedDateTime == null ? endDateTime : startDateTime
+                                            completedDateTime != null ? completedDateTime : endDateTime
                                     )
                                     .toMinutes());
                         }

@@ -130,7 +130,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
 
         List<SchedulingProducingArrangement> prerequisiteProducingArrangements
-                = producingArrangement.calcDeepPrerequisiteProducingArrangements();
+                = producingArrangement.getDeepPrerequisiteProducingArrangements();
 
         Duration approximateDelay = Duration.ZERO;
 

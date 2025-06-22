@@ -66,6 +66,10 @@ public class SchedulingProducingArrangement {
     private List<SchedulingProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
 
     @JsonIgnore
+    @DeepPlanningClone
+    private List<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new ArrayList<>();
+
+    @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
 
     @JsonIgnore
@@ -151,6 +155,7 @@ public class SchedulingProducingArrangement {
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
+        setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
     }
 
     public void activate(
