@@ -84,6 +84,12 @@ public class OrderFormPresenter {
                 );
     }
 
+    public void delBillItem(BillItem billItem) {
+        getGridBillItems().removeIf(iterating -> iterating.getProductEntity()
+                .getProductId()
+                .equals(billItem.getProductEntity().getProductId()));
+    }
+
     OrderFormView getOrderFormView() {
         return orderFormView;
     }
@@ -128,8 +134,8 @@ public class OrderFormPresenter {
     }
 
     public void setupDataProviderForItems(Grid<BillItem> grid) {
-        billItemGridDataProvider = new ListDataProvider<>(getGridBillItems());
-        billItemGridListDataView = grid.setItems(getBillItemGridDataProvider());
+        billItemGridDataProvider = new ListDataProvider<>(this.gridBillItems);
+        billItemGridListDataView = grid.setItems(this.billItemGridDataProvider);
     }
 
     public void clean() {
@@ -145,10 +151,11 @@ public class OrderFormPresenter {
 
     public Supplier<Collection<FieldFactoryInfoEntity>> getFactoryProductsSupplier() {
         Optional<PlayerEntity> playerEntity = townshipAuthenticationContext.getPlayerEntity();
-        return playerEntity.<Supplier<Collection<FieldFactoryInfoEntity>>>map(entity -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
-                entity.getLevel(),
-                Sort.by(Sort.Direction.ASC, "level")
-        )).orElseGet(() -> {
+        return playerEntity.<Supplier<Collection<FieldFactoryInfoEntity>>>map(
+                entity -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                        entity.getLevel(),
+                        Sort.by(Sort.Direction.ASC, "level")
+                )).orElseGet(() -> {
             log.error("player should present,but return full entity...");
             return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
                     Sort.by(Sort.Direction.ASC, "level")

@@ -2,48 +2,45 @@ package zzk.townshipscheduler.ui.views.scheduling;
 
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
-import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.spring.annotation.RouteScope;
-import com.vaadin.flow.spring.annotation.RouteScopeOwner;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.Resource;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
+import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareComponent;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingServiceImpl;
 import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
-import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Consumer;
 
 @SpringComponent
-@RouteScope
-@RouteScopeOwner(SchedulingView.class)
+@UIScope
 @RequiredArgsConstructor
 @Setter
 @Getter
@@ -53,13 +50,11 @@ public class SchedulingViewPresenter {
 
     private final OrderEntityRepository orderEntityRepository;
 
+    private final ProductEntityRepository productEntityRepository;
+
     private final TownshipSchedulingPrepareComponent townshipSchedulingPrepareComponent;
 
     private final TownshipSchedulingServiceImpl schedulingService;
-
-    private final SolutionManager<TownshipSchedulingProblem, BendableScore> solutionManager;
-
-    private final TransactionTemplate transactionTemplate;
 
     private TownshipAuthenticationContext townshipAuthenticationContext;
 
@@ -81,14 +76,8 @@ public class SchedulingViewPresenter {
     }
 
     public TownshipSchedulingProblem findCurrentProblem() {
-        if (getTownshipSchedulingProblem() == null) {
-            setTownshipSchedulingProblem(this.schedulingService.getSchedule(getCurrentProblemId()));
-        }
+        setTownshipSchedulingProblem(this.schedulingService.getSchedule(getCurrentProblemId()));
         return getTownshipSchedulingProblem();
-    }
-
-    public List<SchedulingOrder> getSchedulingOrder() {
-        return findCurrentProblem().getSchedulingOrderList();
     }
 
     public void onStartButton() {
@@ -97,16 +86,18 @@ public class SchedulingViewPresenter {
             List<SchedulingProducingArrangement> producingArrangements
                     = townshipSchedulingProblem.getSchedulingProducingArrangementList();
             ScoreAnalysis<BendableScore> scoreAnalysis
-                    = solutionManager.analyze(
-                    townshipSchedulingProblem
-            );
+                    = getSchedulingService().analyze(townshipSchedulingProblem);
 
             this.ui.access(
                     () -> {
+                        getSchedulingView().getTriggerButton().setToState2();
                         getSchedulingView().getScoreAnalysisParagraph()
                                 .setText(scoreAnalysis.toString());
                         getSchedulingView().getArrangementGrid().setItems(producingArrangements);
                         getSchedulingView().getArrangementGrid().getListDataView().refreshAll();
+
+                        getSchedulingView().getArrangementReportArticle()
+                                .update(SchedulingViewPresenter.this.getTownshipSchedulingProblem());
                     }
             );
         };
@@ -121,8 +112,8 @@ public class SchedulingViewPresenter {
 
         schedulingService.schedulingWithSolverManager(
                 solverManager -> solverManager.solveBuilder()
-                        .withProblemId(currentProblemId)
-                        .withProblem(townshipSchedulingProblem)
+                        .withProblemId(getCurrentProblemId())
+                        .withProblem(findCurrentProblem())
                         .withBestSolutionConsumer(solutionConsumer)
                         .withFinalBestSolutionConsumer(
                                 solutionConsumer.andThen(_ -> {
@@ -138,16 +129,8 @@ public class SchedulingViewPresenter {
                                                     }
                                             );
                                         })
-                                        .andThen(finalTownshipProblemResult -> {
-                                            this.ui.access(() -> {
-                                                SchedulingReportArticle reportArticle
-                                                        = new SchedulingReportArticle(finalTownshipProblemResult);
-                                                this.schedulingView.getTabSheet().add("Report", reportArticle);
-                                            });
-                                        })
                                         .andThen(_ -> {
                                             springScheduledFuture.cancel(true);
-                                            getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
                                         })
                         )
                         .withExceptionHandler((uuid, throwable) -> {
@@ -162,14 +145,12 @@ public class SchedulingViewPresenter {
                                 notification.open();
                             });
                             springScheduledFuture.cancel(true);
-                            getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
                         })
                         .run()
         );
 
         ui.addDetachListener(detachEvent -> {
             springScheduledFuture.cancel(true);
-            getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
             schedulingService.abort(currentProblemId);
         });
     }
@@ -178,7 +159,7 @@ public class SchedulingViewPresenter {
         if (springScheduledFuture != null) {
             springScheduledFuture.cancel(true);
         }
-        getSchedulingView().getArrangementTimelinePanel().cleanPushQueue();
+
         schedulingService.abort(currentProblemId);
     }
 
@@ -186,8 +167,8 @@ public class SchedulingViewPresenter {
         return schedulingService.checkUuidIsValidForSchedule(parameter);
     }
 
-    public List<OrderEntity> allOrder() {
-       return this.getTownshipAuthenticationContext()
+    public List<OrderEntity> fetchPlayerOrders() {
+        return this.getTownshipAuthenticationContext()
                 .getPlayerEntity()
                 .map(orderEntityRepository::queryForOrderListView)
                 .orElse(Collections.emptyList());
@@ -197,23 +178,25 @@ public class SchedulingViewPresenter {
             Collection<OrderEntity> orderEntityList,
             DateTimeSlotSize dateTimeSlotSize,
             LocalDateTime workCalendarStart,
-            LocalDateTime workCalendarEnd
+            LocalDateTime workCalendarEnd,
+            LocalTime sleepStartPickerValue,
+            LocalTime sleepEndPickerValue
     ) {
         PlayerEntity playerEntity = townshipAuthenticationContext.getPlayerEntity().orElseThrow();
 
-        return transactionTemplate.execute(status -> {
-            TownshipSchedulingRequest townshipSchedulingRequest
-                    = townshipSchedulingPrepareComponent.buildTownshipSchedulingRequest(
-                    playerEntity,
-                    orderEntityList,
-                    dateTimeSlotSize,
-                    workCalendarStart,
-                    workCalendarEnd
-            );
-            TownshipSchedulingProblem problem
-                    = schedulingService.prepareScheduling(townshipSchedulingRequest);
-            return problem.getUuid();
-        });
+        TownshipSchedulingRequest townshipSchedulingRequest
+                = townshipSchedulingPrepareComponent.buildTownshipSchedulingRequest(
+                playerEntity,
+                orderEntityList,
+                dateTimeSlotSize,
+                workCalendarStart,
+                workCalendarEnd,
+                sleepStartPickerValue,
+                sleepEndPickerValue
+        );
+        TownshipSchedulingProblem problem
+                = schedulingService.prepareScheduling(townshipSchedulingRequest);
+        return problem.getUuid();
     }
 
     public Collection<SchedulingProblemVo> allSchedulingProblem() {
@@ -231,5 +214,16 @@ public class SchedulingViewPresenter {
             }
         });
     }
+
+    public byte[] fetchProductImage(Long productId) {
+        Optional<byte[]> productImage = productEntityRepository.queryProductImageById(productId);
+        return productImage.orElse(null);
+    }
+
+    public byte[] fetchProductImage(String productName) {
+        Optional<byte[]> bytes = productEntityRepository.queryProductImageByName(productName);
+        return bytes.orElse(null);
+    }
+
 
 }

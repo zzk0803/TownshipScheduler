@@ -39,7 +39,7 @@
         <termination>
             <diminishedReturns>
                 <slidingWindowMinutes>3</slidingWindowMinutes>
-                <minimumImprovementRatio>0.125</minimumImprovementRatio>
+                <minimumImprovementRatio>0.01</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 
@@ -92,12 +92,12 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>8</fadingEntityTabuSize>
+            <fadingEntityTabuSize>11</fadingEntityTabuSize>
             <lateAcceptanceSize>512</lateAcceptanceSize>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>3</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>

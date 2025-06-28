@@ -1,18 +1,21 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import ai.timefold.solver.core.api.score.ScoreExplanation;
+import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
+import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
+import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverJob;
 import ai.timefold.solver.core.api.solver.SolverManager;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -25,6 +28,8 @@ import java.util.stream.Collectors;
 public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
 
     private final SolverManager<TownshipSchedulingProblem, String> solverManager;
+
+    private final SolutionManager<TownshipSchedulingProblem, BendableScore> solutionManager;
 
     private final Map<String, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
 
@@ -40,6 +45,18 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     };
 
     private final Map<String, SolverJob<TownshipSchedulingProblem, String>> idSolverJobMap = new ConcurrentHashMap<>();
+
+    @Override
+    public @NonNull ScoreAnalysis<BendableScore> analyze(@NonNull TownshipSchedulingProblem townshipSchedulingProblem) {
+        return solutionManager.analyze(townshipSchedulingProblem);
+    }
+
+    @Override
+    public @NonNull ScoreExplanation<TownshipSchedulingProblem, BendableScore> explain(
+            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+    ) {
+        return solutionManager.explain(townshipSchedulingProblem);
+    }
 
     @Override
     public TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest) {
@@ -123,7 +140,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
             Function<
                     SolverManager<TownshipSchedulingProblem, String>,
                     SolverJob<TownshipSchedulingProblem, String>
-            > solverManagerConsumer
+                    > solverManagerConsumer
     ) {
         SolverJob<TownshipSchedulingProblem, String> solverJob
                 = solverManagerConsumer.apply(this.solverManager);
@@ -132,14 +149,18 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     }
 
     public Collection<SchedulingProblemVo> allSchedulingProblem() {
-       return this.idProblemMap.entrySet()
+        return this.idProblemMap.entrySet()
                 .stream()
                 .map(entry -> {
                     SchedulingProblemVo schedulingProblemVo = new SchedulingProblemVo();
                     schedulingProblemVo.setUuid(entry.getKey());
                     schedulingProblemVo.setSolverStatus(solverManager.getSolverStatus(entry.getKey()));
+                    TownshipSchedulingProblem townshipSchedulingProblem = entry.getValue();
+                    List<SchedulingOrder> orderList = townshipSchedulingProblem.getSchedulingOrderList();
+                    schedulingProblemVo.setOrderList(orderList);
                     return schedulingProblemVo;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
     }
+
 }

@@ -39,7 +39,6 @@ import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.components.BillDurationField;
 import zzk.townshipscheduler.ui.components.ProductsSelectionPanel;
 import zzk.townshipscheduler.ui.pojo.BillItem;
-import zzk.townshipscheduler.ui.pojo.FactoryProductsDto;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 import java.io.ByteArrayInputStream;

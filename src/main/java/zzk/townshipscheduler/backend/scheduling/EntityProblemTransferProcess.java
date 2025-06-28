@@ -36,6 +36,10 @@ class EntityProblemTransferProcess {
 
     private final LocalDateTime workCalendarEnd;
 
+    private final LocalTime sleepStartPickerValue;
+
+    private final LocalTime sleepEndPickerValue;
+
     private SchedulingPlayer schedulingPlayer;
 
     public EntityProblemTransferProcess(
@@ -45,6 +49,8 @@ class EntityProblemTransferProcess {
         this.dateTimeSlotSize = townshipSchedulingRequest.getDateTimeSlotSize();
         this.workCalendarStart = townshipSchedulingRequest.getWorkCalendarStart();
         this.workCalendarEnd = townshipSchedulingRequest.getWorkCalendarEnd();
+        this.sleepStartPickerValue = townshipSchedulingRequest.getSleepStartPickerValue();
+        this.sleepEndPickerValue = townshipSchedulingRequest.getSleepEndPickerValue();
         this.idProductMap = new LinkedHashMap<>();
         this.idFactoryTypeMap = new LinkedHashMap<>();
         this.schedulingProducingExecutionModes = new ArrayList<>();
@@ -58,6 +64,8 @@ class EntityProblemTransferProcess {
         SchedulingWorkCalendar schedulingWorkCalendar
                 = SchedulingWorkCalendar.with(workCalendarStart, workCalendarEnd);
 
+        this.schedulingPlayer.setSleepStart(this.sleepStartPickerValue);
+        this.schedulingPlayer.setSleepEnd(this.sleepEndPickerValue);
 
         return TownshipSchedulingProblem.builder()
                 .uuid()
@@ -77,14 +85,6 @@ class EntityProblemTransferProcess {
         fetchAndMapToSchedulingFactoryInstance();
         fetchAndMapToSchedulingWarehouse();
         fetchAndMapToSchedulingOrder();
-    }
-
-    public LocalDateTime calcCalendarStart() {
-        LocalDateTime localDateTimeNow = LocalDateTime.now();
-        LocalDateTime after30Mins = localDateTimeNow.plusMinutes(30);
-        int i1 = after30Mins.getMinute() % MINUTE_GRAIN;
-        int i2 = MINUTE_GRAIN - i1;
-        return after30Mins.plusMinutes(i2);
     }
 
     private void fetchAndMapToSchedulingProduct() {
@@ -341,6 +341,14 @@ class EntityProblemTransferProcess {
                 }
         );
         return productAmountBill;
+    }
+
+    public LocalDateTime calcCalendarStart() {
+        LocalDateTime localDateTimeNow = LocalDateTime.now();
+        LocalDateTime after30Mins = localDateTimeNow.plusMinutes(30);
+        int i1 = after30Mins.getMinute() % MINUTE_GRAIN;
+        int i2 = MINUTE_GRAIN - i1;
+        return after30Mins.plusMinutes(i2);
     }
 
 }

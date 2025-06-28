@@ -13,12 +13,11 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
+import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.backend.service.PlayerService;
-import zzk.townshipscheduler.ui.components.ProductCategoriesPanel;
+import zzk.townshipscheduler.ui.components.ProductsCategoriesPanel;
 
 import java.util.List;
 import java.util.Map;
@@ -27,24 +26,21 @@ import java.util.Optional;
 
 @Route("/player")
 @Menu(title = "Player", order = 4.00d)
-@AnonymousAllowed
+@PermitAll
 public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
 
     private final TownshipAuthenticationContext townshipAuthenticationContext;
 
-    private final ProductCategoriesPanel productCategoriesPanel;
-
-    private final PlayerService playerService;
-
+    private PlayerViewPresenter playerViewPresenter;
 
     public PlayerView(
             TownshipAuthenticationContext townshipAuthenticationContext,
-            ProductCategoriesPanel productCategoriesPanel,
-            PlayerService playerService
+            PlayerViewPresenter playerViewPresenter
     ) {
         this.townshipAuthenticationContext = townshipAuthenticationContext;
-        this.productCategoriesPanel = productCategoriesPanel;
-        this.playerService = playerService;
+        this.playerViewPresenter = playerViewPresenter;
+        this.playerViewPresenter.setPlayerView(this);
+        this.playerViewPresenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
         setWidthFull();
     }
 
@@ -57,7 +53,7 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
         AccountEntity currentUser = townshipAuthenticationContext.getUserDetails();
         if (currentUser != null) {
             Optional<PlayerEntity> playerOptional =
-                    playerService.findPlayerEntitiesByAppUser(currentUser);
+                    this.playerViewPresenter.getPlayerService().findPlayerEntitiesByAppUser(currentUser);
             PlayerEntity playerEntity = playerOptional.orElseThrow(() -> {
                 String name = currentUser.getName();
                 String username = currentUser.getUsername();
@@ -80,18 +76,18 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
                     = Map.of(
                     basicTab, new PlayerBasicArticle(
                             playerEntity,
-                            playerService
+                            this.playerViewPresenter.getPlayerService()
                     )
                     ,
                     fieldFactoryTab, new PlayerFieldFactoryArticle(
                             playerEntity,
-                            playerService
+                            this.playerViewPresenter.getPlayerService()
                     )
                     ,
                     warehouseTab, new PlayerWarehouseArticle(
                             playerEntity,
-                            playerService,
-                            productCategoriesPanel
+                            this.playerViewPresenter.getPlayerService(),
+                            new ProductsCategoriesPanel(this.playerViewPresenter.fetchProducts())
                     )
             );
             Tabs articlesTabs = new Tabs();
@@ -114,32 +110,8 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
             tabContent.removeAll();
             tabContent.addComponentAsFirst(tabArticleMap.get(basicTab));
             addAndExpand(horizontalLayout);
-
-//            TabSheet tabSheet = new TabSheet();
-//            tabSheet.setWidth("100%");
-//            tabSheet.add(
-//                    "Basic",
-//                    new PlayerBasicArticle(playerEntity, playerService)
-//            );
-//            tabSheet.add(
-//                    "Field&Factory",
-//                    new PlayerFieldFactoryArticle(
-//                            playerEntity,
-//                            playerService
-//                    )
-//            );
-//            tabSheet.add(
-//                    "Warehouse",
-//                    new PlayerWarehouseArticle(
-//                            playerEntity,
-//                            playerService,
-//                            goodsCategoriesPanel
-//                    )
-//            );
-//
-//            addAndExpand(tabSheet);
         } else {
-            List<PlayerEntity> players = playerService.findAllPlayer();
+            List<PlayerEntity> players = this.playerViewPresenter.getPlayerService().findAllPlayer();
             Grid<PlayerEntity> grid = new Grid<>();
             grid.addColumn(player -> player.getAccount().getName()).setHeader("Name");
             grid.addColumn(PlayerEntity::getLevel).setHeader("Level");

@@ -19,16 +19,18 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.StreamResource;
+import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
-import zzk.townshipscheduler.ui.components.ProductCategoriesPanel;
+import zzk.townshipscheduler.ui.components.ProductsCategoriesPanel;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 
+@Slf4j
 class PlayerWarehouseArticle extends Composite<VerticalLayout> {
 
     private final PlayerEntity currentPlayer;
@@ -40,12 +42,12 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
     public PlayerWarehouseArticle(
             PlayerEntity playerEntity,
             PlayerService playerService,
-            ProductCategoriesPanel productCategoriesPanel
+            ProductsCategoriesPanel productsCategoriesPanel
     ) {
         this.currentPlayer = playerEntity;
         this.playerService = playerService;
 
-        setupMenuBar(productCategoriesPanel);
+        setupMenuBar(productsCategoriesPanel);
         grid = new Grid<>();
         grid.addColumn(new ComponentRenderer<>(productEntityIntegerEntry -> {
             HorizontalLayout result = new HorizontalLayout();
@@ -57,7 +59,8 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
                                             () -> new ByteArrayInputStream(productEntityIntegerEntry.getKey()
                                                     .getCrawledAsImage()
                                                     .getImageBytes())
-                                    ), productEntityIntegerEntry.getKey().getName()),
+                                    ), productEntityIntegerEntry.getKey().getName()
+                            ),
                             new Text(productEntityIntegerEntry.getKey().getName())
                     ),
                     new Text(" X" + productEntityIntegerEntry.getValue())
@@ -75,7 +78,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
         getContent().addAndExpand(grid);
     }
 
-    public void setupMenuBar(ProductCategoriesPanel productCategoriesPanel) {
+    public void setupMenuBar(ProductsCategoriesPanel productsCategoriesPanel) {
         MenuBar menuBar = new MenuBar();
         menuBar.setWidthFull();
         menuBar.addThemeVariants(
@@ -85,7 +88,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
 
         MenuItem menuItem = menuBar.addItem(VaadinIcon.PLUS.create());
         menuItem.addSingleClickListener(menuItemClickEvent -> {
-            Dialog dialog = new Dialog(productCategoriesPanel);
+            Dialog dialog = new Dialog(productsCategoriesPanel);
             dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
             dialog.setSizeFull();
 
@@ -103,14 +106,16 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
                     new Button(
                             "Ok",
                             okClickEvent -> {
-                                productCategoriesPanel.consumeSelected(productEntity -> {
-                                    WarehouseEntity updatedWarehouse = playerService.updateWarehouseStock(
-                                            playerService.findWarehouseEntityByPlayerEntity(currentPlayer),
-                                            productEntity,
-                                            footerAmountField.getOptionalValue().orElse(1)
-                                    );
+                                productsCategoriesPanel.consumeSelected(productEntity -> {
+                                    if (productEntity != null) {
+                                        WarehouseEntity updatedWarehouse = playerService.updateWarehouseStock(
+                                                playerService.findWarehouseEntityByPlayerEntity(currentPlayer),
+                                                productEntity,
+                                                footerAmountField.getOptionalValue().orElse(1)
+                                        );
+                                        UiEventBus.publish(new PlayerWarehouseArticleGridUpdateEvent());
+                                    }
                                 });
-                                UiEventBus.publish(new PlayerWarehouseArticleGridUpdateEvent());
                                 dialog.close();
                             }
                     ));

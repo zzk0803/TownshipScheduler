@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,4 +39,19 @@ public interface ProductEntityRepository
     @Query("select p from ProductEntity p where p.level<=:level")
     Set<ProductEntity> queryForPrepareScheduling(Integer level);
 
+    @EntityGraph(
+            attributePaths = {
+                    "crawledAsImage.imageBytes"
+            }
+    )
+    @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.id=:id")
+    Optional<byte[]> queryProductImageById(Serializable id);
+
+    @EntityGraph(
+            attributePaths = {
+                    "crawledAsImage.imageBytes"
+            }
+    )
+    @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.name=:name")
+    Optional<byte[]> queryProductImageByName(String name);
 }

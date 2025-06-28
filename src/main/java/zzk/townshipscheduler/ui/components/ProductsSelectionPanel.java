@@ -10,6 +10,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.dom.Element;
@@ -77,19 +78,19 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
         protected VerticalLayout initContent() {
             VerticalLayout verticalLayout = super.initContent();
             verticalLayout.setSpacing(2.0f, Unit.PIXELS);
-            verticalLayout.setMinWidth(95.0f,Unit.VW);
+            verticalLayout.setMinWidth(95.0f, Unit.VW);
             return verticalLayout;
         }
 
     }
-
 
     private static class ProductCard extends Composite<VerticalLayout> {
 
         public ProductCard(ProductEntity productEntity) {
             getContent().add(createImage(productEntity));
             getContent().getElement().appendChild(ElementFactory.createSpan("Name:" + productEntity.getName()));
-            getContent().getElement().appendChild(ElementFactory.createSpan("Level:" + productEntity.getLevel().toString()));
+            getContent().getElement()
+                    .appendChild(ElementFactory.createSpan("Level:" + productEntity.getLevel().toString()));
             getContent().add(createAmountField(productEntity));
         }
 
@@ -108,6 +109,7 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
             amountField.setPlaceholder("Amount");
             amountField.setValue(0);
             amountField.setMin(0);
+            amountField.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
             amountField.addValueChangeListener(valueChangeEvent -> {
                 Integer value = valueChangeEvent.getValue();
                 UiEventBus.publish(

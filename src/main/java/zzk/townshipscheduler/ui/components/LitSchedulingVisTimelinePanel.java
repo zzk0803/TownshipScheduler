@@ -21,13 +21,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @JsModule("./src/components/lit-vis-timeline.ts")
 public class LitSchedulingVisTimelinePanel extends Component {
 
-    private final Queue<TownshipSchedulingProblem> pushingQueue;
-
     private SchedulingViewPresenter schedulingViewPresenter;
 
     public LitSchedulingVisTimelinePanel(SchedulingViewPresenter schedulingViewPresenter) {
         this.schedulingViewPresenter = schedulingViewPresenter;
-        this.pushingQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -42,16 +39,11 @@ public class LitSchedulingVisTimelinePanel extends Component {
 
     @ClientCallable
     public void pullScheduleResult() {
-        offerSolvingResult(schedulingViewPresenter.findCurrentProblem());
         updateRemote();
     }
 
-    public void offerSolvingResult(TownshipSchedulingProblem townshipSchedulingProblem) {
-        this.pushingQueue.offer(townshipSchedulingProblem);
-    }
-
     public void updateRemote() {
-        TownshipSchedulingProblem townshipSchedulingProblem = this.pushingQueue.poll();
+        TownshipSchedulingProblem townshipSchedulingProblem = this.schedulingViewPresenter.getTownshipSchedulingProblem();
         if (Objects.nonNull(townshipSchedulingProblem)) {
             updateRemote(townshipSchedulingProblem);
         }
@@ -128,10 +120,6 @@ public class LitSchedulingVisTimelinePanel extends Component {
                 })
                 .toList();
 
-    }
-
-    public void cleanPushQueue() {
-        this.pushingQueue.clear();
     }
 
     private void setPropertyMap(String name, Map<String, ?> map) {

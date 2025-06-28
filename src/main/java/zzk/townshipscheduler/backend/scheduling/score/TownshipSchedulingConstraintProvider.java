@@ -5,12 +5,14 @@ import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import org.jspecify.annotations.NonNull;
+import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -23,6 +25,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidBrokenPrerequisiteStock(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotBrokenCalendarEnd(constraintFactory),
+                shouldNotArrangeInPlayerSleepTime(constraintFactory),
                 preferArrangeAsSoonAsPassable(constraintFactory),
                 preferMinimizeMakeSpan(constraintFactory)
         };
@@ -79,19 +82,19 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .groupBy(
                         (compositeProducingArrangement, materialProducingArrangement) -> compositeProducingArrangement,
-                        ConstraintCollectors.toList((compositeProducingArrangement, materialProducingArrangement) -> materialProducingArrangement)
+                        ConstraintCollectors.toList((compositeProducingArrangement, materialProducingArrangement) -> materialProducingArrangement.getCompletedDateTime())
                 )
-                .groupBy(
-                        (compositeProducingArrangement, materialProducingArrangements) -> compositeProducingArrangement,
-                        (compositeProducingArrangement, materialProducingArrangements) -> {
-                            return materialProducingArrangements.stream()
-                                    .map(SchedulingProducingArrangement::getCompletedDateTime)
-                                    .max(LocalDateTime::compareTo)
-                                    .orElse(
-                                            compositeProducingArrangement.getSchedulingWorkCalendar().getEndDateTime()
-                                    );
-                        }
-                )
+                .flattenLast(localDateTimes -> localDateTimes)
+//                .groupBy(
+//                        (compositeProducingArrangement, materialProducingArrangements) -> compositeProducingArrangement,
+//                        (compositeProducingArrangement, materialProducingArrangements) -> {
+//                            return materialProducingArrangements.stream()
+//                                    .max(LocalDateTime::compareTo)
+//                                    .orElse(
+//                                            compositeProducingArrangement.getSchedulingWorkCalendar().getEndDateTime()
+//                                    );
+//                        }
+//                )
                 .filter((compositeProducingArrangement, materialProducingArrangementsCompletedDateTime) -> {
                     LocalDateTime productArrangeDateTime
                             = compositeProducingArrangement.getArrangeDateTime();
@@ -172,6 +175,29 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("shouldNotBrokenCalendarEnd");
     }
 
+    private Constraint shouldNotArrangeInPlayerSleepTime(
+            @NonNull ConstraintFactory constraintFactory
+    ) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(schedulingProducingArrangement -> {
+                    LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
+                    LocalTime sleepStart = schedulingProducingArrangement.getSchedulingPlayer().getSleepStart();
+                    LocalTime sleepEnd = schedulingProducingArrangement.getSchedulingPlayer().getSleepEnd();
+                    LocalTime localTime = arrangeDateTime.toLocalTime();
+                    return localTime.isAfter(sleepStart) && localTime.isBefore(LocalTime.MIDNIGHT)
+                           || localTime.isAfter(LocalTime.MIDNIGHT) && localTime.isBefore(sleepEnd);
+                })
+                .penalize(
+                        BendableScore.ofSoft(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_TOLERANCE,
+                                2000
+                        )
+                )
+                .asConstraint("shouldNotArrangeInPlayerSleepTime");
+    }
+
     private Constraint preferArrangeAsSoonAsPassable(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .penalize(
@@ -193,7 +219,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint preferMinimizeMakeSpan(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isOrderDirect)
                 .penalize(
                         BendableScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -202,14 +227,27 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 1
                         ),
                         (arrangement) -> {
+                            int ratio = 1;
                             var startDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
                             var endDateTime = arrangement.getSchedulingWorkCalendar().getEndDateTime();
                             var completedDateTime = arrangement.getCompletedDateTime();
-                            return Math.toIntExact(Duration.between(
+                            if (arrangement.isOrderDirect()) {
+                                SchedulingOrder schedulingOrder = arrangement.getSchedulingOrder();
+                                OrderType orderType = schedulingOrder.getOrderType();
+                                switch (orderType) {
+                                    case HELICOPTER -> ratio = 1;
+                                    case TRAIN -> ratio = 5;
+                                    case AIRPLANE -> ratio = 25;
+                                    case ZOO -> ratio = 1;
+                                    case null, default -> ratio = 1;
+                                }
+                            }
+                            return ratio * Math.toIntExact(
+                                    Duration.between(
                                             startDateTime,
                                             completedDateTime != null ? completedDateTime : endDateTime
-                                    )
-                                    .toMinutes());
+                                    ).toMinutes()
+                            );
                         }
                 )
                 .asConstraint("preferMinimizeMakeSpan");

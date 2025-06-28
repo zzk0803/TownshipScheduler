@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views.orders;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -22,7 +23,6 @@ import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.ui.components.BillCard;
-import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -30,7 +30,7 @@ import java.util.Arrays;
 @Route("/orders")
 @Menu(title = "Orders", order = 5.00d)
 @PermitAll
-public class OrderListView extends VerticalLayout implements AfterNavigationObserver {
+public class OrderListView extends VerticalLayout  {
 
     private final OrderListViewPresenter presenter;
 
@@ -134,7 +134,7 @@ public class OrderListView extends VerticalLayout implements AfterNavigationObse
     }
 
     @Override
-    public void afterNavigation(AfterNavigationEvent afterNavigationEvent) {
+    protected void onAttach(AttachEvent attachEvent) {
         presenter.fillGrid(grid);
     }
 

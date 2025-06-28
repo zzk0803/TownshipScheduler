@@ -21,4 +21,8 @@ public class ProductEntityDtoForBuildUp {
 
     String durationString;
 
+    public ProductEntity.ProductId getProductId() {
+        return ProductEntity.ProductId.of(id);
+    }
+
 }

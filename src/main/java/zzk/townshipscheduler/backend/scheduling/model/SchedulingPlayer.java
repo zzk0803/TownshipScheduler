@@ -13,10 +13,18 @@ import java.util.Map;
 @ToString(onlyExplicitlyIncluded = true)
 public class SchedulingPlayer {
 
+    public static final LocalTime DEFAULT_SLEEP_START = LocalTime.MIDNIGHT.minusHours(2);
+
+    public static final LocalTime DEFAULT_SLEEP_END = LocalTime.MIDNIGHT.plusHours(8);
+
     @EqualsAndHashCode.Include
     @ToString.Include
     private String id = "test";
 
     private Map<SchedulingProduct, Integer> productAmountMap;
+
+    private LocalTime sleepStart = DEFAULT_SLEEP_START;
+
+    private LocalTime sleepEnd = DEFAULT_SLEEP_END;
 
 }

@@ -131,7 +131,6 @@ class TownshipDataMappingProcessor {
                         }
                     }
                 });
-                hotfixWithCarrotSandwich(productEntity);
                 productEntityArrayList.add(productEntity);
             });
 
@@ -139,13 +138,6 @@ class TownshipDataMappingProcessor {
 
         logger.info("parse into entity done");
         return new TransferResult(productEntityArrayList);
-    }
-
-    private void hotfixWithCarrotSandwich(ProductEntity productEntity) {
-        if (productEntity.getName().equalsIgnoreCase("carrot sandwich")) {
-            productEntity.setXp(24);
-            productEntity.setDurationString("1h15m");
-        }
     }
 
 

@@ -4,40 +4,61 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Article;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.cache.annotation.Cacheable;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Getter
+@Setter
 public class SchedulingReportArticle extends Composite<VerticalLayout> {
 
     private TownshipSchedulingProblem townshipSchedulingProblem;
+
+    private Function<String, byte[]> fetchImgByIdProvider;
 
     public SchedulingReportArticle(TownshipSchedulingProblem townshipSchedulingProblem) {
         this.townshipSchedulingProblem = townshipSchedulingProblem;
     }
 
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
+    public SchedulingReportArticle(
+            TownshipSchedulingProblem townshipSchedulingProblem,
+            Function<String, byte[]> fetchImgByIdProvider
+    ) {
+        this.townshipSchedulingProblem = townshipSchedulingProblem;
+        this.fetchImgByIdProvider = fetchImgByIdProvider;
+    }
+
+    public void update(TownshipSchedulingProblem townshipSchedulingProblem) {
+        this.townshipSchedulingProblem = townshipSchedulingProblem;
+        update();
+    }
+
+    private void update() {
         getContent().removeAll();
 
-        if (townshipSchedulingProblem != null && townshipSchedulingProblem.getScore().isFeasible()) {
+        if (townshipSchedulingProblem != null) {
             buildContentWithSolution(townshipSchedulingProblem);
         } else {
             buildEmptyContent();
@@ -92,7 +113,33 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         grid.setItems(byDateTimeByFactoryByProductMapToCount.entrySet());
         grid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
         grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+        addErrorSpanIfNotFeasible();
         getContent().addAndExpand(grid);
+    }
+
+    private void addErrorSpanIfNotFeasible() {
+        if (!getTownshipSchedulingProblem().getScore().isFeasible()) {
+            Span span = new Span("Not Feasible");
+            span.getElement().getThemeList().add("badge contrast error");
+            getContent().add(span);
+        }
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        update();
+    }
+
+    private Image createProductImage(String productName) {
+        byte[] productImage = fetchImgByIdProvider.apply(productName);
+        Image image = new Image(
+                new StreamResource(productName, () -> new ByteArrayInputStream(productImage)),
+                productName
+        );
+        image.setWidth("30px");
+        image.setHeight("30px");
+
+        return image;
     }
 
     class ByDateTimeByFactoryByProductMapToCountGrid
@@ -120,14 +167,17 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                                 LumoUtility.Margin.Horizontal.XSMALL
                         );
 
-                        div.add(productCountMap.entrySet()
+                        productCountMap.entrySet()
                                 .stream()
-                                .map((productAmountEntry) -> String.format(
-                                        "%s x%s",
-                                        productAmountEntry.getKey(),
-                                        productAmountEntry.getValue()
-                                ))
-                                .collect(Collectors.joining(",")));
+                                .map((productAmountEntry) -> {
+                                    Span span = new Span();
+                                    String productName = productAmountEntry.getKey();
+                                    span.add(createProductImage(productName));
+                                    span.add(productName);
+                                    span.add(" x" + productAmountEntry.getValue());
+                                    return span;
+                                })
+                                .forEach(div::add);
 
                         Article article = new Article();
                         article.addClassNames(LumoUtility.Width.AUTO, LumoUtility.Height.AUTO);
@@ -139,7 +189,8 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                         getContent().add(article);
                     });
 
-            Element dateTimeHeader = ElementFactory.createHeading4(arrangeDateTime.format(DateTimeFormatter.ofPattern("M-dd HH:mm")));
+            Element dateTimeHeader = ElementFactory.createHeading4(arrangeDateTime.format(DateTimeFormatter.ofPattern(
+                    "M-dd HH:mm")));
             getContent().getElement().insertChild(0, dateTimeHeader);
         }
 
@@ -148,6 +199,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
             HorizontalLayout horizontalLayout = super.initContent();
             horizontalLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
             horizontalLayout.setAlignItems(FlexComponent.Alignment.START);
+            horizontalLayout.setWrap(true);
             return horizontalLayout;
         }
 
