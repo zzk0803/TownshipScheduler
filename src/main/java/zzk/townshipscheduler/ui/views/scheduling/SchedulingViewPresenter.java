@@ -58,7 +58,7 @@ public class SchedulingViewPresenter {
 
     private TownshipAuthenticationContext townshipAuthenticationContext;
 
-    private String currentProblemId;
+    private String townshipSchedulingProblemId;
 
     private TownshipSchedulingProblem townshipSchedulingProblem;
 
@@ -76,12 +76,13 @@ public class SchedulingViewPresenter {
     }
 
     public TownshipSchedulingProblem findCurrentProblem() {
-        setTownshipSchedulingProblem(this.schedulingService.getSchedule(getCurrentProblemId()));
+        setTownshipSchedulingProblem(this.schedulingService.getSchedule(getTownshipSchedulingProblemId()));
         return getTownshipSchedulingProblem();
     }
 
     public void onStartButton() {
-        Consumer<TownshipSchedulingProblem> solutionConsumer = townshipSchedulingProblem -> {
+        Consumer<TownshipSchedulingProblem> solutionConsumer
+                = townshipSchedulingProblem -> {
             SchedulingViewPresenter.this.setTownshipSchedulingProblem(townshipSchedulingProblem);
             List<SchedulingProducingArrangement> producingArrangements
                     = townshipSchedulingProblem.getSchedulingProducingArrangementList();
@@ -97,7 +98,7 @@ public class SchedulingViewPresenter {
                         getSchedulingView().getArrangementGrid().getListDataView().refreshAll();
 
                         getSchedulingView().getArrangementReportArticle()
-                                .update(SchedulingViewPresenter.this.getTownshipSchedulingProblem());
+                                .update(townshipSchedulingProblem);
                     }
             );
         };
@@ -112,8 +113,8 @@ public class SchedulingViewPresenter {
 
         schedulingService.schedulingWithSolverManager(
                 solverManager -> solverManager.solveBuilder()
-                        .withProblemId(getCurrentProblemId())
-                        .withProblem(findCurrentProblem())
+                        .withProblemId(this.townshipSchedulingProblemId)
+                        .withProblem(this.townshipSchedulingProblem)
                         .withBestSolutionConsumer(solutionConsumer)
                         .withFinalBestSolutionConsumer(
                                 solutionConsumer.andThen(_ -> {
@@ -151,7 +152,7 @@ public class SchedulingViewPresenter {
 
         ui.addDetachListener(detachEvent -> {
             springScheduledFuture.cancel(true);
-            schedulingService.abort(currentProblemId);
+            schedulingService.abort(townshipSchedulingProblemId);
         });
     }
 
@@ -160,7 +161,7 @@ public class SchedulingViewPresenter {
             springScheduledFuture.cancel(true);
         }
 
-        schedulingService.abort(currentProblemId);
+        schedulingService.abort(townshipSchedulingProblemId);
     }
 
     public boolean validProblemId(String parameter) {

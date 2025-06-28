@@ -10,8 +10,9 @@ import zzk.townshipscheduler.ui.pojo.SchedulingFactoryInstanceVO;
 import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Tag("scheduling-vis-timeline-panel")
 @NpmPackage(value = "vis-timeline", version = "7.7.4")
@@ -43,10 +44,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     public void updateRemote() {
-        TownshipSchedulingProblem townshipSchedulingProblem = this.schedulingViewPresenter.getTownshipSchedulingProblem();
-        if (Objects.nonNull(townshipSchedulingProblem)) {
-            updateRemote(townshipSchedulingProblem);
-        }
+        updateRemote(this.schedulingViewPresenter.getTownshipSchedulingProblem());
     }
 
     private void updateRemote(TownshipSchedulingProblem townshipSchedulingProblem) {
