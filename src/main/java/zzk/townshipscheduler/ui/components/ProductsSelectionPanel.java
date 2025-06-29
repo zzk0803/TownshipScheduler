@@ -4,6 +4,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
@@ -30,40 +31,61 @@ import java.util.function.Supplier;
 
 public class ProductsSelectionPanel extends Composite<VerticalLayout> {
 
+    private final TextField filterTextField;
+
+    private final Grid<FieldFactoryInfoEntity> factoryProductsGrid;
+
     public ProductsSelectionPanel(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
-        Grid<FieldFactoryInfoEntity> factoryProductsGrid = createGrid(factoryProductsSupplier);
+        factoryProductsGrid = createGrid(factoryProductsSupplier);
         getContent().addAndExpand(factoryProductsGrid);
 
-        TextField filterTextField = new TextField();
+        filterTextField = new TextField();
         filterTextField.setWidthFull();
         filterTextField.setPlaceholder("Filter Products...");
-        filterTextField.setValueChangeMode(ValueChangeMode.ON_CHANGE);
+        filterTextField.setValueChangeMode(ValueChangeMode.EAGER);
         filterTextField.addValueChangeListener(valueChangeEvent -> {
             String criteria = valueChangeEvent.getValue().toLowerCase();
             GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
-            if (criteria.isBlank()) {
-                dataView.removeFilters();
-            } else {
-                dataView.addFilter(fieldFactoryInfoEntity -> {
-                    String factoryName = fieldFactoryInfoEntity.getCategory();
-                    return factoryName.contains(criteria) || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                            .anyMatch(productEntity -> {
-                                return productEntity.getName().contains(criteria) || productEntity.getBomString()
-                                        .contains(criteria);
-                            });
-                });
-            }
+            dataView.removeFilters();
+            dataView.addFilter(fieldFactoryInfoEntity -> {
+                String factoryName = fieldFactoryInfoEntity.getCategory();
+                return factoryName.contains(criteria)
+                       || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                               .anyMatch(productEntity -> {
+                                   return productEntity.getName()
+                                                  .toLowerCase()
+                                                  .contains(criteria)
+                                          || productEntity.getBomString()
+                                                  .toLowerCase()
+                                                  .contains(criteria);
+                               })
+                       || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                               .map(ProductEntity::getBomString)
+                               .anyMatch(productBomString -> {
+                                   return productBomString.toLowerCase().contains(criteria);
+                               });
+            });
             dataView.refreshAll();
         });
         filterTextField.setPrefixComponent(VaadinIcon.SEARCH.create());
-        filterTextField.setSuffixComponent(new Button(
-                VaadinIcon.CLOSE_SMALL.create(), clicked -> {
-            filterTextField.clear();
-            GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
-            dataView.removeFilters();
-            dataView.refreshAll();
-        }
-        ));
+        Button textFieldSuffixButton = new Button(
+                VaadinIcon.CLOSE_SMALL.create(),
+                clicked -> {
+                    filterTextField.clear();
+                    GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
+                    dataView.removeFilters();
+                    dataView.refreshAll();
+                }
+        );
+        textFieldSuffixButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
+        filterTextField.setSuffixComponent(textFieldSuffixButton);
+        UiEventBus.subscribe(
+                filterTextField,
+                ProductCardProductSpanClickedEvent.class,
+                componentEvent -> {
+                    filterTextField.setValue(componentEvent.getProductName());
+                }
+        );
         getContent().addComponentAsFirst(filterTextField);
     }
 
@@ -119,8 +141,19 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
     private static class ProductCard extends Composite<VerticalLayout> {
 
         public ProductCard(ProductEntity productEntity) {
+            Element nameSpan = ElementFactory.createSpan(productEntity.getName());
+            nameSpan.getStyle().setCursor("pointer");
+            nameSpan.getStyle().setBorderBottom("1px solid black");
+            nameSpan.addEventListener(
+                    "click", domEvent -> {
+                        UiEventBus.publish(
+                                new ProductCardProductSpanClickedEvent(this, false, productEntity.getName())
+                        );
+                    }
+            );
             getContent().add(createImage(productEntity));
-            getContent().getElement().appendChild(ElementFactory.createSpan("Name:" + productEntity.getName()));
+            getContent().getElement()
+                    .appendChild(nameSpan);
             getContent().getElement()
                     .appendChild(ElementFactory.createSpan("Level:" + productEntity.getLevel().toString()));
             getContent().add(createAmountField(productEntity));
@@ -162,6 +195,21 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
             VerticalLayout verticalLayout = super.initContent();
             verticalLayout.setWidth(200, Unit.PIXELS);
             return verticalLayout;
+        }
+
+    }
+
+    public static class ProductCardProductSpanClickedEvent extends ComponentEvent<ProductCard> {
+
+        private final String productName;
+
+        public ProductCardProductSpanClickedEvent(ProductCard source, boolean fromClient, String productName) {
+            super(source, fromClient);
+            this.productName = productName;
+        }
+
+        public String getProductName() {
+            return productName;
         }
 
     }

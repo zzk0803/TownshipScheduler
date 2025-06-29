@@ -7,11 +7,13 @@ import org.atteo.evo.inflector.English;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
 import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForBuildUp;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,6 +42,31 @@ public class ProductService {
     public <T> Set<T> findBy(Class<T> projectionClass, Sort sort) {
         return productEntityRepository.findBy(projectionClass, sort);
     }
+
+    public Optional<ProductEntity> queryById(Long id) {
+        return productEntityRepository.queryById(id);
+    }
+
+    public Optional<ProductEntity> findByName(String name) {
+        return productEntityRepository.findByName(name);
+    }
+
+    public List<FieldFactoryInfoEntity> queryFieldFactory() {
+        return productEntityRepository.queryFieldFactory();
+    }
+
+    public Set<ProductEntity> queryForPrepareScheduling(Integer level) {
+        return productEntityRepository.queryForPrepareScheduling(level);
+    }
+
+    public Optional<byte[]> queryProductImageById(Serializable id) {
+        return productEntityRepository.queryProductImageById(id);
+    }
+
+    public Optional<byte[]> queryProductImageByName(String name) {
+        return productEntityRepository.queryProductImageByName(name);
+    }
+
     //</editor-fold>
 
     public Set<ProductManufactureInfoEntity> calcManufactureInfoSet(ProductEntity productEntity) {
@@ -76,6 +103,44 @@ public class ProductService {
         return producingInfoSet;
     }
 
+    public List<ContextProductHierarchyStructure> calcGoodsHierarchies(ProductEntity productEntity) {
+        if (boolNeedCachedGoodHierarchiesReady) {
+            calcGoodsHierarchies();
+        }
+
+        return CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.resultByGroupInProduct()
+                .get(productEntity.getProductId());
+    }
+
+    public List<Duration> calcGoodsDuration(ProductEntity productEntity) {
+        String durationString = productEntity.getDurationString();
+        if (Objects.isNull(durationString)) {
+            return Collections.singletonList(Duration.ZERO);
+        }
+
+        String replacedOr = durationString.replaceAll("\\s\\bor\\b\\s", ",");
+        String replacedSpaceChar = replacedOr.replaceAll("\\s", "");
+        String[] split = replacedSpaceChar.split(",");
+
+        return Arrays.stream(split)
+                .filter(s -> !s.isEmpty())
+                .map(s -> {
+                    String durationParseString = "";
+                    try {
+                        durationParseString = "PT" + s;
+                        return Duration.parse(durationParseString);
+                    } catch (Exception e) {
+                        log.error(
+                                "ERR! when parse product {} producing duration -> {}",
+                                productEntity.getName(),
+                                durationParseString
+                        );
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
+    }
+
     private ProductManufactureInfoEntity buildProductManufactureInfoEntity(
             ProductEntity productEntity,
             ContextProductHierarchyStructure contextProductHierarchyStructure,
@@ -92,35 +157,10 @@ public class ProductService {
         }
         if (duration != null) {
             productManufactureInfoEntity.setProducingDuration(duration);
-        }else {
+        } else {
             productManufactureInfoEntity.setProducingDuration(Duration.ZERO);
         }
         return productManufactureInfoEntity;
-    }
-
-    private Set<ProductMaterialsRelation> buildProductMaterialRelationSet(
-            ProductManufactureInfoEntity productManufactureInfoEntity,
-            ContextProductHierarchyStructure contextProductHierarchyStructure
-    ) {
-        Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
-        Map<ProductEntity.ProductId, Integer> productManufactureRelationMaterials = contextProductHierarchyStructure.getMaterials();
-        productManufactureRelationMaterials.forEach((productId, integer) -> {
-            ProductMaterialsRelation productMaterialsRelation = new ProductMaterialsRelation();
-            productMaterialsRelation.setProductManufactureInfo(productManufactureInfoEntity);
-            productMaterialsRelation.setMaterial(productEntityRepository.getReferenceById(productId.getValue()));
-            productMaterialsRelation.setAmount(integer);
-            productMaterialsRelations.add(productMaterialsRelation);
-        });
-        return productMaterialsRelations;
-    }
-
-    public List<ContextProductHierarchyStructure> calcGoodsHierarchies(ProductEntity productEntity) {
-        if (boolNeedCachedGoodHierarchiesReady) {
-            calcGoodsHierarchies();
-        }
-
-        return CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.resultByGroupInProduct()
-                .get(productEntity.getProductId());
     }
 
     public void calcGoodsHierarchies() {
@@ -174,6 +214,22 @@ public class ProductService {
         boolNeedCachedGoodHierarchiesReady = false;
     }
 
+    private Set<ProductMaterialsRelation> buildProductMaterialRelationSet(
+            ProductManufactureInfoEntity productManufactureInfoEntity,
+            ContextProductHierarchyStructure contextProductHierarchyStructure
+    ) {
+        Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
+        Map<ProductEntity.ProductId, Integer> productManufactureRelationMaterials = contextProductHierarchyStructure.getMaterials();
+        productManufactureRelationMaterials.forEach((productId, integer) -> {
+            ProductMaterialsRelation productMaterialsRelation = new ProductMaterialsRelation();
+            productMaterialsRelation.setProductManufactureInfo(productManufactureInfoEntity);
+            productMaterialsRelation.setMaterial(productEntityRepository.getReferenceById(productId.getValue()));
+            productMaterialsRelation.setAmount(integer);
+            productMaterialsRelations.add(productMaterialsRelation);
+        });
+        return productMaterialsRelations;
+    }
+
     private void initProductIntoCachedRelations(
             Set<ContextProductHierarchyStructure> cachedRelations,
             ProductEntityDtoForBuildUp productEntityDtoForBuildUp,
@@ -221,7 +277,8 @@ public class ProductService {
                                             targetProduct.getId()
                                     ))
                                     .findFirst();
-                            Map<ProductEntity.ProductId, Integer> materials = relationOptional.map(ContextProductHierarchyStructure::getMaterials)
+                            Map<ProductEntity.ProductId, Integer> materials = relationOptional.map(
+                                            ContextProductHierarchyStructure::getMaterials)
                                     .orElseThrow();
                             materials.putIfAbsent(ProductEntity.ProductId.of(goodsMaterialDto.getId()), quantity);
 
@@ -257,35 +314,6 @@ public class ProductService {
                     contextProductHierarchyStructure.getComposite().addAll(productIdList);
                 });
 
-    }
-
-    public List<Duration> calcGoodsDuration(ProductEntity productEntity) {
-        String durationString = productEntity.getDurationString();
-        if (Objects.isNull(durationString)) {
-            return Collections.singletonList(Duration.ZERO);
-        }
-
-        String replacedOr = durationString.replaceAll("\\s\\bor\\b\\s", ",");
-        String replacedSpaceChar = replacedOr.replaceAll("\\s", "");
-        String[] split = replacedSpaceChar.split(",");
-
-        return Arrays.stream(split)
-                .filter(s -> !s.isEmpty())
-                .map(s -> {
-                    String durationParseString = "";
-                    try {
-                        durationParseString = "PT" + s;
-                        return Duration.parse(durationParseString);
-                    } catch (Exception e) {
-                        log.error(
-                                "ERR! when parse product {} producing duration -> {}",
-                                productEntity.getName(),
-                                durationParseString
-                        );
-                        throw new RuntimeException(e);
-                    }
-                })
-                .toList();
     }
 
     private static class ProductHierarchyBuildUpContext {

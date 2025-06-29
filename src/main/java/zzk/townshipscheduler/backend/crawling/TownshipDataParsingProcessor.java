@@ -89,7 +89,6 @@ class TownshipDataParsingProcessor {
                         .forEach(dataEntry -> {
                             String columnName = columnEntry.getValue().reasonableText();
                             CrawledDataCell crawledDataCell = dataEntry.getValue();
-//                            parsedResultSegment.add(columnName, rawDataCrawledCell);
                             parsedResultSegment.add(rowCounter.incrementAndGet(), columnName, crawledDataCell);
                         });
             }

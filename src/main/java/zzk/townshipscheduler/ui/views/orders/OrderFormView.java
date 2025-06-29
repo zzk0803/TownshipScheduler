@@ -55,17 +55,13 @@ public class OrderFormView extends VerticalLayout {
 
     private final ProductsSelectionPanel productsSelectionPanel;
 
-    //    private final ProductCategoriesPanel productCategoriesPanel;
-
     private Grid<BillItem> billItemGrid;
 
     public OrderFormView(
             OrderFormPresenter orderFormPresenter,
-//            ProductCategoriesPanel productCategoriesPanel,
             TownshipAuthenticationContext townshipAuthenticationContext
     ) {
         this.presenter = orderFormPresenter;
-//        this.productCategoriesPanel = productCategoriesPanel;
         this.presenter.setOrderFormView(this);
         this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
         this.productsSelectionPanel

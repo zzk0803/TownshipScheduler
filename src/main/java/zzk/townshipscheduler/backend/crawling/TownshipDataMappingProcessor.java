@@ -34,12 +34,7 @@ class TownshipDataMappingProcessor {
             ParsedResultSegment parsedResultSegment = entry.getValue();
             String category = parsedResultSegment.getCategory();
 
-            int size = parsedResultSegment.size();
             Table<Integer, String, CrawledDataCell> cellTable = parsedResultSegment.getTable();
-//            MultiValueMap<String, RawDataCrawledCell> columnCellsMultiValueMap = parsedResultSegment.getColumnValuesMap();
-            Set<String> columnNames = cellTable.columnKeySet();
-//            Set<String> columnNames = columnCellsMultiValueMap.keySet();
-
             Map<Integer, Map<String, CrawledDataCell>> rowNumberMapColumnDataMap = cellTable.rowMap();
             rowNumberMapColumnDataMap.forEach((keyAsRow, valueAsColumnDataMap) -> {
                 ProductEntity productEntity = new ProductEntity();
@@ -53,7 +48,6 @@ class TownshipDataMappingProcessor {
                                 String mayMixNameAndGain = cellContentScanner.nextLine();
                                 Matcher nameGainMatcher = PRODUCT_NAME_GAIN_AMOUNT_PATTERN.matcher(mayMixNameAndGain);
                                 if (nameGainMatcher.find()) {
-                                    // 如果匹配成功，提取单词和数字
                                     String productName = nameGainMatcher.group(1).trim();
                                     productEntity.setName(productName);
                                     productEntity.setNameForMaterial(English.plural(productName.toLowerCase(),1));
@@ -69,17 +63,11 @@ class TownshipDataMappingProcessor {
                         case "goods[colspan:1]",
                              "Goods[colspan:1]" -> {//include symbol '[' ']',so str.tolowercase() doesn't work??
                             valueAsDataCell.getImageString().ifPresent(imgUrl -> {
-//                                productEntity.setImageBytes(
-//                                        wikiCrawledEntityRepository.queryImageBytesByHtml(imgUrl)
-//                                );
                                 productEntity.setCrawledAsImage(wikiCrawledEntityRepository.queryEntityBearImageByHtml(imgUrl));
                             });
                         }
                         case "image" -> {
                             valueAsDataCell.getImageString().ifPresent(imgUrl -> {
-//                                productEntity.setImageBytes(
-//                                        wikiCrawledEntityRepository.queryImageBytesByHtml(imgUrl)
-//                                );
                                 productEntity.setCrawledAsImage(wikiCrawledEntityRepository.queryEntityBearImageByHtml(imgUrl));
                             });
 

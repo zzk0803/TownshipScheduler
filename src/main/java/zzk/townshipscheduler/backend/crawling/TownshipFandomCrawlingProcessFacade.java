@@ -65,4 +65,10 @@ public class TownshipFandomCrawlingProcessFacade {
         return crawlingProcessor.downloadImage(url);
     }
 
+    public void clean() {
+        crawledResult = null;
+        parsedResult = null;
+        transferResult = null;
+    }
+
 }

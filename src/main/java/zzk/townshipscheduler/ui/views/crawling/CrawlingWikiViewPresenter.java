@@ -37,6 +37,7 @@ public class CrawlingWikiViewPresenter {
                         logger.error(throwable.getMessage());
                     }
                     logger.info("setup presenter");
+                    townshipFandomCrawlingProcessFacade.clean();
                 }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService());
     }
 
