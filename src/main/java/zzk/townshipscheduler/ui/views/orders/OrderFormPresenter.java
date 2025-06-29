@@ -79,7 +79,7 @@ public class OrderFormPresenter {
                 .ifPresentOrElse(
                         optionalPresent -> {
                             int amount = optionalPresent.getAmount();
-                            optionalPresent.setAmount(amount + billItem.getAmount());
+                            optionalPresent.setAmount(amount);
                         }, () -> getGridBillItems().add(billItem)
                 );
     }
