@@ -3,16 +3,19 @@ package zzk.townshipscheduler.ui.components;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Unit;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
-import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.server.StreamResource;
@@ -30,6 +33,38 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
     public ProductsSelectionPanel(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
         Grid<FieldFactoryInfoEntity> factoryProductsGrid = createGrid(factoryProductsSupplier);
         getContent().addAndExpand(factoryProductsGrid);
+
+        TextField filterTextField = new TextField();
+        filterTextField.setWidthFull();
+        filterTextField.setPlaceholder("Filter Products...");
+        filterTextField.setValueChangeMode(ValueChangeMode.ON_CHANGE);
+        filterTextField.addValueChangeListener(valueChangeEvent -> {
+            String criteria = valueChangeEvent.getValue().toLowerCase();
+            GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
+            if (criteria.isBlank()) {
+                dataView.removeFilters();
+            } else {
+                dataView.addFilter(fieldFactoryInfoEntity -> {
+                    String factoryName = fieldFactoryInfoEntity.getCategory();
+                    return factoryName.contains(criteria) || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                            .anyMatch(productEntity -> {
+                                return productEntity.getName().contains(criteria) || productEntity.getBomString()
+                                        .contains(criteria);
+                            });
+                });
+            }
+            dataView.refreshAll();
+        });
+        filterTextField.setPrefixComponent(VaadinIcon.SEARCH.create());
+        filterTextField.setSuffixComponent(new Button(
+                VaadinIcon.CLOSE_SMALL.create(), clicked -> {
+            filterTextField.clear();
+            GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
+            dataView.removeFilters();
+            dataView.refreshAll();
+        }
+        ));
+        getContent().addComponentAsFirst(filterTextField);
     }
 
     private Grid<FieldFactoryInfoEntity> createGrid(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
@@ -43,7 +78,7 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
         grid.addColumn(new ComponentRenderer<>(FactoryProductsCard::new))
                 .setComparator(Comparator.comparingInt(FieldFactoryInfoEntity::getLevel))
                 .setFlexGrow(1);
-        grid.setDataProvider(DataProvider.ofCollection(factoryProductsSupplier.get()));
+        grid.setItems(factoryProductsSupplier.get());
         return grid;
     }
 
@@ -63,22 +98,19 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
             factoryHeaderLayout.getElement().appendChild(category, level);
 
             HorizontalLayout productsGridLayout = new HorizontalLayout();
-            productsGridLayout.setWidthFull();
-            fieldFactoryInfoEntity.getPortfolioGoods().stream().map(ProductCard::new).forEach(productsGridLayout::add);
+            productsGridLayout.setWrap(true);
+            fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                    .sorted(Comparator.comparingInt(ProductEntity::getLevel))
+                    .map(ProductCard::new)
+                    .forEachOrdered(productsGridLayout::add);
 
-            Scroller productsGridLayoutScroller = new Scroller();
-            productsGridLayoutScroller.setWidthFull();
-            productsGridLayoutScroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
-            productsGridLayoutScroller.setContent(productsGridLayout);
-
-            getContent().add(factoryHeaderLayout, productsGridLayoutScroller);
+            getContent().add(factoryHeaderLayout, productsGridLayout);
         }
 
         @Override
         protected VerticalLayout initContent() {
             VerticalLayout verticalLayout = super.initContent();
-            verticalLayout.setSpacing(2.0f, Unit.PIXELS);
-            verticalLayout.setMinWidth(95.0f, Unit.VW);
+            verticalLayout.setWidth(95.0f, Unit.VW);
             return verticalLayout;
         }
 
@@ -124,6 +156,13 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
             return amountField;
         }
 
+
+        @Override
+        protected VerticalLayout initContent() {
+            VerticalLayout verticalLayout = super.initContent();
+            verticalLayout.setWidth(200, Unit.PIXELS);
+            return verticalLayout;
+        }
 
     }
 

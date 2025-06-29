@@ -157,9 +157,11 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
             getGridListDataView().refreshAll();
         }
 
-        getGridListDataView().addFilter(product -> {
+        getGridListDataView().addFilter(
+                product -> {
                     String productName = product.getName();
-                    return productName.contains(filterCriteria) || filterCriteria.contains(productName);
+                    String bomString = product.getBomString();
+                    return productName.contains(filterCriteria) || bomString.contains(filterCriteria);
                 }
         );
     }
