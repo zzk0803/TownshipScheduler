@@ -84,19 +84,15 @@ public class SchedulingViewPresenter {
         Consumer<TownshipSchedulingProblem> solutionConsumer
                 = townshipSchedulingProblem -> {
             SchedulingViewPresenter.this.setTownshipSchedulingProblem(townshipSchedulingProblem);
-            List<SchedulingProducingArrangement> producingArrangements
-                    = townshipSchedulingProblem.getSchedulingProducingArrangementList();
-            ScoreAnalysis<BendableScore> scoreAnalysis
-                    = getSchedulingService().analyze(townshipSchedulingProblem);
 
             this.ui.access(
                     () -> {
                         getSchedulingView().getTriggerButton().setToState2();
                         getSchedulingView().getScoreAnalysisParagraph()
-                                .setText(scoreAnalysis.toString());
-                        getSchedulingView().getArrangementGrid().setItems(producingArrangements);
+                                .setText(getSchedulingService().analyze(townshipSchedulingProblem).toString());
+                        getSchedulingView().getArrangementGrid()
+                                .setItems(townshipSchedulingProblem.getSchedulingProducingArrangementList());
                         getSchedulingView().getArrangementGrid().getListDataView().refreshAll();
-
                         getSchedulingView().getArrangementReportArticle()
                                 .update(townshipSchedulingProblem);
                     }
@@ -111,43 +107,33 @@ public class SchedulingViewPresenter {
                 Duration.ofSeconds(UPDATE_FREQUENCY)
         );
 
-        schedulingService.schedulingWithSolverManager(
-                solverManager -> solverManager.solveBuilder()
-                        .withProblemId(this.townshipSchedulingProblemId)
-                        .withProblem(this.townshipSchedulingProblem)
-                        .withBestSolutionConsumer(solutionConsumer)
-                        .withFinalBestSolutionConsumer(
-                                solutionConsumer.andThen(_ -> {
-                                            this.ui.access(
-                                                    () -> {
-                                                        getSchedulingView().getTriggerButton().setToState1();
-                                                        Notification notification = new Notification();
-                                                        notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                                                        notification.setText("Scheduling Done");
-                                                        notification.setPosition(Notification.Position.MIDDLE);
-                                                        notification.setDuration(3000);
-                                                        notification.open();
-                                                    }
-                                            );
-                                        })
-                                        .andThen(_ -> {
-                                            springScheduledFuture.cancel(true);
-                                        })
-                        )
-                        .withExceptionHandler((uuid, throwable) -> {
-                            throwable.printStackTrace();
-                            this.ui.access(() -> {
-                                getSchedulingView().getTriggerButton().setToState2();
-                                Notification notification = new Notification();
-                                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                                notification.setText(throwable.toString());
-                                notification.setPosition(Notification.Position.MIDDLE);
-                                notification.setDuration(3000);
-                                notification.open();
-                            });
-                            springScheduledFuture.cancel(true);
-                        })
-                        .run()
+        schedulingService.scheduling(
+                getTownshipSchedulingProblemId(),
+                solutionConsumer,
+                solutionConsumer.andThen(_ -> this.ui.access(
+                        () -> {
+                            getSchedulingView().getTriggerButton().setToState1();
+                            Notification notification = new Notification();
+                            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                            notification.setText("Scheduling Done");
+                            notification.setPosition(Notification.Position.MIDDLE);
+                            notification.setDuration(3000);
+                            notification.open();
+                        }
+                )),
+                (uuid, throwable) -> {
+                    throwable.printStackTrace();
+                    this.ui.access(() -> {
+                        getSchedulingView().getTriggerButton().setToState2();
+                        Notification notification = new Notification();
+                        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        notification.setText(throwable.toString());
+                        notification.setPosition(Notification.Position.MIDDLE);
+                        notification.setDuration(3000);
+                        notification.open();
+                    });
+                    springScheduledFuture.cancel(true);
+                }
         );
 
         ui.addDetachListener(detachEvent -> {

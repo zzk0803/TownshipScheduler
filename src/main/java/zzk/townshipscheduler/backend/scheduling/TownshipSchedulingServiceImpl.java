@@ -136,6 +136,25 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         return idProblemMap.containsKey(uuid);
     }
 
+    public void scheduling(
+            String problemId,
+            Consumer<TownshipSchedulingProblem> problemConsumer,
+            Consumer<TownshipSchedulingProblem> finalProblemConsumer,
+            BiConsumer<String, Throwable> solveExceptionConsumer
+    ) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob
+                = solverManager.solveBuilder()
+                .withProblemId(problemId)
+                .withProblemFinder(this::getSchedule)
+                .withBestSolutionConsumer(
+                        defaultConsumer.andThen(problemConsumer)
+                )
+                .withFinalBestSolutionConsumer(defaultConsumer.andThen(finalProblemConsumer))
+                .withExceptionHandler(defaultExceptionHandler.andThen(solveExceptionConsumer))
+                .run();
+        idSolverJobMap.put(problemId, solverJob);
+    }
+
     public void schedulingWithSolverManager(
             Function<
                     SolverManager<TownshipSchedulingProblem, String>,
