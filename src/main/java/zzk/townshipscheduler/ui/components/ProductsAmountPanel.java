@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.components;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Unit;
@@ -12,6 +13,10 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.popover.PopoverVariant;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -19,7 +24,9 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
+import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.server.StreamResource;
+import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
@@ -27,16 +34,25 @@ import zzk.townshipscheduler.ui.utility.UiEventBus;
 import java.io.ByteArrayInputStream;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
-public class ProductsSelectionPanel extends Composite<VerticalLayout> {
+public class ProductsAmountPanel extends Composite<VerticalLayout> {
 
     private final TextField filterTextField;
 
     private final Grid<FieldFactoryInfoEntity> factoryProductsGrid;
 
-    public ProductsSelectionPanel(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
-        factoryProductsGrid = createGrid(factoryProductsSupplier);
+    private final Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier;
+
+    private Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
+
+    private List<ProductEntity> productEntityList;
+
+    public ProductsAmountPanel(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
+        this.factoryProductsSupplier = factoryProductsSupplier;
+        factoryProductsGrid = createGrid();
         getContent().addAndExpand(factoryProductsGrid);
 
         filterTextField = new TextField();
@@ -47,24 +63,7 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
             String criteria = valueChangeEvent.getValue().toLowerCase();
             GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
             dataView.removeFilters();
-            dataView.addFilter(fieldFactoryInfoEntity -> {
-                String factoryName = fieldFactoryInfoEntity.getCategory();
-                return factoryName.contains(criteria)
-                       || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                               .anyMatch(productEntity -> {
-                                   return productEntity.getName()
-                                                  .toLowerCase()
-                                                  .contains(criteria)
-                                          || productEntity.getBomString()
-                                                  .toLowerCase()
-                                                  .contains(criteria);
-                               })
-                       || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                               .map(ProductEntity::getBomString)
-                               .anyMatch(productBomString -> {
-                                   return productBomString.toLowerCase().contains(criteria);
-                               });
-            });
+            dataView.addFilter(createTextFieldGridFilter(criteria));
             dataView.refreshAll();
         });
         filterTextField.setPrefixComponent(VaadinIcon.SEARCH.create());
@@ -86,10 +85,15 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
                     filterTextField.setValue(componentEvent.getProductName());
                 }
         );
-        getContent().addComponentAsFirst(filterTextField);
+        HorizontalLayout filterWrapper = new HorizontalLayout();
+        filterWrapper.setWidthFull();
+        filterWrapper.add(filterTextField);
+        filterWrapper.setFlexGrow(1.0d, filterTextField);
+        filterWrapper.setFlexShrink(1.0d, filterTextField);
+        getContent().addComponentAsFirst(filterWrapper);
     }
 
-    private Grid<FieldFactoryInfoEntity> createGrid(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
+    private Grid<FieldFactoryInfoEntity> createGrid() {
         final Grid<FieldFactoryInfoEntity> grid;
         grid = new Grid<>(FieldFactoryInfoEntity.class, false);
         grid.setId("goods-categories-selection-grid");
@@ -100,8 +104,101 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
         grid.addColumn(new ComponentRenderer<>(FactoryProductsCard::new))
                 .setComparator(Comparator.comparingInt(FieldFactoryInfoEntity::getLevel))
                 .setFlexGrow(1);
-        grid.setItems(factoryProductsSupplier.get());
+
         return grid;
+    }
+
+    @NotNull
+    private SerializablePredicate<FieldFactoryInfoEntity> createTextFieldGridFilter(String criteria) {
+        return fieldFactoryInfoEntity -> {
+            String factoryName = fieldFactoryInfoEntity.getCategory();
+            return factoryName.contains(criteria)
+                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                           .anyMatch(productEntity -> {
+                               return productEntity.getName()
+                                              .toLowerCase()
+                                              .contains(criteria)
+                                      || productEntity.getBomString()
+                                              .toLowerCase()
+                                              .contains(criteria);
+                           })
+                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                           .map(ProductEntity::getBomString)
+                           .anyMatch(productBomString -> {
+                               return productBomString.toLowerCase().contains(criteria);
+                           });
+        };
+    }
+
+    private Button createFilterButton() {
+        Button button = new Button();
+        button.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY);
+        button.setIcon(VaadinIcon.FILTER.create());
+
+        Popover popover = new Popover();
+        popover.setTarget(button);
+        popover.addThemeVariants(PopoverVariant.ARROW);
+
+        RadioButtonGroup<RadioButtonGroupValues> productFilterRbg = new RadioButtonGroup<>();
+        productFilterRbg.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
+        productFilterRbg.setItems(RadioButtonGroupValues.values());
+        productFilterRbg.setValue(RadioButtonGroupValues.EVERYTHING);
+        productFilterRbg.addValueChangeListener(changed -> {
+            this.factoryProductsGrid.getListDataView().removeFilters();
+            this.factoryProductsGrid.getListDataView()
+                    .addFilter(createTextFieldGridFilter(this.filterTextField.getValue()));
+            this.factoryProductsGrid.getListDataView().addFilter(fieldFactoryInfoEntity -> {
+                boolean result = false;
+                RadioButtonGroupValues value = changed.getValue();
+                switch (value) {
+                    case ATOMIC -> {
+                        result = isAtomicProductFilter(fieldFactoryInfoEntity);
+                    }
+                    case INTERMEDIATE -> {
+                        result = !isAtomicProductFilter(fieldFactoryInfoEntity)
+                                 && !isFinalProductFilter(fieldFactoryInfoEntity);
+                    }
+                    case FINAL -> {
+                        result = isFinalProductFilter(fieldFactoryInfoEntity);
+                    }
+                    case EVERYTHING -> {
+                        return result = true;
+                    }
+                }
+                return result;
+            });
+
+            this.factoryProductsGrid.getListDataView().refreshAll();
+        });
+        popover.add(productFilterRbg);
+
+        return button;
+    }
+
+    private  boolean isAtomicProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
+        boolean result;
+        result = fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                .anyMatch(productEntity -> productEntity.getBomString().isBlank());
+        return result;
+    }
+
+    private boolean isFinalProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
+        boolean result;
+        result = fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                .anyMatch(subjectProduct -> subjectProductComposite(subjectProduct).isEmpty());
+        return result;
+    }
+
+    private List<ProductEntity> subjectProductComposite(ProductEntity subjectProduct) {
+        return this.productEntityList.stream()
+                .filter(product -> {
+                    return product.getManufactureInfoEntities().stream()
+                            .flatMap(productManufactureInfoEntity -> productManufactureInfoEntity.getProductMaterialsRelations()
+                                    .stream()
+                            )
+                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(),subjectProduct));
+                })
+                .toList();
     }
 
     @Override
@@ -109,6 +206,30 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
         VerticalLayout verticalLayout = super.initContent();
         verticalLayout.setMargin(false);
         return verticalLayout;
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        this.filterTextField.clear();
+
+        this.fieldFactoryInfoEntities = factoryProductsSupplier.get();
+        this.productEntityList = this.fieldFactoryInfoEntities.stream()
+                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getPortfolioGoods().stream())
+                .toList();
+        this.factoryProductsGrid.setItems(fieldFactoryInfoEntities);
+    }
+
+    private enum RadioButtonGroupValues {
+        EVERYTHING("Everything"),
+        ATOMIC("Atomic"),
+        INTERMEDIATE("Intermediate"),
+        FINAL("Final");
+
+        private final String string;
+
+        RadioButtonGroupValues(String string) {
+            this.string = string;
+        }
     }
 
     private static class FactoryProductsCard extends Composite<VerticalLayout> {
@@ -159,7 +280,7 @@ public class ProductsSelectionPanel extends Composite<VerticalLayout> {
             getContent().add(createAmountField(productEntity));
         }
 
-        private static Image createImage(ProductEntity productEntity) {
+        private  Image createImage(ProductEntity productEntity) {
             return new Image(
                     new StreamResource(
                             productEntity.getName(),

@@ -49,6 +49,7 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
     @EntityGraph(
             attributePaths = {
                     "portfolioGoods",
+                    "portfolioGoods.manufactureInfoEntities.productMaterialsRelations",
                     "portfolioGoods.crawledAsImage.imageBytes"
             }
     )

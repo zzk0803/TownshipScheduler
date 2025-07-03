@@ -37,7 +37,7 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.components.BillDurationField;
-import zzk.townshipscheduler.ui.components.ProductsSelectionPanel;
+import zzk.townshipscheduler.ui.components.ProductsAmountPanel;
 import zzk.townshipscheduler.ui.pojo.BillItem;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
@@ -53,7 +53,7 @@ public class OrderFormView extends VerticalLayout {
 
     private final OrderFormPresenter presenter;
 
-    private final ProductsSelectionPanel productsSelectionPanel;
+    private final ProductsAmountPanel productsAmountPanel;
 
     private Grid<BillItem> billItemGrid;
 
@@ -64,10 +64,8 @@ public class OrderFormView extends VerticalLayout {
         this.presenter = orderFormPresenter;
         this.presenter.setOrderFormView(this);
         this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
-        this.productsSelectionPanel
-                = new ProductsSelectionPanel(
-                presenter.getFactoryProductsSupplier()
-        );
+        this.productsAmountPanel
+                = new ProductsAmountPanel(presenter.getFactoryProductsSupplier());
 
         style();
         add(assembleBillForm());
@@ -77,7 +75,7 @@ public class OrderFormView extends VerticalLayout {
 
         UiEventBus.subscribe(
                 this,
-                ProductsSelectionPanel.ProductCardSelectionAmountEvent.class,
+                ProductsAmountPanel.ProductCardSelectionAmountEvent.class,
                 componentEvent -> {
                     var selectProduct = componentEvent.getProduct();
                     int amount = componentEvent.getAmount();
@@ -172,7 +170,7 @@ public class OrderFormView extends VerticalLayout {
         addItemButton.addClickListener(_ -> {
             Dialog dialog = new Dialog("Select Goods...");
             dialog.setSizeFull();
-            dialog.addComponentAsFirst(this.productsSelectionPanel);
+            dialog.addComponentAsFirst(this.productsAmountPanel);
 
             Button button = new Button("OK");
             button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);

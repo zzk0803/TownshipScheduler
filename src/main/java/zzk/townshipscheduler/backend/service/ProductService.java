@@ -164,9 +164,11 @@ public class ProductService {
     }
 
     public void calcGoodsHierarchies() {
-        Set<ContextProductHierarchyStructure> cachedRelations = CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.getCachedRelations();
+        Set<ContextProductHierarchyStructure> cachedRelations
+                = CACHED_PRODUCT_HIERARCHY_BUILD_UP_CONTEXT.getCachedRelations();
 
-        Set<ProductEntityDtoForBuildUp> productEntityDtoForBuildUpList = productEntityRepository.findBy(
+        Set<ProductEntityDtoForBuildUp> productEntityDtoForBuildUpList
+                = productEntityRepository.findBy(
                 ProductEntityDtoForBuildUp.class,
                 Sort.by("id")
         );

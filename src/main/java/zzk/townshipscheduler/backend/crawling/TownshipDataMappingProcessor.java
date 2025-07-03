@@ -52,7 +52,7 @@ class TownshipDataMappingProcessor {
                                     productEntity.setName(productName);
                                     productEntity.setNameForMaterial(English.plural(productName.toLowerCase(),1));
                                     String number = nameGainMatcher.group(2);
-                                    productEntity.setGainWhenCompleted(Integer.parseInt(number));
+                                    productEntity.setDefaultAmountWhenCreated(Integer.parseInt(number));
                                 } else {
                                     String productName = mayMixNameAndGain;
                                     productEntity.setName(productName);

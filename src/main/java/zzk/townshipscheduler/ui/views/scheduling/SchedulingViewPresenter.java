@@ -1,12 +1,11 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
-import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.Resource;
@@ -71,7 +70,7 @@ public class SchedulingViewPresenter {
     @Resource(name = "townshipTaskScheduler")
     private TaskScheduler taskScheduler;
 
-    public void setupPlayerActionGrid(Grid<SchedulingProducingArrangement> grid) {
+    public void setupArrangementsGrid(Grid<SchedulingProducingArrangement> grid) {
         grid.setItems(findCurrentProblem().getSchedulingProducingArrangementList());
     }
 

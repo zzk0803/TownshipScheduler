@@ -11,20 +11,19 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Main;
-import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.timepicker.TimePicker;
+import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
-import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
@@ -38,6 +37,7 @@ import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
+import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Route("/scheduling/:schedulingId?")
 @Menu(title = "Scheduling", order = 6.00d)
@@ -111,7 +110,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
     }
 
     private void schedulingDetailUi() {
-//        addAndExpand(buildGameActionTabSheetArticle());
         VerticalLayout schedulingContentLayout = new VerticalLayout();
         schedulingContentLayout.setSizeFull();
         addAndExpand(schedulingContentLayout);
@@ -170,9 +168,9 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             schedulingForm.add(workCalendarStartPickerPicker, 1);
             schedulingForm.add(workCalendarEndPickerPicker, 1);
 
-            TimePicker playerSleepStartPicker=new TimePicker("Player Sleep Start");
+            TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
             playerSleepStartPicker.setValue(SchedulingPlayer.DEFAULT_SLEEP_START);
-            TimePicker playerSleepEndPicker=new TimePicker("Player Sleep End");
+            TimePicker playerSleepEndPicker = new TimePicker("Player Sleep End");
             playerSleepEndPicker.setValue(SchedulingPlayer.DEFAULT_SLEEP_END);
             schedulingForm.add(playerSleepStartPicker, 1);
             schedulingForm.add(playerSleepEndPicker, 1);
@@ -214,22 +212,21 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
         AtomicInteger idRoller = new AtomicInteger(1);
         Grid<SchedulingProblemVo> grid = new Grid<>(SchedulingProblemVo.class, false);
-        grid.addColumn(vo -> idRoller.getAndIncrement()).setHeader("#");
+        grid.addColumn(vo -> idRoller.getAndIncrement()).setHeader("#").setAutoWidth(true).setFlexGrow(0);
         grid.addColumn(new ComponentRenderer<>(
                         schedulingProblemVo -> new RouterLink(
                                 schedulingProblemVo.getUuid(),
                                 SchedulingView.class,
                                 new RouteParameters("schedulingId", schedulingProblemVo.getUuid())
                         )))
-                .setHeader("UUID");
+                .setHeader("UUID").setAutoWidth(true).setFlexGrow(0);
         grid.addColumn(new ComponentRenderer<>(
                 schedulingProblemVo -> {
                     Main layout = new Main();
                     layout.addClassNames(
                             LumoUtility.Display.FLEX,
-                            LumoUtility.FlexDirection.COLUMN,
+                            LumoUtility.FlexDirection.ROW,
                             LumoUtility.Margin.NONE,
-                            LumoUtility.Overflow.SCROLL,
                             LumoUtility.Width.FULL,
                             LumoUtility.Height.FULL
                     );
@@ -237,18 +234,31 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                     orderList.stream()
                             .map(schedulingOrder -> {
                                 ProductAmountBill productAmountBill = schedulingOrder.getProductAmountBill();
-                                String productAmountString = productAmountBill.entrySet()
+                                Div div = new Div();
+                                div.addClassNames(
+                                        LumoUtility.Width.AUTO,
+                                        LumoUtility.Display.FLEX,
+                                        LumoUtility.FlexDirection.COLUMN
+                                );
+
+                                productAmountBill.entrySet()
                                         .stream()
-                                        .map(productAmountEntry -> productAmountEntry.getKey()
-                                                                           .getName() + ":" + productAmountEntry.getValue())
-                                        .collect(
-                                                Collectors.joining(","));
-                                return ElementFactory.createParagraph(productAmountString);
+                                        .map((productAmountEntry) -> {
+                                            Span span = new Span();
+                                            SchedulingProduct schedulingProduct = productAmountEntry.getKey();
+                                            String productName = schedulingProduct.getName();
+                                            span.add(createProductImage(productName));
+                                            span.add(productName);
+                                            span.add(" x" + productAmountEntry.getValue());
+                                            return span;
+                                        })
+                                        .forEach(div::add);
+                                return div;
                             })
-                            .forEachOrdered(element -> layout.getElement().appendChild(element));
+                            .forEachOrdered(layout::add);
                     return layout;
-                })).setHeader("Items");
-        grid.addColumn(SchedulingProblemVo::getSolverStatus).setHeader("status");
+                })).setHeader("Items").setAutoWidth(true).setFlexGrow(1);
+        grid.addColumn(SchedulingProblemVo::getSolverStatus).setHeader("status").setAutoWidth(true).setFlexGrow(0);
         grid.setItems(schedulingViewPresenter.allSchedulingProblem());
         addAndExpand(grid);
 
@@ -318,10 +328,22 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setResizable(true)
                 .setHeader("Completed Date Time");
         arrangementGrid.setSizeFull();
-        schedulingViewPresenter.setupPlayerActionGrid(arrangementGrid);
+        schedulingViewPresenter.setupArrangementsGrid(arrangementGrid);
 
         gameActionArticle.addAndExpand(arrangementGrid);
         return gameActionArticle;
+    }
+
+    private Image createProductImage(String productName) {
+        byte[] productImage = getSchedulingViewPresenter().fetchProductImage(productName);
+        Image image = new Image(
+                new StreamResource(productName, () -> new ByteArrayInputStream(productImage)),
+                productName
+        );
+        image.setWidth("30px");
+        image.setHeight("30px");
+
+        return image;
     }
 
     private HorizontalLayout buildScorePanel() {

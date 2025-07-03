@@ -29,6 +29,8 @@ public class ProductManufactureInfoEntity {
 
     private Duration producingDuration;
 
+    private Integer amountWhenCreated = 1;
+
     @OneToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "jointable_manufacture_material")
     @ToString.Exclude

@@ -6,6 +6,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -74,7 +75,7 @@ public class ProductEntity {
 
     private Integer helpValue = 0;
 
-    private Integer gainWhenCompleted = 1;
+    private Integer defaultAmountWhenCreated = 1;
 
     private String bomString = "";
 

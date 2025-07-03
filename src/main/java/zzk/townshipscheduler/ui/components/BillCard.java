@@ -23,17 +23,17 @@ public class BillCard extends HorizontalLayout {
             Image image = new Image();
             image.setHeight("40px");
             image.setWidth("40px");
-//            InputStreamDownloadHandler downloadHandler = DownloadHandler.fromInputStream(downloadEvent -> {
-//                ByteArrayInputStream byteArrayInputStream
-//                        = new ByteArrayInputStream(product.getCrawledAsImage().getImageBytes());
-//                return new DownloadResponse(
-//                        byteArrayInputStream,
-//                        product.getName(),
-//                        "image/webp",
-//                        byteArrayInputStream.available()
-//                );
-//            });
-//            image.setSrc(downloadHandler);
+            //            InputStreamDownloadHandler downloadHandler = DownloadHandler.fromInputStream(downloadEvent -> {
+            //                ByteArrayInputStream byteArrayInputStream
+            //                        = new ByteArrayInputStream(product.getCrawledAsImage().getImageBytes());
+            //                return new DownloadResponse(
+            //                        byteArrayInputStream,
+            //                        product.getName(),
+            //                        "image/webp",
+            //                        byteArrayInputStream.available()
+            //                );
+            //            });
+            //            image.setSrc(downloadHandler);
             image.setSrc(
                     new StreamResource(
                             product.getName(),

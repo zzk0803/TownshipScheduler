@@ -81,12 +81,11 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
                 new Button(
                         VaadinIcon.REFRESH.create(),
                         buttonClickEvent -> {
-                            getGridListDataView().removeFilters();
                             setCurrentSelectProduct(null);
-                            searchField.clear();
-                            categoryRadioGroup.clear();
-                            productsGrid.getDataProvider().refreshAll();
-                            categoryRadioGroup.getDataProvider().refreshAll();
+                            this.searchField.clear();
+                            this.categoryRadioGroup.clear();
+                            this.gridListDataView.removeFilters().refreshAll();
+                            this.categoryRadioGroup.getDataProvider().refreshAll();
                         }
                 )
         );
