@@ -251,7 +251,7 @@ public class OrderFormView extends VerticalLayout {
                         (orderEntity, typeString) -> orderEntity.setOrderType(OrderType.valueOf(typeString))
                 );
         binder.forField(boolDeadlineCheckbox)
-                .bind(OrderEntity::isBoolDeadLine, OrderEntity::setBoolDeadLine);
+                .bind(OrderEntity::isBearDeadline, OrderEntity::setBearDeadline);
         binder.forField(deadlinePicker)
                 .withValidator(new DateTimeRangeValidator(
                         "not pasted datetime",

@@ -14,15 +14,13 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.AfterNavigationEvent;
-import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
-import zzk.townshipscheduler.ui.components.BillCard;
+import zzk.townshipscheduler.ui.components.OrderGridItemsCard;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -34,7 +32,7 @@ public class OrderListView extends VerticalLayout  {
 
     private final OrderListViewPresenter presenter;
 
-    private final Grid<OrderEntity> grid = new Grid<>();
+    private final Grid<OrderEntity> grid ;
 
     public OrderListView(
             OrderListViewPresenter presenter,
@@ -46,6 +44,7 @@ public class OrderListView extends VerticalLayout  {
 
         style();
 
+        grid = new Grid<>();
         grid.setSelectionMode(Grid.SelectionMode.NONE);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
         grid.addComponentColumn(this::buildBillCard).setFlexGrow(1);
@@ -72,8 +71,7 @@ public class OrderListView extends VerticalLayout  {
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
-        boolean boolDeadLine = orderView.isBoolDeadLine();
-        if (boolDeadLine) {
+        if (orderView.isBearDeadline()) {
             LocalDateTime deadLine = orderView.getDeadLine();
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
             dateTimePicker.setLabel("Dead Line");
@@ -94,7 +92,7 @@ public class OrderListView extends VerticalLayout  {
             );
         }
 
-        Scroller scroller = new Scroller(new BillCard(orderView));
+        Scroller scroller = new Scroller(new OrderGridItemsCard(orderView));
         scroller.setWidthFull();
         scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
         card.addAndExpand(scroller);

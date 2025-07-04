@@ -60,7 +60,7 @@ public class OrderEntity {
 
     private LocalDateTime createdDateTime;
 
-    private boolean boolDeadLine;
+    private boolean bearDeadline;
 
     private LocalDateTime deadLine;
 

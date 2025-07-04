@@ -6,18 +6,15 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.server.streams.DownloadHandler;
-import com.vaadin.flow.server.streams.DownloadResponse;
-import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 
-public class BillCard extends HorizontalLayout {
+public class OrderGridItemsCard extends HorizontalLayout {
 
-    public BillCard(OrderEntity orderEntity) {
+    public OrderGridItemsCard(OrderEntity orderEntity) {
         Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
         productAmountMap.forEach((product, amount) -> {
             Image image = new Image();

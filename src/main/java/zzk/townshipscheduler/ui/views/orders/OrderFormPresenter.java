@@ -102,7 +102,7 @@ public class OrderFormPresenter {
         getBinder().validate();
         OrderEntity savingOrder = getOrderEntity();
         savingOrder.setCreatedDateTime(LocalDateTime.now());
-        if (!savingOrder.isBoolDeadLine()) {
+        if (!savingOrder.isBearDeadline()) {
             savingOrder.setDeadLine(null);
         }
 

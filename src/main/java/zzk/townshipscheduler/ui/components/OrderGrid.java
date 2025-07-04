@@ -31,17 +31,17 @@ public class OrderGrid extends Grid<OrderEntity> {
         this.cardDelBtnListener = null;
         this.setSelectionMode(Grid.SelectionMode.NONE);
         this.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-        this.addComponentColumn(this::buildBillCard).setFlexGrow(1);
+        this.addComponentColumn(this::buildBillRibbon).setFlexGrow(1);
         this.setItems(orders);
     }
 
-    public Component buildBillCard(OrderEntity orderView) {
+    public Component buildBillRibbon(OrderEntity orderView) {
         HorizontalLayout card = new HorizontalLayout();
         card.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
-        boolean boolDeadLine = orderView.isBoolDeadLine();
+        boolean boolDeadLine = orderView.isBearDeadline();
         if (boolDeadLine) {
             LocalDateTime deadLine = orderView.getDeadLine();
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
@@ -63,7 +63,7 @@ public class OrderGrid extends Grid<OrderEntity> {
             );
         }
 
-        Scroller scroller = new Scroller(new BillCard(orderView));
+        Scroller scroller = new Scroller(new OrderGridItemsCard(orderView));
         scroller.setWidthFull();
         scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
         card.addAndExpand(scroller);
@@ -100,7 +100,7 @@ public class OrderGrid extends Grid<OrderEntity> {
         this.cardDelBtnListener = cardDelBtnListener;
         this.setSelectionMode(Grid.SelectionMode.NONE);
         this.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-        this.addComponentColumn(this::buildBillCard).setFlexGrow(1);
+        this.addComponentColumn(this::buildBillRibbon).setFlexGrow(1);
         this.setItems(orders);
     }
 
@@ -108,17 +108,17 @@ public class OrderGrid extends Grid<OrderEntity> {
         this.cardDelBtnListener = null;
         this.setSelectionMode(Grid.SelectionMode.NONE);
         this.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-        this.addComponentColumn(order -> this.buildBillCard(order, false)).setFlexGrow(1);
+        this.addComponentColumn(order -> this.buildBillRibbon(order, false)).setFlexGrow(1);
         this.setItems(orders);
     }
 
-    public Component buildBillCard(OrderEntity orderView, boolean boolSuffixBtn) {
+    public Component buildBillRibbon(OrderEntity orderView, boolean boolSuffixBtn) {
         HorizontalLayout card = new HorizontalLayout();
         card.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
-        boolean boolDeadLine = orderView.isBoolDeadLine();
+        boolean boolDeadLine = orderView.isBearDeadline();
         if (boolDeadLine) {
             LocalDateTime deadLine = orderView.getDeadLine();
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
@@ -140,7 +140,7 @@ public class OrderGrid extends Grid<OrderEntity> {
             );
         }
 
-        Scroller scroller = new Scroller(new BillCard(orderView));
+        Scroller scroller = new Scroller(new OrderGridItemsCard(orderView));
         scroller.setWidthFull();
         scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
         card.addAndExpand(scroller);
