@@ -2,10 +2,12 @@ package zzk.townshipscheduler.ui.views.scheduling;
 
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.Resource;
@@ -21,10 +23,9 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareComponent;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingServiceImpl;
-import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.TriggerButton;
+import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
 import java.time.Duration;
@@ -94,6 +95,7 @@ public class SchedulingViewPresenter {
                         getSchedulingView().getArrangementGrid().getListDataView().refreshAll();
                         getSchedulingView().getArrangementReportArticle()
                                 .update(townshipSchedulingProblem);
+                        this.setupOrderBriefGrid();
                     }
             );
         };
@@ -211,5 +213,59 @@ public class SchedulingViewPresenter {
         return bytes.orElse(null);
     }
 
+    public void setupOrderBriefGrid() {
+        List<SchedulingOrderVo> schedulingOrderVo = toSchedulingOrderVo();
+        this.getSchedulingView().getOrderBriefGrid().setItems(schedulingOrderVo);
+    }
+
+    public List<SchedulingOrderVo> toSchedulingOrderVo() {
+        TownshipSchedulingProblem problem = findCurrentProblem();
+        SchedulingWorkCalendar schedulingWorkCalendar = problem.getSchedulingWorkCalendar();
+        List<SchedulingOrder> schedulingOrderList = problem.getSchedulingOrderList();
+        List<SchedulingProducingArrangement> schedulingProducingArrangementList = problem.getSchedulingProducingArrangementList();
+        return schedulingOrderList.stream()
+                .map(schedulingOrder -> {
+                    SchedulingOrderVo schedulingOrderVo = new SchedulingOrderVo();
+                    schedulingOrderVo.setOrderType(schedulingOrder.getOrderType());
+                    schedulingOrderVo.setProductAmountBill(schedulingOrder.getProductAmountBill());
+                    schedulingOrderVo.setRelatedArrangements(
+                            schedulingProducingArrangementList.stream()
+                                    .filter(schedulingProducingArrangement -> schedulingOrder.equals(schedulingProducingArrangement.getSchedulingOrder()))
+                                    .toList()
+                    );
+                    if (schedulingOrder.boolHasDeadline()) {
+                        schedulingOrderVo.setDeadline(schedulingOrder.getDeadline());
+                    } else {
+                        schedulingOrderVo.setDeadline(schedulingWorkCalendar.getEndDateTime());
+                    }
+                    return schedulingOrderVo;
+                })
+                .toList();
+    }
+
+    public void setupSlotSizeSelectReadValue(Select<DateTimeSlotSize> slotSizeSelect) {
+        DateTimeSlotSize slotSize = findCurrentProblem().getSlotSize();
+        slotSizeSelect.setValue(slotSize);
+    }
+
+    public void setupWorkCalendarStartPickerPickerReadValue(DateTimePicker workCalendarStartPickerPicker) {
+        SchedulingWorkCalendar workCalendar = findCurrentProblem().getSchedulingWorkCalendar();
+        workCalendarStartPickerPicker.setValue(workCalendar.getStartDateTime());
+    }
+
+    public void setupWorkCalendarEndPickerPickerReadValue(DateTimePicker workCalendarEndPickerPicker) {
+        SchedulingWorkCalendar workCalendar = findCurrentProblem().getSchedulingWorkCalendar();
+        workCalendarEndPickerPicker.setValue(workCalendar.getEndDateTime());
+    }
+
+    public void setupPlayerSleepStartPickerReadValue(TimePicker playerSleepStartPicker) {
+        SchedulingPlayer schedulingPlayer = findCurrentProblem().getSchedulingPlayer();
+        playerSleepStartPicker.setValue(schedulingPlayer.getSleepStart());
+    }
+
+    public void setupPlayerSleepEndPickerReadValue(TimePicker playerSleepEndPicker) {
+        SchedulingPlayer schedulingPlayer = findCurrentProblem().getSchedulingPlayer();
+        playerSleepEndPicker.setValue(schedulingPlayer.getSleepEnd());
+    }
 
 }

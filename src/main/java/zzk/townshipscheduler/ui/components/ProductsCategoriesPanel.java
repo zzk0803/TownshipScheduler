@@ -134,7 +134,7 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
                 .setHeader("Required Level").setAutoWidth(true);
         grid.addColumn(ProductEntity::getCategory)
                 .setHeader("Category").setAutoWidth(true);
-//        grid.addColumn(ProductEntity::getBomString).setHeader("Materials-String").setAutoWidth(true)
+        grid.addColumn(ProductEntity::getBomString).setHeader("Materials-String").setAutoWidth(true);
         grid.addColumn(ProductEntity::getDurationString)
                 .setHeader("Producing Duration").setAutoWidth(true);
         grid.addColumn(new ComponentRenderer<>(this::productMaterialsRender))

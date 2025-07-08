@@ -2,22 +2,26 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.function.IntFunction;
 
 @Data
-@Builder
 public final class ProducingArrangementConsequence {
 
-    @PlanningId
     @EqualsAndHashCode.Include
     private String uuid;
 
-    @DeepPlanningClone
-    private SchedulingProducingArrangement producingArrangement;
+    private LocalDateTime arrangementDateTime;
+
+    private LocalDateTime producingDateTime;
+
+    private LocalDateTime completedDateTime;
 
     private SchedulingResource resource;
 
@@ -27,29 +31,37 @@ public final class ProducingArrangementConsequence {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    @EqualsAndHashCode.Include
-    public Integer getId() {
-        return producingArrangement.getId();
+    ProducingArrangementConsequence(
+            String uuid,
+            LocalDateTime arrangementDateTime,
+            LocalDateTime producingDateTime,
+            LocalDateTime completedDateTime,
+            SchedulingResource resource,
+            SchedulingResourceChange resourceChange
+    ) {
+        this.uuid = uuid;
+        this.arrangementDateTime = arrangementDateTime;
+        this.producingDateTime = producingDateTime;
+        this.completedDateTime = completedDateTime;
+        this.resource = resource;
+        this.resourceChange = resourceChange;
+    }
+
+    public static ProducingArrangementConsequenceBuilder builder() {
+        return new ProducingArrangementConsequenceBuilder();
     }
 
     public LocalDateTime getArrangeDateTime() {
-        return producingArrangement.getArrangeDateTime();
+        return this.arrangementDateTime;
     }
 
     public LocalDateTime getProducingDateTime() {
-        return producingArrangement.getProducingDateTime();
+        return this.producingDateTime;
     }
 
-    public LocalDateTime getProductReapDateTime() {
-        return getCompletedDateTime();
-    }
 
     public LocalDateTime getCompletedDateTime() {
-        return producingArrangement.getCompletedDateTime();
-    }
-
-    public LocalDateTime getFactorySlotOrQueueRestoreDateTime() {
-        return getCompletedDateTime();
+        return this.completedDateTime;
     }
 
     public interface SchedulingResource {
@@ -148,6 +160,52 @@ public final class ProducingArrangementConsequence {
         @Override
         public Integer apply(int value) {
             return value - delta;
+        }
+
+    }
+
+    public static class ProducingArrangementConsequenceBuilder {
+
+        private String uuid;
+
+        private SchedulingProducingArrangement producingArrangement;
+
+        private SchedulingResource resource;
+
+        private SchedulingResourceChange resourceChange;
+
+        ProducingArrangementConsequenceBuilder() {
+        }
+
+        public ProducingArrangementConsequenceBuilder uuid(String uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public ProducingArrangementConsequenceBuilder producingArrangement(SchedulingProducingArrangement producingArrangement) {
+            this.producingArrangement = producingArrangement;
+            return this;
+        }
+
+        public ProducingArrangementConsequenceBuilder resource(SchedulingResource resource) {
+            this.resource = resource;
+            return this;
+        }
+
+        public ProducingArrangementConsequenceBuilder resourceChange(SchedulingResourceChange resourceChange) {
+            this.resourceChange = resourceChange;
+            return this;
+        }
+
+        public ProducingArrangementConsequence build() {
+            return new ProducingArrangementConsequence(
+                    this.uuid,
+                    this.producingArrangement.getArrangeDateTime(),
+                    this.producingArrangement.getProducingDateTime(),
+                    this.producingArrangement.getCompletedDateTime(),
+                    this.resource,
+                    this.resourceChange
+            );
         }
 
     }

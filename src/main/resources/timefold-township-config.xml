@@ -93,11 +93,14 @@
 
         <acceptor>
             <fadingEntityTabuSize>11</fadingEntityTabuSize>
-            <lateAcceptanceSize>512</lateAcceptanceSize>
+            <fadingValueTabuSize>11</fadingValueTabuSize>
+            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>
             <acceptedCountLimit>2</acceptedCountLimit>
+            <breakTieRandomly>true</breakTieRandomly>
         </forager>
 
     </localSearch>

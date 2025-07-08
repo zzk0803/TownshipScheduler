@@ -18,7 +18,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.timepicker.TimePicker;
-import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
@@ -35,6 +34,7 @@ import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
 import zzk.townshipscheduler.ui.components.OrderGrid;
 import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
 import zzk.townshipscheduler.ui.components.TriggerButton;
+import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
 import java.io.ByteArrayInputStream;
@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @PermitAll
 @Setter
 @Getter
-public class SchedulingView extends VerticalLayout implements BeforeEnterObserver, BeforeLeaveObserver {
+public class SchedulingView extends VerticalLayout implements BeforeEnterObserver {
 
     private final SchedulingViewPresenter schedulingViewPresenter;
 
@@ -66,6 +67,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
     private Grid<SchedulingProducingArrangement> arrangementGrid;
 
     private TabSheet tabSheet;
+
+    private Grid<SchedulingOrderVo> orderBriefGrid;
 
     public SchedulingView(
             SchedulingViewPresenter schedulingViewPresenter,
@@ -114,6 +117,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         schedulingContentLayout.setSizeFull();
         addAndExpand(schedulingContentLayout);
 
+        schedulingContentLayout.add(new Details("Order Brief", buildBriefPanel()));
         schedulingContentLayout.add(buildBtnPanel());
         tabSheet = new TabSheet();
         tabSheet.setWidthFull();
@@ -351,89 +355,101 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
         layout.setJustifyContentMode(JustifyContentMode.START);
         scoreAnalysisParagraph = new Paragraph();
-        layout.add(new Details("Score Analysis:", scoreAnalysisParagraph));
+        layout.add(scoreAnalysisParagraph);
         return layout;
     }
 
-    @Override
-    public void beforeLeave(BeforeLeaveEvent beforeLeaveEvent) {
+    private VerticalLayout buildBriefPanel() {
+        AtomicInteger idRoller = new AtomicInteger(1);
+        VerticalLayout panel = new VerticalLayout();
 
-    }
+        FormLayout schedulingForm = new FormLayout();
 
-    static class ReadonlyDateTimePicker extends DateTimePicker {
+        Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
+        slotSizeSelect.setLabel("Scheduling Time Slot");
+        slotSizeSelect.setNoVerticalOverlap(true);
+        slotSizeSelect.setItems(DateTimeSlotSize.values());
+        this.getSchedulingViewPresenter().setupSlotSizeSelectReadValue(slotSizeSelect);
+        slotSizeSelect.setReadOnly(true);
+        schedulingForm.add(slotSizeSelect, 2);
 
-        private ReadonlyDateTimePicker(String label, LocalDateTime dateTime) {
-            super(label, dateTime);
-            setReadOnly(true);
-        }
+        DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
+        this.getSchedulingViewPresenter().setupWorkCalendarStartPickerPickerReadValue(workCalendarStartPickerPicker);
+        workCalendarStartPickerPicker.setReadOnly(true);
+        DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
+        this.getSchedulingViewPresenter().setupWorkCalendarEndPickerPickerReadValue(workCalendarEndPickerPicker);
+        workCalendarEndPickerPicker.setReadOnly(true);
+        schedulingForm.add(workCalendarStartPickerPicker, 1);
+        schedulingForm.add(workCalendarEndPickerPicker, 1);
 
-    }
+        TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
+        this.getSchedulingViewPresenter().setupPlayerSleepStartPickerReadValue(playerSleepStartPicker);
+        playerSleepStartPicker.setReadOnly(true);
+        TimePicker playerSleepEndPicker = new TimePicker("Player Sleep End");
+        this.getSchedulingViewPresenter().setupPlayerSleepEndPickerReadValue(playerSleepEndPicker);
+        playerSleepEndPicker.setReadOnly(true);
+        schedulingForm.add(playerSleepStartPicker, 1);
+        schedulingForm.add(playerSleepEndPicker, 1);
+        panel.add(schedulingForm);
 
-    class ActionCard extends HorizontalLayout {
+        orderBriefGrid = new Grid<>(SchedulingOrderVo.class, false);
+        orderBriefGrid.addColumn(_ -> idRoller.getAndIncrement()).setHeader("#").setAutoWidth(true).setFlexGrow(0);
+        orderBriefGrid.addColumn(SchedulingOrderVo::getOrderType)
+                .setHeader("Order Type")
+                .setAutoWidth(true)
+                .setFlexGrow(0);
+        orderBriefGrid.addColumn(new ComponentRenderer<>(
+                schedulingOrderVo -> {
+                    Main layout = new Main();
+                    layout.addClassNames(
+                            LumoUtility.Display.FLEX,
+                            LumoUtility.FlexDirection.ROW,
+                            LumoUtility.Margin.NONE,
+                            LumoUtility.Width.FULL,
+                            LumoUtility.Height.FULL
+                    );
+                    ProductAmountBill productAmountBill = schedulingOrderVo.getProductAmountBill();
+                    Div div = new Div();
+                    div.addClassNames(
+                            LumoUtility.Width.AUTO,
+                            LumoUtility.Display.FLEX,
+                            LumoUtility.FlexDirection.COLUMN
+                    );
 
-        private SchedulingProducingArrangement producingArrangement;
-
-        public ActionCard(SchedulingProducingArrangement producingArrangement) {
-            this();
-            this.producingArrangement = producingArrangement;
-            var planningFactory = producingArrangement.getPlanningFactoryInstance();
-            LocalDateTime planningPlayerArrangeDateTime = producingArrangement.getArrangeDateTime();
-            boolean scheduled = planningFactory != null && planningPlayerArrangeDateTime != null;
-
-            VerticalLayout verticalLayout = new VerticalLayout();
-            verticalLayout.add(
-                    new Text(
-                            "Type:" + (scheduled
-                                    ? planningFactory.toString()
-                                    : "N/A"
-                            )
-                    )
-            );
-            add(verticalLayout);
-
-            String humanReadable = producingArrangement.getHumanReadable();
-            add(
-                    new VerticalLayout(
-                            scheduled
-                                    ? new ReadonlyDateTimePicker("Arrange", planningPlayerArrangeDateTime)
-                                    : new Text("Arrange")
-                    )
-            );
-
-            add(
-                    new VerticalLayout(
-                            scheduled
-                                    ? new ReadonlyDateTimePicker(
-                                    "Producing DateTime",
-                                    producingArrangement.getProducingDateTime()
-                            )
-                                    : new Text("Producing")
-                            ,
-                            scheduled
-                                    ? new ReadonlyDateTimePicker(
-                                    "Completed DateTime",
-                                    producingArrangement.getCompletedDateTime()
-                            )
-                                    : new Text("Completed")
-                    )
-            );
-        }
-
-        public ActionCard() {
-            setHeight("15rem");
-            setWidthFull();
-            setDefaultVerticalComponentAlignment(Alignment.STRETCH);
-            setDefaultHorizontalComponentAlignment(Alignment.CENTER);
-        }
-
-        public SchedulingProducingArrangement getProducingArrangement() {
-            return producingArrangement;
-        }
-
-        public void setProducingArrangement(SchedulingProducingArrangement producingArrangement) {
-            this.producingArrangement = producingArrangement;
-        }
-
+                    productAmountBill.entrySet()
+                            .stream()
+                            .map((productAmountEntry) -> {
+                                Span span = new Span();
+                                SchedulingProduct schedulingProduct = productAmountEntry.getKey();
+                                String productName = schedulingProduct.getName();
+                                span.add(createProductImage(productName));
+                                span.add(productName);
+                                span.add(" x" + productAmountEntry.getValue());
+                                return span;
+                            })
+                            .forEach(div::add);
+                    layout.add(div);
+                    return layout;
+                })).setHeader("Items").setAutoWidth(true).setFlexGrow(1);
+        orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
+            LocalDateTime deadline = schedulingOrderVo.getDeadline();
+            DateTimePicker dateTimePicker = new DateTimePicker(deadline);
+            dateTimePicker.setReadOnly(true);
+            return dateTimePicker;
+        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(0);
+        orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
+            LocalDateTime deadline = schedulingOrderVo.getCompletedDateTime();
+            if (Objects.nonNull(deadline)) {
+                DateTimePicker dateTimePicker = new DateTimePicker(deadline);
+                dateTimePicker.setReadOnly(true);
+                return dateTimePicker;
+            } else {
+                return new Text("N/A");
+            }
+        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(0);
+        panel.addAndExpand(orderBriefGrid);
+        this.getSchedulingViewPresenter().setupOrderBriefGrid();
+        return panel;
     }
 
 }
