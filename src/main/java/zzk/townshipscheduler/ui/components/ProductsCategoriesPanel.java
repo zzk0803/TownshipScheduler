@@ -90,6 +90,9 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
                 )
         );
         searchWrapper.setWidthFull();
+        searchWrapper.setSpacing(false);
+        searchWrapper.setMargin(false);
+        searchWrapper.setPadding(false);
         searchWrapper.getFlexGrow(searchField);
         getContent().add(searchWrapper);
         getContent().addAndExpand(wrapper);
@@ -134,9 +137,9 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
                 .setHeader("Required Level").setAutoWidth(true);
         grid.addColumn(ProductEntity::getCategory)
                 .setHeader("Category").setAutoWidth(true);
-        grid.addColumn(ProductEntity::getBomString).setHeader("Materials-String").setAutoWidth(true);
         grid.addColumn(ProductEntity::getDurationString)
                 .setHeader("Producing Duration").setAutoWidth(true);
+        grid.addColumn(ProductEntity::getBomString).setHeader("Materials-String").setAutoWidth(true);
         grid.addColumn(new ComponentRenderer<>(this::productMaterialsRender))
                 .setHeader("Materials").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
@@ -229,6 +232,8 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
         contentLayout.setId("container");
         contentLayout.setSizeFull();
         contentLayout.setMargin(false);
+        contentLayout.setPadding(false);
+        contentLayout.setSpacing(false);
         return contentLayout;
     }
 

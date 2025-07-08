@@ -268,4 +268,9 @@ public class SchedulingViewPresenter {
         playerSleepEndPicker.setValue(schedulingPlayer.getSleepEnd());
     }
 
+    public void setupScoreAnalysisParagraph() {
+        getSchedulingView().getScoreAnalysisParagraph()
+                .setText(getSchedulingService().analyze(townshipSchedulingProblem).toString());
+    }
+
 }

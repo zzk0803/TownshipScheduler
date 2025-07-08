@@ -183,7 +183,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
             Dialog.DialogFooter footer = dialog.getFooter();
             footer.add(new Button(
-                            "Start",
+                            "Confirm",
                             footerBtnClicked -> {
                                 Set<OrderEntity> selectedOrder = orderGrid.getSelectedItems();
                                 DateTimeSlotSize dateTimeSlotSize = slotSizeSelect.getValue();
@@ -356,11 +356,11 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         layout.setJustifyContentMode(JustifyContentMode.START);
         scoreAnalysisParagraph = new Paragraph();
         layout.add(scoreAnalysisParagraph);
+        getSchedulingViewPresenter().setupScoreAnalysisParagraph();
         return layout;
     }
 
     private VerticalLayout buildBriefPanel() {
-        AtomicInteger idRoller = new AtomicInteger(1);
         VerticalLayout panel = new VerticalLayout();
 
         FormLayout schedulingForm = new FormLayout();
@@ -393,7 +393,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         panel.add(schedulingForm);
 
         orderBriefGrid = new Grid<>(SchedulingOrderVo.class, false);
-        orderBriefGrid.addColumn(_ -> idRoller.getAndIncrement()).setHeader("#").setAutoWidth(true).setFlexGrow(0);
         orderBriefGrid.addColumn(SchedulingOrderVo::getOrderType)
                 .setHeader("Order Type")
                 .setAutoWidth(true)
