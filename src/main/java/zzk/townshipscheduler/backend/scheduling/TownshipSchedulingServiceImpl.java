@@ -60,7 +60,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     @Override
     public TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest) {
-        EntityProblemTransferProcess process = new EntityProblemTransferProcess(townshipSchedulingRequest);
+        ProblemTransferProcess process = new ProblemTransferProcess(townshipSchedulingRequest);
         TownshipSchedulingProblem townshipSchedulingProblem = process.buildProblem();
         var uuid = townshipSchedulingProblem.getUuid();
         idProblemMap.put(uuid, townshipSchedulingProblem);

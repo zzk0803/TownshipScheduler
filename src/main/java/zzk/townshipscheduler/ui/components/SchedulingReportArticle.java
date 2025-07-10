@@ -66,10 +66,6 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
     }
 
     private void buildContentWithSolution(TownshipSchedulingProblem townshipSchedulingProblem) {
-        List<SchedulingOrder> schedulingOrderList
-                = townshipSchedulingProblem.getSchedulingOrderList();
-        buildWithOrderContent(schedulingOrderList);
-
         List<SchedulingProducingArrangement> schedulingProducingArrangementList
                 = townshipSchedulingProblem.getSchedulingProducingArrangementList();
         buildWithArrangementsContent(schedulingProducingArrangementList);
@@ -86,10 +82,6 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         );
         wrapperDiv.add(new H1("N/A"));
         getContent().add(wrapperDiv);
-    }
-
-    private void buildWithOrderContent(List<SchedulingOrder> schedulingOrderList) {
-
     }
 
     private void buildWithArrangementsContent(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {

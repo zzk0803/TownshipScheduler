@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
-class EntityProblemTransferProcess {
+class ProblemTransferProcess {
 
     public static final int MINUTE_GRAIN = 5;
 
@@ -42,7 +42,7 @@ class EntityProblemTransferProcess {
 
     private SchedulingPlayer schedulingPlayer;
 
-    public EntityProblemTransferProcess(
+    public ProblemTransferProcess(
             TownshipSchedulingRequest townshipSchedulingRequest
     ) {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
@@ -228,7 +228,6 @@ class EntityProblemTransferProcess {
                     );
                 }
         );
-        schedulingPlayer.setProductAmountMap(productAmountMap);
         this.schedulingPlayer = schedulingPlayer;
     }
 

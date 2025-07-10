@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
-<!--    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>-->
+    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
 
     <environmentMode>PHASE_ASSERT</environmentMode>
 
@@ -92,15 +92,13 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>11</fadingEntityTabuSize>
-            <fadingValueTabuSize>11</fadingValueTabuSize>
-            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>
-            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
+            <fadingEntityTabuSize>3</fadingEntityTabuSize>
+            <fadingValueTabuSize>3</fadingValueTabuSize>
+            <lateAcceptanceSize>11</lateAcceptanceSize>
         </acceptor>
 
         <forager>
             <acceptedCountLimit>2</acceptedCountLimit>
-            <breakTieRandomly>true</breakTieRandomly>
         </forager>
 
     </localSearch>
