@@ -38,7 +38,7 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowMinutes>3</slidingWindowMinutes>
+                <slidingWindowMinutes>1</slidingWindowMinutes>
                 <minimumImprovementRatio>0.01</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
@@ -60,9 +60,6 @@
             </changeMoveSelector>
 
             <changeMoveSelector>
-                <!--                <filterClass>-->
-                <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningDataTimeSlotChangeMoveSelectionFilter-->
-                <!--                </filterClass>-->
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
@@ -92,10 +89,16 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>3</fadingEntityTabuSize>
-            <fadingValueTabuSize>3</fadingValueTabuSize>
-            <lateAcceptanceSize>11</lateAcceptanceSize>
+            <fadingEntityTabuSize>11</fadingEntityTabuSize>
+            <fadingValueTabuSize>7</fadingValueTabuSize>
+            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
+
+        <!--        <acceptor>-->
+        <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
+        <!--            <lateAcceptanceSize>13</lateAcceptanceSize>-->
+        <!--        </acceptor>-->
 
         <forager>
             <acceptedCountLimit>2</acceptedCountLimit>
