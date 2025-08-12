@@ -88,17 +88,17 @@
 
         </unionMoveSelector>
 
-        <acceptor>
-            <fadingEntityTabuSize>11</fadingEntityTabuSize>
-            <fadingValueTabuSize>7</fadingValueTabuSize>
-            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>
-            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
-        </acceptor>
-
         <!--        <acceptor>-->
-        <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
-        <!--            <lateAcceptanceSize>13</lateAcceptanceSize>-->
+        <!--            <fadingEntityTabuSize>11</fadingEntityTabuSize>-->
+        <!--            <fadingValueTabuSize>7</fadingValueTabuSize>-->
+        <!--            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>-->
+        <!--            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>-->
         <!--        </acceptor>-->
+
+        <acceptor>
+            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
+            <lateAcceptanceSize>11</lateAcceptanceSize>
+        </acceptor>
 
         <forager>
             <acceptedCountLimit>2</acceptedCountLimit>
