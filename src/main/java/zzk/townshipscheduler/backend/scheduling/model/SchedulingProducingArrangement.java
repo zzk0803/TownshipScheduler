@@ -43,7 +43,7 @@ public class SchedulingProducingArrangement {
 
     public static final String SHADOW_COMPLETED_DATE_TIME = "computedShadowCompletedDateTime";
 
-    public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "factoryComputedDataTimePair";
+    public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "shadowFactoryComputedDataTimePair";
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -101,7 +101,7 @@ public class SchedulingProducingArrangement {
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
     @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
-    private FactoryComputedDataTimePair factoryComputedDataTimePair;
+    private FactoryComputedDataTimePair shadowFactoryComputedDataTimePair;
 
     public SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -240,7 +240,7 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getCompletedDateTime() {
-        FactoryComputedDataTimePair computedDataTimePair = getFactoryComputedDataTimePair();
+        FactoryComputedDataTimePair computedDataTimePair = getShadowFactoryComputedDataTimePair();
         if (computedDataTimePair == null) {
             return null;
         } else {
@@ -253,7 +253,7 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getProducingDateTime() {
-        FactoryComputedDataTimePair computedDataTimePair = getFactoryComputedDataTimePair();
+        FactoryComputedDataTimePair computedDataTimePair = getShadowFactoryComputedDataTimePair();
         if (computedDataTimePair == null) {
             return null;
         } else {

@@ -2,7 +2,6 @@ package zzk.townshipscheduler.ui.views.orders;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -25,7 +24,6 @@ import com.vaadin.flow.data.binder.Result;
 import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.converter.Converter;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.validator.DateTimeRangeValidator;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -66,6 +64,12 @@ public class OrderFormView extends VerticalLayout {
         this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
         this.productsAmountPanel
                 = new ProductsAmountPanel(presenter.getFactoryProductsSupplier());
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        this.presenter.clean();
+        removeAll();
 
         style();
         add(assembleBillForm());
@@ -89,6 +93,7 @@ public class OrderFormView extends VerticalLayout {
                     presenter.setupDataProviderForItems(billItemGrid);
                 }
         );
+        this.presenter.setupDataProviderForItems(billItemGrid);
     }
 
     private void style() {
@@ -243,25 +248,12 @@ public class OrderFormView extends VerticalLayout {
             DateTimePicker deadlinePicker,
             BillDurationField durationCountdownField
     ) {
-        Binder<OrderEntity> binder = presenter.prepareBillAndBinder();
-        binder.forField(billTypeGroup)
-                .asRequired()
-                .bind(
-                        orderEntity -> orderEntity.getOrderType().name(),
-                        (orderEntity, typeString) -> orderEntity.setOrderType(OrderType.valueOf(typeString))
-                );
-        binder.forField(boolDeadlineCheckbox)
-                .bind(OrderEntity::isBearDeadline, OrderEntity::setBearDeadline);
-        binder.forField(deadlinePicker)
-                .withValidator(new DateTimeRangeValidator(
-                        "not pasted datetime",
-                        LocalDateTime.now(),
-                        LocalDateTime.MAX
-                ))
-                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
-        binder.forField(durationCountdownField)
-                .withConverter(getDurationLocalDateTimeConverter())
-                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
+        presenter.prepareBillAndBinder(
+                billTypeGroup,
+                boolDeadlineCheckbox,
+                deadlinePicker,
+                durationCountdownField
+        );
     }
 
     private ComponentRenderer<Div, BillItem> buildItemCard() {
@@ -313,7 +305,7 @@ public class OrderFormView extends VerticalLayout {
         };
     }
 
-    private Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
+    public Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
         return new Converter<>() {
 
             @Override
@@ -348,16 +340,5 @@ public class OrderFormView extends VerticalLayout {
         return description;
     }
 
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        super.onAttach(attachEvent);
-        this.presenter.setupDataProviderForItems(billItemGrid);
-    }
-
-    @Override
-    protected void onDetach(DetachEvent detachEvent) {
-        super.onDetach(detachEvent);
-        this.presenter.clean();
-    }
 
 }

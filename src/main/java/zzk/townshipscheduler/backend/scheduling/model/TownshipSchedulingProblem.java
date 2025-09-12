@@ -113,4 +113,11 @@ public class TownshipSchedulingProblem {
                 .findFirst();
     }
 
+    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryProcessSequence factoryProcessSequence) {
+        return getSchedulingFactoryInstanceList().stream()
+                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
+                        .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
+                .findFirst();
+    }
+
 }

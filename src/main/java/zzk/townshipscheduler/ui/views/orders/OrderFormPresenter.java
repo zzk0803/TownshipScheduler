@@ -1,19 +1,25 @@
 package zzk.townshipscheduler.ui.views.orders;
 
+import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.data.validator.DateTimeRangeValidator;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
+import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.ui.components.BillDurationField;
 import zzk.townshipscheduler.ui.pojo.BillItem;
 
 import java.time.LocalDateTime;
@@ -127,10 +133,32 @@ public class OrderFormPresenter {
         getOrderEntityRepository().saveAndFlush(savingOrder);
     }
 
-    public Binder<OrderEntity> prepareBillAndBinder() {
+    public void prepareBillAndBinder(
+            RadioButtonGroup<String> billTypeGroup,
+            Checkbox boolDeadlineCheckbox,
+            DateTimePicker deadlinePicker,
+            BillDurationField durationCountdownField
+    ) {
         this.binder = new Binder<>();
         this.binder.setBean(this.orderEntity = new OrderEntity());
-        return this.binder;
+        this.binder.forField(billTypeGroup)
+                .asRequired()
+                .bind(
+                        orderEntity -> orderEntity.getOrderType().name(),
+                        (orderEntity, typeString) -> orderEntity.setOrderType(OrderType.valueOf(typeString))
+                );
+        this.binder.forField(boolDeadlineCheckbox)
+                .bind(OrderEntity::isBearDeadline, OrderEntity::setBearDeadline);
+        this.binder.forField(deadlinePicker)
+                .withValidator(new DateTimeRangeValidator(
+                        "not pasted datetime",
+                        LocalDateTime.now(),
+                        LocalDateTime.MAX
+                ))
+                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
+        this.binder.forField(durationCountdownField)
+                .withConverter(orderFormView.getDurationLocalDateTimeConverter())
+                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
     }
 
     public void setupDataProviderForItems(Grid<BillItem> grid) {

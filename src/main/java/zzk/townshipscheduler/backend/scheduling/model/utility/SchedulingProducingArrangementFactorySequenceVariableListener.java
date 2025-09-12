@@ -70,10 +70,9 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                 = new FactoryProcessSequence(schedulingProducingArrangement);
         if (!Objects.equals(oldFactoryProcessSequence, newFactoryProcessSequence)) {
             if (Objects.nonNull(oldFactoryProcessSequence)) {
-                scoreDirectorWorkingSolution.lookupFactoryInstance(oldFactoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())
+                scoreDirectorWorkingSolution.lookupFactoryInstance(oldFactoryProcessSequence)
                         .ifPresent(schedulingFactoryInstance -> {
-                            schedulingFactoryInstance.removeFactoryProcessSequence(
-                                    oldFactoryProcessSequence);
+                            schedulingFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
                         });
             }
             planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
@@ -85,12 +84,12 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                     SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
             );
 
-            SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> preparedProducingAndCompletedMap
+            SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> processToPairMap
                     = planningFactoryInstance.prepareProducingAndCompletedMap();
 
             scoreDirectorWorkingSolution.lookupProducingArrangements(planningFactoryInstance)
-                    .forEach(streamIterating -> {
-                        doUpdateDateTime(scoreDirector, streamIterating, preparedProducingAndCompletedMap);
+                    .forEach(producingArrangement -> {
+                        doUpdateDateTime(scoreDirector, producingArrangement, processToPairMap);
                     });
         }
 
@@ -114,7 +113,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
             SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> preparedProducingAndCompletedMap
     ) {
         FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        FactoryComputedDataTimePair oldDateTimePair = schedulingProducingArrangement.getFactoryComputedDataTimePair();
+        FactoryComputedDataTimePair oldDateTimePair = schedulingProducingArrangement.getShadowFactoryComputedDataTimePair();
         if (factoryProcessSequence == null) {
             return;
         }
@@ -130,7 +129,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                     scoreDirector,
                     schedulingProducingArrangement,
                     newDateTimePair,
-                    SchedulingProducingArrangement::setFactoryComputedDataTimePair,
+                    SchedulingProducingArrangement::setShadowFactoryComputedDataTimePair,
                     SchedulingProducingArrangement.SHADOW_COMPUTED_DATE_TIME_PAIR
             );
         }
