@@ -111,17 +111,23 @@ public class SchedulingViewPresenter {
         schedulingService.scheduling(
                 getTownshipSchedulingProblemId(),
                 solutionConsumer,
-                solutionConsumer.andThen(_ -> this.ui.access(
-                        () -> {
-                            getSchedulingView().getTriggerButton().setToState1();
-                            Notification notification = new Notification();
-                            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                            notification.setText("Scheduling Done");
-                            notification.setPosition(Notification.Position.MIDDLE);
-                            notification.setDuration(3000);
-                            notification.open();
-                        }
-                )),
+                solutionConsumer
+                        .andThen(_ -> this.ui.access(
+                                        () -> {
+                                            getSchedulingView().getTriggerButton().setToState1();
+                                            Notification notification = new Notification();
+                                            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                                            notification.setText("Scheduling Done");
+                                            notification.setPosition(Notification.Position.MIDDLE);
+                                            notification.setDuration(3000);
+                                            notification.open();
+                                        }
+                                )
+                        )
+                        .andThen(townshipSchedulingProblem -> {
+                            springScheduledFuture.cancel(true);
+                        })
+                ,
                 (uuid, throwable) -> {
                     throwable.printStackTrace();
                     this.ui.access(() -> {
@@ -141,6 +147,37 @@ public class SchedulingViewPresenter {
             springScheduledFuture.cancel(true);
             schedulingService.abort(townshipSchedulingProblemId);
         });
+    }
+
+    public void setupOrderBriefGrid() {
+        List<SchedulingOrderVo> schedulingOrderVo = toSchedulingOrderVo();
+        this.getSchedulingView().getOrderBriefGrid().setItems(schedulingOrderVo);
+    }
+
+    public List<SchedulingOrderVo> toSchedulingOrderVo() {
+        TownshipSchedulingProblem problem = findCurrentProblem();
+        SchedulingWorkCalendar schedulingWorkCalendar = problem.getSchedulingWorkCalendar();
+        List<SchedulingOrder> schedulingOrderList = problem.getSchedulingOrderList();
+        List<SchedulingProducingArrangement> schedulingProducingArrangementList = problem.getSchedulingProducingArrangementList();
+        return schedulingOrderList.stream()
+                .map(schedulingOrder -> {
+                    SchedulingOrderVo schedulingOrderVo = new SchedulingOrderVo();
+                    schedulingOrderVo.setOrderType(schedulingOrder.getOrderType());
+                    schedulingOrderVo.setProductAmountBill(schedulingOrder.getProductAmountBill());
+                    schedulingOrderVo.setRelatedArrangements(
+                            schedulingProducingArrangementList.stream()
+                                    .filter(schedulingProducingArrangement -> schedulingOrder.equals(
+                                            schedulingProducingArrangement.getSchedulingOrder()))
+                                    .toList()
+                    );
+                    if (schedulingOrder.boolHasDeadline()) {
+                        schedulingOrderVo.setDeadline(schedulingOrder.getDeadline());
+                    } else {
+                        schedulingOrderVo.setDeadline(schedulingWorkCalendar.getEndDateTime());
+                    }
+                    return schedulingOrderVo;
+                })
+                .toList();
     }
 
     public void onStopButton() {
@@ -211,36 +248,6 @@ public class SchedulingViewPresenter {
     public byte[] fetchProductImage(String productName) {
         Optional<byte[]> bytes = productEntityRepository.queryProductImageByName(productName);
         return bytes.orElse(null);
-    }
-
-    public void setupOrderBriefGrid() {
-        List<SchedulingOrderVo> schedulingOrderVo = toSchedulingOrderVo();
-        this.getSchedulingView().getOrderBriefGrid().setItems(schedulingOrderVo);
-    }
-
-    public List<SchedulingOrderVo> toSchedulingOrderVo() {
-        TownshipSchedulingProblem problem = findCurrentProblem();
-        SchedulingWorkCalendar schedulingWorkCalendar = problem.getSchedulingWorkCalendar();
-        List<SchedulingOrder> schedulingOrderList = problem.getSchedulingOrderList();
-        List<SchedulingProducingArrangement> schedulingProducingArrangementList = problem.getSchedulingProducingArrangementList();
-        return schedulingOrderList.stream()
-                .map(schedulingOrder -> {
-                    SchedulingOrderVo schedulingOrderVo = new SchedulingOrderVo();
-                    schedulingOrderVo.setOrderType(schedulingOrder.getOrderType());
-                    schedulingOrderVo.setProductAmountBill(schedulingOrder.getProductAmountBill());
-                    schedulingOrderVo.setRelatedArrangements(
-                            schedulingProducingArrangementList.stream()
-                                    .filter(schedulingProducingArrangement -> schedulingOrder.equals(schedulingProducingArrangement.getSchedulingOrder()))
-                                    .toList()
-                    );
-                    if (schedulingOrder.boolHasDeadline()) {
-                        schedulingOrderVo.setDeadline(schedulingOrder.getDeadline());
-                    } else {
-                        schedulingOrderVo.setDeadline(schedulingWorkCalendar.getEndDateTime());
-                    }
-                    return schedulingOrderVo;
-                })
-                .toList();
     }
 
     public void setupSlotSizeSelectReadValue(Select<DateTimeSlotSize> slotSizeSelect) {
