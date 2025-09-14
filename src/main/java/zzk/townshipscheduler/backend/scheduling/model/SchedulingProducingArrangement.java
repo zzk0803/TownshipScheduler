@@ -178,63 +178,6 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    //<editor-fold desc="DEPRECATED">
-    public List<ProducingArrangementConsequence> calcConsequence() {
-        List<ProducingArrangementConsequence> producingArrangementConsequenceList = new ArrayList<>(5);
-        SchedulingProducingArrangement producingArrangement = this;
-        SchedulingProducingExecutionMode executionMode = producingArrangement.getProducingExecutionMode();
-        //when arrange,materials was consumed
-        if (executionMode.boolCompositeProduct()) {
-            ProductAmountBill materials = executionMode.getMaterials();
-            materials.forEach((material, amount) -> {
-                ProducingArrangementConsequence consequence = ProducingArrangementConsequence.builder()
-                        .producingArrangement(producingArrangement)
-                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(material))
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease(amount))
-                        .build();
-                producingArrangementConsequenceList.add(consequence);
-            });
-        }
-
-        //when arrange,factory wait queue was consumed
-        producingArrangementConsequenceList.add(
-                ProducingArrangementConsequence.builder()
-                        .producingArrangement(producingArrangement)
-                        .resource(
-                                ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
-                                        getPlanningFactoryInstance()
-                                )
-                        )
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.decrease())
-                        .build()
-        );
-
-        //when completed ,factory wait queue was release
-        producingArrangementConsequenceList.add(
-                ProducingArrangementConsequence.builder()
-                        .producingArrangement(producingArrangement)
-                        .resource(ProducingArrangementConsequence.SchedulingResource.factoryWaitQueue(
-                                        getPlanningFactoryInstance()
-                                )
-                        )
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
-                        .build()
-        );
-
-        //when completed ,product stock was increase
-        producingArrangementConsequenceList.add(
-                ProducingArrangementConsequence.builder()
-                        .producingArrangement(producingArrangement)
-                        .resource(ProducingArrangementConsequence.SchedulingResource.productStock(getSchedulingProduct()))
-                        .resourceChange(ProducingArrangementConsequence.SchedulingResourceChange.increase())
-                        .build()
-        );
-
-
-        return producingArrangementConsequenceList;
-    }
-    //</editor-fold>
-
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
