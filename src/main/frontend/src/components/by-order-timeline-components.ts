@@ -105,6 +105,9 @@ export class ByOrderTimelineComponents
     private timelinePropertiesLitUpdate(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>) {
         const dataGroupItems: DataGroup[] = [];
         const dataSetItems: DataItem[] = [];
+        const orderIdList: string[] = [];
+        const factoryIdList: string[] = [];
+        const orderFactoryIdList: string[] = [];
 
         if (_changedProperties.has('schedulingWorkCalendar')) {
             this.dateWindowStartString = this.schedulingWorkCalendar?.startDateTime;
@@ -119,10 +122,31 @@ export class ByOrderTimelineComponents
         }
 
         if (_changedProperties.has('schedulingFactoryInstances')) {
-            //do nothing
+            this.schedulingFactoryInstances
+                ?.map((factory) => {
+                    factoryIdList.push(factory?.factoryReadableIdentifier);
+                });
         }
 
         if (_changedProperties.has('schedulingOrders')) {
+            this.schedulingOrders
+                ?.map((order) => {
+                    let orderId = order.id;
+                    let orderType = order.orderType;
+                    for (let factoryId of factoryIdList) {
+                        let orderFactoryNestedId = orderId + "#" + factoryId;
+                        orderFactoryIdList.push(orderFactoryNestedId)
+                        dataGroupItems.push({
+                            id: orderFactoryNestedId,
+                            content: ` 
+                             <h6 class="mb-m">
+                                ${orderType + "#" + orderId + "#" + factoryId}
+                            </h6>
+                        `
+                        });
+                    }
+                });
+
             this.schedulingOrders
                 ?.map((order) => {
                     let orderId = order?.id;
@@ -130,9 +154,10 @@ export class ByOrderTimelineComponents
                         id: orderId,
                         content: ` 
                              <h6 class="mb-m">
-                                ${order?.orderType + "#" + order?.id}
+                                ${order?.orderType + "#" + orderId}
                             </h6>
-                        `
+                        `,
+                        nestedGroups: [...(factoryIdList?.map(factoryId => orderId + "#" + factoryId))]
                     });
                 });
 
@@ -149,7 +174,7 @@ export class ByOrderTimelineComponents
                         dataSetItems.push({
                             id: arrangement?.uuid + '_arrange',
                             className: 'arrange',
-                            group: arrangement.order,
+                            group: arrangement.order + "#" + arrangement.factoryReadableIdentifier,
                             content: `<p class="h-auto w-auto text-left">&nbsp;</p>`,
                             type: 'range',
                             start: arrangement?.arrangeDateTime,
@@ -159,7 +184,7 @@ export class ByOrderTimelineComponents
 
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
-                            group: arrangement.order,
+                            group: arrangement.order + "#" + arrangement.factoryReadableIdentifier,
                             content: `<p class="h-auto w-auto text-center">${arrangement.factoryReadableIdentifier + '#' + arrangement.product}</p>`,
                             type: 'range',
                             start: arrangement?.producingDateTime,

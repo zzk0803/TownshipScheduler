@@ -17,4 +17,9 @@ export const visTownshipStyles=css`
         border-style: dashed !important;
         z-index: 0;
     }
+
+    .vis-item .vis-item-overflow {
+        overflow: visible;
+    }
+    
 `as any

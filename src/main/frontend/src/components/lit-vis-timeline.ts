@@ -3,8 +3,6 @@ import {customElement, property, query} from 'lit/decorators.js';
 import {vaadinStyles, visStyles, visTownshipStyles} from "./external-styles";
 import {DataGroup, DataItem, Timeline, TimelineOptions} from "vis-timeline";
 
-// import {DataGroup, DataItem, Timeline, TimelineOptions} from "vis-timeline/standalone";
-
 @customElement('lit-vis-timeline')
 export class LitVisTimeline
     extends LitElement {
