@@ -164,7 +164,7 @@ export class ByFactoryTimelineComponents
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
                             group: arrangement?.factoryReadableIdentifier,
-                            content: `<p class="h-auto w-auto text-center"> ${arrangement?.product + "#" + arrangement.id}</p>`,
+                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id}</p>`,
                             start: producingDateTime,
                             end: completedDateTime,
                             type: 'range',

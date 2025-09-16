@@ -2,10 +2,10 @@ package zzk.townshipscheduler.ui.views.orders;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
@@ -21,6 +21,7 @@ import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.ui.components.OrderGridItemsCard;
+import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -28,11 +29,11 @@ import java.util.Arrays;
 @Route("/orders")
 @Menu(title = "Orders", order = 5.00d)
 @PermitAll
-public class OrderListView extends VerticalLayout  {
+public class OrderListView extends VerticalLayout {
 
     private final OrderListViewPresenter presenter;
 
-    private final Grid<OrderEntity> grid ;
+    private final Grid<OrderEntity> grid;
 
     public OrderListView(
             OrderListViewPresenter presenter,
@@ -54,7 +55,26 @@ public class OrderListView extends VerticalLayout  {
         Button addBillButton = new Button(VaadinIcon.PLUS.create());
         addBillButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
         addBillButton.setWidth("5rem");
-        addBillButton.addClickListener(addBillClicked -> UI.getCurrent().navigate(OrderFormView.class));
+        addBillButton.addClickListener(addBillClicked -> {
+            Dialog dialog = new Dialog(
+                    new OrderFormView(
+                            this.presenter.getOrderEntityRepository(),
+                            this.presenter.getProductEntityRepository(),
+                            this.presenter.getFieldFactoryInfoEntityRepository(),
+                            townshipAuthenticationContext
+                    )
+            );
+            UiEventBus.subscribe(
+                    dialog,
+                    OrderFormView.OrderFormViewHasSubmitEvent.class,
+                    componentEvent -> {
+                        dialog.close();
+                        presenter.fillGrid(grid);
+                    }
+            );
+            dialog.setSizeFull();
+            dialog.open();
+        });
         HorizontalLayout horizontalLayout = new HorizontalLayout(addBillButton);
         horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
         add(horizontalLayout);

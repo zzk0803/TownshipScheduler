@@ -1,7 +1,7 @@
 package zzk.townshipscheduler.ui.views.orders;
 
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -11,29 +11,35 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.Result;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.converter.Converter;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.validator.DateTimeRangeValidator;
 import com.vaadin.flow.function.ValueProvider;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import jakarta.annotation.security.PermitAll;
+import lombok.Getter;
+import org.springframework.data.domain.Sort;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
-import zzk.townshipscheduler.backend.persistence.OrderEntity;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
+import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
+import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.ui.components.BillDurationField;
 import zzk.townshipscheduler.ui.components.ProductsAmountPanel;
 import zzk.townshipscheduler.ui.pojo.BillItem;
@@ -42,38 +48,68 @@ import zzk.townshipscheduler.ui.utility.UiEventBus;
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
-@Route
-@PermitAll
-@UIScope
+@Getter
 public class OrderFormView extends VerticalLayout {
 
-    private final OrderFormPresenter presenter;
-
     private final ProductsAmountPanel productsAmountPanel;
+
+    private final OrderEntityRepository orderEntityRepository;
+
+    private final ProductEntityRepository productEntityRepository;
+
+    private final FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository;
+
+    private final TownshipAuthenticationContext townshipAuthenticationContext;
+
+    private final Binder<OrderEntity> binder = new Binder<>();
+
+    private final List<BillItem> gridBillItems = new ArrayList<>();
+
+    private final LocalDateTime createdDateTime = LocalDateTime.now();
+
+    private AtomicInteger gridBillItemsCounter = new AtomicInteger();
+
+    private OrderEntity orderEntity;
+
+    private ListDataProvider<BillItem> billItemGridDataProvider;
+
+    private GridListDataView<BillItem> billItemGridListDataView;
 
     private Grid<BillItem> billItemGrid;
 
     public OrderFormView(
-            OrderFormPresenter orderFormPresenter,
+            OrderEntityRepository orderEntityRepository,
+            ProductEntityRepository productEntityRepository,
+            FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository,
             TownshipAuthenticationContext townshipAuthenticationContext
     ) {
-        this.presenter = orderFormPresenter;
-        this.presenter.setOrderFormView(this);
-        this.presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
-        this.productsAmountPanel
-                = new ProductsAmountPanel(presenter.getFactoryProductsSupplier());
-    }
 
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        this.presenter.clean();
-        removeAll();
+        this.orderEntityRepository = orderEntityRepository;
+        this.productEntityRepository = productEntityRepository;
+        this.fieldFactoryInfoEntityRepository = fieldFactoryInfoEntityRepository;
+        this.townshipAuthenticationContext = townshipAuthenticationContext;
+        this.productsAmountPanel
+                = new ProductsAmountPanel(() -> {
+            Optional<PlayerEntity> playerEntity = townshipAuthenticationContext.getPlayerEntity();
+            return playerEntity.<Supplier<Collection<FieldFactoryInfoEntity>>>map(
+                    entity -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                            entity.getLevel(),
+                            Sort.by(Sort.Direction.ASC, "level")
+                    )).orElseGet(() -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                    Sort.by(Sort.Direction.ASC, "level")
+            )).get();
+        });
 
         style();
         add(assembleBillForm());
-        addAndExpand(assembleBillItemGrid());
+        addAndExpand(this.billItemGrid = assembleBillItemGrid());
         add(assembleItemAppendBtn());
         add(assembleFooterPanel());
 
@@ -85,15 +121,15 @@ public class OrderFormView extends VerticalLayout {
                     int amount = componentEvent.getAmount();
 
                     BillItem billItem = new BillItem(
-                            presenter.getGridBillItemsCounter().incrementAndGet(),
+                            getGridBillItemsCounter().incrementAndGet(),
                             selectProduct,
                             amount
                     );
-                    presenter.addBillItem(billItem);
-                    presenter.setupDataProviderForItems(billItemGrid);
+                    addBillItem(billItem);
+                    setupDataProviderForItems(this.billItemGrid);
                 }
         );
-        this.presenter.setupDataProviderForItems(billItemGrid);
+        this.setupDataProviderForItems(this.billItemGrid);
     }
 
     private void style() {
@@ -129,18 +165,18 @@ public class OrderFormView extends VerticalLayout {
 
         deadLineFieldLayout.add(boolDeadlineCheckbox, durationCountdownField, deadlinePicker);
 
-        RadioButtonGroup<String> billTypeGroup = new RadioButtonGroup<>();
-        billTypeGroup.setItems(Arrays.stream(OrderType.values()).map(Enum::name).toList());
-        billTypeGroup.setValue(OrderType.TRAIN.name());
+        RadioButtonGroup<OrderType> billTypeGroup = new RadioButtonGroup<>();
+        billTypeGroup.setItems(OrderType.values());
+        billTypeGroup.setValue(OrderType.TRAIN);
+        billTypeGroup.setItemLabelGenerator(Enum::name);
         billTypeGroup.addValueChangeListener(valueChangeEvent -> {
-            String changedIntoValue = valueChangeEvent.getValue();
-            if (OrderType.AIRPLANE.name().equalsIgnoreCase(changedIntoValue)) {
+            if (OrderType.AIRPLANE == valueChangeEvent.getValue()) {
                 boolDeadlineCheckbox.setValue(true);
                 durationCountdownField.setValue(Duration.ofHours(15));
             }
         });
 
-        settingBinder(billTypeGroup, boolDeadlineCheckbox, deadlinePicker, durationCountdownField);
+        settingBinder(billTypeGroup, boolDeadlineCheckbox, deadlinePicker);
 
         formLayout.addFormItem(billTypeGroup, "Bill Type");
         formLayout.addFormItem(deadLineFieldLayout, "Duration To Deadline");
@@ -161,8 +197,6 @@ public class OrderFormView extends VerticalLayout {
         grid.addComponentColumn(buildItemAmountField())
                 .setHeader("Amount Operation");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
-
-        this.billItemGrid = grid;
         return grid;
     }
 
@@ -181,7 +215,7 @@ public class OrderFormView extends VerticalLayout {
             button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
             button.addClickListener(_ -> {
                 dialog.close();
-                presenter.setupDataProviderForItems(billItemGrid);
+                setupDataProviderForItems(billItemGrid);
             });
             dialog.getFooter().add(button);
             dialog.open();
@@ -196,8 +230,13 @@ public class OrderFormView extends VerticalLayout {
         Button submit = new Button("Submit");
         submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         submit.addClickListener(_ -> {
-            presenter.onSubmit();
-            UI.getCurrent().navigate(OrderListView.class);
+            onSubmit();
+            UiEventBus.publish(
+                    new OrderFormViewHasSubmitEvent(
+                            this,
+                            false
+                    )
+            );
         });
 
         Button cancel = new Button("Cancel");
@@ -208,6 +247,25 @@ public class OrderFormView extends VerticalLayout {
         footerLayout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
         footerLayout.setAlignItems(Alignment.BASELINE);
         return footerLayout;
+    }
+
+    private void addBillItem(BillItem billItem) {
+        getGridBillItems().stream()
+                .filter(iterating -> iterating.getProductEntity()
+                        .getProductId()
+                        .equals(billItem.getProductEntity().getProductId()))
+                .findFirst()
+                .ifPresentOrElse(
+                        optionalPresent -> {
+                            int amount = optionalPresent.getAmount();
+                            optionalPresent.setAmount(amount);
+                        }, () -> getGridBillItems().add(billItem)
+                );
+    }
+
+    private void setupDataProviderForItems(Grid<BillItem> grid) {
+        billItemGridDataProvider = new ListDataProvider<>(this.gridBillItems);
+        billItemGridListDataView = grid.setItems(this.billItemGridDataProvider);
     }
 
     private static void settingDeadlineFieldGroupAvailableStatus(
@@ -243,17 +301,26 @@ public class OrderFormView extends VerticalLayout {
     }
 
     private void settingBinder(
-            RadioButtonGroup<String> billTypeGroup,
+            RadioButtonGroup<OrderType> billTypeGroup,
             Checkbox boolDeadlineCheckbox,
-            DateTimePicker deadlinePicker,
-            BillDurationField durationCountdownField
+            DateTimePicker deadlinePicker
     ) {
-        presenter.prepareBillAndBinder(
-                billTypeGroup,
-                boolDeadlineCheckbox,
-                deadlinePicker,
-                durationCountdownField
-        );
+        renewBinderAndObject();
+        this.binder.forField(billTypeGroup)
+                .asRequired()
+                .bind(
+                        OrderEntity::getOrderType,
+                        OrderEntity::setOrderType
+                );
+        this.binder.forField(boolDeadlineCheckbox)
+                .bind(OrderEntity::isBearDeadline, OrderEntity::setBearDeadline);
+        this.binder.forField(deadlinePicker)
+                .withValidator(new DateTimeRangeValidator(
+                        "not pasted datetime",
+                        LocalDateTime.now(),
+                        LocalDateTime.MAX
+                ))
+                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
     }
 
     private ComponentRenderer<Div, BillItem> buildItemCard() {
@@ -305,6 +372,35 @@ public class OrderFormView extends VerticalLayout {
         };
     }
 
+    private void onSubmit() {
+        try {
+            this.orderEntity.setCreatedDateTime(createdDateTime);
+            if (!this.orderEntity.isBearDeadline()) {
+                this.orderEntity.setDeadLine(null);
+            }
+
+            getGridBillItems().forEach(
+                    billItem -> this.orderEntity.addItem(
+                            billItem.getProductEntity(),
+                            billItem.getAmount()
+                    )
+            );
+
+            Optional.ofNullable(getTownshipAuthenticationContext())
+                    .map(TownshipAuthenticationContext::getUserDetails)
+                    .map(AccountEntity::getPlayerEntity)
+                    .ifPresent(player -> {
+                        orderEntity.setPlayerEntity(player);
+                    });
+
+            getBinder().writeBean(this.orderEntity);
+            getOrderEntityRepository().saveAndFlush(this.orderEntity);
+        } catch (ValidationException e) {
+            Notification.show(e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
     public Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
         return new Converter<>() {
 
@@ -323,7 +419,11 @@ public class OrderFormView extends VerticalLayout {
         };
     }
 
-    private static Div createProductDescriptionDiv(ProductEntity productEntity) {
+    private void renewBinderAndObject() {
+        this.binder.readBean(this.orderEntity = new OrderEntity());
+    }
+
+    private Div createProductDescriptionDiv(ProductEntity productEntity) {
         Div description = new Div();
         description.addClassNames(
                 LumoUtility.Display.FLEX,
@@ -340,5 +440,12 @@ public class OrderFormView extends VerticalLayout {
         return description;
     }
 
+    public static class OrderFormViewHasSubmitEvent extends ComponentEvent<OrderFormView> {
+
+        public OrderFormViewHasSubmitEvent(OrderFormView source, boolean fromClient) {
+            super(source, fromClient);
+        }
+
+    }
 
 }

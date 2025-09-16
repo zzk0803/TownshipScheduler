@@ -6,6 +6,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
 import lombok.Setter;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
+import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
@@ -15,6 +16,7 @@ import zzk.townshipscheduler.backend.service.PlayerService;
 import java.util.List;
 import java.util.Optional;
 
+@Getter
 @SpringComponent
 public class OrderListViewPresenter {
 
@@ -22,11 +24,12 @@ public class OrderListViewPresenter {
 
     private final ProductEntityRepository productEntityRepository;
 
+    private final FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository;
+
     private final PlayerService playerService;
 
     private OrderListView view;
 
-    @Getter
     @Setter
     private TownshipAuthenticationContext townshipAuthenticationContext;
 
@@ -35,11 +38,13 @@ public class OrderListViewPresenter {
     public OrderListViewPresenter(
             OrderEntityRepository orderEntityRepository,
             ProductEntityRepository productEntityRepository,
+            FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository,
             PlayerService playerService
     ) {
 
         this.orderEntityRepository = orderEntityRepository;
         this.productEntityRepository = productEntityRepository;
+        this.fieldFactoryInfoEntityRepository = fieldFactoryInfoEntityRepository;
         this.playerService = playerService;
     }
 

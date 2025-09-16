@@ -111,24 +111,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
 
     private List<SchedulingProducingArrangementVO> toProducingArrangementVo(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         return schedulingProducingArrangementList.stream()
-                .map(producingArrangement -> {
-                    return new SchedulingProducingArrangementVO(producingArrangement);
-//                    return new SchedulingProducingArrangementVO(
-//                            producingArrangement.getId(),
-//                            producingArrangement.getUuid(),
-//                            String.valueOf(producingArrangement.getSchedulingOrder().getId()),
-//                            producingArrangement.getSchedulingProduct().getName(),
-//                            Optional.ofNullable(planningFactoryInstance)
-//                                    .map(schedulingFactoryInstance -> {
-//                                        return schedulingFactoryInstance.getFactoryReadableIdentifier().toString();
-//                                    })
-//                                    .orElse(null),
-//                            producingArrangement.getProducingDuration().toString(),
-//                            producingArrangement.getArrangeDateTime(),
-//                            producingArrangement.getProducingDateTime(),
-//                            producingArrangement.getCompletedDateTime()
-//                    );
-                })
+                .map(SchedulingProducingArrangementVO::new)
                 .toList();
 
     }
