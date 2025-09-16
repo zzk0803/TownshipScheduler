@@ -5,7 +5,6 @@ import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import org.jspecify.annotations.NonNull;
-import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
@@ -232,15 +231,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
-                                100
+                                500
                         ),
-                        (schedulingFactoryInstance, dataTimeSlotUsage) -> {
-                            ProducingStructureType producingStructureType
-                                    = schedulingFactoryInstance.getSchedulingFactoryInfo().getProducingStructureType();
-                            return producingStructureType == ProducingStructureType.SLOT
-                                    ? 5 * dataTimeSlotUsage
-                                    : 3 * dataTimeSlotUsage;
-                        }
+                        (schedulingFactoryInstance, dataTimeSlotUsage) -> schedulingFactoryInstance.weatherFactoryProducingTypeIsQueue()
+                                ? 2 * dataTimeSlotUsage
+                                : 3 * dataTimeSlotUsage
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }

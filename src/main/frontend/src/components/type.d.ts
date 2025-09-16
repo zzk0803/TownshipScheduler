@@ -1,12 +1,10 @@
-import {Duration} from "@js-joda/core";
-
 export declare type ScoreAnalysisFetchPolicy = "FETCH_ALL" | "FETCH_SHALLOW";
 
-export declare interface IVisTimeLineRemote{
+export declare interface IVisTimeLineRemote {
     pullScheduleResult(): void;
 }
 
-export declare interface SchedulingWorkTimeLimit {
+export declare interface SchedulingWorkCalendar {
 
     startDateTime: string;
 
@@ -22,37 +20,23 @@ export declare interface SchedulingWorkTimeLimit {
 
 export declare interface SchedulingOrder {
 
-    id: number,
+    id: string,
 
     orderType: string,
 
-    productAmountBill: Map<SchedulingProduct, number>,
-
-    deadline: Date
-}
-
-export declare interface SchedulingProducingExecutionMode {
-
-    id: number,
-
-    product: SchedulingProduct,
-
-    materials: Map<SchedulingProduct, number>,
-
-    executeDuration: Duration
+    deadline: string
 }
 
 export declare interface SchedulingProduct {
 
-    id: number
+    id: string,
 
-    name: string
+    name: string,
 
-    level: number
+    level: string,
 
-    requireFactory: SchedulingFactoryInfo
+    requireFactory: string
 
-    executionModeSet: SchedulingProducingExecutionMode[]
 }
 
 export declare interface SchedulingFactoryInfo {
@@ -63,7 +47,7 @@ export declare interface SchedulingFactoryInfo {
 
     level: number,
 
-    portfolioGoods: SchedulingProduct[],
+    portfolio: SchedulingProduct[],
 
     producingStructureType: SchedulingFactoryType,
 
@@ -78,6 +62,7 @@ export declare interface SchedulingFactoryInfo {
     maxReapWindowCapacity: number,
 
     maxInstanceAmount: number
+
 }
 
 export declare enum SchedulingFactoryType {
@@ -85,13 +70,15 @@ export declare enum SchedulingFactoryType {
     SLOT
 }
 
-export declare interface SchedulingFactory {
+export declare interface SchedulingFactoryInstance {
 
     id: number,
 
     categoryName: string,
 
-    info: SchedulingFactoryInfo,
+    schedulingFactoryInfo: SchedulingFactoryInfo,
+
+    factoryReadableIdentifier: string,
 
     seqNum: number,
 
@@ -100,37 +87,25 @@ export declare interface SchedulingFactory {
     reapWindowSize: number
 }
 
-export declare interface BaseProducingArrangement {
+export declare interface SchedulingProducingArrangement {
+
     id: string,
 
     uuid: string,
 
+    order: string,
+
     product: string,
 
-    arrangeFactory: string,
-
-    arrangeFactoryId: string,
+    factoryReadableIdentifier: string,
 
     producingDuration: string,
 
     arrangeDateTime: string,
 
-    gameProducingDateTime: string,
+    producingDateTime: string,
 
-    gameCompletedDateTime: string
-}
-
-export declare interface SchedulingFactoryQueueProducingArrangement
-    extends BaseProducingArrangement {
-
-    nextQueueProducingArrangement: SchedulingFactoryQueueProducingArrangement
-
-    planningPreviousProducingArrangementOrFactory: SchedulingFactoryQueueProducingArrangement | SchedulingFactory
-
-}
-
-export declare interface SchedulingFactorySlotProducingArrangement
-    extends BaseProducingArrangement {
+    completedDateTime: string
 
 }
 
@@ -139,3 +114,5 @@ export declare type BendableScore = {
 }
 
 export type SolverStatus = "SOLVING_SCHEDULED" | "SOLVING_ACTIVE" | "NOT_SOLVING";
+
+export type DateTimeSlotSize = "TEN_MINUTES" | "HALF_HOUR" | "HOUR" | "TWO_HOUR" | "THREE_HOUR";

@@ -130,11 +130,11 @@
 
         <acceptor>
             <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
-            <lateAcceptanceSize>11</lateAcceptanceSize>
+            <lateAcceptanceSize>7</lateAcceptanceSize>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>2</acceptedCountLimit>
+            <acceptedCountLimit>1</acceptedCountLimit>
         </forager>
 
     </localSearch>

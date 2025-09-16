@@ -41,6 +41,10 @@ public class OrderGrid extends Grid<OrderEntity> {
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
+        card.add(createCardInnerDiv(
+                strAsSpan(orderView.getOrderType().name() + "#" + orderView.getId())
+        ));
+
         boolean boolDeadLine = orderView.isBearDeadline();
         if (boolDeadLine) {
             LocalDateTime deadLine = orderView.getDeadLine();

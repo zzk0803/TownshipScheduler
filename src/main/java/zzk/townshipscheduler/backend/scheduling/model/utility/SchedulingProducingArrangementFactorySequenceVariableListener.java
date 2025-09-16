@@ -84,7 +84,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                     SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
             );
 
-            SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> processToPairMap
+            SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processToPairMap
                     = planningFactoryInstance.prepareProducingAndCompletedMap();
 
             scoreDirectorWorkingSolution.lookupProducingArrangements(planningFactoryInstance)
@@ -110,15 +110,15 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
     private void doUpdateDateTime(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement schedulingProducingArrangement,
-            SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> preparedProducingAndCompletedMap
+            SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> preparedProducingAndCompletedMap
     ) {
         FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        FactoryComputedDataTimePair oldDateTimePair = schedulingProducingArrangement.getShadowFactoryComputedDataTimePair();
+        FactoryComputedDateTimePair oldDateTimePair = schedulingProducingArrangement.getShadowFactoryComputedDateTimePair();
         if (factoryProcessSequence == null) {
             return;
         }
 
-        FactoryComputedDataTimePair newDateTimePair
+        FactoryComputedDateTimePair newDateTimePair
                 = preparedProducingAndCompletedMap.get(factoryProcessSequence);
         if (newDateTimePair == null) {
             return;
@@ -129,7 +129,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                     scoreDirector,
                     schedulingProducingArrangement,
                     newDateTimePair,
-                    SchedulingProducingArrangement::setShadowFactoryComputedDataTimePair,
+                    SchedulingProducingArrangement::setShadowFactoryComputedDateTimePair,
                     SchedulingProducingArrangement.SHADOW_COMPUTED_DATE_TIME_PAIR
             );
         }

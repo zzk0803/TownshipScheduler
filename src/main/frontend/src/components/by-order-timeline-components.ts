@@ -10,9 +10,8 @@ import {
     SchedulingWorkCalendar
 } from './type';
 
-
-@customElement('by-factory-timeline-components')
-export class ByFactoryTimelineComponents
+@customElement('by-order-timeline-components')
+export class ByOrderTimelineComponents
     extends LitElement {
 
     static styles = [
@@ -54,7 +53,6 @@ export class ByFactoryTimelineComponents
         super.connectedCallback();
         this.classList.add('flex', 'flex-col', 'w-full', 'h-auto');
     }
-
 
     firstUpdated(_changedProperties: PropertyValues) {
         this.timelinePropertiesLitUpdate(_changedProperties);
@@ -120,18 +118,19 @@ export class ByFactoryTimelineComponents
             });
         }
 
-        if (_changedProperties.has('schedulingOrders')) {
+        if (_changedProperties.has('schedulingFactoryInstances')) {
             //do nothing
         }
 
-        if (_changedProperties.has('schedulingFactoryInstances')) {
-            this.schedulingFactoryInstances
-                ?.map((factory) => {
+        if (_changedProperties.has('schedulingOrders')) {
+            this.schedulingOrders
+                ?.map((order) => {
+                    let orderId = order?.id;
                     dataGroupItems.push({
-                        id: factory?.factoryReadableIdentifier,
+                        id: orderId,
                         content: ` 
                              <h6 class="mb-m">
-                                ${(factory?.categoryName ?? 'Unknown Factory') + '#' + factory?.seqNum + '(' + factory.producingLength + ")"}
+                                ${order?.orderType + "#" + order?.id}
                             </h6>
                         `
                     });
@@ -147,27 +146,24 @@ export class ByFactoryTimelineComponents
                 })
                 ?.map(
                     (arrangement) => {
-                        let arrangeDateTime = arrangement?.arrangeDateTime;
-                        let producingDateTime = arrangement?.producingDateTime;
-                        let completedDateTime = arrangement?.completedDateTime;
                         dataSetItems.push({
                             id: arrangement?.uuid + '_arrange',
                             className: 'arrange',
-                            group: arrangement?.factoryReadableIdentifier,
+                            group: arrangement.order,
                             content: `<p class="h-auto w-auto text-left">&nbsp;</p>`,
-                            start: arrangeDateTime,
-                            end: producingDateTime,
                             type: 'range',
+                            start: arrangement?.arrangeDateTime,
+                            end: arrangement?.producingDateTime,
                             subgroup: arrangement?.uuid
                         });
 
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
-                            group: arrangement?.factoryReadableIdentifier,
-                            content: `<p class="h-auto w-auto text-center"> ${arrangement?.product + "#" + arrangement.id}</p>`,
-                            start: producingDateTime,
-                            end: completedDateTime,
+                            group: arrangement.order,
+                            content: `<p class="h-auto w-auto text-center">${arrangement.factoryReadableIdentifier + '#' + arrangement.product}</p>`,
                             type: 'range',
+                            start: arrangement?.producingDateTime,
+                            end: arrangement?.completedDateTime,
                             subgroup: arrangement?.uuid
                         });
                     });
@@ -175,10 +171,11 @@ export class ByFactoryTimelineComponents
             this.dataItems = dataSetItems;
         }
     }
+
 }
 
 declare global {
     interface HTMLElementTagNameMap {
-        'by-factory-timeline-components': ByFactoryTimelineComponents;
+        'by-order-timeline-components': ByOrderTimelineComponents;
     }
 }

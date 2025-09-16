@@ -62,14 +62,18 @@ public class SchedulingFactoryInstance {
         return shadowFactorySequenceSet.remove(o);
     }
 
-    public FactoryComputedDataTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
+    }
+
+    public FactoryComputedDateTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
         FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> processSequenceDateTimePairMap
+        SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processSequenceDateTimePairMap
                 = prepareProducingAndCompletedMap();
         return processSequenceDateTimePairMap.get(factoryProcessSequence);
     }
 
-    public SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap() {
+    public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
         return this.useComputeStrategy().prepareProducingAndCompletedMap(new TreeSet<>(getShadowFactorySequenceSet()));
     }
 
@@ -103,7 +107,7 @@ public class SchedulingFactoryInstance {
 
     private interface ProducingAndCompletedDateTimeComputeStrategy {
 
-        SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap(
+        SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap(
                 SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
         );
 
@@ -113,11 +117,11 @@ public class SchedulingFactoryInstance {
             implements ProducingAndCompletedDateTimeComputeStrategy {
 
         @Override
-        public SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap(
+        public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap(
                 SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
         ) {
 
-            TreeMap<FactoryProcessSequence, FactoryComputedDataTimePair> computingProducingCompletedMap
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> computingProducingCompletedMap
                     = new TreeMap<>();
 
             for (FactoryProcessSequence current : shadowFactorySequenceSet) {
@@ -127,7 +131,7 @@ public class SchedulingFactoryInstance {
                 LocalDateTime previousCompletedDateTime
                         = Optional.ofNullable(computingProducingCompletedMap.lowerKey(current))
                         .map(computingProducingCompletedMap::get)
-                        .map(FactoryComputedDataTimePair::completedDateTime)
+                        .map(FactoryComputedDateTimePair::completedDateTime)
                         .orElse(null);
 
                 LocalDateTime producingDateTime;
@@ -142,7 +146,7 @@ public class SchedulingFactoryInstance {
 
                 computingProducingCompletedMap.put(
                         current,
-                        new FactoryComputedDataTimePair(producingDateTime, completedDateTime)
+                        new FactoryComputedDateTimePair(producingDateTime, completedDateTime)
                 );
 
             }
@@ -157,11 +161,11 @@ public class SchedulingFactoryInstance {
             implements ProducingAndCompletedDateTimeComputeStrategy {
 
         @Override
-        public SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> prepareProducingAndCompletedMap(
+        public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap(
                 SortedSet<FactoryProcessSequence> shadowFactorySequenceSet
         ) {
 
-            SortedMap<FactoryProcessSequence, FactoryComputedDataTimePair> computingProducingCompletedMap
+            SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> computingProducingCompletedMap
                     = new ConcurrentSkipListMap<>(
                     Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
                             .thenComparingInt(FactoryProcessSequence::getArrangementId)
@@ -174,7 +178,7 @@ public class SchedulingFactoryInstance {
 
                 computingProducingCompletedMap.put(
                         current,
-                        new FactoryComputedDataTimePair(arrangeDateTime, completedDateTime)
+                        new FactoryComputedDateTimePair(arrangeDateTime, completedDateTime)
                 );
 
             }

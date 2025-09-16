@@ -25,5 +25,7 @@ public class SchedulingFactoryInstanceVO implements Serializable {
 
     int reapWindowSize;
 
+    String factoryReadableIdentifier;
+
 
 }

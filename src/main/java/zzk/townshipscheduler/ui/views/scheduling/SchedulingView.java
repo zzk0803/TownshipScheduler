@@ -22,7 +22,6 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
@@ -37,7 +36,6 @@ import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
-import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -127,7 +125,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 "Report",
                 arrangementReportArticle = new SchedulingReportArticle(
                         schedulingViewPresenter.findCurrentProblem(),
-                        schedulingViewPresenter::fetchProductImage
+                        schedulingViewPresenter::getProductImage
                 )
         );
         schedulingContentLayout.addAndExpand(tabSheet);
@@ -245,13 +243,15 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                                         LumoUtility.FlexDirection.COLUMN
                                 );
 
+                                div.add(new Span(schedulingOrder.getOrderType()
+                                                         .name() + "#" + schedulingOrder.getId()));
                                 productAmountBill.entrySet()
                                         .stream()
                                         .map((productAmountEntry) -> {
                                             Span span = new Span();
                                             SchedulingProduct schedulingProduct = productAmountEntry.getKey();
                                             String productName = schedulingProduct.getName();
-                                            span.add(createProductImage(productName));
+                                            span.add(this.schedulingViewPresenter.getProductImage(productName));
                                             span.add(productName);
                                             span.add(" x" + productAmountEntry.getValue());
                                             return span;
@@ -266,6 +266,100 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         grid.setItems(schedulingViewPresenter.allSchedulingProblem());
         addAndExpand(grid);
 
+    }
+
+    private VerticalLayout buildBriefPanel() {
+        VerticalLayout panel = new VerticalLayout();
+
+        FormLayout schedulingForm = new FormLayout();
+
+        Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
+        slotSizeSelect.setLabel("Scheduling Time Slot");
+        slotSizeSelect.setNoVerticalOverlap(true);
+        slotSizeSelect.setItems(DateTimeSlotSize.values());
+        this.getSchedulingViewPresenter().setupSlotSizeSelectReadValue(slotSizeSelect);
+        slotSizeSelect.setReadOnly(true);
+        schedulingForm.add(slotSizeSelect, 2);
+
+        DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
+        this.getSchedulingViewPresenter().setupWorkCalendarStartPickerPickerReadValue(workCalendarStartPickerPicker);
+        workCalendarStartPickerPicker.setReadOnly(true);
+        DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
+        this.getSchedulingViewPresenter().setupWorkCalendarEndPickerPickerReadValue(workCalendarEndPickerPicker);
+        workCalendarEndPickerPicker.setReadOnly(true);
+        schedulingForm.add(workCalendarStartPickerPicker, 1);
+        schedulingForm.add(workCalendarEndPickerPicker, 1);
+
+        TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
+        this.getSchedulingViewPresenter().setupPlayerSleepStartPickerReadValue(playerSleepStartPicker);
+        playerSleepStartPicker.setReadOnly(true);
+        TimePicker playerSleepEndPicker = new TimePicker("Player Sleep End");
+        this.getSchedulingViewPresenter().setupPlayerSleepEndPickerReadValue(playerSleepEndPicker);
+        playerSleepEndPicker.setReadOnly(true);
+        schedulingForm.add(playerSleepStartPicker, 1);
+        schedulingForm.add(playerSleepEndPicker, 1);
+        panel.add(schedulingForm);
+
+        orderBriefGrid = new Grid<>(SchedulingOrderVo.class, false);
+        orderBriefGrid.addColumn(new ComponentRenderer<>(
+                        schedulingOrderVo -> {
+                            return new Span(schedulingOrderVo.getOrderType().name() + "#" + schedulingOrderVo.getSerial());
+                        }))
+                .setHeader("Order Type # ID")
+                .setAutoWidth(true)
+                .setFlexGrow(0);
+        orderBriefGrid.addColumn(new ComponentRenderer<>(
+                schedulingOrderVo -> {
+                    Main layout = new Main();
+                    layout.addClassNames(
+                            LumoUtility.Display.FLEX,
+                            LumoUtility.FlexDirection.ROW,
+                            LumoUtility.Margin.NONE,
+                            LumoUtility.Width.FULL,
+                            LumoUtility.Height.FULL
+                    );
+                    ProductAmountBill productAmountBill = schedulingOrderVo.getProductAmountBill();
+                    Div div = new Div();
+                    div.addClassNames(
+                            LumoUtility.Width.AUTO,
+                            LumoUtility.Display.FLEX,
+                            LumoUtility.FlexDirection.COLUMN
+                    );
+
+                    productAmountBill.entrySet()
+                            .stream()
+                            .map((productAmountEntry) -> {
+                                Span span = new Span();
+                                SchedulingProduct schedulingProduct = productAmountEntry.getKey();
+                                String productName = schedulingProduct.getName();
+                                span.add(this.schedulingViewPresenter.getProductImage(productName));
+                                span.add(productName);
+                                span.add(" x" + productAmountEntry.getValue());
+                                return span;
+                            })
+                            .forEach(div::add);
+                    layout.add(div);
+                    return layout;
+                })).setHeader("Items").setAutoWidth(true).setFlexGrow(1);
+        orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
+            LocalDateTime deadline = schedulingOrderVo.getDeadline();
+            DateTimePicker dateTimePicker = new DateTimePicker(deadline);
+            dateTimePicker.setReadOnly(true);
+            return dateTimePicker;
+        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(0);
+        orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
+            LocalDateTime deadline = schedulingOrderVo.getCompletedDateTime();
+            if (Objects.nonNull(deadline)) {
+                DateTimePicker dateTimePicker = new DateTimePicker(deadline);
+                dateTimePicker.setReadOnly(true);
+                return dateTimePicker;
+            } else {
+                return new Text("N/A");
+            }
+        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(0);
+        panel.addAndExpand(orderBriefGrid);
+        this.getSchedulingViewPresenter().setupOrderBriefGrid();
+        return panel;
     }
 
     private HorizontalLayout buildBtnPanel() {
@@ -291,13 +385,22 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         arrangementGrid.addComponentColumn(producingArrangement -> {
                     HorizontalLayout horizontalLayout = new HorizontalLayout();
                     horizontalLayout.setSpacing(false);
-                    horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+                    horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
                     String name = producingArrangement.getSchedulingProduct().getName();
+                    horizontalLayout.add(this.getSchedulingViewPresenter().getProductImage(name));
                     horizontalLayout.add(name);
                     return horizontalLayout;
                 })
                 .setResizable(true)
                 .setHeader("Product");
+        arrangementGrid.addColumn(SchedulingProducingArrangement::getSchedulingOrder)
+                .setRenderer(new TextRenderer<>(schedulingProducingArrangement -> {
+                    SchedulingOrder schedulingOrder = schedulingProducingArrangement.getSchedulingOrder();
+                    return schedulingOrder.getOrderType() + "#" + schedulingOrder.getId();
+                }))
+                .setSortable(true)
+                .setResizable(true)
+                .setHeader("Order");
         arrangementGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 .setRenderer(new TextRenderer<>(producingArrangement -> {
                     return Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
@@ -338,18 +441,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         return gameActionArticle;
     }
 
-    private Image createProductImage(String productName) {
-        byte[] productImage = getSchedulingViewPresenter().fetchProductImage(productName);
-        Image image = new Image(
-                new StreamResource(productName, () -> new ByteArrayInputStream(productImage)),
-                productName
-        );
-        image.setWidth("30px");
-        image.setHeight("30px");
-
-        return image;
-    }
-
     private HorizontalLayout buildScorePanel() {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
@@ -358,97 +449,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         layout.add(scoreAnalysisParagraph);
         getSchedulingViewPresenter().setupScoreAnalysisParagraph();
         return layout;
-    }
-
-    private VerticalLayout buildBriefPanel() {
-        VerticalLayout panel = new VerticalLayout();
-
-        FormLayout schedulingForm = new FormLayout();
-
-        Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
-        slotSizeSelect.setLabel("Scheduling Time Slot");
-        slotSizeSelect.setNoVerticalOverlap(true);
-        slotSizeSelect.setItems(DateTimeSlotSize.values());
-        this.getSchedulingViewPresenter().setupSlotSizeSelectReadValue(slotSizeSelect);
-        slotSizeSelect.setReadOnly(true);
-        schedulingForm.add(slotSizeSelect, 2);
-
-        DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
-        this.getSchedulingViewPresenter().setupWorkCalendarStartPickerPickerReadValue(workCalendarStartPickerPicker);
-        workCalendarStartPickerPicker.setReadOnly(true);
-        DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
-        this.getSchedulingViewPresenter().setupWorkCalendarEndPickerPickerReadValue(workCalendarEndPickerPicker);
-        workCalendarEndPickerPicker.setReadOnly(true);
-        schedulingForm.add(workCalendarStartPickerPicker, 1);
-        schedulingForm.add(workCalendarEndPickerPicker, 1);
-
-        TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
-        this.getSchedulingViewPresenter().setupPlayerSleepStartPickerReadValue(playerSleepStartPicker);
-        playerSleepStartPicker.setReadOnly(true);
-        TimePicker playerSleepEndPicker = new TimePicker("Player Sleep End");
-        this.getSchedulingViewPresenter().setupPlayerSleepEndPickerReadValue(playerSleepEndPicker);
-        playerSleepEndPicker.setReadOnly(true);
-        schedulingForm.add(playerSleepStartPicker, 1);
-        schedulingForm.add(playerSleepEndPicker, 1);
-        panel.add(schedulingForm);
-
-        orderBriefGrid = new Grid<>(SchedulingOrderVo.class, false);
-        orderBriefGrid.addColumn(SchedulingOrderVo::getOrderType)
-                .setHeader("Order Type")
-                .setAutoWidth(true)
-                .setFlexGrow(0);
-        orderBriefGrid.addColumn(new ComponentRenderer<>(
-                schedulingOrderVo -> {
-                    Main layout = new Main();
-                    layout.addClassNames(
-                            LumoUtility.Display.FLEX,
-                            LumoUtility.FlexDirection.ROW,
-                            LumoUtility.Margin.NONE,
-                            LumoUtility.Width.FULL,
-                            LumoUtility.Height.FULL
-                    );
-                    ProductAmountBill productAmountBill = schedulingOrderVo.getProductAmountBill();
-                    Div div = new Div();
-                    div.addClassNames(
-                            LumoUtility.Width.AUTO,
-                            LumoUtility.Display.FLEX,
-                            LumoUtility.FlexDirection.COLUMN
-                    );
-
-                    productAmountBill.entrySet()
-                            .stream()
-                            .map((productAmountEntry) -> {
-                                Span span = new Span();
-                                SchedulingProduct schedulingProduct = productAmountEntry.getKey();
-                                String productName = schedulingProduct.getName();
-                                span.add(createProductImage(productName));
-                                span.add(productName);
-                                span.add(" x" + productAmountEntry.getValue());
-                                return span;
-                            })
-                            .forEach(div::add);
-                    layout.add(div);
-                    return layout;
-                })).setHeader("Items").setAutoWidth(true).setFlexGrow(1);
-        orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
-            LocalDateTime deadline = schedulingOrderVo.getDeadline();
-            DateTimePicker dateTimePicker = new DateTimePicker(deadline);
-            dateTimePicker.setReadOnly(true);
-            return dateTimePicker;
-        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(0);
-        orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
-            LocalDateTime deadline = schedulingOrderVo.getCompletedDateTime();
-            if (Objects.nonNull(deadline)) {
-                DateTimePicker dateTimePicker = new DateTimePicker(deadline);
-                dateTimePicker.setReadOnly(true);
-                return dateTimePicker;
-            } else {
-                return new Text("N/A");
-            }
-        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(0);
-        panel.addAndExpand(orderBriefGrid);
-        this.getSchedulingViewPresenter().setupOrderBriefGrid();
-        return panel;
     }
 
 }

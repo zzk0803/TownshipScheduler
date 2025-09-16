@@ -61,6 +61,10 @@ public class SchedulingFactoryInfo {
         return this.getCategoryName().equals(that.getCategoryName());
     }
 
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return this.producingStructureType == ProducingStructureType.QUEUE;
+    }
+
     @Value
     public static class Id implements Comparable<Id> {
 

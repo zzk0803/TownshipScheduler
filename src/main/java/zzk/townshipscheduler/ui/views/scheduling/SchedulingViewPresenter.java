@@ -4,10 +4,12 @@ import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.timepicker.TimePicker;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.Resource;
@@ -28,14 +30,12 @@ import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
+import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Consumer;
 
@@ -71,6 +71,35 @@ public class SchedulingViewPresenter {
     @Resource(name = "townshipTaskScheduler")
     private TaskScheduler taskScheduler;
 
+    private Map<String, Image> productToImageMap = new LinkedHashMap<>();
+
+    public Image getProductImage(String productName) {
+//        if (productToImageMap.containsKey(productName)) {
+//            return productToImageMap.get(productName);
+//        } else {
+//            productToImageMap.put(productName, createProductImage(productName));
+//            return productToImageMap.get(productName);
+//        }
+        return createProductImage(productName);
+    }
+
+    public Image createProductImage(String productName) {
+        byte[] productImage = fetchProductImage(productName);
+        Image image = new Image(
+                new StreamResource(productName, () -> new ByteArrayInputStream(productImage)),
+                productName
+        );
+        image.setWidth("30px");
+        image.setHeight("30px");
+
+        return image;
+    }
+
+    public byte[] fetchProductImage(String productName) {
+        Optional<byte[]> bytes = productEntityRepository.queryProductImageByName(productName);
+        return bytes.orElse(null);
+    }
+
     public void setupArrangementsGrid(Grid<SchedulingProducingArrangement> grid) {
         grid.setItems(findCurrentProblem().getSchedulingProducingArrangementList());
     }
@@ -102,7 +131,7 @@ public class SchedulingViewPresenter {
 
         springScheduledFuture = taskScheduler.scheduleAtFixedRate(
                 () -> this.ui.access(
-                        () -> getSchedulingView().getArrangementTimelinePanel().pullScheduleResult()
+                        () -> getSchedulingView().getArrangementTimelinePanel().updateRemoteArrangements()
                 ),
                 Instant.now().plusSeconds(1),
                 Duration.ofSeconds(UPDATE_FREQUENCY)
@@ -162,6 +191,7 @@ public class SchedulingViewPresenter {
         return schedulingOrderList.stream()
                 .map(schedulingOrder -> {
                     SchedulingOrderVo schedulingOrderVo = new SchedulingOrderVo();
+                    schedulingOrderVo.setSerial(Math.toIntExact(schedulingOrder.getId()));
                     schedulingOrderVo.setOrderType(schedulingOrder.getOrderType());
                     schedulingOrderVo.setProductAmountBill(schedulingOrder.getProductAmountBill());
                     schedulingOrderVo.setRelatedArrangements(
@@ -245,13 +275,8 @@ public class SchedulingViewPresenter {
         return productImage.orElse(null);
     }
 
-    public byte[] fetchProductImage(String productName) {
-        Optional<byte[]> bytes = productEntityRepository.queryProductImageByName(productName);
-        return bytes.orElse(null);
-    }
-
     public void setupSlotSizeSelectReadValue(Select<DateTimeSlotSize> slotSizeSelect) {
-        DateTimeSlotSize slotSize = findCurrentProblem().getSlotSize();
+        DateTimeSlotSize slotSize = findCurrentProblem().getDateTimeSlotSize();
         slotSizeSelect.setValue(slotSize);
     }
 

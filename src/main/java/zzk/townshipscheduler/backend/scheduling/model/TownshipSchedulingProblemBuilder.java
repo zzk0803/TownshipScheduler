@@ -180,6 +180,7 @@ public class TownshipSchedulingProblemBuilder {
             ArrangementIdRoller idRoller,
             SchedulingProducingArrangement producingArrangement
     ) {
+        SchedulingOrder arrangementSchedulingOrder = producingArrangement.getSchedulingOrder();
         LinkedList<SchedulingProducingArrangement> dealingChain = new LinkedList<>(List.of(producingArrangement));
         ArrayList<SchedulingProducingArrangement> resultArrangementList = new ArrayList<>();
 
@@ -201,6 +202,7 @@ public class TownshipSchedulingProblemBuilder {
                     = producingExecutionMode.materialsActions();
             iteratingArrangement.appendPrerequisiteArrangements(materialsActions);
             for (SchedulingProducingArrangement materialsAction : materialsActions) {
+                materialsAction.setSchedulingOrder(arrangementSchedulingOrder);
                 dealingChain.addLast(materialsAction);
             }
 

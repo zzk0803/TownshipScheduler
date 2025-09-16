@@ -2,21 +2,12 @@ package zzk.townshipscheduler.ui.pojo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-
 import lombok.AllArgsConstructor;
 import lombok.Value;
-import zzk.townshipscheduler.backend.scheduling.model.FactoryComputedDataTimePair;
-import zzk.townshipscheduler.backend.scheduling.model.FactoryProcessSequence;
-import zzk.townshipscheduler.backend.scheduling.model.IGameArrangeObject;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayer;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingExecutionMode;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingWorkCalendar;
 
+import java.time.LocalDateTime;
 
 
 @Value
@@ -27,11 +18,11 @@ public class SchedulingProducingArrangementVO {
 
     String uuid;
 
+    String order;
+
     String product;
 
-    String arrangeFactory;
-
-    String arrangeFactoryId;
+    String factoryReadableIdentifier;
 
     String producingDuration;
 
@@ -41,22 +32,25 @@ public class SchedulingProducingArrangementVO {
 
     @JsonInclude
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime gameProducingDateTime;
+    LocalDateTime producingDateTime;
 
     @JsonInclude
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime gameCompletedDateTime;
+    LocalDateTime completedDateTime;
 
     public SchedulingProducingArrangementVO(SchedulingProducingArrangement schedulingProducingArrangement) {
+        SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
         this.id = schedulingProducingArrangement.getId();
         this.uuid = schedulingProducingArrangement.getUuid();
-        this.product=schedulingProducingArrangement.getSchedulingProduct().getName();
-        this.arrangeFactory=schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier().toString();
-        this.arrangeFactoryId=schedulingProducingArrangement.getPlanningFactoryInstance().getId().toString();
-        this.producingDuration=schedulingProducingArrangement.getProducingDuration().toString();
-        this.arrangeDateTime=schedulingProducingArrangement.getArrangeDateTime();
-        this.gameProducingDateTime=schedulingProducingArrangement.getProducingDateTime();
-        this.gameCompletedDateTime=schedulingProducingArrangement.getCompletedDateTime();
+        this.order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder().getId());
+        this.product = schedulingProducingArrangement.getSchedulingProduct().getName();
+        this.factoryReadableIdentifier = planningFactoryInstance != null
+                ? planningFactoryInstance.getFactoryReadableIdentifier().toString()
+                : null;
+        this.producingDuration = schedulingProducingArrangement.getProducingDuration().toString();
+        this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
+        this.producingDateTime = schedulingProducingArrangement.getProducingDateTime();
+        this.completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
     }
 
 }

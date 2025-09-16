@@ -89,7 +89,9 @@ public final class SchedulingOrder implements IGameArrangeObject {
                     int amount = entry.getValue();
                     return IntStream.range(0, amount)
                             .mapToObj(_ -> schedulingProduct.calcFactoryActions(targetObject))
-                            .flatMap(Collection::stream);
+                            .flatMap(Collection::stream)
+                            .peek(schedulingProducingArrangement -> schedulingProducingArrangement.setSchedulingOrder(
+                                    this));
                 })
                 .toList();
     }

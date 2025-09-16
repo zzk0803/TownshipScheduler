@@ -43,7 +43,7 @@ public class SchedulingProducingArrangement {
 
     public static final String SHADOW_COMPLETED_DATE_TIME = "computedShadowCompletedDateTime";
 
-    public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "shadowFactoryComputedDataTimePair";
+    public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "shadowFactoryComputedDateTimePair";
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -53,6 +53,9 @@ public class SchedulingProducingArrangement {
     @ToString.Include
     @PlanningId
     private String uuid;
+
+    @JsonIgnore
+    private SchedulingOrder schedulingOrder;
 
     @JsonIgnore
     private IGameArrangeObject targetActionObject;
@@ -101,7 +104,7 @@ public class SchedulingProducingArrangement {
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
     @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
-    private FactoryComputedDataTimePair shadowFactoryComputedDataTimePair;
+    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
     public SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -139,16 +142,6 @@ public class SchedulingProducingArrangement {
         return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
 
-    @JsonIgnore
-    public SchedulingOrder getSchedulingOrder() {
-        IGameArrangeObject iGameArrangeObject = getTargetActionObject();
-        if (iGameArrangeObject instanceof SchedulingOrder) {
-            return ((SchedulingOrder) iGameArrangeObject);
-        } else {
-            return null;
-        }
-    }
-
     public void readyElseThrow() {
         Objects.requireNonNull(this.getCurrentActionObject());
         Objects.requireNonNull(getId());
@@ -183,7 +176,7 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getCompletedDateTime() {
-        FactoryComputedDataTimePair computedDataTimePair = getShadowFactoryComputedDataTimePair();
+        FactoryComputedDateTimePair computedDataTimePair = getShadowFactoryComputedDateTimePair();
         if (computedDataTimePair == null) {
             return null;
         } else {
@@ -196,7 +189,7 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getProducingDateTime() {
-        FactoryComputedDataTimePair computedDataTimePair = getShadowFactoryComputedDataTimePair();
+        FactoryComputedDateTimePair computedDataTimePair = getShadowFactoryComputedDateTimePair();
         if (computedDataTimePair == null) {
             return null;
         } else {

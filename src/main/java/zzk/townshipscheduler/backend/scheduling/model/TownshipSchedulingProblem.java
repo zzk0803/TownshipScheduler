@@ -64,7 +64,7 @@ public class TownshipSchedulingProblem {
     )
     private BendableScore score;
 
-    private DateTimeSlotSize slotSize;
+    private DateTimeSlotSize dateTimeSlotSize;
 
     private SolverStatus solverStatus;
 
@@ -79,7 +79,7 @@ public class TownshipSchedulingProblem {
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
             BendableScore score,
-            DateTimeSlotSize slotSize,
+            DateTimeSlotSize dateTimeSlotSize,
             SolverStatus solverStatus
     ) {
         this.uuid = uuid;
@@ -92,7 +92,7 @@ public class TownshipSchedulingProblem {
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;
         this.score = score;
-        this.slotSize = slotSize;
+        this.dateTimeSlotSize = dateTimeSlotSize;
         this.solverStatus = solverStatus;
     }
 

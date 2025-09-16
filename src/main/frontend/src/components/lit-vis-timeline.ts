@@ -1,6 +1,6 @@
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query} from 'lit/decorators.js';
-import {vaadinStyles, visStyles} from "./external-styles";
+import {vaadinStyles, visStyles, visTownshipStyles} from "./external-styles";
 import {DataGroup, DataItem, Timeline, TimelineOptions} from "vis-timeline";
 
 // import {DataGroup, DataItem, Timeline, TimelineOptions} from "vis-timeline/standalone";
@@ -12,6 +12,7 @@ export class LitVisTimeline
     static styles = [
         visStyles,
         vaadinStyles,
+        visTownshipStyles,
         css`
             :host {
                 display: flex;
@@ -23,50 +24,6 @@ export class LitVisTimeline
             }
         `
     ]
-
-    connectedCallback() {
-        super.connectedCallback();
-        this.classList.add("flex", "flex-col", "w-full", "h-auto");
-    }
-
-    render() {
-        return html`
-            <div id="vis-container">
-            </div>
-        `;
-    }
-
-    protected willUpdate(_changedProperties: PropertyValues) {
-        super.willUpdate(_changedProperties)
-
-        if (this.timeline) {
-            if (_changedProperties.has("datasets")) {
-                this.timeline.setItems(this.datasets);
-            }
-
-            if (_changedProperties.has("groups")) {
-                this.timeline.setGroups(this.groups);
-            }
-
-            if (_changedProperties.has("options")) {
-                this.timeline.setOptions(this.options);
-            }
-        }
-    }
-
-
-    protected updated(_changedProperties: PropertyValues) {
-        if (this.timeline) {
-            this.timeline.redraw();
-        }
-
-        super.updated(_changedProperties);
-    }
-
-    firstUpdated(_changedProperties: PropertyValues) {
-        // Create a new Timeline in the vis-container
-        this.setupTimeline();
-    }
 
     @property()
     fromDateTime?: string;
@@ -87,6 +44,49 @@ export class LitVisTimeline
     visContainerElement!: HTMLDivElement;
 
     timeline!: Timeline;
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.classList.add("flex", "flex-col", "w-full", "h-auto");
+    }
+
+    render() {
+        return html`
+            <div id="vis-container">
+            </div>
+        `;
+    }
+
+    firstUpdated(_changedProperties: PropertyValues) {
+        // Create a new Timeline in the vis-container
+        this.setupTimeline();
+    }
+
+    protected willUpdate(_changedProperties: PropertyValues) {
+        super.willUpdate(_changedProperties)
+
+        if (this.timeline) {
+            if (_changedProperties.has("datasets")) {
+                this.timeline.setItems(this.datasets);
+            }
+
+            if (_changedProperties.has("groups")) {
+                this.timeline.setGroups(this.groups);
+            }
+
+            if (_changedProperties.has("options")) {
+                this.timeline.setOptions(this.options);
+            }
+        }
+    }
+
+    protected updated(_changedProperties: PropertyValues) {
+        if (this.timeline) {
+            this.timeline.redraw();
+        }
+
+        super.updated(_changedProperties);
+    }
 
     private setupTimeline() {
         this.timeline = new Timeline(

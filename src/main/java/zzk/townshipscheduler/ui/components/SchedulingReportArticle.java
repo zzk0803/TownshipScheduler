@@ -10,20 +10,15 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.cache.annotation.Cacheable;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
 
-import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -36,7 +31,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
 
     private TownshipSchedulingProblem townshipSchedulingProblem;
 
-    private Function<String, byte[]> fetchImgByIdProvider;
+    private Function<String, Image> fetchImgByIdProvider;
 
     public SchedulingReportArticle(TownshipSchedulingProblem townshipSchedulingProblem) {
         this.townshipSchedulingProblem = townshipSchedulingProblem;
@@ -44,7 +39,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
 
     public SchedulingReportArticle(
             TownshipSchedulingProblem townshipSchedulingProblem,
-            Function<String, byte[]> fetchImgByIdProvider
+            Function<String, Image> fetchImgByIdProvider
     ) {
         this.townshipSchedulingProblem = townshipSchedulingProblem;
         this.fetchImgByIdProvider = fetchImgByIdProvider;
@@ -93,7 +88,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                                 SchedulingProducingArrangementVO::getArrangeDateTime,
                                 TreeMap::new,
                                 Collectors.groupingBy(
-                                        SchedulingProducingArrangementVO::getArrangeFactory,
+                                        SchedulingProducingArrangementVO::getFactoryReadableIdentifier,
                                         Collectors.groupingBy(
                                                 SchedulingProducingArrangementVO::getProduct,
                                                 Collectors.counting()
@@ -122,17 +117,10 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         update();
     }
 
-    private Image createProductImage(String productName) {
-        byte[] productImage = fetchImgByIdProvider.apply(productName);
-        Image image = new Image(
-                new StreamResource(productName, () -> new ByteArrayInputStream(productImage)),
-                productName
-        );
-        image.setWidth("30px");
-        image.setHeight("30px");
-
-        return image;
+    private Image getProductImage(String productName) {
+        return this.fetchImgByIdProvider.apply(productName);
     }
+
 
     class ByDateTimeByFactoryByProductMapToCountGrid
             extends Grid<Map.Entry<LocalDateTime, Map<String, Map<String, Long>>>> {
@@ -164,7 +152,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                                 .map((productAmountEntry) -> {
                                     Span span = new Span();
                                     String productName = productAmountEntry.getKey();
-                                    span.add(createProductImage(productName));
+                                    span.add(getProductImage(productName));
                                     span.add(productName);
                                     span.add(" x" + productAmountEntry.getValue());
                                     return span;
