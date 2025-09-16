@@ -86,39 +86,6 @@
                 </variableNameIncludes>
             </swapMoveSelector>
 
-            <pillarChangeMoveSelector>
-                <pillarSelector>
-                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                </pillarSelector>
-                <valueSelector variableName="planningDateTimeSlot"
-                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">
-                </valueSelector>
-            </pillarChangeMoveSelector>
-
-            <pillarSwapMoveSelector>
-                <pillarSelector>
-                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                </pillarSelector>
-                <secondaryPillarSelector>
-                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                </secondaryPillarSelector>
-                <variableNameIncludes>
-                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
-                </variableNameIncludes>
-            </pillarSwapMoveSelector>
-
         </unionMoveSelector>
 
         <!--        <acceptor>-->
