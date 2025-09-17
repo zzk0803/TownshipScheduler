@@ -18,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.timepicker.TimePicker;
+import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
@@ -62,7 +63,9 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private SchedulingReportArticle arrangementReportArticle;
 
-    private Grid<SchedulingProducingArrangement> arrangementGrid;
+//    private Grid<SchedulingProducingArrangement> arrangementGrid;
+
+    private TreeGrid<SchedulingProducingArrangement> arrangementTreeGrid;
 
     private TabSheet tabSheet;
 
@@ -380,9 +383,9 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private VerticalLayout buildProducingArrangementsGrid() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        arrangementGrid = new Grid<>(SchedulingProducingArrangement.class, false);
-        arrangementGrid.setMultiSort(true);
-        arrangementGrid.addComponentColumn(producingArrangement -> {
+        arrangementTreeGrid = new TreeGrid<>(SchedulingProducingArrangement.class, false);
+        arrangementTreeGrid.setMultiSort(true);
+        arrangementTreeGrid.addComponentHierarchyColumn(producingArrangement -> {
                     HorizontalLayout horizontalLayout = new HorizontalLayout();
                     horizontalLayout.setSpacing(false);
                     horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
@@ -393,7 +396,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 })
                 .setResizable(true)
                 .setHeader("Product");
-        arrangementGrid.addColumn(SchedulingProducingArrangement::getSchedulingOrder)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getSchedulingOrder)
                 .setRenderer(new TextRenderer<>(schedulingProducingArrangement -> {
                     SchedulingOrder schedulingOrder = schedulingProducingArrangement.getSchedulingOrder();
                     return schedulingOrder.getOrderType() + "#" + schedulingOrder.getId();
@@ -401,7 +404,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setSortable(true)
                 .setResizable(true)
                 .setHeader("Order");
-        arrangementGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 .setRenderer(new TextRenderer<>(producingArrangement -> {
                     return Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
                             .map(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
@@ -412,7 +415,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setSortable(true)
                 .setResizable(true)
                 .setHeader("Assign Factory");
-        arrangementGrid.addColumn(SchedulingProducingArrangement::getArrangeDateTime)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getArrangeDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getArrangeDateTime,
                         "yyyy-MM-dd HH:mm:ss"
@@ -420,24 +423,28 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setSortable(true)
                 .setResizable(true)
                 .setHeader("Arrange Date Time");
-        arrangementGrid.addColumn(SchedulingProducingArrangement::getProducingDateTime)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getProducingDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getProducingDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setResizable(true)
                 .setHeader("Producing Date Time");
-        arrangementGrid.addColumn(SchedulingProducingArrangement::getCompletedDateTime)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getCompletedDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getCompletedDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setResizable(true)
                 .setHeader("Completed Date Time");
-        arrangementGrid.setSizeFull();
-        schedulingViewPresenter.setupArrangementsGrid(arrangementGrid);
 
-        gameActionArticle.addAndExpand(arrangementGrid);
+        arrangementTreeGrid.setSizeFull();
+
+        schedulingViewPresenter.setupArrangementsTreeGrid(arrangementTreeGrid);
+
+        gameActionArticle.addAndExpand(
+                arrangementTreeGrid
+        );
         return gameActionArticle;
     }
 

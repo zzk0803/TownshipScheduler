@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
-    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
+    <!--    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>-->
 
     <environmentMode>PHASE_ASSERT</environmentMode>
 
@@ -88,20 +88,20 @@
 
         </unionMoveSelector>
 
-        <!--        <acceptor>-->
-        <!--            <fadingEntityTabuSize>11</fadingEntityTabuSize>-->
-        <!--            <fadingValueTabuSize>7</fadingValueTabuSize>-->
-        <!--            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>-->
-        <!--            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>-->
-        <!--        </acceptor>-->
-
         <acceptor>
-            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
-            <lateAcceptanceSize>7</lateAcceptanceSize>
+            <fadingEntityTabuSize>7</fadingEntityTabuSize>
+            <fadingValueTabuSize>5</fadingValueTabuSize>
+            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
+        <!--        <acceptor>-->
+        <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
+        <!--            <lateAcceptanceSize>7</lateAcceptanceSize>-->
+        <!--        </acceptor>-->
+
         <forager>
-            <acceptedCountLimit>1</acceptedCountLimit>
+            <acceptedCountLimit>3</acceptedCountLimit>
         </forager>
 
     </localSearch>
