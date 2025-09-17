@@ -31,10 +31,7 @@ import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
 import java.io.ByteArrayInputStream;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Consumer;
@@ -66,7 +63,7 @@ public class SchedulingViewPresenter {
 
     private SchedulingView schedulingView;
 
-    private ScheduledFuture<?> springScheduledFuture;
+    private ScheduledFuture<?> timelinePushScheduledFuture;
 
     @Resource(name = "townshipTaskScheduler")
     private TaskScheduler taskScheduler;
@@ -89,8 +86,8 @@ public class SchedulingViewPresenter {
                 new StreamResource(productName, () -> new ByteArrayInputStream(productImage)),
                 productName
         );
-        image.setWidth("30px");
-        image.setHeight("30px");
+        image.setWidth("40px");
+        image.setHeight("40px");
 
         return image;
     }
@@ -129,7 +126,7 @@ public class SchedulingViewPresenter {
             );
         };
 
-        springScheduledFuture = taskScheduler.scheduleAtFixedRate(
+        timelinePushScheduledFuture = taskScheduler.scheduleAtFixedRate(
                 () -> this.ui.access(
                         () -> getSchedulingView().getArrangementTimelinePanel().updateRemoteArrangements()
                 ),
@@ -154,7 +151,7 @@ public class SchedulingViewPresenter {
                                 )
                         )
                         .andThen(townshipSchedulingProblem -> {
-                            springScheduledFuture.cancel(true);
+                            timelinePushScheduledFuture.cancel(true);
                         })
                 ,
                 (uuid, throwable) -> {
@@ -168,12 +165,12 @@ public class SchedulingViewPresenter {
                         notification.setDuration(3000);
                         notification.open();
                     });
-                    springScheduledFuture.cancel(true);
+                    timelinePushScheduledFuture.cancel(true);
                 }
         );
 
         ui.addDetachListener(detachEvent -> {
-            springScheduledFuture.cancel(true);
+            timelinePushScheduledFuture.cancel(true);
             schedulingService.abort(townshipSchedulingProblemId);
         });
     }
@@ -211,8 +208,8 @@ public class SchedulingViewPresenter {
     }
 
     public void onStopButton() {
-        if (springScheduledFuture != null) {
-            springScheduledFuture.cancel(true);
+        if (timelinePushScheduledFuture != null) {
+            timelinePushScheduledFuture.cancel(true);
         }
 
         schedulingService.abort(townshipSchedulingProblemId);

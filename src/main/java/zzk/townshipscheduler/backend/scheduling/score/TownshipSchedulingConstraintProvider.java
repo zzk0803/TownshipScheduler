@@ -161,7 +161,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_TOLERANCE,
-                                1000
+                                10
                         ),
                         schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
@@ -176,7 +176,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 );
                             } else {
                                 return Math.toIntExact(
-                                        Duration.between(workCalendarEnd, completedDateTime)
+                                        Duration.between(workCalendarStart, workCalendarEnd)
                                                 .toMinutes()
                                 );
                             }
