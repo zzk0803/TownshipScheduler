@@ -12,12 +12,6 @@ export declare interface SchedulingWorkCalendar {
 
 }
 
-// export declare type Product = {
-//     id: string;
-//     name: string;
-//     cleaningDurations: Map<Product, number>
-// }
-
 export declare interface SchedulingOrder {
 
     id: string,
@@ -97,6 +91,12 @@ export declare interface SchedulingProducingArrangement {
 
     product: string,
 
+    orderProduct: string,
+
+    orderProductArrangementId: string,
+
+    boolDirectToOrder: boolean,
+
     factoryReadableIdentifier: string,
 
     producingDuration: string,
@@ -107,6 +107,23 @@ export declare interface SchedulingProducingArrangement {
 
     completedDateTime: string
 
+}
+
+export declare interface SchedulingProducingArrangementUnitGroup {
+
+    orderId: string;
+
+    orderType: string;
+
+    nestedOrderProductList: SchedulingProducingArrangementUnitGroupOrderProductPair[];
+
+}
+
+export declare interface SchedulingProducingArrangementUnitGroupOrderProductPair {
+
+    arrangementOrderProductName: string;
+
+    arrangementOrderProductArrangeId: string;
 }
 
 export declare type BendableScore = {

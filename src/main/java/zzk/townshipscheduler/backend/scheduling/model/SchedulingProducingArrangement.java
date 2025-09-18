@@ -58,6 +58,12 @@ public class SchedulingProducingArrangement {
     private SchedulingOrder schedulingOrder;
 
     @JsonIgnore
+    private SchedulingProduct schedulingOrderProduct;
+
+    @JsonIgnore
+    private Integer schedulingOrderProductArrangementId;
+
+    @JsonIgnore
     private IGameArrangeObject targetActionObject;
 
     @JsonIgnore
@@ -106,7 +112,7 @@ public class SchedulingProducingArrangement {
     @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
     private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
-    public SchedulingProducingArrangement(
+    private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
             IGameArrangeObject currentActionObject
     ) {

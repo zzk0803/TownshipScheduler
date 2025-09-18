@@ -1,7 +1,7 @@
 import {css, html, LitElement, PropertyValueMap, PropertyValues} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import '@vaadin/vertical-layout';
-import {vaadinStyles, visStyles} from './external-styles';
+import {vaadinStyles, visStyles, visTownshipStyles} from './external-styles';
 import {DataGroup, DataItem} from 'vis-timeline';
 import {
     SchedulingFactoryInstance,
@@ -18,6 +18,7 @@ export class ByFactoryTimelineComponents
     static styles = [
         vaadinStyles,
         visStyles,
+        visTownshipStyles,
         css`
 
         `
@@ -53,11 +54,6 @@ export class ByFactoryTimelineComponents
     connectedCallback() {
         super.connectedCallback();
         this.classList.add('flex', 'flex-col', 'w-full', 'h-auto');
-    }
-
-
-    firstUpdated(_changedProperties: PropertyValues) {
-        this.timelinePropertiesLitUpdate(_changedProperties);
     }
 
     willUpdate(_changedProperties: PropertyValues) {
@@ -111,13 +107,6 @@ export class ByFactoryTimelineComponents
         if (_changedProperties.has('schedulingWorkCalendar')) {
             this.dateWindowStartString = this.schedulingWorkCalendar?.startDateTime;
             this.dateWindowEndString = this.schedulingWorkCalendar?.endDateTime;
-            dataSetItems.push({
-                content: '',
-                start: this.dateWindowStartString,
-                end: this.dateWindowEndString,
-                type: 'background',
-                className: "calendar"
-            });
         }
 
         if (_changedProperties.has('schedulingOrders')) {

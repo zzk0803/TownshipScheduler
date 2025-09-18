@@ -22,6 +22,12 @@ public class SchedulingProducingArrangementVO {
 
     String product;
 
+    String orderProduct;
+
+    int orderProductArrangementId;
+
+    boolean boolDirectToOrder;
+
     String factoryReadableIdentifier;
 
     String producingDuration;
@@ -38,12 +44,17 @@ public class SchedulingProducingArrangementVO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime completedDateTime;
 
-    public SchedulingProducingArrangementVO(SchedulingProducingArrangement schedulingProducingArrangement) {
+    public SchedulingProducingArrangementVO(
+            SchedulingProducingArrangement schedulingProducingArrangement
+    ) {
         SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
         this.id = schedulingProducingArrangement.getId();
         this.uuid = schedulingProducingArrangement.getUuid();
         this.order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder().getId());
         this.product = schedulingProducingArrangement.getSchedulingProduct().getName();
+        this.orderProduct = schedulingProducingArrangement.getSchedulingOrderProduct().getName();
+        this.orderProductArrangementId = schedulingProducingArrangement.getSchedulingOrderProductArrangementId();
+        this.boolDirectToOrder = schedulingProducingArrangement.isOrderDirect();
         this.factoryReadableIdentifier = planningFactoryInstance != null
                 ? planningFactoryInstance.getFactoryReadableIdentifier().toString()
                 : null;

@@ -7,7 +7,7 @@ import {
     IVisTimeLineRemote,
     SchedulingFactoryInstance,
     SchedulingOrder,
-    SchedulingProducingArrangement,
+    SchedulingProducingArrangement, SchedulingProducingArrangementUnitGroup,
     SchedulingProduct,
     SchedulingWorkCalendar
 } from "./type";
@@ -42,6 +42,9 @@ export class SchedulingVisTimelinePanel
     schedulingProducingArrangements: Array<SchedulingProducingArrangement> = new Array<SchedulingProducingArrangement>();
 
     @property()
+    schedulingProducingArrangementUnitGroups: Array<SchedulingProducingArrangementUnitGroup> = new Array<SchedulingProducingArrangementUnitGroup>();
+
+    @property()
     dateTimeSlotSizeInMinute: number = 30;
 
     @state()
@@ -60,6 +63,7 @@ export class SchedulingVisTimelinePanel
                          @selected-changed=${this.selectedChanged}>
                 <vaadin-tab selected id="by-factory-tab">By Factory</vaadin-tab>
                 <vaadin-tab id="by-order-tab">By Order</vaadin-tab>
+                <vaadin-tab id="by-unit-tab">By Unit</vaadin-tab>
             </vaadin-tabs>
             ${this.renderTimeline()}
         `;
@@ -74,6 +78,8 @@ export class SchedulingVisTimelinePanel
             return this.renderFactoryTimeline();
         } else if (this.tabSelected == 1) {
             return this.renderOrderTimeline();
+        } else if (this.tabSelected == 2) {
+            return this.renderUnitTimeline();
         } else {
             return this.renderFactoryTimeline();
         }
@@ -104,6 +110,20 @@ export class SchedulingVisTimelinePanel
             >
             </by-order-timeline-components>
         `
+    }
+
+    renderUnitTimeline() {
+        return html`
+            <by-unit-timeline-components
+                    .schedulingFactoryInstances="${this.schedulingFactoryInstances}"
+                    .schedulingOrders="${this.schedulingOrders}"
+                    .schedulingProducingArrangements="${this.schedulingProducingArrangements}"
+                    .schedulingWorkCalendar="${this.schedulingWorkCalendar}"
+                    .schedulingProducingArrangementUnitGroups="${this.schedulingProducingArrangementUnitGroups}"
+                    .dateTimeSlotSizeInMinute="${this.dateTimeSlotSizeInMinute}"
+            >
+            </by-unit-timeline-components>
+        `;
     }
 }
 

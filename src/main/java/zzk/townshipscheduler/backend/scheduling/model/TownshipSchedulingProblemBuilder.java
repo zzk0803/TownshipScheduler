@@ -190,13 +190,16 @@ public class TownshipSchedulingProblemBuilder {
             iteratingArrangement.activate(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
             resultArrangementList.add(iteratingArrangement);
 
-            Set<SchedulingProducingExecutionMode> executionModes
-                    = iteratingArrangement.getCurrentActionObject().getExecutionModeSet();
             SchedulingProducingExecutionMode producingExecutionMode
-                    = executionModes.stream()
+                    = iteratingArrangement.getCurrentActionObject().getExecutionModeSet().stream()
                     .min(Comparator.comparing(SchedulingProducingExecutionMode::getExecuteDuration))
                     .orElseThrow();
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
+
+            if (producingArrangement.isOrderDirect()) {
+                iteratingArrangement.setSchedulingOrderProduct(producingArrangement.getSchedulingProduct());
+                iteratingArrangement.setSchedulingOrderProductArrangementId(producingArrangement.getId());
+            }
 
             List<SchedulingProducingArrangement> materialsActions
                     = producingExecutionMode.materialsActions();

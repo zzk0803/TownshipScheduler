@@ -21,5 +21,4 @@ export const visTownshipStyles=css`
     .vis-item .vis-item-overflow {
         overflow: visible;
     }
-    
 `as any

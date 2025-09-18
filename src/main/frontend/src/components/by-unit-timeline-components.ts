@@ -7,13 +7,13 @@ import {
     SchedulingFactoryInstance,
     SchedulingOrder,
     SchedulingProducingArrangement,
+    SchedulingProducingArrangementUnitGroup,
     SchedulingWorkCalendar
 } from './type';
 
-@customElement('by-order-timeline-components')
-export class ByOrderTimelineComponents
+@customElement('by-unit-timeline-components')
+export class ByUnitTimelineComponents
     extends LitElement {
-
     static styles = [
         vaadinStyles,
         visStyles,
@@ -36,6 +36,9 @@ export class ByOrderTimelineComponents
     schedulingOrders: Array<SchedulingOrder> = new Array<SchedulingOrder>();
 
     @property()
+    schedulingProducingArrangementUnitGroups: Array<SchedulingProducingArrangementUnitGroup> = new Array<SchedulingProducingArrangementUnitGroup>();
+
+    @property()
     dataItems: DataItem[] = [];
 
     @property()
@@ -53,10 +56,6 @@ export class ByOrderTimelineComponents
     connectedCallback() {
         super.connectedCallback();
         this.classList.add('flex', 'flex-col', 'w-full', 'h-auto');
-    }
-
-    willUpdate(_changedProperties: PropertyValues) {
-        this.timelinePropertiesLitUpdate(_changedProperties);
     }
 
     render() {
@@ -99,11 +98,13 @@ export class ByOrderTimelineComponents
         `;
     }
 
+    willUpdate(_changedProperties: PropertyValues) {
+        this.timelinePropertiesLitUpdate(_changedProperties);
+    }
+
     private timelinePropertiesLitUpdate(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>) {
         const dataGroupItems: DataGroup[] = [];
         const dataSetItems: DataItem[] = [];
-        const factoryIdList: string[] = [];
-        const orderFactoryIdList: string[] = [];
 
         if (_changedProperties.has('schedulingWorkCalendar')) {
             this.dateWindowStartString = this.schedulingWorkCalendar?.startDateTime;
@@ -111,86 +112,95 @@ export class ByOrderTimelineComponents
         }
 
         if (_changedProperties.has('schedulingFactoryInstances')) {
-            this.schedulingFactoryInstances
-                ?.map((factory) => {
-                    factoryIdList.push(factory?.factoryReadableIdentifier);
-                });
+            //do nothing
         }
 
         if (_changedProperties.has('schedulingOrders')) {
-            this.schedulingOrders
-                ?.map((order) => {
-                    let orderId = order.id;
-                    let orderType = order.orderType;
-                    for (let factoryId of factoryIdList) {
-                        let orderFactoryNestedId = orderId + "#" + factoryId;
-                        orderFactoryIdList.push(orderFactoryNestedId)
+            //do nothing
+        }
+
+        if (_changedProperties.has("schedulingProducingArrangementUnitGroups")) {
+            this.schedulingProducingArrangementUnitGroups
+                .forEach(unitGroup => {
+                        let orderId = unitGroup.orderId;
+                        let orderType = unitGroup.orderType;
+                        let nestedOrderProductList = unitGroup.nestedOrderProductList;
+
+                        nestedOrderProductList.forEach(orderProductPair => {
+                            let orderProduct = orderProductPair.arrangementOrderProductName;
+                            let orderProductArrangeId = orderProductPair.arrangementOrderProductArrangeId;
+
+                            let unit = `${orderId}::${orderProduct}#${orderProductArrangeId}`;
+                            dataGroupItems.push({
+                                id: unit,
+                                content: ` 
+                                 <h6 class="mb-m">
+                                     ${orderType + "#" + orderId + "::" + orderProduct + "#" + orderProductArrangeId}
+                                </h6>
+                            `
+                            });
+
+                        });
+
                         dataGroupItems.push({
-                            id: orderFactoryNestedId,
+                            id: orderId,
                             content: ` 
                              <h6 class="mb-m">
-                                ${orderType + "#" + orderId + "#" + factoryId}
-                            </h6>
-                        `
-                        });
-                    }
-                });
-
-            this.schedulingOrders
-                ?.map((order) => {
-                    let orderId = order?.id;
-                    dataGroupItems.push({
-                        id: orderId,
-                        content: ` 
-                             <h6 class="mb-m">
-                                ${order?.orderType + "#" + orderId}
+                                ${orderType + "#" + orderId}
                             </h6>
                         `,
-                        nestedGroups: [...(factoryIdList?.map(factoryId => orderId + "#" + factoryId))]
-                    });
-                });
+                            nestedGroups: [...([...nestedOrderProductList]?.map(
+                                orderProduct =>
+                                    `${orderId}::${orderProduct.arrangementOrderProductName}#${orderProduct.arrangementOrderProductArrangeId}`
+                            ))]
+                        });
+                    }
+                );
 
             this.groups = dataGroupItems;
         }
 
         if (_changedProperties.has('schedulingProducingArrangements')) {
+
             this.schedulingProducingArrangements
                 ?.filter(arrangement => {
                     return arrangement.factoryReadableIdentifier != null && arrangement.arrangeDateTime != null;
                 })
                 ?.map(
                     (arrangement) => {
-                        let group = arrangement.order + "#" + arrangement.factoryReadableIdentifier;
+                        let groupId = arrangement.order + "::" + arrangement.orderProduct + "#" + arrangement.orderProductArrangementId;
+                        let subgroup = arrangement?.factoryReadableIdentifier + "#" + arrangement?.uuid;
                         dataSetItems.push({
                             id: arrangement?.uuid + '_arrange',
                             className: 'arrange',
-                            group: group,
+                            group: groupId,
                             content: `<p class="h-auto w-auto text-left">&nbsp;</p>`,
                             type: 'range',
                             start: arrangement?.arrangeDateTime,
                             end: arrangement?.producingDateTime,
-                            subgroup: arrangement?.uuid
+                            subgroup: subgroup
                         });
 
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
-                            group: group,
-                            content: `<p class="h-auto w-auto text-center text-2xs">${ arrangement.product}</p>`,
+                            group: groupId,
+                            content: `<p class="h-auto w-auto text-center text-2xs">${arrangement.factoryReadableIdentifier + "#" + arrangement.product}</p>`,
                             type: 'range',
                             start: arrangement?.producingDateTime,
                             end: arrangement?.completedDateTime,
-                            subgroup: arrangement?.uuid
+                            subgroup: subgroup
                         });
                     });
 
             this.dataItems = dataSetItems;
         }
+
     }
 
 }
 
 declare global {
     interface HTMLElementTagNameMap {
-        'by-order-timeline-components': ByOrderTimelineComponents;
+        'by-unit-timeline-components': ByUnitTimelineComponents;
     }
 }
