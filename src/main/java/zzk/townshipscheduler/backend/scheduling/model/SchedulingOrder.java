@@ -20,8 +20,6 @@ public final class SchedulingOrder implements IGameArrangeObject {
 
     private ProductAmountBill productAmountBill;
 
-//    private String orderType;
-
     private OrderType orderType;
 
     private LocalDateTime deadline;

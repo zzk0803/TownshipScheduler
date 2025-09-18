@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.EqualsAndHashCode;
 
 import java.util.Comparator;
@@ -12,6 +13,7 @@ public final class FactoryReadableIdentifier implements CharSequence, Comparable
 
     private final int seqNum;
 
+    @JsonCreator
     public FactoryReadableIdentifier(String factoryCategory, int seqNum) {
         this.factoryCategory = factoryCategory;
         this.seqNum = seqNum;

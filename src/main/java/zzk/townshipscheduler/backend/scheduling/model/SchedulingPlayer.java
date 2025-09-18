@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -23,8 +24,10 @@ public class SchedulingPlayer {
 
     private Map<SchedulingProduct, Integer> productAmountMap;
 
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime sleepStart = DEFAULT_SLEEP_START;
 
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime sleepEnd = DEFAULT_SLEEP_END;
 
 }

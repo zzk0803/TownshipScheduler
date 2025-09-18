@@ -6,10 +6,7 @@ import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -22,6 +19,7 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Data
@@ -54,29 +52,29 @@ public class SchedulingProducingArrangement {
     @PlanningId
     private String uuid;
 
-    @JsonIgnore
+    @JsonIdentityReference
     private SchedulingOrder schedulingOrder;
 
-    @JsonIgnore
+    @JsonIdentityReference
     private SchedulingProduct schedulingOrderProduct;
 
-    @JsonIgnore
     private Integer schedulingOrderProductArrangementId;
 
-    @JsonIgnore
+    @JsonIdentityReference
     private IGameArrangeObject targetActionObject;
 
-    @JsonIgnore
+    @JsonIdentityReference
     @ToString.Include
     private IGameArrangeObject currentActionObject;
 
-    @JsonIgnore
+    @JsonBackReference
     @DeepPlanningClone
-    private List<SchedulingProducingArrangement> prerequisiteProducingArrangements = new ArrayList<>();
+    private Set<SchedulingProducingArrangement> prerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @JsonBackReference
     @JsonIgnore
     @DeepPlanningClone
-    private List<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new ArrayList<>();
+    private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
@@ -230,10 +228,10 @@ public class SchedulingProducingArrangement {
         return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
     }
 
-    public List<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
+    public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
         LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
         Set<SchedulingProducingArrangement> visited = new HashSet<>();
-        List<SchedulingProducingArrangement> result = new ArrayList<>();
+        Set<SchedulingProducingArrangement> result = new LinkedHashSet<>();
 
         while (!queue.isEmpty()) {
             SchedulingProducingArrangement current = queue.removeFirst();
@@ -241,7 +239,7 @@ public class SchedulingProducingArrangement {
                 continue;
             }
 
-            List<SchedulingProducingArrangement> prerequisites =
+            Set<SchedulingProducingArrangement> prerequisites =
                     current.getPrerequisiteProducingArrangements();
             if (prerequisites != null) {
                 for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
@@ -254,6 +252,17 @@ public class SchedulingProducingArrangement {
         }
 
         return result;
+    }
+
+    public Duration calcStaticProducingDuration() {
+        Duration selfDuration = getProducingDuration();
+        Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
+                .map(SchedulingProducingArrangement::calcStaticProducingDuration)
+                .filter(Objects::nonNull)
+                .max(Duration::compareTo)
+                .orElse(Duration.ZERO);
+        return selfDuration.plus(prerequisiteStaticProducingDuration);
+
     }
 
     public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {

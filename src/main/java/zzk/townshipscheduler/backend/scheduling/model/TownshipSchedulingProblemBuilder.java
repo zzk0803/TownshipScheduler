@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
+import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 
 import java.time.LocalDateTime;
@@ -27,7 +28,7 @@ public class TownshipSchedulingProblemBuilder {
 
     private SchedulingPlayer schedulingPlayer;
 
-    private BendableScore score;
+    private BendableLongScore score;
 
     private DateTimeSlotSize slotSize;
 
@@ -71,7 +72,7 @@ public class TownshipSchedulingProblemBuilder {
         return this;
     }
 
-    public TownshipSchedulingProblemBuilder score(BendableScore score) {
+    public TownshipSchedulingProblemBuilder score(BendableLongScore score) {
         this.score = score;
         return this;
     }

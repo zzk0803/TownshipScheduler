@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
@@ -129,7 +130,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
     ) {
         SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
 
-        List<SchedulingProducingArrangement> prerequisiteProducingArrangements
+        Set<SchedulingProducingArrangement> prerequisiteProducingArrangements
                 = producingArrangement.getDeepPrerequisiteProducingArrangements();
 
         Duration approximateDelay = Duration.ZERO;

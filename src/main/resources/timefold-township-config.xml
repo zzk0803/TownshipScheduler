@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
-    <!--    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>-->
+    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
 
     <environmentMode>PHASE_ASSERT</environmentMode>
 
@@ -86,6 +86,39 @@
                 </variableNameIncludes>
             </swapMoveSelector>
 
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector variableName="planningDateTimeSlot"
+                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">
+                </valueSelector>
+            </pillarChangeMoveSelector>
+
+            <pillarSwapMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <secondaryPillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </secondaryPillarSelector>
+                <variableNameIncludes>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                </variableNameIncludes>
+            </pillarSwapMoveSelector>
+
         </unionMoveSelector>
 
         <acceptor>
@@ -97,11 +130,11 @@
 
         <!--        <acceptor>-->
         <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
-        <!--            <lateAcceptanceSize>7</lateAcceptanceSize>-->
+        <!--            <lateAcceptanceSize>15</lateAcceptanceSize>-->
         <!--        </acceptor>-->
 
         <forager>
-            <acceptedCountLimit>3</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>

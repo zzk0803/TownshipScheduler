@@ -40,7 +40,6 @@ public class SchedulingFactoryInstance {
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
-    @JsonIgnore
     @DeepPlanningClone
     private Set<FactoryProcessSequence> shadowFactorySequenceSet
             = new LinkedHashSet<>();
@@ -49,7 +48,6 @@ public class SchedulingFactoryInstance {
         setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
     }
 
-    @JsonProperty
     public String getCategoryName() {
         return schedulingFactoryInfo.getCategoryName();
     }

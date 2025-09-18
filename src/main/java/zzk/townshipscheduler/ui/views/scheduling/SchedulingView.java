@@ -401,7 +401,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                     SchedulingOrder schedulingOrder = schedulingProducingArrangement.getSchedulingOrder();
                     return schedulingOrder.getOrderType() + "#" + schedulingOrder.getId();
                 }))
-                .setSortable(true)
                 .setResizable(true)
                 .setHeader("Order");
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
@@ -414,7 +413,14 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 ))
                 .setSortable(true)
                 .setResizable(true)
+                .setAutoWidth(true)
                 .setHeader("Assign Factory");
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::calcStaticProducingDuration)
+                .setSortable(true)
+                .setSortable(true)
+                .setResizable(true)
+                .setAutoWidth(true)
+                .setHeader("Static Producing Duration");
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getArrangeDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getArrangeDateTime,
@@ -422,6 +428,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 ))
                 .setSortable(true)
                 .setResizable(true)
+                .setAutoWidth(true)
+                .setFlexGrow(1)
                 .setHeader("Arrange Date Time");
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getProducingDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
@@ -429,13 +437,16 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setResizable(true)
+                .setAutoWidth(true)
                 .setHeader("Producing Date Time");
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getCompletedDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getCompletedDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
+                .setSortable(true)
                 .setResizable(true)
+                .setAutoWidth(true)
                 .setHeader("Completed Date Time");
 
         arrangementTreeGrid.setSizeFull();

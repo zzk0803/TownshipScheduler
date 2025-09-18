@@ -14,19 +14,14 @@ import java.util.Collection;
 public class TownshipSchedulingRequest {
 
     Collection<ProductEntity> productEntities;
-//    Set<ProductEntityDtoForScheduling> productEntities;
 
     Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
-//    Set<FieldFactoryInfoEntityDto> fieldFactoryInfoEntities;
 
     Collection<OrderEntity> playerEntityOrderEntities;
-//    Set<OrderEntityDto> playerEntityOrderEntities;
 
     Collection<FieldFactoryEntity> playerEntityFieldFactoryEntities;
-//    Set<FieldFactoryEntityDto> playerEntityFieldFactoryEntities;
 
     WarehouseEntity playerEntityWarehouseEntity;
-//    WarehouseEntityDto playerEntityWarehouseEntity;
 
     DateTimeSlotSize dateTimeSlotSize;
 
