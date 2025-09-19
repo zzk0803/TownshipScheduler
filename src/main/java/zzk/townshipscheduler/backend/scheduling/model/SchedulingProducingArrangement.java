@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -36,11 +37,11 @@ public class SchedulingProducingArrangement {
 
     public static final String SHADOW_FACTORY_PROCESS_SEQUENCE = "shadowFactoryProcessSequence";
 
+    public static final String SHADOW_PRODUCING_DATE_TIME = "computedShadowProducingDateTime";
+
+    public static final String SHADOW_COMPLETED_DATE_TIME = "computedShadowCompletedDateTime";
+
     public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "shadowFactoryComputedDateTimePair";
-
-    public static final String SHADOW_PRODUCING_DATE_TIME = "producingDateTime";
-
-    public static final String SHADOW_COMPLETED_DATE_TIME = "completedDateTime";
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -94,29 +95,11 @@ public class SchedulingProducingArrangement {
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
     @JsonIgnore
-    @ShadowVariable(
-            sourceVariableName = PLANNING_FACTORY_INSTANCE,
-            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
-    )
-    @ShadowVariable(
-            sourceVariableName = PLANNING_DATA_TIME_SLOT,
-            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
-    )
+    @ShadowVariable(supplierName = "shadowFactoryProcessSequenceSupplier")
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
-    @JsonProperty("producingDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
-    private LocalDateTime producingDateTime;
-
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
-    private LocalDateTime completedDateTime;
+    @ShadowVariable(supplierName = "shadowFactoryComputedDateTimePairSupplier")
+    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -136,6 +119,60 @@ public class SchedulingProducingArrangement {
         );
         producingArrangement.setUuid(UUID.randomUUID().toString());
         return producingArrangement;
+    }
+
+    @ShadowSources(
+            {
+                    "shadowFactoryProcessSequence",
+                    "planningFactoryInstance.factoryProcessToDateTimePairMap"
+            }
+    )
+    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePairSupplier() {
+        log.info(
+                "schedulingFactoryInstance={},shadowFactoryProcessSequence={}",
+                this.planningFactoryInstance, this.shadowFactoryProcessSequence
+        );
+        SchedulingFactoryInstance schedulingFactoryInstance = this.getPlanningFactoryInstance();
+        if (Objects.isNull(schedulingFactoryInstance)) {
+            return null;
+        }
+        if (Objects.isNull(getShadowFactoryProcessSequence())) {
+            return null;
+        }
+
+        FactoryProcessSequence factoryProcessSequence
+                = this.getShadowFactoryProcessSequence();
+        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> computedMap
+                = schedulingFactoryInstance.getFactoryProcessToDateTimePairMap();
+        FactoryComputedDateTimePair dateTimePair = computedMap.get(factoryProcessSequence);
+        log.info("dateTimePair={}", dateTimePair);
+        return dateTimePair;
+    }
+
+    @ShadowSources(
+            {
+                    "planningFactoryInstance",
+                    "planningDateTimeSlot"
+            }
+    )
+    private FactoryProcessSequence shadowFactoryProcessSequenceSupplier() {
+        log.info(
+                "schedulingFactoryInstance={},planningDateTimeSlot={}",
+                this.planningFactoryInstance, this.planningDateTimeSlot
+        );
+        SchedulingFactoryInstance planningFactoryInstance
+                = this.getPlanningFactoryInstance();
+        SchedulingDateTimeSlot planningDateTimeSlot
+                = this.getPlanningDateTimeSlot();
+        if (Objects.isNull(planningFactoryInstance)
+            || Objects.isNull(planningDateTimeSlot)
+        ) {
+            return null;
+        }
+
+        FactoryProcessSequence factoryProcessSequence = new FactoryProcessSequence(this);
+        log.info("factoryProcessSequence={}", factoryProcessSequence);
+        return factoryProcessSequence;
     }
 
     @JsonIgnore
@@ -181,6 +218,32 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     public ProductAmountBill getMaterials() {
         return getProducingExecutionMode().getMaterials();
+    }
+
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getCompletedDateTime() {
+        FactoryComputedDateTimePair computedDataTimePair = getShadowFactoryComputedDateTimePair();
+        if (computedDataTimePair == null) {
+            return null;
+        } else {
+            return computedDataTimePair.completedDateTime();
+        }
+    }
+
+    @JsonProperty("producingDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getProducingDateTime() {
+        FactoryComputedDateTimePair computedDataTimePair = getShadowFactoryComputedDateTimePair();
+        if (computedDataTimePair == null) {
+            return null;
+        } else {
+            return computedDataTimePair.producingDateTime();
+        }
     }
 
     @JsonProperty("producingDuration")
