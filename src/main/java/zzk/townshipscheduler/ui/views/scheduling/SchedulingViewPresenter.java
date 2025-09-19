@@ -12,8 +12,9 @@ import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.spring.annotation.RouteScope;
+import com.vaadin.flow.spring.annotation.RouteScopeOwner;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.Resource;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,6 @@ import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
-import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,7 +43,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.function.Consumer;
 
 @SpringComponent
-@UIScope
+@RouteScope
+@RouteScopeOwner(SchedulingView.class)
 @RequiredArgsConstructor
 @Setter
 @Getter

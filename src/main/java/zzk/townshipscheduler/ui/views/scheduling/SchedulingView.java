@@ -22,11 +22,13 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
+import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.scheduling.model.*;
@@ -47,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Route("/scheduling/:schedulingId?")
+@PreserveOnRefresh
 @Menu(title = "Scheduling", order = 6.00d)
 @PermitAll
 @Setter
@@ -62,8 +65,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
     private LitSchedulingVisTimelinePanel arrangementTimelinePanel;
 
     private SchedulingReportArticle arrangementReportArticle;
-
-//    private Grid<SchedulingProducingArrangement> arrangementGrid;
 
     private TreeGrid<SchedulingProducingArrangement> arrangementTreeGrid;
 
@@ -122,8 +123,14 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         schedulingContentLayout.add(buildBtnPanel());
         tabSheet = new TabSheet();
         tabSheet.setWidthFull();
-        tabSheet.add("Grid", buildProducingArrangementsGrid());
-        tabSheet.add("Timeline", arrangementTimelinePanel = new LitSchedulingVisTimelinePanel(schedulingViewPresenter));
+        tabSheet.add(
+                "Grid",
+                buildProducingArrangementsGrid()
+        );
+        tabSheet.add(
+                "Timeline",
+                arrangementTimelinePanel = new LitSchedulingVisTimelinePanel(schedulingViewPresenter)
+        );
         tabSheet.add(
                 "Report",
                 arrangementReportArticle = new SchedulingReportArticle(
@@ -224,47 +231,13 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                                 SchedulingView.class,
                                 new RouteParameters("schedulingId", schedulingProblemVo.getUuid())
                         )))
-                .setHeader("UUID").setAutoWidth(true).setFlexGrow(0);
-        grid.addColumn(new ComponentRenderer<>(
-                schedulingProblemVo -> {
-                    Main layout = new Main();
-                    layout.addClassNames(
-                            LumoUtility.Display.FLEX,
-                            LumoUtility.FlexDirection.ROW,
-                            LumoUtility.Margin.NONE,
-                            LumoUtility.Width.FULL,
-                            LumoUtility.Height.FULL
-                    );
-                    List<SchedulingOrder> orderList = schedulingProblemVo.getOrderList();
-                    orderList.stream()
-                            .map(schedulingOrder -> {
-                                ProductAmountBill productAmountBill = schedulingOrder.getProductAmountBill();
-                                Div div = new Div();
-                                div.addClassNames(
-                                        LumoUtility.Width.AUTO,
-                                        LumoUtility.Display.FLEX,
-                                        LumoUtility.FlexDirection.COLUMN
-                                );
-
-                                div.add(new Span(schedulingOrder.getOrderType()
-                                                         .name() + "#" + schedulingOrder.getId()));
-                                productAmountBill.entrySet()
-                                        .stream()
-                                        .map((productAmountEntry) -> {
-                                            Span span = new Span();
-                                            SchedulingProduct schedulingProduct = productAmountEntry.getKey();
-                                            String productName = schedulingProduct.getName();
-                                            span.add(this.schedulingViewPresenter.getProductImage(productName));
-                                            span.add(productName);
-                                            span.add(" x" + productAmountEntry.getValue());
-                                            return span;
-                                        })
-                                        .forEach(div::add);
-                                return div;
-                            })
-                            .forEachOrdered(layout::add);
-                    return layout;
-                })).setHeader("Items").setAutoWidth(true).setFlexGrow(1);
+                .setHeader("UUID")
+                .setAutoWidth(true)
+                .setFlexGrow(0);
+        grid.addColumn(new ComponentRenderer<>(funOrdersGridItemsRenderer()))
+                .setHeader("Items")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
         grid.addColumn(SchedulingProblemVo::getSolverStatus).setHeader("status").setAutoWidth(true).setFlexGrow(0);
         grid.setItems(schedulingViewPresenter.allSchedulingProblem());
         addAndExpand(grid);
@@ -311,39 +284,10 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setHeader("Order Type # ID")
                 .setAutoWidth(true)
                 .setFlexGrow(0);
-        orderBriefGrid.addColumn(new ComponentRenderer<>(
-                schedulingOrderVo -> {
-                    Main layout = new Main();
-                    layout.addClassNames(
-                            LumoUtility.Display.FLEX,
-                            LumoUtility.FlexDirection.ROW,
-                            LumoUtility.Margin.NONE,
-                            LumoUtility.Width.FULL,
-                            LumoUtility.Height.FULL
-                    );
-                    ProductAmountBill productAmountBill = schedulingOrderVo.getProductAmountBill();
-                    Div div = new Div();
-                    div.addClassNames(
-                            LumoUtility.Width.AUTO,
-                            LumoUtility.Display.FLEX,
-                            LumoUtility.FlexDirection.COLUMN
-                    );
-
-                    productAmountBill.entrySet()
-                            .stream()
-                            .map((productAmountEntry) -> {
-                                Span span = new Span();
-                                SchedulingProduct schedulingProduct = productAmountEntry.getKey();
-                                String productName = schedulingProduct.getName();
-                                span.add(this.schedulingViewPresenter.getProductImage(productName));
-                                span.add(productName);
-                                span.add(" x" + productAmountEntry.getValue());
-                                return span;
-                            })
-                            .forEach(div::add);
-                    layout.add(div);
-                    return layout;
-                })).setHeader("Items").setAutoWidth(true).setFlexGrow(1);
+        orderBriefGrid.addColumn(new ComponentRenderer<>(funOrderBriefItemsRenderer()))
+                .setHeader("Items")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
         orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
             LocalDateTime deadline = schedulingOrderVo.getDeadline();
             DateTimePicker dateTimePicker = new DateTimePicker(deadline);
@@ -457,6 +401,85 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 arrangementTreeGrid
         );
         return gameActionArticle;
+    }
+
+    @NotNull
+    private SerializableFunction<SchedulingProblemVo, Main> funOrdersGridItemsRenderer() {
+        return schedulingProblemVo -> {
+            Main layout = new Main();
+            layout.addClassNames(
+                    LumoUtility.Display.FLEX,
+                    LumoUtility.FlexDirection.ROW,
+                    LumoUtility.Margin.NONE,
+                    LumoUtility.Width.FULL,
+                    LumoUtility.Height.FULL
+            );
+            List<SchedulingOrder> orderList = schedulingProblemVo.getOrderList();
+            orderList.stream()
+                    .map(schedulingOrder -> {
+                        ProductAmountBill productAmountBill = schedulingOrder.getProductAmountBill();
+                        Div div = new Div();
+                        div.addClassNames(
+                                LumoUtility.Width.AUTO,
+                                LumoUtility.Display.FLEX,
+                                LumoUtility.FlexDirection.COLUMN
+                        );
+
+                        div.add(new Span(schedulingOrder.getOrderType()
+                                                 .name() + "#" + schedulingOrder.getId()));
+                        productAmountBill.entrySet()
+                                .stream()
+                                .map((productAmountEntry) -> {
+                                    Span span = new Span();
+                                    SchedulingProduct schedulingProduct = productAmountEntry.getKey();
+                                    String productName = schedulingProduct.getName();
+                                    span.add(this.schedulingViewPresenter.getProductImage(productName));
+                                    span.add(productName);
+                                    span.add(" x" + productAmountEntry.getValue());
+                                    return span;
+                                })
+                                .forEach(div::add);
+                        return div;
+                    })
+                    .forEachOrdered(layout::add);
+            return layout;
+        };
+    }
+
+    @NotNull
+    private SerializableFunction<SchedulingOrderVo, Main> funOrderBriefItemsRenderer() {
+        return schedulingOrderVo -> {
+            Main layout = new Main();
+            layout.addClassNames(
+                    LumoUtility.Display.FLEX,
+                    LumoUtility.FlexDirection.ROW,
+                    LumoUtility.Margin.NONE,
+                    LumoUtility.Width.FULL,
+                    LumoUtility.Height.FULL
+            );
+            ProductAmountBill productAmountBill = schedulingOrderVo.getProductAmountBill();
+            Div div = new Div();
+            div.addClassNames(
+                    LumoUtility.Width.AUTO,
+                    LumoUtility.Display.FLEX,
+                    LumoUtility.FlexDirection.COLUMN
+            );
+
+            productAmountBill.entrySet()
+                    .stream()
+                    .map((productAmountEntry) -> {
+                        Span span = new Span();
+                        SchedulingProduct schedulingProduct = productAmountEntry.getKey();
+                        String productName = schedulingProduct.getName();
+                        span.add(this.schedulingViewPresenter.getProductImage(productName));
+                        span.add(productName);
+                        span.add(" x" + productAmountEntry.getValue());
+                        return span;
+                    })
+                    .forEach(div::add);
+            layout.add(div);
+            return layout;
+        };
     }
 
     private HorizontalLayout buildScorePanel() {

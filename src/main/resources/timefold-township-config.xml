@@ -123,7 +123,7 @@
 
         <acceptor>
             <fadingEntityTabuSize>13</fadingEntityTabuSize>
-            <stepCountingHillClimbingSize>384</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingSize>425</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
@@ -133,7 +133,7 @@
         <!--        </acceptor>-->
 
         <forager>
-            <acceptedCountLimit>2</acceptedCountLimit>
+            <acceptedCountLimit>3</acceptedCountLimit>
         </forager>
 
     </localSearch>

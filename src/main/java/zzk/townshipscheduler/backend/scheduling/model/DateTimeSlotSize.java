@@ -16,4 +16,15 @@ public enum DateTimeSlotSize {
     public int getMinute() {
         return minute;
     }
+
+    public static DateTimeSlotSize of(int minute) {
+        return switch (minute) {
+            case 10 -> TEN_MINUTES;
+            case 30 -> HALF_HOUR;
+            case 60 -> HOUR;
+            case 120 -> TWO_HOUR;
+            case 180 -> THREE_HOUR;
+            default -> throw new IllegalStateException("Unexpected value: " + minute);
+        };
+    }
 }
