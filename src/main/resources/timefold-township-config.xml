@@ -45,19 +45,11 @@
 
         <unionMoveSelector>
 
-            <changeMoveSelector>
+            <listChangeMoveSelector>
                 <filterClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter
+                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryListChangeMoveSelectionFilter
                 </filterClass>
-                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                    </entityClass>
-                </entitySelector>
-                <valueSelector variableName="planningFactoryInstance"
-                               id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
-                </valueSelector>
-            </changeMoveSelector>
+            </listChangeMoveSelector>
 
             <changeMoveSelector>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">

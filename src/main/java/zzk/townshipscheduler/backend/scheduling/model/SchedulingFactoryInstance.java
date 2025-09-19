@@ -3,21 +3,28 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Setter;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
 public class SchedulingFactoryInstance {
+
+    public static final String PLANNING_PRODUCING_ARRANGEMENTS = "planningProducingArrangements";
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -37,38 +44,38 @@ public class SchedulingFactoryInstance {
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
     @JsonIgnore
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
-    private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
+    @PlanningListVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_ARRANGEMENTS)
+    private List<SchedulingProducingArrangement> planningProducingArrangements = new ArrayList<>();
 
+    @ShadowVariable(supplierName = "shadowFactorySequenceSetSupplier")
     @DeepPlanningClone
-    private Set<FactoryProcessSequence> shadowFactorySequenceSet
+    private LinkedHashSet<FactoryProcessSequence> shadowFactorySequenceSet
             = new LinkedHashSet<>();
 
-    public void setupFactoryReadableIdentifier() {
-        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+    @ShadowVariable(supplierName = "factoryProcessToDateTimePairMapSupplier")
+    @DeepPlanningClone
+    private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMap
+            = new TreeMap<>();
+
+    @ShadowSources(
+            value = {
+                    "planningProducingArrangements",
+                    "planningProducingArrangements[].shadowFactoryProcessSequence"
+            }
+    )
+    public LinkedHashSet<FactoryProcessSequence> shadowFactorySequenceSetSupplier() {
+        return planningProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getShadowFactoryProcessSequence)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    public String getCategoryName() {
-        return schedulingFactoryInfo.getCategoryName();
-    }
-
-    public boolean addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
-        return shadowFactorySequenceSet.add(factoryProcessSequence);
-    }
-
-    public boolean removeFactoryProcessSequence(Object o) {
-        return shadowFactorySequenceSet.remove(o);
-    }
-
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
-    }
-
-    public FactoryComputedDateTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
-        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processSequenceDateTimePairMap
-                = prepareProducingAndCompletedMap();
-        return processSequenceDateTimePairMap.get(factoryProcessSequence);
+    @ShadowSources(
+            value = {
+                    "shadowFactorySequenceSet"
+            }
+    )
+    public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMapSupplier() {
+        return (TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>) this.prepareProducingAndCompletedMap();
     }
 
     public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
@@ -88,6 +95,29 @@ public class SchedulingFactoryInstance {
         } else {
             throw new IllegalStateException();
         }
+    }
+
+    public void setupFactoryReadableIdentifier() {
+        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+    }
+
+    public String getCategoryName() {
+        return schedulingFactoryInfo.getCategoryName();
+    }
+
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
+    }
+
+    public FactoryComputedDateTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
+        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
+        SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processSequenceDateTimePairMap
+                = prepareProducingAndCompletedMap();
+        return processSequenceDateTimePairMap.get(factoryProcessSequence);
+    }
+
+    public FactoryComputedDateTimePair queryProducingAndCompletedPair(FactoryProcessSequence factoryProcessSequence) {
+        return getFactoryProcessToDateTimePairMap().get(factoryProcessSequence);
     }
 
     @Override
@@ -164,7 +194,7 @@ public class SchedulingFactoryInstance {
         ) {
 
             SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> computingProducingCompletedMap
-                    = new ConcurrentSkipListMap<>(
+                    = new TreeMap<>(
                     Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
                             .thenComparingInt(FactoryProcessSequence::getArrangementId)
             );

@@ -33,6 +33,8 @@ public class TownshipSchedulingProblem {
 
     public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT = "valueRangeForDateTimeSlot";
 
+    public static final String VALUE_RANGE_FOR_ARRANGEMENTS = "valueRangeForArrangements";
+
     private String uuid;
 
     @ProblemFactCollectionProperty
@@ -45,7 +47,6 @@ public class TownshipSchedulingProblem {
     private List<SchedulingOrder> schedulingOrderList;
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @PlanningEntityCollectionProperty
@@ -53,6 +54,7 @@ public class TownshipSchedulingProblem {
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
     @ProblemFactProperty
