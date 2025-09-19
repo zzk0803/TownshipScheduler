@@ -38,7 +38,7 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowMinutes>1</slidingWindowMinutes>
+                <slidingWindowSeconds>30</slidingWindowSeconds>
                 <minimumImprovementRatio>0.01</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
@@ -122,9 +122,8 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>7</fadingEntityTabuSize>
-            <fadingValueTabuSize>5</fadingValueTabuSize>
-            <stepCountingHillClimbingSize>512</stepCountingHillClimbingSize>
+            <fadingEntityTabuSize>13</fadingEntityTabuSize>
+            <stepCountingHillClimbingSize>384</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 

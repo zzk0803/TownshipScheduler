@@ -68,12 +68,10 @@ public class SchedulingProducingArrangement {
     private IGameArrangeObject currentActionObject;
 
     @JsonBackReference
-    @DeepPlanningClone
     private Set<SchedulingProducingArrangement> prerequisiteProducingArrangements = new LinkedHashSet<>();
 
     @JsonBackReference
     @JsonIgnore
-    @DeepPlanningClone
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
     @JsonIgnore

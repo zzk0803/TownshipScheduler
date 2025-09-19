@@ -22,8 +22,6 @@ public class SchedulingFactoryInfo {
     @EqualsAndHashCode.Include
     private Id id;
 
-    @ToString.Include
-    @EqualsAndHashCode.Include
     private String categoryName;
 
     private int level;
@@ -58,7 +56,7 @@ public class SchedulingFactoryInfo {
     }
 
     public boolean typeEqual(SchedulingFactoryInfo that) {
-        return this.getCategoryName().equals(that.getCategoryName());
+        return this.equals(that) || this.getCategoryName().equals(that.getCategoryName());
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -72,16 +70,16 @@ public class SchedulingFactoryInfo {
         @Getter
         private long value;
 
-        public static Id of(long value) {
-            return new Id(value);
-        }
-
         public static Id of(FieldFactoryEntity fieldFactoryEntity) {
             return of(fieldFactoryEntity.getFieldFactoryInfoEntity());
         }
 
         public static Id of(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
             return of(fieldFactoryInfoEntity.getId());
+        }
+
+        public static Id of(long value) {
+            return new Id(value);
         }
 
         @Override
@@ -93,6 +91,18 @@ public class SchedulingFactoryInfo {
         @Override
         public String toString() {
             return String.valueOf(value);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Id id)) return false;
+
+            return getValue() == id.getValue();
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(getValue());
         }
 
     }
