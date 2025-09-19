@@ -13,13 +13,16 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
 
     public static final Comparator<FactoryProcessSequence> COMPARATOR
             = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
-            .thenComparingInt(FactoryProcessSequence::getArrangementId);
+            .thenComparingInt(FactoryProcessSequence::getIndexInFactoryArrangements);
 
     @EqualsAndHashCode.Include
     LocalDateTime arrangeDateTime;
 
     @EqualsAndHashCode.Include
     Integer arrangementId;
+
+    @EqualsAndHashCode.Include
+    Integer indexInFactoryArrangements;
 
     @EqualsAndHashCode.Include
     FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
@@ -34,6 +37,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
+        this.indexInFactoryArrangements = schedulingProducingArrangement.getIndexInFactoryArrangements();
         this.schedulingFactoryInstanceReadableIdentifier
                 = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
     }
@@ -45,6 +49,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
         this.arrangeDateTime = schedulingDateTimeSlot.getStart();
         this.slotGapDuration = schedulingDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
+        this.indexInFactoryArrangements = schedulingProducingArrangement.getIndexInFactoryArrangements();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.schedulingFactoryInstanceReadableIdentifier
                 = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
