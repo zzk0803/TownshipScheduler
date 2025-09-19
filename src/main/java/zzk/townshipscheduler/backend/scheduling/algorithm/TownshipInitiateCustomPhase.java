@@ -105,29 +105,29 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         scoreDirector.triggerVariableListeners();
 
         int size = schedulingFactoryInstance.getPlanningProducingArrangements().size();
-        scoreDirector.beforeListVariableElementAssigned(
-                schedulingFactoryInstance,
-                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
-                schedulingProducingArrangement
-        );
         scoreDirector.beforeListVariableChanged(
                 schedulingFactoryInstance,
                 SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
                 size,
                 size+1
         );
+        scoreDirector.beforeListVariableElementAssigned(
+                schedulingFactoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                schedulingProducingArrangement
+        );
         schedulingProducingArrangement.setPlanningFactoryInstance(schedulingFactoryInstance);
         schedulingFactoryInstance.getPlanningProducingArrangements().add(schedulingProducingArrangement);
+        scoreDirector.afterListVariableElementAssigned(
+                schedulingFactoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                schedulingProducingArrangement
+        );
         scoreDirector.afterListVariableChanged(
                 schedulingFactoryInstance,
                 SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
                 size,
                 size+1
-        );
-        scoreDirector.afterListVariableElementAssigned(
-                schedulingFactoryInstance,
-                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
-                schedulingProducingArrangement
         );
 
         scoreDirector.triggerVariableListeners();
