@@ -2,26 +2,25 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
-import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
+@Log4j2
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -95,17 +94,10 @@ public class SchedulingProducingArrangement {
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
     @JsonIgnore
-    @ShadowVariable(
-            sourceVariableName = PLANNING_FACTORY_INSTANCE,
-            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
-    )
-    @ShadowVariable(
-            sourceVariableName = PLANNING_DATA_TIME_SLOT,
-            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
-    )
+    @ShadowVariable(supplierName = "shadowFactoryProcessSequenceSupplier")
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    @ShadowVariable(supplierName = "shadowFactoryComputedDateTimePairSupplier")
     private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
     private SchedulingProducingArrangement(
@@ -126,6 +118,60 @@ public class SchedulingProducingArrangement {
         );
         producingArrangement.setUuid(UUID.randomUUID().toString());
         return producingArrangement;
+    }
+
+    @ShadowSources(
+            {
+                    "shadowFactoryProcessSequence",
+                    "planningFactoryInstance.factoryProcessToDateTimePairMap"
+            }
+    )
+    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePairSupplier() {
+        log.info(
+                "schedulingFactoryInstance={},shadowFactoryProcessSequence={}",
+                this.planningFactoryInstance, this.shadowFactoryProcessSequence
+        );
+        SchedulingFactoryInstance schedulingFactoryInstance = this.getPlanningFactoryInstance();
+        if (Objects.isNull(schedulingFactoryInstance)) {
+            return null;
+        }
+        if (Objects.isNull(getShadowFactoryProcessSequence())) {
+            return null;
+        }
+
+        FactoryProcessSequence factoryProcessSequence
+                = this.getShadowFactoryProcessSequence();
+        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> computedMap
+                = schedulingFactoryInstance.getFactoryProcessToDateTimePairMap();
+        FactoryComputedDateTimePair dateTimePair = computedMap.get(factoryProcessSequence);
+        log.info("dateTimePair={}", dateTimePair);
+        return dateTimePair;
+    }
+
+    @ShadowSources(
+            {
+                    "planningFactoryInstance",
+                    "planningDateTimeSlot"
+            }
+    )
+    private FactoryProcessSequence shadowFactoryProcessSequenceSupplier() {
+        log.info(
+                "schedulingFactoryInstance={},planningDateTimeSlot={}",
+                this.planningFactoryInstance, this.planningDateTimeSlot
+        );
+        SchedulingFactoryInstance planningFactoryInstance
+                = this.getPlanningFactoryInstance();
+        SchedulingDateTimeSlot planningDateTimeSlot
+                = this.getPlanningDateTimeSlot();
+        if (Objects.isNull(planningFactoryInstance)
+            || Objects.isNull(planningDateTimeSlot)
+        ) {
+            return null;
+        }
+
+        FactoryProcessSequence factoryProcessSequence = new FactoryProcessSequence(this);
+        log.info("factoryProcessSequence={}", factoryProcessSequence);
+        return factoryProcessSequence;
     }
 
     @JsonIgnore
@@ -151,6 +197,32 @@ public class SchedulingProducingArrangement {
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+    }
+
+    public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
+        LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
+        Set<SchedulingProducingArrangement> visited = new HashSet<>();
+        Set<SchedulingProducingArrangement> result = new LinkedHashSet<>();
+
+        while (!queue.isEmpty()) {
+            SchedulingProducingArrangement current = queue.removeFirst();
+            if (!visited.add(current)) {
+                continue;
+            }
+
+            Set<SchedulingProducingArrangement> prerequisites =
+                    current.getPrerequisiteProducingArrangements();
+            if (prerequisites != null) {
+                for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
+                    if (iteratingSingleArrangement != null) {
+                        result.add(iteratingSingleArrangement);
+                        queue.add(iteratingSingleArrangement);
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     public void activate(
@@ -224,32 +296,6 @@ public class SchedulingProducingArrangement {
     public LocalDateTime getArrangeDateTime() {
         SchedulingDateTimeSlot dateTimeSlot = getPlanningDateTimeSlot();
         return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
-    }
-
-    public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
-        LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
-        Set<SchedulingProducingArrangement> visited = new HashSet<>();
-        Set<SchedulingProducingArrangement> result = new LinkedHashSet<>();
-
-        while (!queue.isEmpty()) {
-            SchedulingProducingArrangement current = queue.removeFirst();
-            if (!visited.add(current)) {
-                continue;
-            }
-
-            Set<SchedulingProducingArrangement> prerequisites =
-                    current.getPrerequisiteProducingArrangements();
-            if (prerequisites != null) {
-                for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
-                    if (iteratingSingleArrangement != null) {
-                        result.add(iteratingSingleArrangement);
-                        queue.add(iteratingSingleArrangement);
-                    }
-                }
-            }
-        }
-
-        return result;
     }
 
     public Duration calcStaticProducingDuration() {
