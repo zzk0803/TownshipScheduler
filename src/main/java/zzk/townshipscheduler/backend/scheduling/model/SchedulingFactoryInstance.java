@@ -11,14 +11,15 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
@@ -59,14 +60,15 @@ public class SchedulingFactoryInstance {
 
     @ShadowSources(
             value = {
-                    "planningProducingArrangements",
                     "planningProducingArrangements[].shadowFactoryProcessSequence"
             }
     )
     public LinkedHashSet<FactoryProcessSequence> shadowFactorySequenceSetSupplier() {
-        return planningProducingArrangements.stream()
+        LinkedHashSet<FactoryProcessSequence> factoryProcessSequences = planningProducingArrangements.stream()
                 .map(SchedulingProducingArrangement::getShadowFactoryProcessSequence)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+        log.info("factoryProcessSequences={}", factoryProcessSequences);
+        return factoryProcessSequences;
     }
 
     @ShadowSources(
@@ -75,7 +77,10 @@ public class SchedulingFactoryInstance {
             }
     )
     public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMapSupplier() {
-        return (TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>) this.prepareProducingAndCompletedMap();
+        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> map
+                = (TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>) this.prepareProducingAndCompletedMap();
+        log.info("factoryProcessToDateTimePairMap={}", map);
+        return map;
     }
 
     public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {

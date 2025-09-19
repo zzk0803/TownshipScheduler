@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 
+@Log4j2
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -139,9 +141,11 @@ public class SchedulingProducingArrangement {
         if (Objects.isNull(schedulingFactoryInstance)) {
             return null;
         }
-        return schedulingFactoryInstance.queryProducingAndCompletedPair(
+        FactoryComputedDateTimePair dateTimePair = schedulingFactoryInstance.queryProducingAndCompletedPair(
                 this.getShadowFactoryProcessSequence()
         );
+        log.info("dateTimePair={}",dateTimePair);
+        return dateTimePair;
     }
 
     @ShadowSources(
@@ -162,10 +166,13 @@ public class SchedulingProducingArrangement {
                 || Objects.isNull(planningDateTimeSlot)
                 || Objects.isNull(indexInFactoryArrangements)
         ) {
+            log.info("factory or dateTimeSlot or index is miss");
             return null;
         }
 
-        return new FactoryProcessSequence(this);
+        FactoryProcessSequence factoryProcessSequence = new FactoryProcessSequence(this);
+        log.info("factoryProcessSequence={}",factoryProcessSequence);
+        return factoryProcessSequence;
     }
 
     @JsonIgnore
