@@ -38,10 +38,10 @@ Township Scheduler 是以此为课题的玩具项目，用于我自己学习Time
 4. **可视化**：提供资源调度和订单管理的可视化界面。
 
 ## 屏幕截图
-![](.\readme\1.PNG)
-![](.\readme\2.PNG)
-![](.\readme\3.PNG)
-![](.\readme\4.PNG)
+![1](readme\1.PNG)
+![2](readme\2.PNG)
+![3](readme\3.PNG)
+![4](readme\4.PNG)
 
 ## 运行步骤
 1. **克隆项目**
