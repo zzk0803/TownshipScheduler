@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
@@ -34,6 +35,10 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 = workingSolution.getSchedulingProducingArrangementList();
         List<SchedulingFactoryInstance> queueFactoryInstanceValueRange
                 = workingSolution.getSchedulingFactoryInstanceList();
+        List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList
+                = workingSolution.getSchedulingFactoryInstanceDateTimeSlotList();
+        LocalDateTime startDateTime = workingSolution.getSchedulingWorkCalendar().getStartDateTime();
+
 
         List<SchedulingDateTimeSlot> sortedDataTimeSlotValueRange = dateTimeSlotSetValueRange.stream()
                 .sorted()
@@ -52,7 +57,9 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                         scoreDirector,
                         arrangement,
                         sortedDataTimeSlotValueRange,
-                        queueFactoryInstanceValueRange
+                        queueFactoryInstanceValueRange,
+                        schedulingFactoryInstanceDateTimeSlotList,
+                        startDateTime
                 );
             }
         }
@@ -79,57 +86,103 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement schedulingProducingArrangement,
             List<SchedulingDateTimeSlot> dateTimeSlotSet,
-            List<SchedulingFactoryInstance> factoryInstanceList
+            List<SchedulingFactoryInstance> factoryInstanceList,
+            List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList,
+            LocalDateTime startDateTime
     ) {
-        SchedulingFactoryInstance schedulingFactoryInstance
-                = factoryInstanceList.stream()
-                .filter(slotFactoryInstance -> schedulingProducingArrangement.getRequiredFactoryInfo()
-                        .typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
-                .findAny()
-                .get();
         SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
                 schedulingProducingArrangement,
-                dateTimeSlotSet
+                dateTimeSlotSet,
+                startDateTime
         );
+        SchedulingFactoryInfo requireFactory
+                = schedulingProducingArrangement.getSchedulingProduct().getRequireFactory();
+        SchedulingFactoryInstance schedulingFactoryInstance
+                = factoryInstanceList.stream()
+                .filter(slotFactoryInstance -> requireFactory.typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
+                .findAny()
+                .get();
 
-        scoreDirector.beforeVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
-        );
-        schedulingProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
-        scoreDirector.afterVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
-        );
-        scoreDirector.triggerVariableListeners();
+        schedulingFactoryInstanceDateTimeSlotList.stream()
+                .filter(schedulingFactoryInstanceDateTimeSlot -> schedulingFactoryInstanceDateTimeSlot.getFactoryInstance() == schedulingFactoryInstance
+                                                                 && schedulingFactoryInstanceDateTimeSlot.getDateTimeSlot() == computedDataTimeSlot)
+                .findFirst()
+                .ifPresent(schedulingFactoryInstanceDateTimeSlot -> {
+                    int size = schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
+                            .size();
+                    scoreDirector.beforeListVariableChanged(
+                            schedulingFactoryInstanceDateTimeSlot,
+                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
+                            size,
+                            size+1
+                    );
+                    scoreDirector.beforeListVariableElementAssigned(
+                            schedulingFactoryInstanceDateTimeSlot,
+                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
+                            schedulingProducingArrangement
+                    );
+                    schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
+                            .add(schedulingProducingArrangement);
+                    scoreDirector.afterListVariableElementAssigned(
+                            schedulingFactoryInstanceDateTimeSlot,
+                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
+                            schedulingProducingArrangement
+                    );
+                    scoreDirector.afterListVariableChanged(
+                            schedulingFactoryInstanceDateTimeSlot,
+                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
+                            size,
+                            size+1
+                    );
+                    scoreDirector.triggerVariableListeners();
+                });
 
-        scoreDirector.beforeVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
-        );
-        schedulingProducingArrangement.setPlanningFactoryInstance(schedulingFactoryInstance);
-        scoreDirector.afterVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
-        );
-        scoreDirector.triggerVariableListeners();
+
     }
 
     private SchedulingDateTimeSlot calcApproximateArrangeDateTimeSlot(
             SchedulingProducingArrangement producingArrangement,
-            List<SchedulingDateTimeSlot> dateTimeSlotSet
+            List<SchedulingDateTimeSlot> dateTimeSlotSet,
+            LocalDateTime startDateTime
     ) {
-
         SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
-        Duration calcStaticProducingDuration = producingArrangement.calcStaticProducingDuration();
 
-        if (!producingArrangement.getDeepPrerequisiteProducingArrangements().isEmpty()) {
-             result =  SchedulingDateTimeSlot.fromRangeJumpCeil(
+        Set<SchedulingProducingArrangement> prerequisiteProducingArrangements
+                = producingArrangement.getDeepPrerequisiteProducingArrangements();
+
+        Duration approximateDelay = Duration.ZERO;
+
+        if (!prerequisiteProducingArrangements.isEmpty()) {
+            SchedulingDateTimeSlot schedulingDateTimeSlot_A
+                    = prerequisiteProducingArrangements.stream()
+                    .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
+                    .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
+                    .max(SchedulingDateTimeSlot::compareTo)
+                    .orElse(result);
+            schedulingDateTimeSlot_A = SchedulingDateTimeSlot.fromRangeJumpCeil(
                     dateTimeSlotSet,
-                    result.getStart().plus(calcStaticProducingDuration)
+                    prerequisiteProducingArrangements.stream()
+                            .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
+                            .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
+                            .max(SchedulingDateTimeSlot::compareTo)
+                            .orElse(result).getStart()
+            ).orElse(schedulingDateTimeSlot_A);
+
+            SchedulingDateTimeSlot schedulingDateTimeSlot_B
+                    = SchedulingDateTimeSlot.fromRangeJumpCeil(
+                    dateTimeSlotSet,
+                    startDateTime.plus(
+                            prerequisiteProducingArrangements.stream()
+                                    .map(SchedulingProducingArrangement::getProducingDuration)
+                                    .distinct()
+                                    .reduce(approximateDelay, Duration::plus)
+                    )
             ).orElse(dateTimeSlotSet.getLast());
 
+            result = schedulingDateTimeSlot_A.compareTo(schedulingDateTimeSlot_B) > 0
+                    ? schedulingDateTimeSlot_A
+                    : schedulingDateTimeSlot_B;
         }
 
         return result;

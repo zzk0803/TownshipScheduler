@@ -1,14 +1,13 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import lombok.extern.log4j.Log4j2;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Log4j2
 public class TownshipSchedulingProblemBuilder {
 
     private String uuid;
@@ -22,6 +21,8 @@ public class TownshipSchedulingProblemBuilder {
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+
+    private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList;
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
@@ -156,6 +157,63 @@ public class TownshipSchedulingProblemBuilder {
                 .collect(Collectors.toCollection(ArrayList::new));
 
         schedulingProducingArrangementList(producingArrangementArrayList);
+    }
+
+    private void trimUnrelatedObject() {
+        List<SchedulingProduct> relatedSchedulingProduct
+                = this.schedulingProducingArrangementList.stream()
+                .map(SchedulingProducingArrangement::getSchedulingProduct)
+                .toList();
+        this.schedulingProductList.removeIf(product -> !relatedSchedulingProduct.contains(product));
+
+        List<SchedulingFactoryInfo> relatedSchedulingFactoryInfo
+                = this.schedulingProducingArrangementList.stream()
+                .map(SchedulingProducingArrangement::getRequiredFactoryInfo)
+                .toList();
+
+        this.schedulingFactoryInfoList.removeIf(
+                schedulingFactoryInfo -> {
+                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
+                            .anyMatch(streamIterating -> {
+                                return streamIterating.getCategoryName()
+                                        .equals(schedulingFactoryInfo.getCategoryName());
+                            });
+                    return !anyMatch;
+                }
+        );
+        this.schedulingFactoryInstanceList.removeIf(
+                factory -> {
+                    SchedulingFactoryInfo schedulingFactoryInfo = factory.getSchedulingFactoryInfo();
+                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
+                            .anyMatch(streamIterating -> {
+                                boolean categoryEqual = streamIterating.getCategoryName()
+                                        .equals(schedulingFactoryInfo.getCategoryName());
+                                return categoryEqual;
+                            });
+                    return !anyMatch;
+                }
+        );
+    }
+
+    private void setupFactoryDateTimeSlot() {
+        List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
+        this.schedulingFactoryInstanceList.forEach(schedulingFactoryInstance -> {
+            this.schedulingDateTimeSlots.forEach(schedulingDateTimeSlot -> {
+                SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot = new SchedulingFactoryInstanceDateTimeSlot(
+                        schedulingFactoryInstance,
+                        schedulingDateTimeSlot
+                );
+                schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
+                schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlotList()
+                        .add(schedulingFactoryInstanceDateTimeSlot);
+            });
+        });
+        this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
+    }
+
+    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
+        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
+        return this;
     }
 
     private ArrayList<SchedulingProducingArrangement> expandAndSetupIntoMaterials(

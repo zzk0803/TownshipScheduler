@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
@@ -37,9 +36,6 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     @JsonIdentityReference
     private SchedulingDateTimeSlot next;
-
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT)
-    private List<SchedulingProducingArrangement> planningDateTimeSlotProducingArrangements = new ArrayList<>();
 
     private static boolean isDateTimeBetween(
             LocalDateTime dateTime,
@@ -114,25 +110,6 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     public Comparator<SchedulingDateTimeSlot> getDateTimeSlotComparator() {
         return DATE_TIME_SLOT_COMPARATOR;
-    }
-
-    public Collection<SchedulingProducingArrangement> previousArrangements() {
-        return previousArrangements(true);
-    }
-
-    public Collection<SchedulingProducingArrangement> previousArrangements(boolean includeThisSlot) {
-        ArrayList<SchedulingProducingArrangement> producingArrangements = Stream.iterate(
-                        this,
-                        schedulingDateTimeSlot -> schedulingDateTimeSlot.getPrevious() != null,
-                        SchedulingDateTimeSlot::getPrevious
-                )
-                .map(SchedulingDateTimeSlot::getPlanningDateTimeSlotProducingArrangements)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toCollection(ArrayList::new));
-        if (includeThisSlot) {
-            producingArrangements.addAll(this.getPlanningDateTimeSlotProducingArrangements());
-        }
-        return producingArrangements;
     }
 
 }
