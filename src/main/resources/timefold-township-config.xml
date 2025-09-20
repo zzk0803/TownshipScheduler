@@ -58,11 +58,11 @@
 
         <unionMoveSelector>
 
-            <changeMoveSelector>
+            <listChangeMoveSelector>
                 <filterClass>
                     zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryListChangeMoveSelectionFilter
                 </filterClass>
-            </changeMoveSelector>
+            </listChangeMoveSelector>
 
         </unionMoveSelector>
 

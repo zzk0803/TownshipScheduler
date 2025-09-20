@@ -1,6 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariableReference;
 import lombok.AllArgsConstructor;
@@ -21,17 +23,23 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     public static final String PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS = "planningSchedulingProducingArrangements";
 
+    @PlanningId
+    private int id;
+
     private SchedulingFactoryInstance factoryInstance;
 
     private SchedulingDateTimeSlot dateTimeSlot;
 
+    @DeepPlanningClone
     @PlanningListVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
 
     public SchedulingFactoryInstanceDateTimeSlot(
+            int id,
             SchedulingFactoryInstance schedulingFactoryInstance,
             SchedulingDateTimeSlot schedulingDateTimeSlot
     ) {
+        this.id = id;
         this.factoryInstance = schedulingFactoryInstance;
         this.dateTimeSlot = schedulingDateTimeSlot;
     }
