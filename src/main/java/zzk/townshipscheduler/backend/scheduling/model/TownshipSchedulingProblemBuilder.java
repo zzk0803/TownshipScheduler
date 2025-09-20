@@ -179,18 +179,24 @@ public class TownshipSchedulingProblemBuilder {
     private void setupFactoryDateTimeSlot() {
         AtomicInteger idRoller = new AtomicInteger(1);
         List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
-        this.schedulingFactoryInstanceList.forEach(schedulingFactoryInstance -> {
-            this.schedulingDateTimeSlots.forEach(schedulingDateTimeSlot -> {
+        for (SchedulingFactoryInstance schedulingFactoryInstance : this.schedulingFactoryInstanceList) {
+            SchedulingFactoryInstanceDateTimeSlot previous = null;
+            for (SchedulingDateTimeSlot schedulingDateTimeSlot : this.schedulingDateTimeSlots) {
                 SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot = new SchedulingFactoryInstanceDateTimeSlot(
                         idRoller.getAndIncrement(),
                         schedulingFactoryInstance,
                         schedulingDateTimeSlot
                 );
+                if (previous != null) {
+                    previous.setNext(schedulingFactoryInstanceDateTimeSlot);
+                    schedulingFactoryInstanceDateTimeSlot.setPrevious(previous);
+                }
+                previous = schedulingFactoryInstanceDateTimeSlot;
                 schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
                 schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlotList()
                         .add(schedulingFactoryInstanceDateTimeSlot);
-            });
-        });
+            }
+        }
         this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
     }
 

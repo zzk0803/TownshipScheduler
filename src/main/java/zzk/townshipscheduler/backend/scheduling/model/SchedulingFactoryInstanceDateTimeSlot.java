@@ -30,6 +30,10 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     private SchedulingDateTimeSlot dateTimeSlot;
 
+    private SchedulingFactoryInstanceDateTimeSlot previous;
+
+    private SchedulingFactoryInstanceDateTimeSlot next;
+
     @DeepPlanningClone
     @PlanningListVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
