@@ -2,10 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.PreviousElementShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.ShadowSources;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.*;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,6 +15,7 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Log4j2
 @Data
@@ -87,6 +85,9 @@ public class SchedulingProducingArrangement {
     @PreviousElementShadowVariable(sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS)
     private SchedulingProducingArrangement previousSchedulingProducingArrangement;
 
+    @IndexShadowVariable(sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS)
+    private Integer indexInFactorySlot;
+
     @ShadowVariable(supplierName = "shadowFactoryComputedDateTimePairSupplier")
     private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
@@ -135,18 +136,32 @@ public class SchedulingProducingArrangement {
                     previousDateTimePair.completedDateTime().plus(getProducingDuration())
             );
         } else {
-            Optional<LocalDateTime> formerSlotCompletedDateTimeOptional
-                    = getPlanningFactoryDateTimeSlot().getFactoryInstance()
-                    .schedulingFactoryInstanceDateTimeSlotStream()
-                    .filter(schedulingFactoryInstanceDateTimeSlot ->
-                            schedulingFactoryInstanceDateTimeSlot.compareTo(this.getPlanningFactoryDateTimeSlot()) < 0)
-                    .sorted()
+            SchedulingFactoryInstanceDateTimeSlot start = this.getPlanningFactoryDateTimeSlot();
+            SchedulingFactoryInstanceDateTimeSlot firstPrevious = start != null ? start.getPrevious() : null;
+            Optional<LocalDateTime> formerSlotCompletedDateTimeOptional = Stream.iterate(
+                            firstPrevious,
+                            Objects::nonNull,
+                            SchedulingFactoryInstanceDateTimeSlot::getPrevious
+                    )
                     .flatMap(schedulingFactoryInstanceDateTimeSlot ->
                             schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements().stream())
+                    .sorted(Comparator.comparingInt(SchedulingProducingArrangement::getIndexInFactorySlot).reversed())
                     .map(SchedulingProducingArrangement::getShadowFactoryComputedDateTimePair)
+                    .filter(Objects::nonNull)
                     .map(FactoryComputedDateTimePair::completedDateTime)
-                    .max(LocalDateTime::compareTo);
-            log.info("formerSlotCompletedDateTimeOptional={}", formerSlotCompletedDateTimeOptional);
+                    .filter(Objects::nonNull)
+                    .max(Comparator.naturalOrder());
+//            Optional<LocalDateTime> formerSlotCompletedDateTimeOptional
+//                    = getPlanningFactoryDateTimeSlot().getFactoryInstance()
+//                    .schedulingFactoryInstanceDateTimeSlotStream()
+//                    .filter(schedulingFactoryInstanceDateTimeSlot ->
+//                            schedulingFactoryInstanceDateTimeSlot.compareTo(this.getPlanningFactoryDateTimeSlot()) < 0)
+//                    .sorted()
+//                    .flatMap(schedulingFactoryInstanceDateTimeSlot ->
+//                            schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements().stream())
+//                    .map(SchedulingProducingArrangement::getShadowFactoryComputedDateTimePair)
+//                    .map(FactoryComputedDateTimePair::completedDateTime)
+//                    .max(LocalDateTime::compareTo);
 
             if (formerSlotCompletedDateTimeOptional.isPresent()) {
                 LocalDateTime formerSlotCompletedDateTime = formerSlotCompletedDateTimeOptional.get();

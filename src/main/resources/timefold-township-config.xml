@@ -44,14 +44,14 @@
             zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
         </customPhaseCommandClass>
     </customPhase>
-    <!--    endregion-->
+    <!--endregion-->
 
     <!--region local search-->
     <localSearch>
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>45</slidingWindowSeconds>
+                <slidingWindowSeconds>30</slidingWindowSeconds>
                 <minimumImprovementRatio>0.01</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
@@ -74,7 +74,7 @@
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>3</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>
