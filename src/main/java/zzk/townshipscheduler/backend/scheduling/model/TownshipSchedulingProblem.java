@@ -29,9 +29,7 @@ public class TownshipSchedulingProblem {
 
     public static final int SOFT_BATTER = 1;
 
-    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
-
-    public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT = "valueRangeForDateTimeSlot";
+    public static final String VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS = "valueRangeForProducingArrangements";
 
     private String uuid;
 
@@ -44,15 +42,17 @@ public class TownshipSchedulingProblem {
     @ProblemFactCollectionProperty
     private List<SchedulingOrder> schedulingOrderList;
 
-    @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
+    @ProblemFactCollectionProperty
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
-    @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
+    @ProblemFactCollectionProperty
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
+    private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList;
+
+    @PlanningEntityCollectionProperty
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
     @ProblemFactProperty
@@ -78,6 +78,7 @@ public class TownshipSchedulingProblem {
             List<SchedulingOrder> schedulingOrderList,
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
             List<SchedulingDateTimeSlot> schedulingDateTimeSlots,
+            List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList,
             List<SchedulingProducingArrangement> schedulingProducingArrangementList,
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
@@ -91,6 +92,7 @@ public class TownshipSchedulingProblem {
         this.schedulingOrderList = schedulingOrderList;
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
+        this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlotList;
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;

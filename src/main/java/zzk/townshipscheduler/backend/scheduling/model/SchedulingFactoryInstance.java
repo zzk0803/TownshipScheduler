@@ -13,10 +13,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
 public class SchedulingFactoryInstance {
 
     @PlanningId
@@ -36,13 +36,8 @@ public class SchedulingFactoryInstance {
     @Setter(AccessLevel.PRIVATE)
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
-    @JsonIgnore
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
-    private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
-
     @DeepPlanningClone
-    private Set<FactoryProcessSequence> shadowFactorySequenceSet
-            = new LinkedHashSet<>();
+    private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
@@ -52,27 +47,16 @@ public class SchedulingFactoryInstance {
         return schedulingFactoryInfo.getCategoryName();
     }
 
-    public boolean addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
-        return shadowFactorySequenceSet.add(factoryProcessSequence);
-    }
-
-    public boolean removeFactoryProcessSequence(Object o) {
-        return shadowFactorySequenceSet.remove(o);
-    }
-
     public boolean weatherFactoryProducingTypeIsQueue() {
         return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
     }
 
-    public FactoryComputedDateTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
-        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processSequenceDateTimePairMap
-                = prepareProducingAndCompletedMap();
-        return processSequenceDateTimePairMap.get(factoryProcessSequence);
+    public Stream<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotStream() {
+        return this.schedulingFactoryInstanceDateTimeSlotList.stream();
     }
 
     public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
-        return this.useComputeStrategy().prepareProducingAndCompletedMap(new TreeSet<>(getShadowFactorySequenceSet()));
+        return this.useComputeStrategy().prepareProducingAndCompletedMap(new TreeSet<>());
     }
 
     public ProducingAndCompletedDateTimeComputeStrategy useComputeStrategy() {

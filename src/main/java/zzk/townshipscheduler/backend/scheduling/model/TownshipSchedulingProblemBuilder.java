@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 
@@ -21,6 +20,8 @@ public class TownshipSchedulingProblemBuilder {
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+
+    private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList;
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
@@ -91,6 +92,7 @@ public class TownshipSchedulingProblemBuilder {
         this.setupDateTimeSlot();
         this.setupGameActions();
         this.trimUnrelatedObject();
+        this.setupFactoryDateTimeSlot();
 
         return new TownshipSchedulingProblem(
                 this.uuid,
@@ -99,6 +101,7 @@ public class TownshipSchedulingProblemBuilder {
                 this.schedulingOrderList,
                 this.schedulingFactoryInstanceList,
                 this.schedulingDateTimeSlots,
+                this.schedulingFactoryInstanceDateTimeSlotList,
                 this.schedulingProducingArrangementList,
                 this.schedulingWorkCalendar,
                 this.schedulingPlayer,
@@ -170,6 +173,22 @@ public class TownshipSchedulingProblemBuilder {
                     return !anyMatch;
                 }
         );
+    }
+
+    private void setupFactoryDateTimeSlot() {
+        List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
+        this.schedulingFactoryInstanceList.forEach(schedulingFactoryInstance -> {
+            this.schedulingDateTimeSlots.forEach(schedulingDateTimeSlot -> {
+                SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot = new SchedulingFactoryInstanceDateTimeSlot(
+                        schedulingFactoryInstance,
+                        schedulingDateTimeSlot
+                );
+                schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
+                schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlotList()
+                        .add(schedulingFactoryInstanceDateTimeSlot);
+            });
+        });
+        this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
     }
 
     private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
