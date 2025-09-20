@@ -5,6 +5,7 @@ import ai.timefold.solver.core.api.solver.SolverStatus;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class TownshipSchedulingProblemBuilder {
@@ -176,10 +177,12 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     private void setupFactoryDateTimeSlot() {
+        AtomicInteger idRoller = new AtomicInteger(1);
         List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
         this.schedulingFactoryInstanceList.forEach(schedulingFactoryInstance -> {
             this.schedulingDateTimeSlots.forEach(schedulingDateTimeSlot -> {
                 SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot = new SchedulingFactoryInstanceDateTimeSlot(
+                        idRoller.getAndIncrement(),
                         schedulingFactoryInstance,
                         schedulingDateTimeSlot
                 );

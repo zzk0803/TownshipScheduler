@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 
@@ -18,7 +19,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
-
+@Log4j2
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -137,14 +138,15 @@ public class SchedulingProducingArrangement {
             Optional<LocalDateTime> formerSlotCompletedDateTimeOptional
                     = getPlanningFactoryDateTimeSlot().getFactoryInstance()
                     .schedulingFactoryInstanceDateTimeSlotStream()
-                    .takeWhile(schedulingFactoryInstanceDateTimeSlot -> schedulingFactoryInstanceDateTimeSlot.getStart()
-                            .isBefore(this.getPlanningFactoryDateTimeSlot().getStart())
-                    )
-                    .flatMap(schedulingFactoryInstanceDateTimeSlot -> schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
-                            .stream())
+                    .filter(schedulingFactoryInstanceDateTimeSlot ->
+                            schedulingFactoryInstanceDateTimeSlot.compareTo(this.getPlanningFactoryDateTimeSlot()) < 0)
+                    .sorted()
+                    .flatMap(schedulingFactoryInstanceDateTimeSlot ->
+                            schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements().stream())
                     .map(SchedulingProducingArrangement::getShadowFactoryComputedDateTimePair)
                     .map(FactoryComputedDateTimePair::completedDateTime)
                     .max(LocalDateTime::compareTo);
+            log.info("formerSlotCompletedDateTimeOptional={}", formerSlotCompletedDateTimeOptional);
 
             if (formerSlotCompletedDateTimeOptional.isPresent()) {
                 LocalDateTime formerSlotCompletedDateTime = formerSlotCompletedDateTimeOptional.get();
