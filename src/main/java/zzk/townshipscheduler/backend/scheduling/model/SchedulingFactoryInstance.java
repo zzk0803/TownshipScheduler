@@ -48,44 +48,6 @@ public class SchedulingFactoryInstance {
     @PlanningListVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningProducingArrangements = new ArrayList<>();
 
-    @ShadowVariable(supplierName = "shadowFactorySequenceSetSupplier")
-    @DeepPlanningClone
-    private LinkedHashSet<FactoryProcessSequence> shadowFactorySequenceSet
-            = new LinkedHashSet<>();
-
-    @ShadowVariable(supplierName = "factoryProcessToDateTimePairMapSupplier")
-    @DeepPlanningClone
-    private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMap
-            = new TreeMap<>();
-
-    @ShadowSources(
-            value = {
-                    "planningProducingArrangements[].shadowFactoryProcessSequence"
-            }
-    )
-    public LinkedHashSet<FactoryProcessSequence> shadowFactorySequenceSetSupplier() {
-        LinkedHashSet<FactoryProcessSequence> factoryProcessSequences = planningProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getShadowFactoryProcessSequence)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        log.info("factoryProcessSequences={}", factoryProcessSequences);
-        return factoryProcessSequences;
-    }
-
-    @ShadowSources(
-            value = {
-                    "shadowFactorySequenceSet"
-            }
-    )
-    public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMapSupplier() {
-        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> map
-                = (TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>) this.prepareProducingAndCompletedMap();
-        log.info("factoryProcessToDateTimePairMap={}", map);
-        return map;
-    }
-
-    public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
-        return this.useComputeStrategy().prepareProducingAndCompletedMap(new TreeSet<>(getShadowFactorySequenceSet()));
-    }
 
     public ProducingAndCompletedDateTimeComputeStrategy useComputeStrategy() {
         if (getSchedulingFactoryInfo() == null) {
@@ -112,17 +74,6 @@ public class SchedulingFactoryInstance {
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
-    }
-
-    public FactoryComputedDateTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
-        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processSequenceDateTimePairMap
-                = prepareProducingAndCompletedMap();
-        return processSequenceDateTimePairMap.get(factoryProcessSequence);
-    }
-
-    public FactoryComputedDateTimePair queryProducingAndCompletedPair(FactoryProcessSequence factoryProcessSequence) {
-        return getFactoryProcessToDateTimePairMap().get(factoryProcessSequence);
     }
 
     @Override

@@ -105,24 +105,4 @@ public class TownshipSchedulingProblem {
         return new TownshipSchedulingProblemBuilder();
     }
 
-    public List<SchedulingProducingArrangement> lookupProducingArrangements(SchedulingFactoryInstance schedulingFactoryInstance) {
-        return getSchedulingProducingArrangementList().stream()
-                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance() == schedulingFactoryInstance)
-                .toList();
-    }
-
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryReadableIdentifier factoryReadableIdentifier) {
-        return getSchedulingFactoryInstanceList().stream()
-                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
-                        .equals(factoryReadableIdentifier))
-                .findFirst();
-    }
-
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryProcessSequence factoryProcessSequence) {
-        return getSchedulingFactoryInstanceList().stream()
-                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
-                        .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
-                .findFirst();
-    }
-
 }
