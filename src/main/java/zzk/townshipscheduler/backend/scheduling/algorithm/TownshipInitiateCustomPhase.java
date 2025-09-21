@@ -67,9 +67,9 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
     }
 
     private boolean shouldInitiating(SchedulingProducingArrangement arrangement) {
-        SchedulingDateTimeSlot planningDateTimeSlot = arrangement.getPlanningDateTimeSlot();
+        SchedulingDateTimeSlot planningDateTimeSlot = arrangement.getSchedulingDateTimeSlot();
         LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
-        SchedulingFactoryInstance planningFactoryInstance = arrangement.getPlanningFactoryInstance();
+        SchedulingFactoryInstance planningFactoryInstance = arrangement.getSchedulingFactoryInstance();
         LocalDateTime producingDateTime = arrangement.getProducingDateTime();
         LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
 
@@ -156,15 +156,15 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         if (!prerequisiteProducingArrangements.isEmpty()) {
             SchedulingDateTimeSlot schedulingDateTimeSlot_A
                     = prerequisiteProducingArrangements.stream()
-                    .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
-                    .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
+                    .filter(iterating -> iterating.getSchedulingDateTimeSlot() != null)
+                    .map(SchedulingProducingArrangement::getSchedulingDateTimeSlot)
                     .max(SchedulingDateTimeSlot::compareTo)
                     .orElse(result);
             schedulingDateTimeSlot_A = SchedulingDateTimeSlot.fromRangeJumpCeil(
                     dateTimeSlotSet,
                     prerequisiteProducingArrangements.stream()
-                            .filter(iterating -> iterating.getPlanningDateTimeSlot() != null)
-                            .map(SchedulingProducingArrangement::getPlanningDateTimeSlot)
+                            .filter(iterating -> iterating.getSchedulingDateTimeSlot() != null)
+                            .map(SchedulingProducingArrangement::getSchedulingDateTimeSlot)
                             .max(SchedulingDateTimeSlot::compareTo)
                             .orElse(result).getStart()
             ).orElse(schedulingDateTimeSlot_A);

@@ -347,9 +347,9 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 }))
                 .setResizable(true)
                 .setHeader("Order");
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getSchedulingFactoryInstance)
                 .setRenderer(new TextRenderer<>(producingArrangement -> {
-                    return Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
+                    return Optional.ofNullable(producingArrangement.getSchedulingFactoryInstance())
                             .map(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
                                     .toString())
                             .orElse("N/A");
