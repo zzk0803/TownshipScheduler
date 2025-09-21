@@ -50,16 +50,16 @@
 
         </unionMoveSelector>
 
-<!--        <acceptor>-->
-<!--            <fadingEntityTabuSize>13</fadingEntityTabuSize>-->
-<!--            <stepCountingHillClimbingSize>425</stepCountingHillClimbingSize>-->
-<!--            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>-->
-<!--        </acceptor>-->
+        <!--        <acceptor>-->
+        <!--            <fadingEntityTabuSize>13</fadingEntityTabuSize>-->
+        <!--            <stepCountingHillClimbingSize>425</stepCountingHillClimbingSize>-->
+        <!--            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>-->
+        <!--        </acceptor>-->
 
-                <acceptor>
-                    <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
-                    <lateAcceptanceSize>17</lateAcceptanceSize>
-                </acceptor>
+        <acceptor>
+            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
+            <lateAcceptanceSize>17</lateAcceptanceSize>
+        </acceptor>
 
         <forager>
             <acceptedCountLimit>2</acceptedCountLimit>

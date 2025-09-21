@@ -25,6 +25,10 @@ import java.util.stream.Stream;
 @PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
 
+    public static final Comparator<SchedulingProducingArrangement> COMPARATOR = Comparator.comparing(
+                    SchedulingProducingArrangement::getPlanningFactoryDateTimeSlot)
+            .thenComparingInt(SchedulingProducingArrangement::getIndexInFactorySlot);
+
 //    public static final String VALUE_RANGE_FOR_FACTORIES_IN_ARRANGEMENT = "valueRangeForFactoriesInArrangement";
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
@@ -85,6 +89,9 @@ public class SchedulingProducingArrangement {
     @PreviousElementShadowVariable(sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS)
     private SchedulingProducingArrangement previousSchedulingProducingArrangement;
 
+    @PreviousElementShadowVariable(sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS)
+    private SchedulingProducingArrangement nextSchedulingProducingArrangement;
+
     @IndexShadowVariable(sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS)
     private Integer indexInFactorySlot;
 
@@ -112,7 +119,7 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            {
+            value = {
                     "planningFactoryDateTimeSlot",
                     "previousSchedulingProducingArrangement.shadowFactoryComputedDateTimePair"
             }
@@ -144,24 +151,13 @@ public class SchedulingProducingArrangement {
                             SchedulingFactoryInstanceDateTimeSlot::getPrevious
                     )
                     .flatMap(schedulingFactoryInstanceDateTimeSlot ->
-                            schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements().stream())
-                    .sorted(Comparator.comparingInt(SchedulingProducingArrangement::getIndexInFactorySlot).reversed())
+                            schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
+                                    .stream()
+                                    .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getNextSchedulingProducingArrangement() == null)
+                    )
                     .map(SchedulingProducingArrangement::getShadowFactoryComputedDateTimePair)
-                    .filter(Objects::nonNull)
                     .map(FactoryComputedDateTimePair::completedDateTime)
-                    .filter(Objects::nonNull)
-                    .max(Comparator.naturalOrder());
-//            Optional<LocalDateTime> formerSlotCompletedDateTimeOptional
-//                    = getPlanningFactoryDateTimeSlot().getFactoryInstance()
-//                    .schedulingFactoryInstanceDateTimeSlotStream()
-//                    .filter(schedulingFactoryInstanceDateTimeSlot ->
-//                            schedulingFactoryInstanceDateTimeSlot.compareTo(this.getPlanningFactoryDateTimeSlot()) < 0)
-//                    .sorted()
-//                    .flatMap(schedulingFactoryInstanceDateTimeSlot ->
-//                            schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements().stream())
-//                    .map(SchedulingProducingArrangement::getShadowFactoryComputedDateTimePair)
-//                    .map(FactoryComputedDateTimePair::completedDateTime)
-//                    .max(LocalDateTime::compareTo);
+                    .max(Comparator.nullsFirst(Comparator.naturalOrder()));
 
             if (formerSlotCompletedDateTimeOptional.isPresent()) {
                 LocalDateTime formerSlotCompletedDateTime = formerSlotCompletedDateTimeOptional.get();
