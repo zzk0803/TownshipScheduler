@@ -1,11 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
@@ -17,6 +14,7 @@ import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 public class SchedulingFactoryInstance {
 
     @PlanningId
@@ -29,11 +27,16 @@ public class SchedulingFactoryInstance {
 
     private int seqNum;
 
-    private int producingLength;
+    private int parallelProducing=1;
 
+    @ToString.Include
+    private int producingQueue;
+
+    @ToString.Include
     private int reapWindowSize;
 
     @Setter(AccessLevel.PRIVATE)
+    @ToString.Include
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
     @DeepPlanningClone
@@ -78,7 +81,7 @@ public class SchedulingFactoryInstance {
     public String toString() {
         return "SchedulingFactoryInstance{" +
                "readableIdentifier='" + factoryReadableIdentifier + '\'' +
-               ", producingLength=" + producingLength +
+               ", producingLength=" + producingQueue +
                ", reapWindowSize=" + reapWindowSize +
                '}';
     }

@@ -47,7 +47,7 @@ public class SchedulingProducingArrangementVO {
     public SchedulingProducingArrangementVO(
             SchedulingProducingArrangement schedulingProducingArrangement
     ) {
-        SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
+        SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getSchedulingFactoryInstance();
         this.id = schedulingProducingArrangement.getId();
         this.uuid = schedulingProducingArrangement.getUuid();
         this.order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder().getId());

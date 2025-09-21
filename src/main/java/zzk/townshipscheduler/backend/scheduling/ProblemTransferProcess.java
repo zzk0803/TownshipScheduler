@@ -262,7 +262,7 @@ class ProblemTransferProcess {
                                 int factoryInstanceId = factoryInstanceIdRoller.getAndIncrement();
                                 fieldInstance.setId(factoryInstanceId);
                                 fieldInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
-                                fieldInstance.setProducingLength(size);
+                                fieldInstance.setProducingQueue(size);
                                 fieldInstance.setReapWindowSize(size);
                                 fieldInstance.setSeqNum(1);
                                 fieldInstance.setupFactoryReadableIdentifier();
@@ -287,7 +287,7 @@ class ProblemTransferProcess {
                                         factoryInstance.setSchedulingFactoryInfo(
                                                 schedulingFactoryInfo
                                         );
-                                        factoryInstance.setProducingLength(
+                                        factoryInstance.setProducingQueue(
                                                 fieldFactoryEntity.getProducingLength()
                                         );
                                         factoryInstance.setReapWindowSize(

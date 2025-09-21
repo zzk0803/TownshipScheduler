@@ -109,7 +109,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
                     Integer id = schedulingFactoryInstance.getId();
                     String categoryName = schedulingFactoryInstance.getCategoryName();
                     int seqNum = schedulingFactoryInstance.getSeqNum();
-                    int producingLength = schedulingFactoryInstance.getProducingLength();
+                    int producingLength = schedulingFactoryInstance.getProducingQueue();
                     int reapWindowSize = schedulingFactoryInstance.getReapWindowSize();
                     FactoryReadableIdentifier factoryReadableIdentifier
                             = schedulingFactoryInstance.getFactoryReadableIdentifier();
