@@ -116,7 +116,7 @@ public class SchedulingFactoryInstance {
                 LocalDateTime previousCompletedDateTime
                         = Optional.ofNullable(computingProducingCompletedMap.lowerKey(current))
                         .map(computingProducingCompletedMap::get)
-                        .map(FactoryComputedDateTimePair::completedDateTime)
+                        .map(FactoryComputedDateTimePair::getCompletedDateTime)
                         .orElse(null);
 
                 LocalDateTime producingDateTime;

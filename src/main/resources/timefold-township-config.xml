@@ -8,6 +8,8 @@
 
     <environmentMode>TRACKED_FULL_ASSERT</environmentMode>
 
+    <randomSeed>42</randomSeed>
+
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
@@ -50,16 +52,16 @@
 
         </unionMoveSelector>
 
-        <!--        <acceptor>-->
-        <!--            <fadingEntityTabuSize>13</fadingEntityTabuSize>-->
-        <!--            <stepCountingHillClimbingSize>425</stepCountingHillClimbingSize>-->
-        <!--            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>-->
-        <!--        </acceptor>-->
-
         <acceptor>
-            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
-            <lateAcceptanceSize>17</lateAcceptanceSize>
+            <fadingEntityTabuSize>13</fadingEntityTabuSize>
+            <stepCountingHillClimbingSize>425</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
+
+        <!--        <acceptor>-->
+        <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
+        <!--            <lateAcceptanceSize>7</lateAcceptanceSize>-->
+        <!--        </acceptor>-->
 
         <forager>
             <acceptedCountLimit>2</acceptedCountLimit>
