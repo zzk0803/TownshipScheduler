@@ -25,13 +25,11 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.function.SerializablePredicate;
-import com.vaadin.flow.server.StreamResource;
 import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
-import java.io.ByteArrayInputStream;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -281,12 +279,9 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
         }
 
         private  Image createImage(ProductEntity productEntity) {
-            return new Image(
-                    new StreamResource(
-                            productEntity.getName(),
-                            () -> new ByteArrayInputStream(productEntity.getCrawledAsImage().getImageBytes())
-                    ),
-                    productEntity.getName()
+            return ProductImages.productImage(
+                    productEntity.getName(),
+                    productEntity.getCrawledAsImage().getImageBytes()
             );
         }
 

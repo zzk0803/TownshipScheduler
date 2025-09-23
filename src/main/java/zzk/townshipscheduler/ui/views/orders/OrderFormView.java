@@ -30,7 +30,6 @@ import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.validator.DateTimeRangeValidator;
 import com.vaadin.flow.function.ValueProvider;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import org.springframework.data.domain.Sort;
@@ -41,11 +40,11 @@ import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.ui.components.BillDurationField;
+import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.ProductsAmountPanel;
 import zzk.townshipscheduler.ui.pojo.BillItem;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
-import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -337,17 +336,16 @@ public class OrderFormView extends VerticalLayout {
                     LumoUtility.Margin.XSMALL
             );
 
-            Image image = new Image();
+            Image image =ProductImages.productImage(
+                    productEntity.getName(),
+                    productEntity.getCrawledAsImage().getImageBytes()
+            );
             image.addClassNames(
                     LumoUtility.Display.FLEX,
                     LumoUtility.FlexDirection.ROW,
                     LumoUtility.AlignItems.BASELINE,
                     LumoUtility.JustifyContent.START
             );
-            image.setSrc(new StreamResource(
-                    productEntity.getName(),
-                    () -> new ByteArrayInputStream(productEntity.getCrawledAsImage().getImageBytes())
-            ));
             card.add(image);
 
             Div description = createProductDescriptionDiv(productEntity);
