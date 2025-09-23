@@ -3,9 +3,9 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
+import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
@@ -13,6 +13,7 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.function.Function;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
@@ -97,41 +98,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
-
-//    private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
-//        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-//                .filter(producingArrangement -> !producingArrangement.getPrerequisiteProducingArrangements().isEmpty())
-//                .join(
-//                        SchedulingProducingArrangement.class,
-//                        Joiners.filtering(SchedulingProducingArrangement::isPrerequisiteArrangement)
-//                )
-//                .groupBy(
-//                        (composite, material) -> composite,
-//                        ConstraintCollectors.max(
-//                                (composite, material) -> material,
-//                                SchedulingProducingArrangement::getCompletedDateTime
-//                        )
-//                )
-//                .filter((compositeProducingArrangement, maxCompletedDateTimeMaterialProducingArrangements) -> {
-//                    LocalDateTime compositeArrangeDateTime = compositeProducingArrangement.getArrangeDateTime();
-//                    LocalDateTime maxMaterialCompletedDateTime = maxCompletedDateTimeMaterialProducingArrangements.getCompletedDateTime();
-//                    return compositeArrangeDateTime.isBefore(maxMaterialCompletedDateTime);
-//                })
-//                .penalizeLong(
-//                        BendableLongScore.ofHard(
-//                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-//                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-//                                TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
-//                                1L
-//                        ),
-//                        (productArrangement, materialProducingArrangementsCompletedDateTime)
-//                                -> Duration.between(
-//                                productArrangement.getArrangeDateTime(),
-//                                materialProducingArrangementsCompletedDateTime.getCompletedDateTime()
-//                        ).toMinutes()
-//                )
-//                .asConstraint("forbidBrokenPrerequisiteStock");
-//    }
 
     private Constraint forbidBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingOrder.class)
@@ -295,8 +261,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
-                                700L
-                        )
+                                100L
+                        ),
+                        (schedulingFactoryInstance, dataTimeSlotUsage) -> schedulingFactoryInstance.weatherFactoryProducingTypeIsQueue()
+                                ? 4L * dataTimeSlotUsage
+                                : 10L * dataTimeSlotUsage
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }

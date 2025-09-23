@@ -2,26 +2,25 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
-import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
+@Log4j2
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -200,6 +199,32 @@ public class SchedulingProducingArrangement {
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
     }
 
+    public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
+        LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
+        Set<SchedulingProducingArrangement> visited = new HashSet<>();
+        Set<SchedulingProducingArrangement> result = new LinkedHashSet<>();
+
+        while (!queue.isEmpty()) {
+            SchedulingProducingArrangement current = queue.removeFirst();
+            if (!visited.add(current)) {
+                continue;
+            }
+
+            Set<SchedulingProducingArrangement> prerequisites =
+                    current.getPrerequisiteProducingArrangements();
+            if (prerequisites != null) {
+                for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
+                    if (iteratingSingleArrangement != null) {
+                        result.add(iteratingSingleArrangement);
+                        queue.add(iteratingSingleArrangement);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
     public void activate(
             ArrangementIdRoller idRoller,
             SchedulingWorkCalendar workTimeLimit,
@@ -273,32 +298,6 @@ public class SchedulingProducingArrangement {
         return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
     }
 
-    public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
-        LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
-        Set<SchedulingProducingArrangement> visited = new HashSet<>();
-        Set<SchedulingProducingArrangement> result = new LinkedHashSet<>();
-
-        while (!queue.isEmpty()) {
-            SchedulingProducingArrangement current = queue.removeFirst();
-            if (!visited.add(current)) {
-                continue;
-            }
-
-            Set<SchedulingProducingArrangement> prerequisites =
-                    current.getPrerequisiteProducingArrangements();
-            if (prerequisites != null) {
-                for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
-                    if (iteratingSingleArrangement != null) {
-                        result.add(iteratingSingleArrangement);
-                        queue.add(iteratingSingleArrangement);
-                    }
-                }
-            }
-        }
-
-        return result;
-    }
-
     public Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
@@ -324,26 +323,6 @@ public class SchedulingProducingArrangement {
 
     public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
-    }
-
-    public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
-        return this.prerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
-        return this.deepPrerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
     }
 
 }
