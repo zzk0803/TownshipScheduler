@@ -31,18 +31,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint forbidBrokenFactoryAbility(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(arrangement -> !arrangement.getProducingDateTime().equals(LocalDateTime.MIN) &&
-                                       !arrangement.getCompletedDateTime().equals(LocalDateTime.MIN))
                 .groupBy(
-                        SchedulingProducingArrangement::getPlanningFactoryDateTimeSlot,
                         SchedulingProducingArrangement::getSchedulingFactoryInstance,
                         ConstraintCollectors.toConnectedTemporalRanges(
-                                SchedulingProducingArrangement::getProducingDateTime,
+                                SchedulingProducingArrangement::getArrangeDateTime,
                                 SchedulingProducingArrangement::getCompletedDateTime
                         )
                 )
                 .flattenLast(ConnectedRangeChain::getConnectedRanges)
-                .filter((factoryInstanceDateTimeSlot, factoryInstance, arrangementDateTimeConnectedRange) -> {
+                .filter((factoryInstance, arrangementDateTimeConnectedRange) -> {
                     int containedRangeCount = arrangementDateTimeConnectedRange.getContainedRangeCount();
                     return containedRangeCount > factoryInstance.getProducingQueue();
                 })
@@ -53,7 +50,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.HARD_BROKEN_FACTORY_ABILITY,
                                 1L
                         ),
-                        (factoryInstanceDateTimeSlot, factoryInstance, arrangementDateTimeConnectedRange) -> {
+                        (factoryInstance, arrangementDateTimeConnectedRange) -> {
                             Duration between = Duration.between(
                                     arrangementDateTimeConnectedRange.getStart(),
                                     arrangementDateTimeConnectedRange.getEnd()
