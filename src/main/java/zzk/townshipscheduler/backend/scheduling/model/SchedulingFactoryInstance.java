@@ -39,7 +39,6 @@ public class SchedulingFactoryInstance {
     @ToString.Include
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
-    @DeepPlanningClone
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
 
     public void setupFactoryReadableIdentifier() {

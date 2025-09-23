@@ -15,6 +15,7 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Log4j2
 @Data
@@ -230,14 +231,15 @@ public class SchedulingProducingArrangement {
     @ShadowSources(
             {
                     "arrangeDateTime",
-                    "planningFactoryDateTimeSlot.shadowMendedFirstArrangementProducingDateTime",
                     "previousSchedulingProducingArrangement",
-                    "previousSchedulingProducingArrangement.completedDateTime"
+                    "previousSchedulingProducingArrangement.completedDateTime",
+                    "planningFactoryDateTimeSlot",
+                    "planningFactoryDateTimeSlot.tailArrangementCompletedDateTime"
             }
     )
     public LocalDateTime producingDateTimeSupplier() {
         if (this.getArrangeDateTime() == null) {
-            return LocalDateTime.MIN;
+            return null;
         }
 
         if (!weatherFactoryProducingTypeIsQueue()) {
@@ -247,7 +249,16 @@ public class SchedulingProducingArrangement {
         if (getPreviousSchedulingProducingArrangement() != null) {
             return getPreviousSchedulingProducingArrangement().getCompletedDateTime();
         } else {
-            return this.planningFactoryDateTimeSlot.getShadowMendedFirstArrangementProducingDateTime();
+            SchedulingFactoryInstanceDateTimeSlot previousOfThis = this.planningFactoryDateTimeSlot.getPrevious();
+            Optional<LocalDateTime> localDateTimeOptional = Stream.iterate(
+                            previousOfThis,
+                            Objects::nonNull,
+                            SchedulingFactoryInstanceDateTimeSlot::getPrevious
+                    ).map(SchedulingFactoryInstanceDateTimeSlot::getTailArrangementCompletedDateTime)
+                    .filter(Objects::nonNull)
+                    .limit(1)
+                    .findFirst();
+            return localDateTimeOptional.orElseGet(this::getArrangeDateTime);
         }
     }
 
@@ -267,7 +278,7 @@ public class SchedulingProducingArrangement {
     @ShadowSources({"producingDateTime"})
     public LocalDateTime completedDateTimeSupplier() {
         LocalDateTime producingDateTime = getProducingDateTime();
-        return producingDateTime != null ? producingDateTime.plus(getProducingDuration()) : LocalDateTime.MIN;
+        return producingDateTime != null ? producingDateTime.plus(getProducingDuration()) : null;
     }
 
     @JsonProperty("producingDuration")

@@ -13,11 +13,14 @@ import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
+import zzk.townshipscheduler.backend.ProducingStructureType;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -49,13 +52,23 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     @PlanningListVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
 
-    @JsonIgnore
-    @ShadowVariable(supplierName = "lastArrangementCompletedDateTimeSupplier")
-    private LocalDateTime lastArrangementCompletedDateTime;
+    @ShadowVariable(supplierName = "tailArrangementCompletedDateTimeSupplier")
+    private LocalDateTime tailArrangementCompletedDateTime;
 
-    @JsonIgnore
-    @ShadowVariable(supplierName = "shadowMendedFirstArrangementProducingDateTimeSupplier")
-    private LocalDateTime shadowMendedFirstArrangementProducingDateTime;
+    @ShadowSources({"planningSchedulingProducingArrangements[].completedDateTime"})
+    private LocalDateTime tailArrangementCompletedDateTimeSupplier() {
+        if (getSchedulingFactoryInfo().getProducingStructureType() == ProducingStructureType.SLOT) {
+            return null;
+        }
+
+        if (getPlanningSchedulingProducingArrangements().isEmpty()) {
+            return null;
+        }
+
+        LocalDateTime completedDateTime = planningSchedulingProducingArrangements.getLast().getCompletedDateTime();
+        log.info("***  factory={},tailArrangementCompletedDateTime={}",factoryInstance.getFactoryReadableIdentifier(),completedDateTime);
+        return completedDateTime;
+    }
 
     public SchedulingFactoryInstanceDateTimeSlot(
             int id,
@@ -67,62 +80,11 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         this.dateTimeSlot = schedulingDateTimeSlot;
     }
 
-    @ShadowSources(
-            {
-                    "planningSchedulingProducingArrangements",
-                    "planningSchedulingProducingArrangements[].completedDateTime"
-            }
-    )
-    public LocalDateTime lastArrangementCompletedDateTimeSupplier() {
-        if (this.planningSchedulingProducingArrangements.isEmpty()) {
-            return getStart();
-        }
-
-        LocalDateTime oldValue = this.lastArrangementCompletedDateTime;
-        LocalDateTime newValue = this.planningSchedulingProducingArrangements.getLast().getCompletedDateTime();
-        if (!Objects.equals(oldValue, newValue)) {
-            return newValue;
-        } else {
-            return oldValue;
-        }
-    }
-
     @EqualsAndHashCode.Include
     public LocalDateTime getStart() {
         return dateTimeSlot.getStart();
     }
 
-    @ShadowSources({"previous.lastArrangementCompletedDateTime"})
-    public @NonNull LocalDateTime shadowMendedFirstArrangementProducingDateTimeSupplier() {
-        LocalDateTime dateTimeSlotStart = this.dateTimeSlot.getStart();
-
-        if (!weatherFactoryProducingTypeIsQueue()) {
-            return dateTimeSlotStart;
-        }
-
-        LocalDateTime maxPreviousCompleted = findMaxPreviousCompleted();
-
-        if (maxPreviousCompleted == null) {
-            return dateTimeSlotStart;
-        }
-
-        return maxPreviousCompleted.isAfter(dateTimeSlotStart)
-                ? maxPreviousCompleted
-                : dateTimeSlotStart;
-    }
-
-    private LocalDateTime findMaxPreviousCompleted() {
-        if (this.previous == null) {
-            return null;
-        }
-
-        LocalDateTime previousMax = this.previous.findMaxPreviousCompleted();
-        LocalDateTime previousLastCompleted = this.previous.getLastArrangementCompletedDateTime();
-        return Stream.of(previousLastCompleted, previousMax)
-                .filter(Objects::nonNull)
-                .max(LocalDateTime::compareTo)
-                .orElse(null);
-    }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return factoryInstance.weatherFactoryProducingTypeIsQueue();
