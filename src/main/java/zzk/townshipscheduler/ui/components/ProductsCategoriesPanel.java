@@ -5,7 +5,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -16,7 +15,6 @@ import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.server.StreamResource;
 import lombok.Getter;
 import lombok.Setter;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
@@ -24,7 +22,6 @@ import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
 
-import java.io.ByteArrayInputStream;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -176,15 +173,10 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
     }
 
     private Component goodsImageRender(ProductEntity productEntity) {
-        Component component = null;
-        String name = productEntity.getName();
-        byte[] imageBytes = productEntity.getCrawledAsImage().getImageBytes();
-        component = new Image(
-                new StreamResource(name, () -> new ByteArrayInputStream(imageBytes)),
-                name
+        return ProductImages.productImage(
+                productEntity.getName(),
+                productEntity.getCrawledAsImage().getImageBytes()
         );
-
-        return component;
     }
 
     private Component productMaterialsRender(ProductEntity productEntity) {

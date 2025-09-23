@@ -11,7 +11,6 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import com.vaadin.flow.spring.annotation.RouteScopeOwner;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -29,11 +28,11 @@ import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareCompone
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingServiceImpl;
 import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
-import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -89,9 +88,9 @@ public class SchedulingViewPresenter {
 
     public Image createProductImage(String productName) {
         byte[] productImage = fetchProductImage(productName);
-        Image image = new Image(
-                new StreamResource(productName, () -> new ByteArrayInputStream(productImage)),
-                productName
+        Image image = ProductImages.productImage(
+                productName,
+                productImage
         );
         image.setWidth("40px");
         image.setHeight("40px");

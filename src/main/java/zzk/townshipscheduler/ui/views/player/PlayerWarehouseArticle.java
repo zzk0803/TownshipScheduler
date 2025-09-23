@@ -9,7 +9,6 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
@@ -18,16 +17,15 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.server.StreamResource;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
+import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.ProductsCategoriesPanel;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
-import java.io.ByteArrayInputStream;
 import java.util.Map;
 
 @Slf4j
@@ -53,13 +51,11 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
             HorizontalLayout result = new HorizontalLayout();
             result.add(
                     new VerticalLayout(
-                            new Image(
-                                    new StreamResource(
-                                            "productEntityIntegerEntry.getKey().getName()",
-                                            () -> new ByteArrayInputStream(productEntityIntegerEntry.getKey()
-                                                    .getCrawledAsImage()
-                                                    .getImageBytes())
-                                    ), productEntityIntegerEntry.getKey().getName()
+                            ProductImages.productImage(
+                                    productEntityIntegerEntry.getKey().getName(),
+                                    productEntityIntegerEntry.getKey()
+                                            .getCrawledAsImage()
+                                            .getImageBytes()
                             ),
                             new Text(productEntityIntegerEntry.getKey().getName())
                     ),
