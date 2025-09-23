@@ -38,7 +38,7 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>30</slidingWindowSeconds>
+                <slidingWindowSeconds>45</slidingWindowSeconds>
                 <minimumImprovementRatio>0.01</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
@@ -122,15 +122,11 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>13</fadingEntityTabuSize>
-            <stepCountingHillClimbingSize>425</stepCountingHillClimbingSize>
+            <fadingEntityTabuSize>3</fadingEntityTabuSize>
+            <fadingValueTabuSize>3</fadingValueTabuSize>
+            <stepCountingHillClimbingSize>333</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
-
-        <!--        <acceptor>-->
-        <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
-        <!--            <lateAcceptanceSize>15</lateAcceptanceSize>-->
-        <!--        </acceptor>-->
 
         <forager>
             <acceptedCountLimit>3</acceptedCountLimit>
