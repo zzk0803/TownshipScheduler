@@ -220,7 +220,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
             OrderType orderType = arrangement.getSchedulingOrder().getOrderType();
             switch (orderType) {
                 case TRAIN -> {
-                    factor = 5;
+                    factor = 10;
                 }
                 case AIRPLANE -> {
                     factor = 100;
@@ -242,7 +242,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                             LocalDateTime workCalendarStart = arrangement.getSchedulingWorkCalendar()
                                     .getStartDateTime();
                             LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
-                            return Duration.between(workCalendarStart, arrangeDateTime).toMinutes();
+                            return Duration.between(workCalendarStart, arrangeDateTime).toMinutes()
+                                   * calcFactor(arrangement);
                         }
                 )
                 .asConstraint("preferArrangeDateTimeAsSoonAsPassible");
@@ -259,11 +260,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
-                                100L
-                        ),
-                        (schedulingFactoryInstance, dataTimeSlotUsage) -> schedulingFactoryInstance.weatherFactoryProducingTypeIsQueue()
-                                ? 4L * dataTimeSlotUsage
-                                : 10L * dataTimeSlotUsage
+                                700L
+                        )
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }
