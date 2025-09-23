@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -19,7 +18,6 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Data
@@ -37,11 +35,11 @@ public class SchedulingProducingArrangement {
 
     public static final String SHADOW_FACTORY_PROCESS_SEQUENCE = "shadowFactoryProcessSequence";
 
-    public static final String SHADOW_PRODUCING_DATE_TIME = "computedShadowProducingDateTime";
-
-    public static final String SHADOW_COMPLETED_DATE_TIME = "computedShadowCompletedDateTime";
-
     public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "shadowFactoryComputedDateTimePair";
+
+    public static final String SHADOW_PRODUCING_DATE_TIME = "producingDateTime";
+
+    public static final String SHADOW_COMPLETED_DATE_TIME = "completedDateTime";
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -108,6 +106,20 @@ public class SchedulingProducingArrangement {
     @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
     private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
+    @JsonProperty("producingDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    private LocalDateTime producingDateTime;
+
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    private LocalDateTime completedDateTime;
+
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
             IGameArrangeObject currentActionObject
@@ -171,32 +183,6 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     public ProductAmountBill getMaterials() {
         return getProducingExecutionMode().getMaterials();
-    }
-
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getCompletedDateTime() {
-        FactoryComputedDateTimePair computedDataTimePair = getShadowFactoryComputedDateTimePair();
-        if (computedDataTimePair == null) {
-            return null;
-        } else {
-            return computedDataTimePair.completedDateTime();
-        }
-    }
-
-    @JsonProperty("producingDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getProducingDateTime() {
-        FactoryComputedDateTimePair computedDataTimePair = getShadowFactoryComputedDateTimePair();
-        if (computedDataTimePair == null) {
-            return null;
-        } else {
-            return computedDataTimePair.producingDateTime();
-        }
     }
 
     @JsonProperty("producingDuration")
@@ -269,6 +255,14 @@ public class SchedulingProducingArrangement {
 
     public boolean isOrderDirect() {
         return getTargetActionObject() instanceof SchedulingOrder;
+    }
+
+    public boolean isDeepPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return getDeepPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    }
+
+    public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
     }
 
 }

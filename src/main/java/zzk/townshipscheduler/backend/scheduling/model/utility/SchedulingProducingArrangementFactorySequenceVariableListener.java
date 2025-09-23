@@ -132,6 +132,22 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                     SchedulingProducingArrangement::setShadowFactoryComputedDateTimePair,
                     SchedulingProducingArrangement.SHADOW_COMPUTED_DATE_TIME_PAIR
             );
+
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    newDateTimePair.producingDateTime(),
+                    SchedulingProducingArrangement::setProducingDateTime,
+                    SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
+            );
+
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    newDateTimePair.completedDateTime(),
+                    SchedulingProducingArrangement::setCompletedDateTime,
+                    SchedulingProducingArrangement.SHADOW_COMPLETED_DATE_TIME
+            );
         }
     }
 
