@@ -261,11 +261,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
-                                100L
-                        ),
-                        (schedulingFactoryInstance, dataTimeSlotUsage) -> schedulingFactoryInstance.weatherFactoryProducingTypeIsQueue()
-                                ? 4L * dataTimeSlotUsage
-                                : 10L * dataTimeSlotUsage
+                                700L
+                        )
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }

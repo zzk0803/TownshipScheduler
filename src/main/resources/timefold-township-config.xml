@@ -47,7 +47,7 @@
             zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
         </customPhaseCommandClass>
     </customPhase>
-    <!--    endregion-->
+    <!--endregion-->
 
     <!--region local search-->
     <localSearch>
@@ -143,6 +143,11 @@
             <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
+
+        <!--        <acceptor>-->
+        <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
+        <!--            <lateAcceptanceSize>15</lateAcceptanceSize>-->
+        <!--        </acceptor>-->
 
         <forager>
             <acceptedCountLimit>3</acceptedCountLimit>
