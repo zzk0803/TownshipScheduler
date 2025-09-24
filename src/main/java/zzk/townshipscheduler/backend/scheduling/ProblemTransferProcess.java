@@ -273,7 +273,7 @@ class ProblemTransferProcess {
     ) {
         AtomicInteger idRoller = new AtomicInteger(1);
         Set<ProductManufactureInfoEntity> productManufactureInfos = productEntity.getManufactureInfoEntities();
-        if (productManufactureInfos != null && !productManufactureInfos.isEmpty()) {
+        if (productManufactureInfos != null ) {
             Set<SchedulingProducingExecutionMode> executionModes = new LinkedHashSet<>();
             productManufactureInfos.forEach(productManufactureInfo -> {
                 SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();

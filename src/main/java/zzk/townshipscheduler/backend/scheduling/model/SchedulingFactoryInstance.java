@@ -51,6 +51,10 @@ public class SchedulingFactoryInstance {
         return schedulingFactoryInfo.getCategoryName();
     }
 
+    public int getMaxPossibleOccupancyDurationMinutes() {
+        return producingLength * this.getSchedulingFactoryInfo().calcMaxSupportedProductDurationMinutes();
+    }
+
     public void addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
 
         if (!weatherFactoryProducingTypeIsQueue()) {
