@@ -5,10 +5,7 @@ import lombok.*;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -34,7 +31,7 @@ public final class SchedulingProduct implements IGameArrangeObject {
 
     @JsonIgnore
     @JsonBackReference
-    private Set<SchedulingProducingExecutionMode> executionModeSet;
+    private Set<SchedulingProducingExecutionMode> executionModeSet = new LinkedHashSet<>();
 
     public SchedulingProduct(
             Id id,

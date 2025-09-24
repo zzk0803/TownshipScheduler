@@ -46,6 +46,8 @@ public class SchedulingFactoryInfo {
 
     private int maxInstanceAmount;
 
+    private Integer maxSupportedProductDurationMinutes;
+
     public SchedulingFactoryInfo() {
         this.portfolio = new ArrayList<>();
         this.factoryInstances = new ArrayList<>();
@@ -61,6 +63,23 @@ public class SchedulingFactoryInfo {
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return this.producingStructureType == ProducingStructureType.QUEUE;
+    }
+
+    public int calcMaxSupportedProductDurationMinutes() {
+        if (this.maxSupportedProductDurationMinutes != null) {
+            return this.maxSupportedProductDurationMinutes;
+        }
+
+        return this.maxSupportedProductDurationMinutes = getPortfolio().stream()
+                        .mapToInt(
+                                product -> product.getExecutionModeSet().stream()
+                                        .map(schedulingProducingExecutionMode -> Math.toIntExact(
+                                                schedulingProducingExecutionMode.getExecuteDuration().toMinutes()))
+                                        .min(Comparator.naturalOrder())
+                                        .orElseThrow()
+                        )
+                        .max()
+                        .orElse(60);
     }
 
     @Value
