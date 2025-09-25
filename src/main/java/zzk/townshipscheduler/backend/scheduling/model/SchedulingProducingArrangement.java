@@ -93,6 +93,9 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
+    @ShadowVariable(supplierName = "factoryProcessSequenceSupplier")
+    private FactoryProcessSequence factoryProcessSequence;
+
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -128,41 +131,47 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            {
-                    "planningDateTimeSlot",
+            value = {
                     "planningFactoryInstance",
-                    "planningFactoryInstance.updateAndSignal"
+                    "planningDateTimeSlot",
+                    "factoryProcessSequence"
             }
     )
-    private LocalDateTime completedDateTimeSupplier() {
-
-        if (Objects.isNull(this.planningFactoryInstance)) {
-            return null;
-        }
-        if (Objects.isNull(this.planningDateTimeSlot)) {
+    public FactoryProcessSequence factoryProcessSequenceSupplier() {
+        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
             return null;
         }
 
-        return this.planningFactoryInstance.queryCompletedDateTime(this);
+        FactoryProcessSequence oldFactoryProcessSequence = this.factoryProcessSequence;
+        FactoryProcessSequence newFactoryProcessSequence = FactoryProcessSequence.of(this);
+        if (Objects.nonNull(oldFactoryProcessSequence)) {
+            if (!Objects.equals(oldFactoryProcessSequence, newFactoryProcessSequence)) {
+                oldFactoryProcessSequence.trigRemove();
+            }else {
+                return oldFactoryProcessSequence;
+            }
+        }
+        this.planningFactoryInstance.putFactoryProcessSequence(newFactoryProcessSequence);
+        return newFactoryProcessSequence;
     }
 
-    @ShadowSources(
-            {
-                    "planningDateTimeSlot",
-                    "planningFactoryInstance",
-                    "planningFactoryInstance.updateAndSignal"
-            }
-    )
+    @ShadowSources(value = {"factoryProcessSequence"})
+    private LocalDateTime completedDateTimeSupplier() {
+        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.planningDateTimeSlot)) {
+            return null;
+        }
+
+        return this.planningFactoryInstance.queryCompletedDateTime(this.factoryProcessSequence);
+    }
+
+    @ShadowSources(value = {"factoryProcessSequence"})
     private LocalDateTime producingDateTimeSupplier() {
-
-        if (Objects.isNull(this.planningFactoryInstance)) {
-            return null;
-        }
-        if (Objects.isNull(this.planningDateTimeSlot)) {
+        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.planningDateTimeSlot)) {
             return null;
         }
 
-        return this.planningFactoryInstance.queryProducingDateTime(this);
+        return this.planningFactoryInstance.queryProducingDateTime(this.factoryProcessSequence);
+
     }
 
     @JsonIgnore
