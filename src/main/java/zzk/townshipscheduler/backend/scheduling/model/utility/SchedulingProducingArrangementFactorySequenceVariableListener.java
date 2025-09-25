@@ -5,6 +5,7 @@ import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.SortedMap;
 import java.util.function.BiConsumer;
@@ -113,7 +114,8 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
             SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> preparedProducingAndCompletedMap
     ) {
         FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        FactoryComputedDateTimePair oldDateTimePair = schedulingProducingArrangement.getShadowFactoryComputedDateTimePair();
+        LocalDateTime oldProducingDateTime = schedulingProducingArrangement.getProducingDateTime();
+        LocalDateTime oldCompletedDateTime = schedulingProducingArrangement.getCompletedDateTime();
         if (factoryProcessSequence == null) {
             return;
         }
@@ -124,15 +126,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
             return;
         }
 
-        if (!Objects.equals(oldDateTimePair, newDateTimePair)) {
-            doShadowVariableUpdate(
-                    scoreDirector,
-                    schedulingProducingArrangement,
-                    newDateTimePair,
-                    SchedulingProducingArrangement::setShadowFactoryComputedDateTimePair,
-                    SchedulingProducingArrangement.SHADOW_COMPUTED_DATE_TIME_PAIR
-            );
-
+        if (!Objects.equals(oldProducingDateTime, newDateTimePair.producingDateTime())) {
             doShadowVariableUpdate(
                     scoreDirector,
                     schedulingProducingArrangement,
@@ -140,7 +134,9 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                     SchedulingProducingArrangement::setProducingDateTime,
                     SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
             );
+        }
 
+        if (!Objects.equals(oldCompletedDateTime, newDateTimePair.completedDateTime())) {
             doShadowVariableUpdate(
                     scoreDirector,
                     schedulingProducingArrangement,

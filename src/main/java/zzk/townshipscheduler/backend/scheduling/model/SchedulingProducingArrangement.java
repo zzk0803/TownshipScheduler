@@ -103,9 +103,6 @@ public class SchedulingProducingArrangement {
     )
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
-    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
-
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
