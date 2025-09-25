@@ -11,12 +11,13 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
+@Log4j2
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
@@ -44,23 +45,11 @@ public class SchedulingFactoryInstance {
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
     @DeepPlanningClone
-    private Set<FactoryProcessSequence> shadowFactorySequenceSet
-            = new LinkedHashSet<>();
-
-    @ShadowVariable(supplierName = "factoryProcessToDateTimePairMapSupplier")
-    @DeepPlanningClone
     private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMap
             = new TreeMap<>();
 
-    @ShadowSources(
-            value = {
-                    "planningFactoryInstanceProducingArrangements",
-                    "planningFactoryInstanceProducingArrangements[].shadowFactoryProcessSequence"
-            }
-    )
-    public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMapSupplier() {
-        return this.factoryProcessToDateTimePairMapSupplier();
-    }
+    @ShadowVariable(supplierName = "updateAndSignal")
+    private int updateAndSignal;
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
@@ -74,7 +63,34 @@ public class SchedulingFactoryInstance {
         return producingLength * this.getSchedulingFactoryInfo().calcMaxSupportedProductDurationMinutes();
     }
 
-    public void addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
+    public LocalDateTime queryProducingDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return this.shadowProcessSequenceToComputePairMap.get(
+                FactoryProcessSequence.of(schedulingProducingArrangement)
+        ).producingDateTime();
+    }
+
+    public LocalDateTime queryCompletedDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return this.shadowProcessSequenceToComputePairMap.get(
+                FactoryProcessSequence.of(schedulingProducingArrangement)
+        ).completedDateTime();
+    }
+
+    @ShadowSources(
+            {
+                    "planningFactoryInstanceProducingArrangements",
+                    "planningFactoryInstanceProducingArrangements[].planningDateTimeSlot"
+            }
+    )
+    public int updateAndSignal() {
+        this.shadowProcessSequenceToComputePairMap.clear();
+        this.planningFactoryInstanceProducingArrangements.stream()
+                .map(FactoryProcessSequence::of)
+                .forEach(this::putFactoryProcessSequence);
+        log.info(" * * * shadowProcessSequenceToComputePairMap={}", this.shadowProcessSequenceToComputePairMap);
+        return this.shadowProcessSequenceToComputePairMap.hashCode();
+    }
+
+    public void putFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
 
         if (!weatherFactoryProducingTypeIsQueue()) {
             this.shadowProcessSequenceToComputePairMap.put(

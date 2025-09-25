@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -94,25 +93,18 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @JsonIgnore
-    @ShadowVariable(supplierName = "shadowFactoryProcessSequenceSupplier")
-    private FactoryProcessSequence shadowFactoryProcessSequence;
-
-    @ShadowVariable(supplierName = "shadowFactoryComputedDateTimePairSupplier")
-    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
-
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    @ShadowVariable(supplierName = "producingDateTimeSupplier")
     private LocalDateTime producingDateTime;
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    @ShadowVariable(supplierName = "completedDateTimeSupplier")
     private LocalDateTime completedDateTime;
 
     private SchedulingProducingArrangement(
@@ -137,56 +129,40 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources(
             {
-                    "shadowFactoryProcessSequence",
-                    "planningFactoryInstance.factoryProcessToDateTimePairMap"
+                    "planningDateTimeSlot",
+                    "planningFactoryInstance",
+                    "planningFactoryInstance.updateAndSignal"
             }
     )
-    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePairSupplier() {
-        log.info(
-                "schedulingFactoryInstance={},shadowFactoryProcessSequence={}",
-                this.planningFactoryInstance, this.shadowFactoryProcessSequence
-        );
-        SchedulingFactoryInstance schedulingFactoryInstance = this.getPlanningFactoryInstance();
-        if (Objects.isNull(schedulingFactoryInstance)) {
+    private LocalDateTime completedDateTimeSupplier() {
+
+        if (Objects.isNull(this.planningFactoryInstance)) {
             return null;
         }
-        if (Objects.isNull(getShadowFactoryProcessSequence())) {
+        if (Objects.isNull(this.planningDateTimeSlot)) {
             return null;
         }
 
-        FactoryProcessSequence factoryProcessSequence
-                = this.getShadowFactoryProcessSequence();
-        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> computedMap
-                = schedulingFactoryInstance.getFactoryProcessToDateTimePairMap();
-        FactoryComputedDateTimePair dateTimePair = computedMap.get(factoryProcessSequence);
-        log.info("dateTimePair={}", dateTimePair);
-        return dateTimePair;
+        return this.planningFactoryInstance.queryCompletedDateTime(this);
     }
 
     @ShadowSources(
             {
+                    "planningDateTimeSlot",
                     "planningFactoryInstance",
-                    "planningDateTimeSlot"
+                    "planningFactoryInstance.updateAndSignal"
             }
     )
-    private FactoryProcessSequence shadowFactoryProcessSequenceSupplier() {
-        log.info(
-                "schedulingFactoryInstance={},planningDateTimeSlot={}",
-                this.planningFactoryInstance, this.planningDateTimeSlot
-        );
-        SchedulingFactoryInstance planningFactoryInstance
-                = this.getPlanningFactoryInstance();
-        SchedulingDateTimeSlot planningDateTimeSlot
-                = this.getPlanningDateTimeSlot();
-        if (Objects.isNull(planningFactoryInstance)
-            || Objects.isNull(planningDateTimeSlot)
-        ) {
+    private LocalDateTime producingDateTimeSupplier() {
+
+        if (Objects.isNull(this.planningFactoryInstance)) {
+            return null;
+        }
+        if (Objects.isNull(this.planningDateTimeSlot)) {
             return null;
         }
 
-        FactoryProcessSequence factoryProcessSequence = new FactoryProcessSequence(this);
-        log.info("factoryProcessSequence={}", factoryProcessSequence);
-        return factoryProcessSequence;
+        return this.planningFactoryInstance.queryProducingDateTime(this);
     }
 
     @JsonIgnore
