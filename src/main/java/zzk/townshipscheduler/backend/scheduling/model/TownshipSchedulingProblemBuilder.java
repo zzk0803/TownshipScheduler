@@ -1,13 +1,14 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
+import lombok.extern.log4j.Log4j2;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Log4j2
 public class TownshipSchedulingProblemBuilder {
 
     private String uuid;
@@ -92,6 +93,22 @@ public class TownshipSchedulingProblemBuilder {
         this.setupGameActions();
         this.trimUnrelatedObject();
 
+        int orderSize = this.schedulingOrderList.size();
+        long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
+                .filter(SchedulingProducingArrangement::isOrderDirect)
+                .count();
+        int totalItemProducingArrangementCount = this.schedulingProducingArrangementList.size();
+        int dateTimeValueRangeCount = this.schedulingDateTimeSlots.size();
+        int factoryCount = this.schedulingFactoryInstanceList.size();
+        log.info(
+                "your township scheduling problem include {} order,contain {} final product item to make,and include all materials  need {} arrangement.factory value range size:{},date times slot size:{}",
+                orderSize,
+                orderItemProducingArrangementCount,
+                totalItemProducingArrangementCount,
+                factoryCount,
+                dateTimeValueRangeCount
+        );
+
         return new TownshipSchedulingProblem(
                 this.uuid,
                 this.schedulingProductList,
@@ -120,6 +137,11 @@ public class TownshipSchedulingProblemBuilder {
         schedulingDateTimeSlots(schedulingDateTimeSlots);
     }
 
+    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
+        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
+        return this;
+    }
+
     public void setupGameActions() {
         ArrangementIdRoller idRoller = ArrangementIdRoller.forProblem(this.uuid);
 
@@ -134,47 +156,6 @@ public class TownshipSchedulingProblemBuilder {
                 .collect(Collectors.toCollection(ArrayList::new));
 
         schedulingProducingArrangementList(producingArrangementArrayList);
-    }
-
-    private void trimUnrelatedObject() {
-        List<SchedulingProduct> relatedSchedulingProduct
-                = this.schedulingProducingArrangementList.stream()
-                .map(SchedulingProducingArrangement::getSchedulingProduct)
-                .toList();
-        this.schedulingProductList.removeIf(product -> !relatedSchedulingProduct.contains(product));
-
-        List<SchedulingFactoryInfo> relatedSchedulingFactoryInfo
-                = this.schedulingProducingArrangementList.stream()
-                .map(SchedulingProducingArrangement::getRequiredFactoryInfo)
-                .toList();
-
-        this.schedulingFactoryInfoList.removeIf(
-                schedulingFactoryInfo -> {
-                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
-                            .anyMatch(streamIterating -> {
-                                return streamIterating.getCategoryName()
-                                        .equals(schedulingFactoryInfo.getCategoryName());
-                            });
-                    return !anyMatch;
-                }
-        );
-        this.schedulingFactoryInstanceList.removeIf(
-                factory -> {
-                    SchedulingFactoryInfo schedulingFactoryInfo = factory.getSchedulingFactoryInfo();
-                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
-                            .anyMatch(streamIterating -> {
-                                boolean categoryEqual = streamIterating.getCategoryName()
-                                        .equals(schedulingFactoryInfo.getCategoryName());
-                                return categoryEqual;
-                            });
-                    return !anyMatch;
-                }
-        );
-    }
-
-    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
-        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
-        return this;
     }
 
     private ArrayList<SchedulingProducingArrangement> expandAndSetupIntoMaterials(
@@ -218,6 +199,42 @@ public class TownshipSchedulingProblemBuilder {
     private TownshipSchedulingProblemBuilder schedulingProducingArrangementList(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
         return this;
+    }
+
+    private void trimUnrelatedObject() {
+        List<SchedulingProduct> relatedSchedulingProduct
+                = this.schedulingProducingArrangementList.stream()
+                .map(SchedulingProducingArrangement::getSchedulingProduct)
+                .toList();
+        this.schedulingProductList.removeIf(product -> !relatedSchedulingProduct.contains(product));
+
+        List<SchedulingFactoryInfo> relatedSchedulingFactoryInfo
+                = this.schedulingProducingArrangementList.stream()
+                .map(SchedulingProducingArrangement::getRequiredFactoryInfo)
+                .toList();
+
+        this.schedulingFactoryInfoList.removeIf(
+                schedulingFactoryInfo -> {
+                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
+                            .anyMatch(streamIterating -> {
+                                return streamIterating.getCategoryName()
+                                        .equals(schedulingFactoryInfo.getCategoryName());
+                            });
+                    return !anyMatch;
+                }
+        );
+        this.schedulingFactoryInstanceList.removeIf(
+                factory -> {
+                    SchedulingFactoryInfo schedulingFactoryInfo = factory.getSchedulingFactoryInfo();
+                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
+                            .anyMatch(streamIterating -> {
+                                boolean categoryEqual = streamIterating.getCategoryName()
+                                        .equals(schedulingFactoryInfo.getCategoryName());
+                                return categoryEqual;
+                            });
+                    return !anyMatch;
+                }
+        );
     }
 
     public String toString() {

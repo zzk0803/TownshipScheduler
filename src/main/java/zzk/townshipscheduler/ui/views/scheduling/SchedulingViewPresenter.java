@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
 import ai.timefold.solver.core.api.solver.SolverStatus;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
@@ -197,11 +198,6 @@ public class SchedulingViewPresenter {
         treeGrid.setTreeData(toTreeData(arrangementList));
     }
 
-    public void setupOrderBriefGrid() {
-        List<SchedulingOrderVo> schedulingOrderVo = toSchedulingOrderVo();
-        this.getSchedulingView().getOrderBriefGrid().setItems(schedulingOrderVo);
-    }
-
     private TreeData<SchedulingProducingArrangement> toTreeData(List<SchedulingProducingArrangement> arrangementList) {
         TreeData<SchedulingProducingArrangement> arrangementTreeData
                 = new TreeData<>();
@@ -214,6 +210,11 @@ public class SchedulingViewPresenter {
         );
 
         return arrangementTreeData;
+    }
+
+    public void setupOrderBriefGrid() {
+        List<SchedulingOrderVo> schedulingOrderVo = toSchedulingOrderVo();
+        this.getSchedulingView().getOrderBriefGrid().setItems(schedulingOrderVo);
     }
 
     public List<SchedulingOrderVo> toSchedulingOrderVo() {
@@ -340,6 +341,26 @@ public class SchedulingViewPresenter {
 
     public void setupArrangementsTreeGrid(TreeGrid<SchedulingProducingArrangement> treeGrid) {
         setupArrangementsTreeGrid(treeGrid, findCurrentProblem());
+    }
+
+    public Text setupBriefText() {
+        int orderSize = this.townshipSchedulingProblem.getSchedulingOrderList().size();
+        long orderItemProducingArrangementCount = this.townshipSchedulingProblem.getSchedulingProducingArrangementList()
+                .stream()
+                .filter(SchedulingProducingArrangement::isOrderDirect)
+                .count();
+        int totalItemProducingArrangementCount = this.townshipSchedulingProblem.getSchedulingProducingArrangementList()
+                .size();
+        int dateTimeValueRangeCount = this.townshipSchedulingProblem.getSchedulingDateTimeSlots().size();
+        int factoryCount = this.townshipSchedulingProblem.getSchedulingFactoryInstanceList().size();
+        String formatted = "your township scheduling problem include %s order,contain %s final product item to make,and include all materials  need %s arrangement.factory value range size:%s,date times slot size:%s".formatted(
+                orderSize,
+                orderItemProducingArrangementCount,
+                totalItemProducingArrangementCount,
+                factoryCount,
+                dateTimeValueRangeCount
+        );
+        return new Text(formatted);
     }
 
 }
