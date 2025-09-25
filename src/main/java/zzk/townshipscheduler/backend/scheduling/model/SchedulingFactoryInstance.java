@@ -4,6 +4,8 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -42,9 +44,37 @@ public class SchedulingFactoryInstance {
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
+    @ShadowVariable(supplierName = "shadowProcessSequenceToComputePairMapSupplier")
     @DeepPlanningClone
     private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMap
             = new TreeMap<>();
+
+    @ShadowSources(
+            value = {
+                    "planningFactoryInstanceProducingArrangements",
+                    "planningFactoryInstanceProducingArrangements[].factoryProcessSequence"
+            }
+    )
+    public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMapSupplier() {
+        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMap
+                = new TreeMap<>();
+        this.planningFactoryInstanceProducingArrangements.stream()
+                .map(FactoryProcessSequence::of)
+                .forEach(factoryProcessSequence -> this.putFactoryProcessSequence(
+                        shadowProcessSequenceToComputePairMap,
+                        factoryProcessSequence
+                ));
+
+        this.planningFactoryInstanceProducingArrangements
+                .forEach(schedulingProducingArrangement -> {
+                    FactoryComputedDateTimePair computedDateTimePair
+                            = shadowProcessSequenceToComputePairMap.get(schedulingProducingArrangement.getFactoryProcessSequence());
+                    schedulingProducingArrangement.setProducingDateTime(computedDateTimePair.producingDateTime());
+                    schedulingProducingArrangement.setCompletedDateTime(computedDateTimePair.completedDateTime());
+                });
+
+        return shadowProcessSequenceToComputePairMap;
+    }
 
 
     public void setupFactoryReadableIdentifier() {
@@ -65,8 +95,8 @@ public class SchedulingFactoryInstance {
     }
 
     public LocalDateTime queryProducingDateTime(FactoryProcessSequence factoryProcessSequence) {
-        FactoryComputedDateTimePair computedDateTimePair = this.shadowProcessSequenceToComputePairMap.get(
-                factoryProcessSequence);
+        FactoryComputedDateTimePair computedDateTimePair
+                = Collections.unmodifiableNavigableMap(this.shadowProcessSequenceToComputePairMap).get(factoryProcessSequence);
         return computedDateTimePair != null ? computedDateTimePair.producingDateTime() : null;
     }
 
@@ -76,8 +106,8 @@ public class SchedulingFactoryInstance {
     }
 
     public LocalDateTime queryCompletedDateTime(FactoryProcessSequence factoryProcessSequence) {
-        FactoryComputedDateTimePair computedDateTimePair = this.shadowProcessSequenceToComputePairMap.get(
-                factoryProcessSequence);
+        FactoryComputedDateTimePair computedDateTimePair
+                = Collections.unmodifiableNavigableMap(this.shadowProcessSequenceToComputePairMap).get(factoryProcessSequence);
         return computedDateTimePair != null ? computedDateTimePair.completedDateTime() : null;
     }
 
