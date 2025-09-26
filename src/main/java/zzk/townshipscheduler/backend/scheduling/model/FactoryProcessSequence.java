@@ -56,7 +56,10 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
     }
 
     public void trigRemove() {
-        this.schedulingFactoryInstance.removeFactoryProcessSequence(this);
+        if (this.schedulingFactoryInstance != null) {
+            this.schedulingFactoryInstance.removeFactoryProcessSequence(this);
+        }
+
     }
 
 }
