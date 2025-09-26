@@ -93,6 +93,13 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    @ShadowVariable(supplierName = "arrangeDateTimeSupplier")
+    private LocalDateTime arrangeDateTime;
+
     @ToString.Include
     @ShadowVariable(supplierName = "factoryProcessSequenceSupplier")
     private FactoryProcessSequence factoryProcessSequence;
@@ -139,44 +146,56 @@ public class SchedulingProducingArrangement {
     )
     public FactoryProcessSequence factoryProcessSequenceSupplier() {
         if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
-            return null;
+            return this.factoryProcessSequence;
         }
 
+        if (this.factoryProcessSequence != null) {
+            this.factoryProcessSequence.trigRemove();
+        }
         return FactoryProcessSequence.of(this);
     }
 
-    @ShadowSources(
-            value = {
-                    "factoryProcessSequence",
-                    "planningFactoryInstance.shadowProcessSequenceToComputePairMap"
-            }
-    )
-    public LocalDateTime completedDateTimeSupplier() {
-        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.planningDateTimeSlot)) {
-            return null;
-        }
-
-        LocalDateTime queriedCompletedDateTime = this.planningFactoryInstance.queryCompletedDateTime(this);
-        return this.completedDateTime != null
-                ? this.completedDateTime
-                : (this.completedDateTime = queriedCompletedDateTime);
+    public void pullComputedDateTime() {
+        this.producingDateTime = producingDateTimeSupplier();
+        this.completedDateTime = completedDateTimeSupplier();
     }
 
     @ShadowSources(
-            value = {
+            {
                     "factoryProcessSequence",
-                    "planningFactoryInstance.shadowProcessSequenceToComputePairMap"
+                    "planningFactoryInstance.shadowProcessSequenceToComputePairMapSignal"
+            }
+    )
+    public LocalDateTime completedDateTimeSupplier() {
+        if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.planningFactoryInstance)) {
+            return null;
+        }
+        if (Objects.isNull(this.factoryProcessSequence)) {
+            return null;
+        }
+        LocalDateTime queriedCompletedDateTime = this.planningFactoryInstance.queryCompletedDateTime(this.factoryProcessSequence);
+        return Objects.nonNull(queriedCompletedDateTime) && !queriedCompletedDateTime.equals(this.completedDateTime)
+                ? (this.completedDateTime = queriedCompletedDateTime)
+                : this.completedDateTime;
+    }
+
+    @ShadowSources(
+            {
+                    "factoryProcessSequence",
+                    "planningFactoryInstance.shadowProcessSequenceToComputePairMapSignal"
             }
     )
     public LocalDateTime producingDateTimeSupplier() {
-        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.planningDateTimeSlot)) {
+        if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.planningFactoryInstance)) {
             return null;
         }
-
-        LocalDateTime queriedProducingDateTime = this.planningFactoryInstance.queryProducingDateTime(this);
-        return Objects.nonNull(this.producingDateTime)
-                ? this.producingDateTime
-                : (this.producingDateTime = queriedProducingDateTime);
+        if (Objects.isNull(this.factoryProcessSequence)) {
+            return null;
+        }
+        LocalDateTime queriedProducingDateTime = this.planningFactoryInstance.queryProducingDateTime(this.factoryProcessSequence);
+        return Objects.nonNull(queriedProducingDateTime) && !queriedProducingDateTime.equals(this.producingDateTime)
+                ? (this.producingDateTime = queriedProducingDateTime)
+                : this.producingDateTime;
     }
 
     @JsonIgnore
@@ -268,11 +287,9 @@ public class SchedulingProducingArrangement {
         return getSchedulingProduct().getRequireFactory();
     }
 
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getArrangeDateTime() {
+
+    @ShadowSources({"planningDateTimeSlot"})
+    public LocalDateTime arrangeDateTimeSupplier() {
         SchedulingDateTimeSlot dateTimeSlot = getPlanningDateTimeSlot();
         return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
     }
