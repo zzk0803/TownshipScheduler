@@ -6,7 +6,7 @@
 
     <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
 
-    <environmentMode>PHASE_ASSERT</environmentMode>
+    <environmentMode>FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
