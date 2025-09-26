@@ -93,10 +93,13 @@ public final class SchedulingProduct implements IGameArrangeObject {
     public static class Id implements Comparable<Id> {
 
         @JsonProperty("id")
-        @Getter
         private long value;
 
         public static Id of(long value) {
+            return new Id(value);
+        }
+
+        public static Id of(Long value) {
             return new Id(value);
         }
 
@@ -111,8 +114,19 @@ public final class SchedulingProduct implements IGameArrangeObject {
 
         @Override
         public int compareTo(Id that) {
-            Comparator<Id> comparator = Comparator.comparing(Id::getValue);
-            return comparator.compare(this, that);
+            return Long.compare(this.value, that.value);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Id id)) return false;
+
+            return getValue() == id.getValue();
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(getValue());
         }
 
     }

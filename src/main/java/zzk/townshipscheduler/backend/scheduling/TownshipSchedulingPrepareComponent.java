@@ -15,7 +15,10 @@ import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -40,15 +43,13 @@ public class TownshipSchedulingPrepareComponent {
 
         final Optional<PlayerEntity> optionalPlayerForScheduling
                 = playerEntityRepository.queryForPrepareScheduling(playerEntity.getId());
-//                = playerEntityRepository.findPlayerById(playerEntity.getId());
 
         final Set<FieldFactoryInfoEntity> factoryInfos
                 = fieldFactoryInfoEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
-//                = fieldFactoryInfoEntityRepository.findBy(FieldFactoryInfoEntity.class, Sort.by("id"));
 
         final Set<ProductEntity> products
                 = productEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
-//                = productEntityRepository.findBy(ProductEntity.class, Sort.by("id"));
+        products.removeIf(productEntity -> productEntity.getLevel() > playerEntity.getLevel());
 
         return optionalPlayerForScheduling
                 .map(playerEntityProjection -> TownshipSchedulingRequest.builder()

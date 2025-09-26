@@ -10,6 +10,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,10 @@ class ProblemTransferProcess {
     private final Map<SchedulingProduct.Id, SchedulingProduct> idProductMap;
 
     private final Map<SchedulingFactoryInfo.Id, SchedulingFactoryInfo> idFactoryTypeMap;
+
+    private final List<SchedulingProduct> schedulingProductList;
+
+    private final List<SchedulingFactoryInfo> schedulingFactoryInfoList;
 
     private final List<SchedulingProducingExecutionMode> schedulingProducingExecutionModes;
 
@@ -51,15 +57,23 @@ class ProblemTransferProcess {
         this.workCalendarEnd = townshipSchedulingRequest.getWorkCalendarEnd();
         this.sleepStartPickerValue = townshipSchedulingRequest.getSleepStartPickerValue();
         this.sleepEndPickerValue = townshipSchedulingRequest.getSleepEndPickerValue();
-        this.idProductMap = new LinkedHashMap<>();
-        this.idFactoryTypeMap = new LinkedHashMap<>();
+        this.idProductMap = new HashMap<>();
+        this.idFactoryTypeMap = new HashMap<>();
         this.schedulingProducingExecutionModes = new ArrayList<>();
         this.schedulingFactoryInstances = new ArrayList<>();
         this.schedulingOrders = new ArrayList<>();
+        this.schedulingProductList = new ArrayList<>();
+        this.schedulingFactoryInfoList = new ArrayList<>();
     }
 
     public TownshipSchedulingProblem buildProblem() {
         doMapping();
+        this.schedulingProductList.addAll(
+                new ArrayList<>(this.idProductMap.values())
+        );
+        this.schedulingFactoryInfoList.addAll(
+                new ArrayList<>(this.idFactoryTypeMap.values())
+        );
 
         SchedulingWorkCalendar schedulingWorkCalendar
                 = SchedulingWorkCalendar.with(workCalendarStart, workCalendarEnd);
@@ -69,8 +83,8 @@ class ProblemTransferProcess {
 
         return TownshipSchedulingProblem.builder()
                 .uuid()
-                .schedulingProductList(new ArrayList<>(this.idProductMap.values()))
-                .schedulingFactoryInfoList(new ArrayList<>(this.idFactoryTypeMap.values()))
+                .schedulingProductList(new ArrayList<>(this.schedulingProductList))
+                .schedulingFactoryInfoList(new ArrayList<>(this.schedulingFactoryInfoList))
                 .schedulingOrderList(new ArrayList<>(this.schedulingOrders))
                 .schedulingFactoryInstanceList(new ArrayList<>(this.schedulingFactoryInstances))
                 .schedulingPlayer(this.schedulingPlayer)
@@ -89,17 +103,11 @@ class ProblemTransferProcess {
 
     private void fetchAndMapToSchedulingProduct() {
         Collection<ProductEntity> productDtoList = townshipSchedulingRequest.getProductEntities();
-        SchedulingProduct schedulingProduct = null;
         for (ProductEntity productDto : productDtoList) {
-            schedulingProduct = buildOrGetSchedulingProduct(productDto);
+            SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productDto);
 
-            FieldFactoryInfoEntity fieldFactoryInfo
-                    = productDto.getFieldFactoryInfo();
-            SchedulingFactoryInfo schedulingFactoryInfo
-                    = buildOrGetSchedulingFactoryInfo(
-                    SchedulingFactoryInfo.Id.of(fieldFactoryInfo)
-            );
-            schedulingProduct.setRequireFactory(schedulingFactoryInfo);
+            FieldFactoryInfoEntity fieldFactoryInfo = productDto.getFieldFactoryInfo();
+            schedulingProduct.setRequireFactory(buildOrGetSchedulingFactoryInfo(fieldFactoryInfo));
 
             Set<SchedulingProducingExecutionMode> producingExecutionModes
                     = calcProducingExecutionMode(productDto, schedulingProduct);
@@ -108,26 +116,117 @@ class ProblemTransferProcess {
         }
     }
 
+    private SchedulingProduct buildOrGetSchedulingProduct(ProductEntity product) {
+        return idProductMap.computeIfAbsent(
+                SchedulingProduct.Id.of(product),
+                id -> {
+                    SchedulingProduct schedulingProduct = new SchedulingProduct();
+                    schedulingProduct.setId(id);
+                    schedulingProduct.setName(product.getName());
+                    schedulingProduct.setLevel(product.getLevel());
+                    schedulingProduct.setGainWhenCompleted(product.getDefaultAmountWhenCreated());
+                    return schedulingProduct;
+                }
+        );
+
+    }
+
+//    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id schedulingFactoryInfoId) {
+//        if (schedulingFactoryInfoId == null) {
+//            throw new IllegalArgumentException("schedulingProductId must not be null");
+//        }
+//        return idFactoryTypeMap.computeIfAbsent(
+//                schedulingFactoryInfoId,
+//                id -> {
+//                    SchedulingFactoryInfo schedulingFactoryInfo = new SchedulingFactoryInfo();
+//                    schedulingFactoryInfo.setId(id);
+//                    return schedulingFactoryInfo;
+//                }
+//        );
+//    }
+
+    private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
+            ProductEntity productEntity,
+            SchedulingProduct schedulingProduct
+    ) {
+        AtomicInteger idRoller = new AtomicInteger(1);
+        Set<ProductManufactureInfoEntity> productManufactureInfos = productEntity.getManufactureInfoEntities();
+        if (productManufactureInfos != null) {
+            Set<SchedulingProducingExecutionMode> executionModes = new LinkedHashSet<>();
+            productManufactureInfos.forEach(productManufactureInfo -> {
+                SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();
+                executionMode.setId(idRoller.getAndIncrement());
+                executionMode.setProduct(schedulingProduct);
+                Duration producingDuration = productManufactureInfo.getProducingDuration();
+                executionMode.setExecuteDuration(producingDuration != null ? producingDuration : Duration.ZERO);
+                ProductAmountBill productAmountBill = new ProductAmountBill();
+                executionMode.setMaterials(productAmountBill);
+                Set<ProductMaterialsRelation> productMaterialsRelations = productManufactureInfo.getProductMaterialsRelations();
+                if (productMaterialsRelations != null && !productMaterialsRelations.isEmpty()) {
+                    productMaterialsRelations.forEach(productMaterialsRelation -> {
+                        ProductEntity materialProduct = productMaterialsRelation.getMaterial();
+                        Integer amount = productMaterialsRelation.getAmount();
+                        SchedulingProduct material = buildOrGetSchedulingProduct(materialProduct);
+                        productAmountBill.put(material, amount);
+                    });
+                }
+                executionModes.add(executionMode);
+            });
+            return executionModes;
+        } else {
+            SchedulingProducingExecutionMode defaultProducingExecutionMode = new SchedulingProducingExecutionMode();
+            defaultProducingExecutionMode.setId(idRoller.getAndIncrement());
+            defaultProducingExecutionMode.setProduct(schedulingProduct);
+            return Set.of(defaultProducingExecutionMode);
+        }
+
+    }
+
     private void fetchAndMapToSchedulingFactoryInfo() {
         Collection<FieldFactoryInfoEntity> factoryInfoEntities
                 = townshipSchedulingRequest.getFieldFactoryInfoEntities();
-//            Set<FieldFactoryInfoEntityDto> factoryInfoEntities = townshipSchedulingRequest.getFieldFactoryInfoEntities();
-        for (FieldFactoryInfoEntity fieldFactoryInfo : factoryInfoEntities) {
-//            for (FieldFactoryInfoEntityDto fieldFactoryInfo : factoryInfoEntities) {
-            SchedulingFactoryInfo schedulingFactoryInfo = buildOrGetSchedulingFactoryInfo(fieldFactoryInfo);
-            fieldFactoryInfo.getPortfolioGoods().stream()
-                    .map(product -> this.buildOrGetSchedulingProduct(
-                            SchedulingProduct.Id.of(product.getId())
-                    ))
-                    .forEach(schedulingFactoryInfo::appendPortfolioProduct);
-            schedulingFactoryInfo.setProducingStructureType(fieldFactoryInfo.getProducingType());
-            schedulingFactoryInfo.setDefaultInstanceAmount(fieldFactoryInfo.getDefaultInstanceAmount());
-            schedulingFactoryInfo.setDefaultProducingCapacity(fieldFactoryInfo.getDefaultProducingCapacity());
-            schedulingFactoryInfo.setDefaultReapWindowCapacity(fieldFactoryInfo.getDefaultReapWindowCapacity());
-            schedulingFactoryInfo.setMaxInstanceAmount(fieldFactoryInfo.getMaxInstanceAmount());
-            schedulingFactoryInfo.setMaxProducingCapacity(fieldFactoryInfo.getMaxProducingCapacity());
-            schedulingFactoryInfo.setMaxReapWindowCapacity(fieldFactoryInfo.getMaxReapWindowCapacity());
-        }
+        factoryInfoEntities.forEach(
+                fieldFactoryInfo -> {
+                    SchedulingFactoryInfo schedulingFactoryInfo = buildOrGetSchedulingFactoryInfo(fieldFactoryInfo);
+                    fieldFactoryInfo.getPortfolioGoods().stream()
+                            .map(this::buildOrGetSchedulingProduct)
+                            .forEach(schedulingFactoryInfo::appendPortfolioProduct);
+                    schedulingFactoryInfo.setProducingStructureType(fieldFactoryInfo.getProducingType());
+                    schedulingFactoryInfo.setDefaultInstanceAmount(fieldFactoryInfo.getDefaultInstanceAmount());
+                    schedulingFactoryInfo.setDefaultProducingCapacity(fieldFactoryInfo.getDefaultProducingCapacity());
+                    schedulingFactoryInfo.setDefaultReapWindowCapacity(fieldFactoryInfo.getDefaultReapWindowCapacity());
+                    schedulingFactoryInfo.setMaxInstanceAmount(fieldFactoryInfo.getMaxInstanceAmount());
+                    schedulingFactoryInfo.setMaxProducingCapacity(fieldFactoryInfo.getMaxProducingCapacity());
+                    schedulingFactoryInfo.setMaxReapWindowCapacity(fieldFactoryInfo.getMaxReapWindowCapacity());
+                }
+        );
+    }
+
+//    private SchedulingProduct buildOrGetSchedulingProduct(SchedulingProduct.Id schedulingProductId) {
+//        if (schedulingProductId == null) {
+//            throw new IllegalArgumentException("schedulingProductId must not be null");
+//        }
+//        return idProductMap.computeIfAbsent(
+//                schedulingProductId,
+//                id -> {
+//                    SchedulingProduct product = new SchedulingProduct();
+//                    product.setId(id);
+//                    return product;
+//                }
+//        );
+//    }
+
+    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
+        return idFactoryTypeMap.computeIfAbsent(
+                SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntity),
+                id -> {
+                    SchedulingFactoryInfo info = new SchedulingFactoryInfo();
+                    info.setId(id);
+                    info.setCategoryName(fieldFactoryInfoEntity.getCategory());
+                    info.setLevel(fieldFactoryInfoEntity.getLevel());
+                    return info;
+                }
+        );
     }
 
     private void fetchAndMapToSchedulingFactoryInstance() {
@@ -158,10 +257,8 @@ class ProblemTransferProcess {
                                         .findFirst()
                                         .orElseThrow();
                                 SchedulingFactoryInstance fieldInstance = new SchedulingFactoryInstance();
-                                SchedulingFactoryInfo.Id schedulingFactoryInfoId
-                                        = SchedulingFactoryInfo.Id.of(fieldFactoryEntity.getFieldFactoryInfoEntity());
                                 SchedulingFactoryInfo schedulingFactoryInfo
-                                        = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
+                                        = buildOrGetSchedulingFactoryInfo(fieldFactoryEntity.getFieldFactoryInfoEntity());
                                 int factoryInstanceId = factoryInstanceIdRoller.getAndIncrement();
                                 fieldInstance.setId(factoryInstanceId);
                                 fieldInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
@@ -172,26 +269,21 @@ class ProblemTransferProcess {
                                 schedulingFactoryInfo.getFactoryInstances().add(fieldInstance);
                                 this.schedulingFactoryInstances.add(fieldInstance);
                             } else {
-                                Map<FieldFactoryInfoEntity, List<FieldFactoryEntity>> typeInstamceMap
-                                        = fieldFactoryEntities
-                                        .stream()
+                                Map<FieldFactoryInfoEntity, List<FieldFactoryEntity>> typeInstanceMap
+                                        = fieldFactoryEntities.stream()
                                         .collect(Collectors.groupingBy(FieldFactoryEntity::getFieldFactoryInfoEntity));
-                                for (Map.Entry<FieldFactoryInfoEntity, List<FieldFactoryEntity>> entry : typeInstamceMap.entrySet()) {
+                                for (Map.Entry<FieldFactoryInfoEntity, List<FieldFactoryEntity>> entry : typeInstanceMap.entrySet()) {
                                     FieldFactoryInfoEntity type = entry.getKey();
                                     List<FieldFactoryEntity> instanceList = entry.getValue();
                                     int size = instanceList.size();
-                                    SchedulingFactoryInfo.Id schedulingFactoryInfoId
-                                            = SchedulingFactoryInfo.Id.of(type);
                                     SchedulingFactoryInfo schedulingFactoryInfo
-                                            = buildOrGetSchedulingFactoryInfo(schedulingFactoryInfoId);
-                                    String categoryName = schedulingFactoryInfo.getCategoryName();
+                                            = buildOrGetSchedulingFactoryInfo(type);
                                     for (int i = 0; i < size; i++) {
                                         FieldFactoryEntity fieldFactoryEntity = instanceList.get(i);
                                         SchedulingFactoryInstance factoryInstance
                                                 = new SchedulingFactoryInstance();
                                         factoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
-                                        int seqNum = i + 1;
-                                        factoryInstance.setSeqNum(seqNum);
+                                        factoryInstance.setSeqNum(i + 1);
                                         factoryInstance.setSchedulingFactoryInfo(
                                                 schedulingFactoryInfo
                                         );
@@ -223,7 +315,7 @@ class ProblemTransferProcess {
         dtoMap.forEach(
                 (product, amount) -> {
                     productAmountMap.put(
-                            buildOrGetSchedulingProduct(SchedulingProduct.Id.of(product.getId())),
+                            buildOrGetSchedulingProduct(product),
                             amount
                     );
                 }
@@ -248,93 +340,13 @@ class ProblemTransferProcess {
                 });
     }
 
-    private SchedulingProduct buildOrGetSchedulingProduct(ProductEntity product) {
-        SchedulingProduct.Id productId = SchedulingProduct.Id.of(Objects.requireNonNull(product.getId()));
-        SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productId);
-        schedulingProduct.setName(product.getName());
-        schedulingProduct.setLevel(product.getLevel());
-        return schedulingProduct;
-
-    }
-
-    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id schedulingFactoryInfoId) {
-        if (!idFactoryTypeMap.containsKey(schedulingFactoryInfoId)) {
-            SchedulingFactoryInfo schedulingFactoryInfo = new SchedulingFactoryInfo();
-            schedulingFactoryInfo.setId(schedulingFactoryInfoId);
-            idFactoryTypeMap.put(schedulingFactoryInfoId, schedulingFactoryInfo);
-        }
-        return idFactoryTypeMap.get(schedulingFactoryInfoId);
-
-    }
-
-    private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
-            ProductEntity productEntity,
-            SchedulingProduct schedulingProduct
-    ) {
-        AtomicInteger idRoller = new AtomicInteger(1);
-        Set<ProductManufactureInfoEntity> productManufactureInfos = productEntity.getManufactureInfoEntities();
-        if (productManufactureInfos != null ) {
-            Set<SchedulingProducingExecutionMode> executionModes = new LinkedHashSet<>();
-            productManufactureInfos.forEach(productManufactureInfo -> {
-                SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();
-                executionMode.setId(idRoller.getAndIncrement());
-                executionMode.setProduct(schedulingProduct);
-                Duration producingDuration = productManufactureInfo.getProducingDuration();
-                executionMode.setExecuteDuration(producingDuration != null ? producingDuration : Duration.ZERO);
-                ProductAmountBill productAmountBill = new ProductAmountBill();
-                executionMode.setMaterials(productAmountBill);
-                Set<ProductMaterialsRelation> productMaterialsRelations = productManufactureInfo.getProductMaterialsRelations();
-                if (productMaterialsRelations != null && !productMaterialsRelations.isEmpty()) {
-                    productMaterialsRelations.forEach(productMaterialsRelation -> {
-                        ProductEntity materialProduct = productMaterialsRelation.getMaterial();
-                        Integer amount = productMaterialsRelation.getAmount();
-                        SchedulingProduct material
-                                = buildOrGetSchedulingProduct(
-                                SchedulingProduct.Id.of(materialProduct)
-                        );
-                        productAmountBill.put(material, amount);
-                    });
-                }
-                executionModes.add(executionMode);
-            });
-            return executionModes;
-        } else {
-            SchedulingProducingExecutionMode defaultProducingExecutionMode = new SchedulingProducingExecutionMode();
-            defaultProducingExecutionMode.setId(idRoller.getAndIncrement());
-            defaultProducingExecutionMode.setProduct(schedulingProduct);
-            return Set.of(defaultProducingExecutionMode);
-        }
-
-    }
-
-    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
-        SchedulingFactoryInfo schedulingFactoryInfo
-                = buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntity));
-        schedulingFactoryInfo.setCategoryName(fieldFactoryInfoEntity.getCategory());
-        schedulingFactoryInfo.setLevel(fieldFactoryInfoEntity.getLevel());
-        return schedulingFactoryInfo;
-    }
-
-    private SchedulingProduct buildOrGetSchedulingProduct(SchedulingProduct.Id schedulingProductId) {
-        if (schedulingProductId == null) {
-            throw new IllegalArgumentException();
-        }
-
-        if (!idProductMap.containsKey(schedulingProductId)) {
-            SchedulingProduct schedulingProduct = new SchedulingProduct();
-            schedulingProduct.setId(schedulingProductId);
-            idProductMap.put(schedulingProductId, schedulingProduct);
-        }
-        return idProductMap.get(schedulingProductId);
-    }
-
     private ProductAmountBill createProductAmountBill(OrderEntity order) {
         Map<ProductEntity, Integer> productIdAmountMap = order.getProductAmountMap();
         ProductAmountBill productAmountBill = new ProductAmountBill();
         productIdAmountMap.forEach(
                 (product, amount) -> {
                     productAmountBill.put(
-                            buildOrGetSchedulingProduct(SchedulingProduct.Id.of(product.getId())),
+                            buildOrGetSchedulingProduct(product),
                             amount
                     );
                 }

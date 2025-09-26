@@ -5,6 +5,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
 import java.util.List;
@@ -21,11 +22,10 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
     <T> Set<T> findBy(Class<T> projectionClass, Sort sort);
 
     @Query("select f from FieldFactoryInfoEntity f where f.level <= ?1  and f.boolCategoryField=false order by f.level")
-    List<FieldFactoryInfoEntity> queryFactoryInfoByLevelLessThanOrEqual(Integer level);
+    List<FieldFactoryInfoEntity> queryFactoryInfoByLevelLessThanOrEqual(@Param("level") Integer level);
 
-    @EntityGraph(attributePaths = {"portfolioGoods.fieldFactoryInfo"})
-    @Query("select f from FieldFactoryInfoEntity f where f.level<=:level")
-    Set<FieldFactoryInfoEntity> queryForPrepareScheduling(Integer level);
+    @Query("select f from FieldFactoryInfoEntity f join fetch f.portfolioGoods as fpg where f.level<=:level and fpg.level<=:level ")
+    Set<FieldFactoryInfoEntity> queryForPrepareScheduling(@Param("level") Integer level);
 
     @EntityGraph(
             attributePaths = {
@@ -53,7 +53,7 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
                     "portfolioGoods.crawledAsImage.imageBytes"
             }
     )
-    @Query("select ffie from FieldFactoryInfoEntity ffie where ffie.level<=:level ")
+    @Query("select ffie from FieldFactoryInfoEntity ffie join fetch ffie.portfolioGoods as ffieg where ffie.level<=:level and ffieg.level<=:level")
     @Cacheable(cacheNames = {"cache::factoryProducts:level"}, key = "#level")
     Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Integer level, Sort sort);
 

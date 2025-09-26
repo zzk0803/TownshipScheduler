@@ -3,22 +3,22 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Value;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(onlyExplicitlyIncluded = true)
 public class SchedulingFactoryInfo {
 
     @JsonUnwrapped
-    @ToString.Include
     @EqualsAndHashCode.Include
     private Id id;
 
@@ -54,7 +54,11 @@ public class SchedulingFactoryInfo {
     }
 
     public void appendPortfolioProduct(SchedulingProduct schedulingProduct) {
-        this.portfolio.add(schedulingProduct);
+        this.portfolio.add(Objects.requireNonNull(schedulingProduct));
+    }
+
+    public void add(SchedulingFactoryInstance schedulingFactoryInstance) {
+        this.factoryInstances.add(Objects.requireNonNull(schedulingFactoryInstance));
     }
 
     public boolean typeEqual(SchedulingFactoryInfo that) {
@@ -71,15 +75,36 @@ public class SchedulingFactoryInfo {
         }
 
         return this.maxSupportedProductDurationMinutes = getPortfolio().stream()
-                        .mapToInt(
-                                product -> product.getExecutionModeSet().stream()
-                                        .map(schedulingProducingExecutionMode -> Math.toIntExact(
-                                                schedulingProducingExecutionMode.getExecuteDuration().toMinutes()))
-                                        .min(Comparator.naturalOrder())
-                                        .orElseThrow()
-                        )
-                        .max()
-                        .orElse(60);
+                .mapToInt(
+                        product -> product.getExecutionModeSet().stream()
+                                .map(schedulingProducingExecutionMode -> Math.toIntExact(
+                                        schedulingProducingExecutionMode.getExecuteDuration().toMinutes()))
+                                .min(Comparator.naturalOrder())
+                                .orElseThrow(() -> new NoSuchElementException("product %s,execution mode %s".formatted(
+                                                product.getName(),
+                                                product.getExecutionModeSet().toString()
+                                        ))
+                                )
+                )
+                .max()
+                .orElse(60);
+    }
+
+    @Override
+    public String toString() {
+        return "SchedulingFactoryInfo{" +
+               "id=" + id +
+               ", categoryName='" + categoryName + '\'' +
+               ", level=" + level +
+               ", portfolio=" + portfolio.stream()
+                       .map(SchedulingProduct::getName)
+                       .collect(Collectors.joining(",", "[", "]")) +
+               ", producingStructureType=" + producingStructureType +
+               ", factoryInstances=" + factoryInstances.stream()
+                       .map(SchedulingFactoryInstance::getFactoryReadableIdentifier)
+                       .collect(
+                               Collectors.joining(",", "[", "]")) +
+               '}';
     }
 
     @Value
@@ -101,15 +126,18 @@ public class SchedulingFactoryInfo {
             return new Id(value);
         }
 
-        @Override
-        public int compareTo(Id that) {
-            Comparator<Id> comparator = Comparator.comparing(Id::getValue);
-            return comparator.compare(this, that);
+        public static Id of(Long value) {
+            return new Id(value);
         }
 
         @Override
-        public String toString() {
-            return String.valueOf(value);
+        public int compareTo(Id that) {
+            return Long.compare(this.value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(getValue());
         }
 
         @Override
@@ -120,8 +148,8 @@ public class SchedulingFactoryInfo {
         }
 
         @Override
-        public int hashCode() {
-            return Long.hashCode(getValue());
+        public String toString() {
+            return String.valueOf(value);
         }
 
     }

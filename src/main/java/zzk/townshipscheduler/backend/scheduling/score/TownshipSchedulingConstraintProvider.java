@@ -30,6 +30,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         };
     }
 
+    //    version.3
 //    private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
 //        return constraintFactory.forEach(SchedulingProducingArrangement.class)
 //                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)

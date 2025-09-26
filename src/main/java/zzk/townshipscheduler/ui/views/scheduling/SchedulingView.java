@@ -144,9 +144,11 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private VerticalLayout buildBriefPanel() {
         VerticalLayout panel = new VerticalLayout();
+        panel.add(
+                this.getSchedulingViewPresenter().setupBriefText()
+        );
 
         FormLayout schedulingForm = new FormLayout();
-
         Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
         slotSizeSelect.setLabel("Scheduling Time Slot");
         slotSizeSelect.setNoVerticalOverlap(true);
@@ -174,10 +176,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         schedulingForm.add(playerSleepEndPicker, 1);
         panel.add(schedulingForm);
 
-        panel.add(
-                this.getSchedulingViewPresenter().setupBriefText()
-        );
-
         orderBriefGrid = new Grid<>(SchedulingOrderVo.class, false);
         orderBriefGrid.addColumn(new ComponentRenderer<>(
                         schedulingOrderVo -> {
@@ -195,7 +193,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             DateTimePicker dateTimePicker = new DateTimePicker(deadline);
             dateTimePicker.setReadOnly(true);
             return dateTimePicker;
-        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(0);
+        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(1);
         orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
             LocalDateTime deadline = schedulingOrderVo.getCompletedDateTime();
             if (Objects.nonNull(deadline)) {
@@ -205,7 +203,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             } else {
                 return new Text("N/A");
             }
-        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(0);
+        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(1);
         panel.addAndExpand(orderBriefGrid);
         this.getSchedulingViewPresenter().setupOrderBriefGrid();
         return panel;

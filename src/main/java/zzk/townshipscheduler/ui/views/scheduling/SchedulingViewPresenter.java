@@ -344,15 +344,16 @@ public class SchedulingViewPresenter {
     }
 
     public Text setupBriefText() {
-        int orderSize = this.townshipSchedulingProblem.getSchedulingOrderList().size();
-        long orderItemProducingArrangementCount = this.townshipSchedulingProblem.getSchedulingProducingArrangementList()
+        TownshipSchedulingProblem currentProblem = findCurrentProblem();
+        int orderSize = currentProblem.getSchedulingOrderList().size();
+        long orderItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
                 .stream()
                 .filter(SchedulingProducingArrangement::isOrderDirect)
                 .count();
-        int totalItemProducingArrangementCount = this.townshipSchedulingProblem.getSchedulingProducingArrangementList()
+        int totalItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
                 .size();
-        int dateTimeValueRangeCount = this.townshipSchedulingProblem.getSchedulingDateTimeSlots().size();
-        int factoryCount = this.townshipSchedulingProblem.getSchedulingFactoryInstanceList().size();
+        int dateTimeValueRangeCount = currentProblem.getSchedulingDateTimeSlots().size();
+        int factoryCount = currentProblem.getSchedulingFactoryInstanceList().size();
         String formatted = "your township scheduling problem include %s order,contain %s final product item to make,and include all materials  need %s arrangement.factory value range size:%s,date times slot size:%s".formatted(
                 orderSize,
                 orderItemProducingArrangementCount,

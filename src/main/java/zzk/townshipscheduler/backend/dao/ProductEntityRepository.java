@@ -28,14 +28,22 @@ public interface ProductEntityRepository
     @Query("from ProductEntity as pe join  pe.fieldFactoryInfo  as ffe  select distinct pe.fieldFactoryInfo")
     List<FieldFactoryInfoEntity> queryFieldFactory();
 
+//    @Query(
+//            """
+//                select p from ProductEntity as p
+//                            left join fetch p.manufactureInfoEntities as pmi
+//                                        left join fetch pmi.productMaterialsRelations as pmr
+//                                                    left join fetch pmr.material
+//                where p.level<=:level
+//            """)
     @EntityGraph(
             attributePaths = {
                     "fieldFactoryInfo",
                     "manufactureInfoEntities",
                     "manufactureInfoEntities.productMaterialsRelations",
-                    "manufactureInfoEntities.productMaterialsRelations.material",
-                    "manufactureInfoEntities.productMaterialsRelations.productManufactureInfo"
-            }
+                    "manufactureInfoEntities.productMaterialsRelations.material"
+            },
+            type = EntityGraph.EntityGraphType.LOAD
     )
     @Query("select p from ProductEntity p where p.level<=:level")
     Set<ProductEntity> queryForPrepareScheduling(Integer level);
