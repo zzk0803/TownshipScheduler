@@ -3,7 +3,10 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
-    <environmentMode>PHASE_ASSERT</environmentMode>
+
+    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
+
+    <environmentMode>FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
@@ -47,7 +50,7 @@
             zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
         </customPhaseCommandClass>
     </customPhase>
-    <!--    endregion-->
+    <!--endregion-->
 
     <!--region local search-->
     <localSearch>
