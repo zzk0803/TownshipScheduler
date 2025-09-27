@@ -5,14 +5,12 @@ import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.Duration;
@@ -20,10 +18,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Stream;
 
-@Log4j2
+@Slf4j
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
@@ -55,20 +51,8 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     @ShadowVariable(supplierName = "tailArrangementCompletedDateTimeSupplier")
     private LocalDateTime tailArrangementCompletedDateTime;
 
-    @ShadowSources({"planningSchedulingProducingArrangements[].completedDateTime"})
-    private LocalDateTime tailArrangementCompletedDateTimeSupplier() {
-        if (getSchedulingFactoryInfo().getProducingStructureType() == ProducingStructureType.SLOT) {
-            return null;
-        }
-
-        if (getPlanningSchedulingProducingArrangements().isEmpty()) {
-            return null;
-        }
-
-        LocalDateTime completedDateTime = planningSchedulingProducingArrangements.getLast().getCompletedDateTime();
-        log.info("***  factory={},tailArrangementCompletedDateTime={}",factoryInstance.getFactoryReadableIdentifier(),completedDateTime);
-        return completedDateTime;
-    }
+    @ShadowVariable(supplierName = "firstArrangementProducingDateTimeSupplier")
+    private LocalDateTime firstArrangementProducingDateTime;
 
     public SchedulingFactoryInstanceDateTimeSlot(
             int id,
@@ -80,11 +64,67 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         this.dateTimeSlot = schedulingDateTimeSlot;
     }
 
+    @ShadowSources({"planningSchedulingProducingArrangements"})
+    private LocalDateTime tailArrangementCompletedDateTimeSupplier() {
+        if (getSchedulingFactoryInfo().getProducingStructureType() == ProducingStructureType.SLOT) {
+            return null;
+        }
+
+        if (getPlanningSchedulingProducingArrangements().isEmpty()) {
+            return null;
+        }
+
+        var completedDateTime = getStart().plus(planningSchedulingProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getProducingDuration)
+                .reduce(Duration.ZERO, Duration::plus));
+
+        return completedDateTime;
+    }
+
     @EqualsAndHashCode.Include
     public LocalDateTime getStart() {
         return dateTimeSlot.getStart();
     }
 
+    @EqualsAndHashCode.Include
+    public SchedulingFactoryInfo getSchedulingFactoryInfo() {
+        return factoryInstance.getSchedulingFactoryInfo();
+    }
+
+    @ShadowSources({"previous.tailArrangementCompletedDateTime", "tailArrangementCompletedDateTime"})
+    public LocalDateTime firstArrangementProducingDateTimeSupplier() {
+        LocalDateTime dateTimeSlotStart = this.dateTimeSlot.getStart();
+
+        if (!weatherFactoryProducingTypeIsQueue()) {
+            return dateTimeSlotStart;
+        }
+
+        LocalDateTime firstPreviousExceed = findFirstFormerExceed(dateTimeSlotStart);
+
+        if (firstPreviousExceed == null) {
+            return dateTimeSlotStart;
+        }
+
+        return firstPreviousExceed.isAfter(dateTimeSlotStart)
+                ? firstPreviousExceed
+                : dateTimeSlotStart;
+    }
+
+    private LocalDateTime findFirstFormerExceed(LocalDateTime targetDateTime) {
+        if (this.previous == null) {
+            return null;
+        }
+
+        LocalDateTime previousStart = this.previous.getStart();
+        LocalDateTime previousTailArrangementCompletedDateTime = this.previous.getTailArrangementCompletedDateTime();
+
+        if (Objects.nonNull(previousTailArrangementCompletedDateTime) && previousTailArrangementCompletedDateTime.isAfter(
+                targetDateTime)) {
+            return previousTailArrangementCompletedDateTime;
+        }
+
+        return this.previous.findFirstFormerExceed(previousStart);
+    }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return factoryInstance.weatherFactoryProducingTypeIsQueue();
@@ -105,11 +145,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     public String getCategoryName() {
         return factoryInstance.getCategoryName();
-    }
-
-    @EqualsAndHashCode.Include
-    public SchedulingFactoryInfo getSchedulingFactoryInfo() {
-        return factoryInstance.getSchedulingFactoryInfo();
     }
 
     public int getSeqNum() {

@@ -15,7 +15,6 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Stream;
 
 @Log4j2
 @Data
@@ -234,7 +233,7 @@ public class SchedulingProducingArrangement {
                     "previousSchedulingProducingArrangement",
                     "previousSchedulingProducingArrangement.completedDateTime",
                     "planningFactoryDateTimeSlot",
-                    "planningFactoryDateTimeSlot.tailArrangementCompletedDateTime"
+                    "planningFactoryDateTimeSlot.firstArrangementProducingDateTime"
             }
     )
     public LocalDateTime producingDateTimeSupplier() {
@@ -249,16 +248,11 @@ public class SchedulingProducingArrangement {
         if (getPreviousSchedulingProducingArrangement() != null) {
             return getPreviousSchedulingProducingArrangement().getCompletedDateTime();
         } else {
-            SchedulingFactoryInstanceDateTimeSlot previousOfThis = this.planningFactoryDateTimeSlot.getPrevious();
-            Optional<LocalDateTime> localDateTimeOptional = Stream.iterate(
-                            previousOfThis,
-                            Objects::nonNull,
-                            SchedulingFactoryInstanceDateTimeSlot::getPrevious
-                    ).map(SchedulingFactoryInstanceDateTimeSlot::getTailArrangementCompletedDateTime)
-                    .filter(Objects::nonNull)
-                    .limit(1)
-                    .findFirst();
-            return localDateTimeOptional.orElseGet(this::getArrangeDateTime);
+            LocalDateTime firstArrangementProducingDateTime = this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
+            return firstArrangementProducingDateTime != null
+                   && firstArrangementProducingDateTime.isAfter(this.arrangeDateTime)
+                    ? firstArrangementProducingDateTime
+                    : getArrangeDateTime();
         }
     }
 
