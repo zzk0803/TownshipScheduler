@@ -95,17 +95,15 @@ public class SchedulingFactoryInstance {
             return;
         }
 
-        List<FactoryProcessSequence> taiKeyList = new ArrayList<>(tailOfProcessSequencePairMap.keySet());
+        NavigableSet<FactoryProcessSequence> tailKeySet = tailOfProcessSequencePairMap.navigableKeySet();
 
         Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prefixEntry
-                = this.shadowProcessSequenceToComputePairMap.lowerEntry(taiKeyList.get(0));
-
-        LocalDateTime prefixMaxCompletedDateTime
-                = (prefixEntry == null)
+                = this.shadowProcessSequenceToComputePairMap.lowerEntry(tailKeySet.first());
+        LocalDateTime prefixMaxCompletedDateTime = (prefixEntry == null)
                 ? null
                 : prefixEntry.getValue().completedDateTime();
 
-        for (FactoryProcessSequence factoryProcessSequence : taiKeyList) {
+        for (FactoryProcessSequence factoryProcessSequence : tailKeySet) {
             LocalDateTime producingDateTime = calcProducingDateTime(
                     factoryProcessSequence,
                     prefixMaxCompletedDateTime
