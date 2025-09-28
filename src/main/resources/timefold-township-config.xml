@@ -3,9 +3,6 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
-
-    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
-
     <environmentMode>PHASE_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
@@ -26,30 +23,30 @@
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
-<!--    <constructionHeuristic>-->
-<!--        <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>-->
-<!--        <changeMoveSelector>-->
-<!--            <filterClass>-->
-<!--                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
-<!--            </filterClass>-->
-<!--            <valueSelector variableName="planningFactoryInstance"-->
-<!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">-->
-<!--            </valueSelector>-->
-<!--        </changeMoveSelector>-->
-<!--        <changeMoveSelector>-->
-<!--            <valueSelector variableName="planningDateTimeSlot"-->
-<!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">-->
-<!--            </valueSelector>-->
-<!--        </changeMoveSelector>-->
-<!--    </constructionHeuristic>-->
+    <constructionHeuristic>
+        <constructionHeuristicType>WEAKEST_FIT</constructionHeuristicType>
+        <changeMoveSelector>
+            <filterClass>
+                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter
+            </filterClass>
+            <valueSelector variableName="planningFactoryInstance"
+                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">
+            </valueSelector>
+        </changeMoveSelector>
+        <changeMoveSelector>
+            <valueSelector variableName="planningDateTimeSlot"
+                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
+            </valueSelector>
+        </changeMoveSelector>
+    </constructionHeuristic>
     <!--endregion-->
 
     <!--region init-->
-    <customPhase>
-        <customPhaseCommandClass>
-            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
-        </customPhaseCommandClass>
-    </customPhase>
+    <!--    <customPhase>-->
+    <!--        <customPhaseCommandClass>-->
+    <!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
+    <!--        </customPhaseCommandClass>-->
+    <!--    </customPhase>-->
     <!--endregion-->
 
     <!--region local search-->
@@ -143,12 +140,12 @@
         <acceptor>
             <fadingEntityTabuSize>8</fadingEntityTabuSize>
             <fadingValueTabuSize>15</fadingValueTabuSize>
-            <stepCountingHillClimbingSize>256</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>2</acceptedCountLimit>
+            <acceptedCountLimit>3</acceptedCountLimit>
         </forager>
 
     </localSearch>
