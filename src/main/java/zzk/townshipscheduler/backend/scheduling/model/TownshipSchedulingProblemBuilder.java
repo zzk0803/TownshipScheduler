@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 
@@ -94,6 +93,7 @@ public class TownshipSchedulingProblemBuilder {
         this.setupDateTimeSlot();
         this.setupGameActions();
         this.trimUnrelatedObject();
+        this.setupFactoryDateTimeSlot();
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
@@ -118,6 +118,7 @@ public class TownshipSchedulingProblemBuilder {
                 this.schedulingOrderList,
                 this.schedulingFactoryInstanceList,
                 this.schedulingDateTimeSlots,
+                this.schedulingFactoryInstanceDateTimeSlotList,
                 this.schedulingProducingArrangementList,
                 this.schedulingWorkCalendar,
                 this.schedulingPlayer,
