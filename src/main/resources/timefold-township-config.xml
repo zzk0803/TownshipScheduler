@@ -23,31 +23,31 @@
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
-    <constructionHeuristic>
-        <constructionHeuristicType>WEAKEST_FIT</constructionHeuristicType>
-        <changeMoveSelector>
-            <filterClass>
-                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter
-            </filterClass>
-            <valueSelector variableName="planningFactoryInstance"
-                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">
-            </valueSelector>
-        </changeMoveSelector>
-        <changeMoveSelector>
-            <valueSelector variableName="planningDateTimeSlot"
-                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
-            </valueSelector>
-        </changeMoveSelector>
-    </constructionHeuristic>
+    <!--    <constructionHeuristic>-->
+    <!--        <constructionHeuristicType>WEAKEST_FIT</constructionHeuristicType>-->
+    <!--        <changeMoveSelector>-->
+    <!--            <filterClass>-->
+    <!--                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
+    <!--            </filterClass>-->
+    <!--            <valueSelector variableName="planningFactoryInstance"-->
+    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">-->
+    <!--            </valueSelector>-->
+    <!--        </changeMoveSelector>-->
+    <!--        <changeMoveSelector>-->
+    <!--            <valueSelector variableName="planningDateTimeSlot"-->
+    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">-->
+    <!--            </valueSelector>-->
+    <!--        </changeMoveSelector>-->
+    <!--    </constructionHeuristic>-->
     <!--endregion-->
 
     <!--region init-->
-    <!--    <customPhase>-->
-    <!--        <customPhaseCommandClass>-->
-    <!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
-    <!--        </customPhaseCommandClass>-->
-    <!--    </customPhase>-->
-    <!--endregion-->
+    <customPhase>
+        <customPhaseCommandClass>
+            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
+        </customPhaseCommandClass>
+    </customPhase>
+    <!--    endregion-->
 
     <!--region local search-->
     <localSearch>
