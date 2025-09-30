@@ -21,7 +21,7 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 
 ## 技术亮点与难点
 
-本项目探索并初步达成了运用了 Timefold 的基本特性，采用 Timefold 推荐的监听器驱动模式（listener-driven pattern），通过 @ShadowVariable 与自定义 VariableListener 动态维护的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)时间顺序与实际执行时段，解决 Township 游戏中特有的复杂调度问题：
+本项目探索并初步达成了运用了 Timefold 的基本特性，采用 Timefold 推荐的监听器驱动模式（listener-driven pattern），通过`@ShadowVariable` 与自定义`VariableListener`动态维护的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)时间顺序与实际执行时段，解决 Township 游戏中特有的复杂调度问题：
 
 * 混合工厂模型：系统同时处理两种工厂类型——队列型（如面包房、饲料厂，织布厂等任务按顺序执行）和槽位型（如田地、农场等）。 
 
