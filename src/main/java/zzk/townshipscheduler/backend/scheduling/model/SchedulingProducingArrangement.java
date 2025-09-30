@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 
@@ -16,7 +15,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Log4j2
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -229,31 +227,27 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources(
             {
-                    "arrangeDateTime",
-                    "previousSchedulingProducingArrangement",
-                    "previousSchedulingProducingArrangement.completedDateTime",
                     "planningFactoryDateTimeSlot",
-                    "planningFactoryDateTimeSlot.firstArrangementProducingDateTime"
+                    "planningFactoryDateTimeSlot.firstArrangementProducingDateTime",
+                    "previousSchedulingProducingArrangement",
+                    "previousSchedulingProducingArrangement.completedDateTime"
             }
     )
     public LocalDateTime producingDateTimeSupplier() {
-        if (this.getArrangeDateTime() == null) {
+        if (this.planningFactoryDateTimeSlot == null) {
             return null;
         }
 
         if (!weatherFactoryProducingTypeIsQueue()) {
-            return getArrangeDateTime();
+            return this.planningFactoryDateTimeSlot.getStart();
         }
 
-        if (getPreviousSchedulingProducingArrangement() != null) {
-            return getPreviousSchedulingProducingArrangement().getCompletedDateTime();
+        if (this.previousSchedulingProducingArrangement != null) {
+            return this.previousSchedulingProducingArrangement.getCompletedDateTime();
         } else {
-            LocalDateTime firstArrangementProducingDateTime = this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
-            return firstArrangementProducingDateTime != null
-                   && firstArrangementProducingDateTime.isAfter(this.arrangeDateTime)
-                    ? firstArrangementProducingDateTime
-                    : getArrangeDateTime();
+            return this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
         }
+
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {

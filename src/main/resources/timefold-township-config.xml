@@ -15,6 +15,9 @@
         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
     </entityClass>
     <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
+    </entityClass>
+    <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceDateTimeSlot
     </entityClass>
 
@@ -53,8 +56,9 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>13</fadingEntityTabuSize>
-            <stepCountingHillClimbingSize>425</stepCountingHillClimbingSize>
+            <fadingEntityTabuSize>7</fadingEntityTabuSize>
+            <fadingValueTabuSize>5</fadingValueTabuSize>
+            <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
@@ -64,7 +68,7 @@
         <!--        </acceptor>-->
 
         <forager>
-            <acceptedCountLimit>2</acceptedCountLimit>
+            <acceptedCountLimit>3</acceptedCountLimit>
         </forager>
 
     </localSearch>
