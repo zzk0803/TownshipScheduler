@@ -17,7 +17,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Data
@@ -74,11 +73,11 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
             return null;
         }
 
-        var completedDateTime = getStart().plus(planningSchedulingProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getProducingDuration)
-                .reduce(Duration.ZERO, Duration::plus));
-
-        return completedDateTime;
+        return getStart().plus(
+                planningSchedulingProducingArrangements.stream()
+                        .map(SchedulingProducingArrangement::getProducingDuration)
+                        .reduce(Duration.ZERO, Duration::plus)
+        );
     }
 
     @EqualsAndHashCode.Include
@@ -91,39 +90,9 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return factoryInstance.getSchedulingFactoryInfo();
     }
 
-    @ShadowSources({"previous.tailArrangementCompletedDateTime", "tailArrangementCompletedDateTime"})
+    @ShadowSources({"factoryInstance.slotToLastCompletedMap"})
     public LocalDateTime firstArrangementProducingDateTimeSupplier() {
-        LocalDateTime dateTimeSlotStart = this.dateTimeSlot.getStart();
-
-        if (!weatherFactoryProducingTypeIsQueue()) {
-            return dateTimeSlotStart;
-        }
-
-        LocalDateTime firstPreviousExceed = findFirstFormerExceed(dateTimeSlotStart);
-
-        if (firstPreviousExceed == null) {
-            return dateTimeSlotStart;
-        }
-
-        return firstPreviousExceed.isAfter(dateTimeSlotStart)
-                ? firstPreviousExceed
-                : dateTimeSlotStart;
-    }
-
-    private LocalDateTime findFirstFormerExceed(LocalDateTime targetDateTime) {
-        if (this.previous == null) {
-            return null;
-        }
-
-        LocalDateTime previousStart = this.previous.getStart();
-        LocalDateTime previousTailArrangementCompletedDateTime = this.previous.getTailArrangementCompletedDateTime();
-
-        if (Objects.nonNull(previousTailArrangementCompletedDateTime) && previousTailArrangementCompletedDateTime.isAfter(
-                targetDateTime)) {
-            return previousTailArrangementCompletedDateTime;
-        }
-
-        return this.previous.findFirstFormerExceed(previousStart);
+        return factoryInstance.queryFormerCompletedDateTimeOrArgSlotDateTime(this);
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {

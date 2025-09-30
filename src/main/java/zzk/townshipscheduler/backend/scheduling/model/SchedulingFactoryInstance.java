@@ -1,7 +1,9 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import zzk.townshipscheduler.backend.ProducingStructureType;
@@ -14,7 +16,7 @@ import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(onlyExplicitlyIncluded = true)
+@PlanningEntity
 public class SchedulingFactoryInstance {
 
     @PlanningId
@@ -27,7 +29,7 @@ public class SchedulingFactoryInstance {
 
     private int seqNum;
 
-    private int parallelProducing=1;
+    private int parallelProducing = 1;
 
     @ToString.Include
     private int producingQueue;
@@ -41,8 +43,43 @@ public class SchedulingFactoryInstance {
 
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
 
+    @ShadowVariable(supplierName = "slotToLastCompletedMapSupplier")
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> slotToLastCompletedMap = new TreeMap<>();
+
+    @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> slotToLastCompletedMapSupplier() {
+        TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> result = schedulingFactoryInstanceDateTimeSlotList.stream()
+                .collect(
+                        TreeMap::new,
+                        (treeMap, factoryInstanceDateTimeSlot) -> {
+                            treeMap.compute(
+                                    factoryInstanceDateTimeSlot,
+                                    (slot, localDateTime) -> {
+                                        LocalDateTime ldt = slot.getTailArrangementCompletedDateTime();
+                                        return ldt != null ? ldt : slot.getStart();
+                                    }
+                            );
+                        }, TreeMap::putAll
+                );
+        return result;
+    }
+
+    public LocalDateTime queryFormerCompletedDateTimeOrArgSlotDateTime(SchedulingFactoryInstanceDateTimeSlot factoryInstanceDateTimeSlot) {
+        NavigableMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> headedMap
+                = slotToLastCompletedMap.headMap(
+                factoryInstanceDateTimeSlot,
+                false
+        );
+        return headedMap.values().stream()
+                .filter(localDateTime -> localDateTime.isAfter(factoryInstanceDateTimeSlot.getStart()))
+                .max(Comparator.naturalOrder())
+                .orElse(factoryInstanceDateTimeSlot.getStart());
+    }
+
     public void setupFactoryReadableIdentifier() {
-        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+        setFactoryReadableIdentifier(
+                new FactoryReadableIdentifier(getCategoryName(), getSeqNum())
+        );
     }
 
     public String getCategoryName() {
