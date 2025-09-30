@@ -1,13 +1,16 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class TownshipSchedulingProblemBuilder {
 
     private String uuid;
@@ -140,11 +143,6 @@ public class TownshipSchedulingProblemBuilder {
         schedulingDateTimeSlots(schedulingDateTimeSlots);
     }
 
-    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
-        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
-        return this;
-    }
-
     public void setupGameActions() {
         ArrangementIdRoller idRoller = ArrangementIdRoller.forProblem(this.uuid);
 
@@ -159,42 +157,6 @@ public class TownshipSchedulingProblemBuilder {
                 .collect(Collectors.toCollection(ArrayList::new));
 
         schedulingProducingArrangementList(producingArrangementArrayList);
-    }
-
-    private void trimUnrelatedObject() {
-        List<SchedulingProduct> relatedSchedulingProduct
-                = this.schedulingProducingArrangementList.stream()
-                .map(SchedulingProducingArrangement::getSchedulingProduct)
-                .toList();
-        this.schedulingProductList.removeIf(product -> !relatedSchedulingProduct.contains(product));
-
-        List<SchedulingFactoryInfo> relatedSchedulingFactoryInfo
-                = this.schedulingProducingArrangementList.stream()
-                .map(SchedulingProducingArrangement::getRequiredFactoryInfo)
-                .toList();
-
-        this.schedulingFactoryInfoList.removeIf(
-                schedulingFactoryInfo -> {
-                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
-                            .anyMatch(streamIterating -> {
-                                return streamIterating.getCategoryName()
-                                        .equals(schedulingFactoryInfo.getCategoryName());
-                            });
-                    return !anyMatch;
-                }
-        );
-        this.schedulingFactoryInstanceList.removeIf(
-                factory -> {
-                    SchedulingFactoryInfo schedulingFactoryInfo = factory.getSchedulingFactoryInfo();
-                    boolean anyMatch = relatedSchedulingFactoryInfo.stream()
-                            .anyMatch(streamIterating -> {
-                                boolean categoryEqual = streamIterating.getCategoryName()
-                                        .equals(schedulingFactoryInfo.getCategoryName());
-                                return categoryEqual;
-                            });
-                    return !anyMatch;
-                }
-        );
     }
 
     private void setupFactoryDateTimeSlot() {

@@ -302,4 +302,12 @@ public class SchedulingProducingArrangement {
         return getTargetActionObject() instanceof SchedulingOrder;
     }
 
+    public boolean isDeepPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return getDeepPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    }
+
+    public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    }
+    
 }
