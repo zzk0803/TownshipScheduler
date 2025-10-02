@@ -29,21 +29,21 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     public static final String PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS = "planningSchedulingProducingArrangements";
 
     @PlanningId
-    @EqualsAndHashCode.Include
     private int id;
 
     @ToString.Include
     @EqualsAndHashCode.Include
+    private FactoryDateTimeReadableIdentifier factoryDateTimeReadableIdentifier;
+
+    @EqualsAndHashCode.Include
     private SchedulingFactoryInstance factoryInstance;
 
-    @ToString.Include
     private SchedulingDateTimeSlot dateTimeSlot;
 
     private SchedulingFactoryInstanceDateTimeSlot previous;
 
     private SchedulingFactoryInstanceDateTimeSlot next;
 
-    @ToString.Include
     @PlanningListVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
 
@@ -61,6 +61,11 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         this.id = id;
         this.factoryInstance = schedulingFactoryInstance;
         this.dateTimeSlot = schedulingDateTimeSlot;
+        this.factoryDateTimeReadableIdentifier = new FactoryDateTimeReadableIdentifier(
+                schedulingFactoryInstance,
+                schedulingDateTimeSlot.getStart(),
+                schedulingDateTimeSlot.getEnd()
+        );
     }
 
     @ShadowSources({"planningSchedulingProducingArrangements"})
@@ -90,7 +95,7 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return factoryInstance.getSchedulingFactoryInfo();
     }
 
-    @ShadowSources({"factoryInstance.slotToLastCompletedMap"})
+    @ShadowSources({"factoryInstance.slotIdToLastCompletedMap"})
     public LocalDateTime firstArrangementProducingDateTimeSupplier() {
         return factoryInstance.queryFormerCompletedDateTimeOrArgSlotDateTime(this);
     }
@@ -126,10 +131,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     public int getReapWindowSize() {
         return factoryInstance.getReapWindowSize();
-    }
-
-    public FactoryReadableIdentifier getFactoryReadableIdentifier() {
-        return factoryInstance.getFactoryReadableIdentifier();
     }
 
     @Override

@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.extern.slf4j.Slf4j;
@@ -143,6 +142,11 @@ public class TownshipSchedulingProblemBuilder {
         schedulingDateTimeSlots(schedulingDateTimeSlots);
     }
 
+    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
+        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
+        return this;
+    }
+
     public void setupGameActions() {
         ArrangementIdRoller idRoller = ArrangementIdRoller.forProblem(this.uuid);
 
@@ -157,37 +161,6 @@ public class TownshipSchedulingProblemBuilder {
                 .collect(Collectors.toCollection(ArrayList::new));
 
         schedulingProducingArrangementList(producingArrangementArrayList);
-    }
-
-    private void setupFactoryDateTimeSlot() {
-        AtomicInteger idRoller = new AtomicInteger(1);
-        List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
-        for (SchedulingFactoryInstance schedulingFactoryInstance : this.schedulingFactoryInstanceList) {
-            List<SchedulingFactoryInstanceDateTimeSlot> factoryInstanceDateTimeSlots = new ArrayList<>();
-            SchedulingFactoryInstanceDateTimeSlot previous = null;
-            for (SchedulingDateTimeSlot schedulingDateTimeSlot : this.schedulingDateTimeSlots) {
-                SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot = new SchedulingFactoryInstanceDateTimeSlot(
-                        idRoller.getAndIncrement(),
-                        schedulingFactoryInstance,
-                        schedulingDateTimeSlot
-                );
-                if (previous != null) {
-                    previous.setNext(schedulingFactoryInstanceDateTimeSlot);
-                    schedulingFactoryInstanceDateTimeSlot.setPrevious(previous);
-                }
-                previous = schedulingFactoryInstanceDateTimeSlot;
-                schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
-                factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
-            }
-            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlotList()
-                        .addAll(factoryInstanceDateTimeSlots);
-        }
-        this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
-    }
-
-    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
-        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
-        return this;
     }
 
     private ArrayList<SchedulingProducingArrangement> expandAndSetupIntoMaterials(
@@ -231,6 +204,33 @@ public class TownshipSchedulingProblemBuilder {
     private TownshipSchedulingProblemBuilder schedulingProducingArrangementList(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
         return this;
+    }
+
+    private void setupFactoryDateTimeSlot() {
+        AtomicInteger idRoller = new AtomicInteger(1);
+        List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
+        for (SchedulingFactoryInstance schedulingFactoryInstance : this.schedulingFactoryInstanceList) {
+            List<SchedulingFactoryInstanceDateTimeSlot> factoryInstanceDateTimeSlots = new ArrayList<>();
+            SchedulingFactoryInstanceDateTimeSlot previous = null;
+            for (SchedulingDateTimeSlot schedulingDateTimeSlot : this.schedulingDateTimeSlots) {
+                SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot
+                        = new SchedulingFactoryInstanceDateTimeSlot(
+                        idRoller.getAndIncrement(),
+                        schedulingFactoryInstance,
+                        schedulingDateTimeSlot
+                );
+                if (previous != null) {
+                    previous.setNext(schedulingFactoryInstanceDateTimeSlot);
+                    schedulingFactoryInstanceDateTimeSlot.setPrevious(previous);
+                }
+                previous = schedulingFactoryInstanceDateTimeSlot;
+                schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
+                factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
+            }
+            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlotList()
+                    .addAll(factoryInstanceDateTimeSlots);
+        }
+        this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
     }
 
     private void trimUnrelatedObject() {

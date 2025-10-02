@@ -3,11 +3,14 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
-    <environmentMode>PHASE_ASSERT</environmentMode>
+    <environmentMode>FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+    </entityClass>
+    <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
     <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceDateTimeSlot

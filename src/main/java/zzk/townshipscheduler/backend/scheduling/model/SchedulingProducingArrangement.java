@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.*;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
@@ -14,6 +15,7 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -51,11 +53,14 @@ public class SchedulingProducingArrangement {
     private IGameArrangeObject currentActionObject;
 
     @JsonBackReference
+    @JsonIgnore
+    @DeepPlanningClone
     private Set<SchedulingProducingArrangement> prerequisiteProducingArrangements
             = new LinkedHashSet<>();
 
     @JsonBackReference
     @JsonIgnore
+    @DeepPlanningClone
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements
             = new LinkedHashSet<>();
 
@@ -309,5 +314,25 @@ public class SchedulingProducingArrangement {
     public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
     }
-    
+
+    public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
+        return this.prerequisiteProducingArrangements.stream()
+                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .whole(this)
+                        .partial(schedulingProducingArrangement)
+                        .build()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
+        return this.deepPrerequisiteProducingArrangements.stream()
+                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .whole(this)
+                        .partial(schedulingProducingArrangement)
+                        .build()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
 }
