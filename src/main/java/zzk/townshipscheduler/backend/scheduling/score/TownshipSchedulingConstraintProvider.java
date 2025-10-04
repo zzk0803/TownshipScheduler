@@ -6,6 +6,7 @@ import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
@@ -98,6 +99,41 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
+
+//    private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+//                .filter(producingArrangement -> !producingArrangement.getPrerequisiteProducingArrangements().isEmpty())
+//                .join(
+//                        SchedulingProducingArrangement.class,
+//                        Joiners.filtering(SchedulingProducingArrangement::isPrerequisiteArrangement)
+//                )
+//                .groupBy(
+//                        (composite, material) -> composite,
+//                        ConstraintCollectors.max(
+//                                (composite, material) -> material,
+//                                SchedulingProducingArrangement::getCompletedDateTime
+//                        )
+//                )
+//                .filter((compositeProducingArrangement, maxCompletedDateTimeMaterialProducingArrangements) -> {
+//                    LocalDateTime compositeArrangeDateTime = compositeProducingArrangement.getArrangeDateTime();
+//                    LocalDateTime maxMaterialCompletedDateTime = maxCompletedDateTimeMaterialProducingArrangements.getCompletedDateTime();
+//                    return compositeArrangeDateTime.isBefore(maxMaterialCompletedDateTime);
+//                })
+//                .penalizeLong(
+//                        BendableLongScore.ofHard(
+//                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+//                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+//                                TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
+//                                1L
+//                        ),
+//                        (productArrangement, materialProducingArrangementsCompletedDateTime)
+//                                -> Duration.between(
+//                                productArrangement.getArrangeDateTime(),
+//                                materialProducingArrangementsCompletedDateTime.getCompletedDateTime()
+//                        ).toMinutes()
+//                )
+//                .asConstraint("forbidBrokenPrerequisiteStock");
+//    }
 
     private Constraint forbidBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingOrder.class)

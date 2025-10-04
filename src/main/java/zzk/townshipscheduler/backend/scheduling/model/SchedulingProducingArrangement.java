@@ -16,6 +16,7 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Log4j2
@@ -302,6 +303,26 @@ public class SchedulingProducingArrangement {
 
     public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    }
+
+    public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
+        return this.prerequisiteProducingArrangements.stream()
+                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .whole(this)
+                        .partial(schedulingProducingArrangement)
+                        .build()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
+        return this.deepPrerequisiteProducingArrangements.stream()
+                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .whole(this)
+                        .partial(schedulingProducingArrangement)
+                        .build()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
 }
