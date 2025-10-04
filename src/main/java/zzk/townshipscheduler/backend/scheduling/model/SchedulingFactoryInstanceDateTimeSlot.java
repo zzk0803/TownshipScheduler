@@ -70,19 +70,11 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     @ShadowSources({"planningSchedulingProducingArrangements"})
     private LocalDateTime tailArrangementCompletedDateTimeSupplier() {
-        if (getSchedulingFactoryInfo().getProducingStructureType() == ProducingStructureType.SLOT) {
-            return null;
-        }
-
         if (getPlanningSchedulingProducingArrangements().isEmpty()) {
             return null;
         }
 
-        return getStart().plus(
-                planningSchedulingProducingArrangements.stream()
-                        .map(SchedulingProducingArrangement::getProducingDuration)
-                        .reduce(Duration.ZERO, Duration::plus)
-        );
+        return this.planningSchedulingProducingArrangements.getLast().getCompletedDateTime();
     }
 
     @EqualsAndHashCode.Include

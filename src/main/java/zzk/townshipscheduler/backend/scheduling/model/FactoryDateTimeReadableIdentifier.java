@@ -9,6 +9,9 @@ import java.util.Comparator;
 @Getter
 public class FactoryDateTimeReadableIdentifier extends FactoryReadableIdentifier {
 
+    public static final Comparator<FactoryDateTimeReadableIdentifier> COMPARATOR = Comparator.comparing(
+            FactoryDateTimeReadableIdentifier::getStart);
+
     private final LocalDateTime start;
 
     private final LocalDateTime end;
@@ -47,8 +50,7 @@ public class FactoryDateTimeReadableIdentifier extends FactoryReadableIdentifier
     @Override
     public int compareTo(FactoryReadableIdentifier factoryReadableIdentifier) {
         if (factoryReadableIdentifier instanceof FactoryDateTimeReadableIdentifier that) {
-            return Comparator.comparing(FactoryDateTimeReadableIdentifier::getStart)
-                    .compare(this, that);
+            return COMPARATOR.compare(this, that);
         }
         return super.compareTo(factoryReadableIdentifier);
     }

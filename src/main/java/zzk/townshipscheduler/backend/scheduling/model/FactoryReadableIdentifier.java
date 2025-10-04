@@ -11,6 +11,9 @@ import java.util.stream.IntStream;
 @EqualsAndHashCode
 public class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier> {
 
+    public static final Comparator<FactoryReadableIdentifier> COMPARATOR = Comparator.comparingInt(
+            FactoryReadableIdentifier::getSeqNum);
+
     private final String factoryCategory;
 
     private final int seqNum;
@@ -58,8 +61,7 @@ public class FactoryReadableIdentifier implements CharSequence, Comparable<Facto
 
     @Override
     public int compareTo(FactoryReadableIdentifier that) {
-        return Comparator.comparingInt(FactoryReadableIdentifier::getSeqNum)
-                .compare(this, that);
+        return COMPARATOR.compare(this, that);
     }
 
     public String getFactoryCategory() {

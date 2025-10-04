@@ -44,13 +44,13 @@ public class SchedulingFactoryInstance {
 
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
 
+    @DeepPlanningClone
     @ShadowVariable(supplierName = "slotIdToLastCompletedMapSupplier")
     private TreeMap<FactoryDateTimeReadableIdentifier, LocalDateTime> slotIdToLastCompletedMap = new TreeMap<>();
 
-    @DeepPlanningClone
     @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
     private TreeMap<FactoryDateTimeReadableIdentifier, LocalDateTime> slotIdToLastCompletedMapSupplier() {
-        TreeMap<FactoryDateTimeReadableIdentifier, LocalDateTime> result = schedulingFactoryInstanceDateTimeSlotList.stream()
+        return schedulingFactoryInstanceDateTimeSlotList.stream()
                 .collect(
                         TreeMap::new,
                         (treeMap, factoryInstanceDateTimeSlot) -> {
@@ -64,18 +64,16 @@ public class SchedulingFactoryInstance {
                         },
                         TreeMap::putAll
                 );
-        return result;
     }
 
     public LocalDateTime queryFormerCompletedDateTimeOrArgSlotDateTime(SchedulingFactoryInstanceDateTimeSlot factoryInstanceDateTimeSlot) {
-        NavigableMap<FactoryDateTimeReadableIdentifier, LocalDateTime> headedMap
-                = slotIdToLastCompletedMap.headMap(
-                factoryInstanceDateTimeSlot.getFactoryDateTimeReadableIdentifier(),
-                false
-        );
-        return headedMap.values().stream()
-                .filter(localDateTime -> localDateTime.isAfter(factoryInstanceDateTimeSlot.getStart()))
-                .max(Comparator.naturalOrder())
+        return slotIdToLastCompletedMap.headMap(
+                        factoryInstanceDateTimeSlot.getFactoryDateTimeReadableIdentifier(),
+                        false
+                ).entrySet().stream()
+                .filter((entry) -> entry.getValue().isAfter(factoryInstanceDateTimeSlot.getStart()))
+                .max(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
                 .orElse(factoryInstanceDateTimeSlot.getStart());
     }
 
@@ -155,7 +153,7 @@ public class SchedulingFactoryInstance {
                 LocalDateTime previousCompletedDateTime
                         = Optional.ofNullable(computingProducingCompletedMap.lowerKey(current))
                         .map(computingProducingCompletedMap::get)
-                        .map(FactoryComputedDateTimePair::getCompletedDateTime)
+                        .map(FactoryComputedDateTimePair::completedDateTime)
                         .orElse(null);
 
                 LocalDateTime producingDateTime;
