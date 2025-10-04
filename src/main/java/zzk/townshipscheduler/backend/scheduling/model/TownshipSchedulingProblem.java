@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @PlanningSolution
@@ -121,6 +122,16 @@ public class TownshipSchedulingProblem {
                 .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
                         .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
                 .findFirst();
+    }
+
+    @ProblemFactCollectionProperty
+    public List<SchedulingArrangementHierarchies> toSchedulingArrangementHierarchies() {
+        return this.schedulingProducingArrangementList.stream()
+                .flatMap(
+                        schedulingProducingArrangement -> schedulingProducingArrangement.toDeepPrerequisiteHierarchies()
+                                .stream()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
 }
