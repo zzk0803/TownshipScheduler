@@ -30,6 +30,7 @@ class TownshipDataMappingProcessor {
 
         Map<String, ParsedResultSegment> resultGroupByTable = parsedResult.groupByTable();
         Set<Map.Entry<String, ParsedResultSegment>> entries = resultGroupByTable.entrySet();
+        English.setMode(English.MODE.ENGLISH_CLASSICAL);
         for (Map.Entry<String, ParsedResultSegment> entry : entries) {
             ParsedResultSegment parsedResultSegment = entry.getValue();
             String category = parsedResultSegment.getCategory();

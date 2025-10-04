@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.support.RetryTemplate;
@@ -91,6 +92,11 @@ public class Application {
         return taskSchedulerBuilder
                 .virtualThreads(true)
                 .build();
+    }
+
+    @Bean("cacheManager")
+    public CacheManager cacheManager() {
+        return new ConcurrentMapCacheManager();
     }
 
 }
