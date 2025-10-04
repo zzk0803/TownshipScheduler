@@ -4,7 +4,7 @@
 
 Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,基于 [Timefold](https://timefold.ai) （原 OptaPlanner）构建的智能调度求解器项目。本项目旨在我自己学习如何使用 Timefold解决我自己的问题，并结合 Vaadin 构建直观的可视化界面。
 
-核心目标是：给定一组玩家订单，系统能够自动规划出所有必需的生产活动，并通过 `Timefold` 求解器智能地为这些活动分配最优的执行日期/时间和工厂，同时保证不违反设定的约束。
+核心目标是：依据玩家给定的订单算出所需要安排的生产任务，并通过 `Timefold` 求解器智能地为这些活动分配最优的执行日期/时间和工厂，同时保证不违反设定的约束。
 
 当前状态：这是一个正在进行中的学习与探索型项目。项目功能已基本可用，但仍在持续迭代优化中。
 
@@ -19,9 +19,19 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 本项目**不隶属于 Playrix（Township 开发商）或 Fandom**，所有游戏相关内容版权归原作者所有。  
 如有任何版权疑虑，请联系作者，我们将立即处理。
 
+## 建模背景
+订单具有不同的种类，不同的种类的订单具有不同的奖励和限制（比如时间窗口限制）。
+订单包含若干物品及其物品数量。
+物品具有原材料结构，一些物品既是产品也作为原材料使用。
+物品的生产依赖特定的工厂，物品的生产需要时间，物品的生产时间基本在5min以上。
+工厂可以生产一系列物品，有的工厂能同时生产多个物品，大多数工厂只能生产一个物品。
+工厂都有任务数量限制。
+玩家们一般每个一段时间上线，一次性安排多项任务
+其他游戏内的特性，如库存限制，工厂收割窗口及其数量限制，加速工具，金币等暂不考虑。
+
 ## 技术亮点与难点
 
-本项目探索并初步达成了运用了 Timefold 的基本特性，采用 Timefold 推荐的监听器驱动模式（listener-driven pattern），通过`@ShadowVariable` 与自定义`VariableListener`动态维护的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)时间顺序与实际执行时段，解决 Township 游戏中特有的复杂调度问题：
+本项目运用 Timefold 的基本特性，通过`@ShadowVariable` 与自定义`VariableListener`动态维护的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)时间顺序与实际执行时段，解决 Township 游戏调度问题：
 
 * 混合工厂模型：系统同时处理两种工厂类型——队列型（如面包房、饲料厂，织布厂等任务按顺序执行）和槽位型（如田地、农场等）。 
 
