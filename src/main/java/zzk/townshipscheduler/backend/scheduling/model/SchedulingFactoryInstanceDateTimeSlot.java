@@ -11,12 +11,11 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import zzk.townshipscheduler.backend.ProducingStructureType;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Data
@@ -78,18 +77,25 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     }
 
     @EqualsAndHashCode.Include
-    public LocalDateTime getStart() {
-        return dateTimeSlot.getStart();
-    }
-
-    @EqualsAndHashCode.Include
     public SchedulingFactoryInfo getSchedulingFactoryInfo() {
         return factoryInstance.getSchedulingFactoryInfo();
     }
 
     @ShadowSources({"factoryInstance.slotIdToLastCompletedMap"})
     public LocalDateTime firstArrangementProducingDateTimeSupplier() {
-        return factoryInstance.queryFormerCompletedDateTimeOrArgSlotDateTime(this);
+        return factoryInstance.getSlotIdToLastCompletedMap().headMap(
+                        this.getFactoryDateTimeReadableIdentifier(),
+                        false
+                ).entrySet().stream()
+                .filter((entry) -> entry.getValue().isAfter(this.getStart()))
+                .max(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .orElse(this.getStart());
+    }
+
+    @EqualsAndHashCode.Include
+    public LocalDateTime getStart() {
+        return dateTimeSlot.getStart();
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
