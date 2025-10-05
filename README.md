@@ -12,9 +12,9 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 
 ## 数据来源说明
 
-本项目部分游戏数据（如产品配方、生产时间、工厂类型等）来源于公开的 [Township Fandom Wiki](https://township.fandom.com/)。  
+本项目部分游戏数据（如产品配方、生产时间、工厂类型等）来源于公开的 [Goods|Township Fandom Wiki](https://township.fandom.com/wiki/Goods#All_Goods_List)。  
 这些数据仅用于**个人学习和非商业研究目的**
-数据仅在首次运行时爬取一次，用于初始化本地数据库。  
+数据仅在首次运行时爬取一次，用于初始化本地数据库，项目的基本功能依赖于此。  
 
 本项目**不隶属于 Playrix（Township 开发商）或 Fandom**，所有游戏相关内容版权归原作者所有。  
 如有任何版权疑虑，请联系作者，我们将立即处理。
@@ -31,7 +31,7 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 
 ## 技术亮点与难点
 
-本项目运用 Timefold 的基本特性，通过`@ShadowVariable` 与自定义`VariableListener`动态维护的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)时间顺序与实际执行时段，解决 Township 游戏调度问题：
+本项目运用 Timefold 的基本特性，通过`@ShadowVariable` 与自定义`VariableListener`动态维护的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)时间顺序与实际执行时段，模拟了ChainVariable或PlanningListVariable的顺序特性，实现了链式时间模型和多层排序（时间+id)，解决 Township 游戏调度问题：
 
 * 混合工厂模型：系统同时处理两种工厂类型——队列型（如面包房、饲料厂，织布厂等任务按顺序执行）和槽位型（如田地、农场等）。 
 
@@ -59,7 +59,6 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 - **求解器**：Timefold
 - **数据库**：H2 内存数据库（开发环境）
 - **构建工具**：Maven
-- **代码工具**：Lombok, Spotless（代码格式化）
 
 ## 项目结构概览
 src/main/java/zzk/townshipscheduler/
@@ -78,10 +77,9 @@ src/main/java/zzk/townshipscheduler/
 
 ## 功能模块
 
-1. **资源调度**：通过 Timefold 实现智能调度算法，优化资源分配。
-2. **订单管理**：支持订单的创建、修改、删除和查询。
-3. **数据爬取**：从Township WiKi爬取数据并处理存储。
-4. **可视化**：提供资源调度和订单管理的可视化界面。
+1. **数据爬取**：从Township WiKi的页面爬取数据并处理存储，包括物品信息、工厂类型、物料清单、生产时长。
+2. **订单管理**：订单的创建、删除和查询，为排程调度做准备。
+3. **排程调度**：通过 Timefold 实现调度，优化资源分配，列出时间线-工厂-生产任务清单。
 
 ## 屏幕截图
 ![(1)orders_product_selection_view.png](readme/%281%29orders_product_selection_view.png)
