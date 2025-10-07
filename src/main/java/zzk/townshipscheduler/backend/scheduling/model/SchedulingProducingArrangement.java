@@ -98,33 +98,27 @@ public class SchedulingProducingArrangement {
     private SchedulingProducingArrangement previousSchedulingProducingArrangement;
 
     @JsonIgnore
-    @NextElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
-    )
-    private SchedulingProducingArrangement nextSchedulingProducingArrangement;
-
-    @JsonIgnore
     @IndexShadowVariable(
             sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
     )
     private Integer indexInFactorySlot;
 
     @JsonIgnore
-    @ShadowVariable(supplierName = "computedDateTimePairSupplier")
-    private FactoryComputedDateTimePair computedDateTimePair;
+    @CascadingUpdateShadowVariable(targetMethodName = "computedDateTimeCascadingUpdater")
+    private LocalDateTime firstProducingDateTime;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "producingDateTimeSupplier")
+    @CascadingUpdateShadowVariable(targetMethodName = "computedDateTimeCascadingUpdater")
     private LocalDateTime producingDateTime;
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "completedDateTimeSupplier")
+    @CascadingUpdateShadowVariable(targetMethodName = "computedDateTimeCascadingUpdater")
     private LocalDateTime completedDateTime;
 
     private SchedulingProducingArrangement(
@@ -231,36 +225,25 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    @ShadowSources(
-            {
-                    "planningFactoryDateTimeSlot",
-                    "planningFactoryDateTimeSlot.firstArrangementProducingDateTime",
-                    "previousSchedulingProducingArrangement",
-                    "previousSchedulingProducingArrangement.completedDateTime"
-            }
-    )
-    public FactoryComputedDateTimePair computedDateTimePairSupplier() {
+    public void computedDateTimeCascadingUpdater() {
         if (this.planningFactoryDateTimeSlot == null) {
-            return null;
+            this.firstProducingDateTime = null;
+            this.producingDateTime = null;
+            this.completedDateTime = null;
+            return;
         }
 
-        LocalDateTime thisProducingDateTime;
+        this.firstProducingDateTime = this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
         if (!weatherFactoryProducingTypeIsQueue()) {
-            thisProducingDateTime = this.planningFactoryDateTimeSlot.getStart();
-            return new FactoryComputedDateTimePair(
-                    thisProducingDateTime,
-                    thisProducingDateTime.plus(getProducingDuration())
-            );
+            this.producingDateTime = this.planningFactoryDateTimeSlot.getStart();
+            this.completedDateTime = this.producingDateTime.plus(getProducingDuration());
+            return;
         }
 
-        thisProducingDateTime = this.previousSchedulingProducingArrangement != null
+        this.producingDateTime = this.previousSchedulingProducingArrangement != null
                 ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
-                : this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
-        return new FactoryComputedDateTimePair(
-                thisProducingDateTime,
-                thisProducingDateTime.plus(getProducingDuration())
-        );
-
+                : this.firstProducingDateTime;
+        this.completedDateTime = this.producingDateTime.plus(getProducingDuration());
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -279,18 +262,6 @@ public class SchedulingProducingArrangement {
     @JsonProperty("producingDuration")
     public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();
-    }
-
-    @ShadowSources({"computedDateTimePair"})
-    public LocalDateTime producingDateTimeSupplier() {
-        var computedDateTimePair = getComputedDateTimePair();
-        return computedDateTimePair != null ? computedDateTimePair.producingDateTime() : null;
-    }
-
-    @ShadowSources({"computedDateTimePair"})
-    public LocalDateTime completedDateTimeSupplier() {
-        var computedDateTimePair = getComputedDateTimePair();
-        return computedDateTimePair != null ? computedDateTimePair.completedDateTime() : null;
     }
 
     @ShadowSources({"planningFactoryDateTimeSlot"})
