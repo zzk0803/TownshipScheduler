@@ -56,10 +56,7 @@ public class SchedulingFactoryInstance {
                         (treeMap, factoryInstanceDateTimeSlot) -> {
                             treeMap.compute(
                                     factoryInstanceDateTimeSlot.getFactoryDateTimeReadableIdentifier(),
-                                    (identifier, oldValueDateTime) -> {
-                                        LocalDateTime ldt = factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime();
-                                        return ldt != null ? ldt : factoryInstanceDateTimeSlot.getStart();
-                                    }
+                                    (identifier, oldValueDateTime) -> factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
                             );
                         },
                         TreeMap::putAll
