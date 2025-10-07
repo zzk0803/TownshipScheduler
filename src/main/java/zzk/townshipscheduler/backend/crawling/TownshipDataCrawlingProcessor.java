@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import jakarta.annotation.PreDestroy;
 import org.javatuples.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -23,6 +24,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Component
 class TownshipDataCrawlingProcessor {
@@ -45,6 +47,8 @@ class TownshipDataCrawlingProcessor {
 
     private final TransactionTemplate transactionTemplate;
 
+    private final HttpClient httpClient;
+
     public TownshipDataCrawlingProcessor(
             CrawledDataMemory crawledDataMemory,
             WikiCrawledEntityRepository wikiCrawledEntityRepository,
@@ -58,6 +62,12 @@ class TownshipDataCrawlingProcessor {
         this.retryTemplate = retryTemplate;
         this.transactionTemplate = transactionTemplate;
         this.imageToDownload = new LinkedHashSet<>();
+        this.httpClient = HttpClient.newHttpClient();
+    }
+
+    @PreDestroy
+    public void close() {
+        this.httpClient.close();
     }
 
     public CompletableFuture<CrawledResult> process() {
@@ -76,10 +86,15 @@ class TownshipDataCrawlingProcessor {
             doTableParse(currentTable, tableNum, tableZoneString);
         }
 
-        fireImageDownloadAsync();
-
         logger.info(" do mending and fire image downloading");
-        return CompletableFuture.supplyAsync(crawledDataMemory::completeAndMend, townshipExecutorService);
+        CompletableFuture.supplyAsync(
+                this::fireImageDownloadAsync,
+                townshipExecutorService
+        );
+        return CompletableFuture.supplyAsync(
+                crawledDataMemory::completeAndMend,
+                townshipExecutorService
+        );
     }
 
     private String findTableZoneString(Element currentTable) {
@@ -295,87 +310,80 @@ class TownshipDataCrawlingProcessor {
         crawledDataMemory.putForSave(currentCoordinate, currentCell);
     }
 
-    private void fireImageDownloadAsync() {
-        CompletableFuture.runAsync(
-                () -> {
-                    List<CompletableFuture<WikiCrawledEntity>> completableFutures
-                            = imageToDownload.stream()
-                            .distinct()
-                            .filter(img -> !wikiCrawledEntityRepository.existsByHtml(img.getSrc()))
-                            .map(rawData_Img -> {
-                                WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
-                                wikiCrawledEntity.setHtml(rawData_Img.getSrc());
-                                wikiCrawledEntity.setText(rawData_Img.getAlt());
+    private CompletableFuture<Void> fireImageDownloadAsync() {
+        logger.info("image downloader start...");
 
-                                return new Pair<>(
-                                        rawData_Img,
-                                        transactionTemplate.execute(
-                                                _ -> wikiCrawledEntityRepository.save(wikiCrawledEntity)
-                                        )
-                                );
-                            })
-                            .map(Pair_RawDataImg_CrawledEntity -> {
-                                CrawledDataCell.Img img = Pair_RawDataImg_CrawledEntity.getValue0();
-                                WikiCrawledEntity wikiCrawledEntity = Pair_RawDataImg_CrawledEntity.getValue1();
-                                return this.downloadImage(img)
-                                        .thenApplyAsync(
-                                                (bytes) -> {
-                                                    wikiCrawledEntity.setImageBytes(bytes);
-                                                    return transactionTemplate.execute(
-                                                            _ -> wikiCrawledEntityRepository.save(wikiCrawledEntity)
-                                                    );
-                                                },
-                                                townshipExecutorService
-                                        );
-                            })
-                            .toList();
-                    CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
-                            .whenComplete((result, exception) -> {
-                                this.imageToDownload.clear();
-                                logger.info("all picture download completed...");
-                            });
-                }, townshipExecutorService
-        );
+        List<Pair<CrawledDataCell.Img, WikiCrawledEntity>> pairList = imageToDownload.stream()
+                .distinct()
+                .filter(img -> !wikiCrawledEntityRepository.existsByHtml(img.getSrc()))
+                .map(img -> {
+                    WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
+                    wikiCrawledEntity.setHtml(img.getSrc());
+                    wikiCrawledEntity.setText(img.getAlt());
+                    wikiCrawledEntity = wikiCrawledEntityRepository.save(wikiCrawledEntity);
+                    return new Pair<>(img, wikiCrawledEntity);
+                })
+                .toList();
+
+        List<CompletableFuture<WikiCrawledEntity>> downloadFutures
+                = pairList.stream().
+                map(
+                        pair -> CompletableFuture.supplyAsync(
+                                        () -> {
+                                            pair.getValue1().setImageBytes(
+                                                    this.downloadImage(pair.getValue0().getSrc())
+                                            );
+                                            return wikiCrawledEntityRepository.save(pair.getValue1());
+                                        }, townshipExecutorService
+                                )
+                                .orTimeout(30, TimeUnit.SECONDS)
+                                .thenApplyAsync(
+                                        crawledEntity -> {
+                                            logger.info("{} image download completed", pair.getValue0().getSrc());
+                                            return crawledEntity;
+                                        }, townshipExecutorService
+                                )
+                                .exceptionallyAsync(
+                                        throwable -> {
+                                            logger.warn("Failed to download image: {}", pair.getValue0().getSrc());
+                                            return null;
+                                        }, townshipExecutorService
+                                )
+                )
+                .toList();
+
+
+        return CompletableFuture.allOf(downloadFutures.toArray(CompletableFuture[]::new))
+                .thenRunAsync(
+                        () -> {
+                            logger.info("All image downloads completed. Count: {}", downloadFutures.size());
+                            imageToDownload.clear();
+                        }, townshipExecutorService
+                );
     }
 
-    CompletableFuture<byte[]> downloadImage(CrawledDataCell.Img img) {
-        return downloadImage(img.getSrc());
-    }
-
-    CompletableFuture<byte[]> downloadImage(String url) {
-        HttpRequest httpRequest
-                = HttpRequest.newBuilder(URI.create(url))
-                .header(
-                        "User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-                ).timeout(Duration.ofSeconds(20))
-                .GET()
-                .build();
-
-        return CompletableFuture.supplyAsync(
-                () -> {
+    byte[] downloadImage(String url) {
+        logger.info("start download image {}", url);
+        return this.retryTemplate.execute(
+                retryContext -> {
                     try {
-                        return retryTemplate.execute(
-                                (RetryCallback<byte[], Throwable>) retryContext -> {
-                                    try (HttpClient client = HttpClient.newHttpClient()) {
-                                        HttpResponse<byte[]> httpResponse = client.send(
-                                                httpRequest,
-                                                HttpResponse.BodyHandlers.ofByteArray()
-                                        );
-                                        return httpResponse.body();
-                                    } catch (IOException | InterruptedException e) {
-                                        logger.error(retryContext.getLastThrowable().getMessage());
-                                        throw new RuntimeException(retryContext.getLastThrowable());
-                                    }
-                                }
+                        HttpResponse<byte[]> httpResponse = httpClient.send(
+                                HttpRequest.newBuilder(URI.create(url))
+                                        .header(
+                                                "User-Agent",
+                                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                                        ).timeout(Duration.ofSeconds(5))
+                                        .GET()
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofByteArray()
                         );
-                    } catch (Throwable e) {
+                        return httpResponse.body();
+                    } catch (IOException | InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                }, townshipExecutorService
-        );
-
+                });
     }
+
 
 }
 
@@ -401,4 +409,57 @@ class TownshipDataCrawlingProcessor {
                             return resultCompletableFuture1;
                         }
                 );
+ */
+
+/*
+@Service
+public class ArticleService {
+
+    // 关键：记录“哪些 article 正在爬图”，避免重复触发
+    private final Map<Long, CompletableFuture<String>> pendingCrawls = new ConcurrentHashMap<>();
+
+    private final ExecutorService ioExecutor = Executors.newVirtualThreadPerTaskExecutor(); // Java 21+
+
+    // 主方法：获取带图片的文章（如果没图，就去爬）
+    public CompletableFuture<Article> getArticleWithImage(Long articleId) {
+        // 1. 先查数据库
+        Article article = articleRepository.findById(articleId).orElse(null);
+        if (article != null && article.getImageUrl() != null) {
+            // 已有图，直接返回
+            return CompletableFuture.completedFuture(article);
+        }
+
+        // 2. 没图？检查是否已有爬取任务在进行
+        return pendingCrawls.computeIfAbsent(articleId, id -> {
+            // 3. 启动爬取任务（仅当没有 pending 任务时）
+            return crawlImageAsync(id)
+                .whenComplete((url, ex) -> {
+                    // 4. 任务完成后，从 pending 移除（无论成功失败）
+                    pendingCrawls.remove(id);
+                    if (ex == null) {
+                        // 5. 成功则更新数据库
+                        articleRepository.updateImageUrl(id, url);
+                    }
+                });
+        })
+        .thenApply(imageUrl -> {
+            // 6. 构造最终结果（这里假设 article 文本已存在）
+            if (article == null) {
+                article = new Article(); // 或抛异常
+                article.setId(articleId);
+            }
+            article.setImageUrl(imageUrl);
+            return article;
+        });
+    }
+
+    // 模拟爬图（返回 CF 图片 URL）
+    private CompletableFuture<String> crawlImageAsync(Long articleId) {
+        return CompletableFuture.supplyAsync(() -> {
+            // 模拟耗时爬取
+            try { Thread.sleep(2000); } catch (InterruptedException e) { }
+            return "https://cf.example.com/image-" + articleId + ".jpg";
+        }, ioExecutor);
+    }
+}
  */

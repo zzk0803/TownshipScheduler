@@ -28,6 +28,7 @@ import com.vaadin.flow.function.SerializablePredicate;
 import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 import java.util.Collection;
@@ -279,9 +280,10 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
         }
 
         private  Image createImage(ProductEntity productEntity) {
+            WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
             return ProductImages.productImage(
                     productEntity.getName(),
-                    productEntity.getCrawledAsImage().getImageBytes()
+                    crawledAsImage
             );
         }
 

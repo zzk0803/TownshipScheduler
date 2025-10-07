@@ -10,8 +10,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -131,20 +129,6 @@ class ProblemTransferProcess {
 
     }
 
-//    private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(SchedulingFactoryInfo.Id schedulingFactoryInfoId) {
-//        if (schedulingFactoryInfoId == null) {
-//            throw new IllegalArgumentException("schedulingProductId must not be null");
-//        }
-//        return idFactoryTypeMap.computeIfAbsent(
-//                schedulingFactoryInfoId,
-//                id -> {
-//                    SchedulingFactoryInfo schedulingFactoryInfo = new SchedulingFactoryInfo();
-//                    schedulingFactoryInfo.setId(id);
-//                    return schedulingFactoryInfo;
-//                }
-//        );
-//    }
-
     private Set<SchedulingProducingExecutionMode> calcProducingExecutionMode(
             ProductEntity productEntity,
             SchedulingProduct schedulingProduct
@@ -201,20 +185,6 @@ class ProblemTransferProcess {
                 }
         );
     }
-
-//    private SchedulingProduct buildOrGetSchedulingProduct(SchedulingProduct.Id schedulingProductId) {
-//        if (schedulingProductId == null) {
-//            throw new IllegalArgumentException("schedulingProductId must not be null");
-//        }
-//        return idProductMap.computeIfAbsent(
-//                schedulingProductId,
-//                id -> {
-//                    SchedulingProduct product = new SchedulingProduct();
-//                    product.setId(id);
-//                    return product;
-//                }
-//        );
-//    }
 
     private SchedulingFactoryInfo buildOrGetSchedulingFactoryInfo(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         return idFactoryTypeMap.computeIfAbsent(

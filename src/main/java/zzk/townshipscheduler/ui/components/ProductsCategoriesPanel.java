@@ -17,10 +17,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
-import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
+import zzk.townshipscheduler.backend.persistence.*;
 
 import java.util.Comparator;
 import java.util.List;
@@ -173,9 +170,10 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
     }
 
     private Component goodsImageRender(ProductEntity productEntity) {
+        WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
         return ProductImages.productImage(
                 productEntity.getName(),
-                productEntity.getCrawledAsImage().getImageBytes()
+                crawledAsImage
         );
     }
 
