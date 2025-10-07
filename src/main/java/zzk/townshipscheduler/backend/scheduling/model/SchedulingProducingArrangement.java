@@ -2,16 +2,19 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.*;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
+import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -222,6 +225,11 @@ public class SchedulingProducingArrangement {
                        .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
+    @JsonProperty("schedulingProduct")
+    public SchedulingProduct getSchedulingProduct() {
+        return (SchedulingProduct) getCurrentActionObject();
+    }
+
     public boolean isPlanningAssigned() {
         return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
@@ -323,6 +331,10 @@ public class SchedulingProducingArrangement {
                         .build()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
     }
 
 }
