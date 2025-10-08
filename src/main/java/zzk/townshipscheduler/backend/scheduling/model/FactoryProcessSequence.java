@@ -36,7 +36,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
 
     int slotGapDuration;
 
-    private FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
+    public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
         SchedulingDateTimeSlot planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
         this.arrangeDateTime = planningDateTimeSlot.getStart();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();

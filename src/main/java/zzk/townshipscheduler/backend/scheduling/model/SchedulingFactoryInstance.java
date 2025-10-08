@@ -7,14 +7,14 @@ import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
-import zzk.townshipscheduler.backend.ProducingStructureType;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -44,30 +44,23 @@ public class SchedulingFactoryInstance {
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
-    @DeepPlanningClone
-    private Set<FactoryProcessSequence> shadowFactorySequenceSet
-            = new LinkedHashSet<>();
+    @ShadowVariable(supplierName = "arrangementComputedDateTimeDispatch")
+    private Long updateSignal;
 
-    @ShadowVariable(supplierName = "factoryProcessToDateTimePairMapSupplier")
     @DeepPlanningClone
     private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMap
             = new TreeMap<>();
 
-    @ShadowSources(
-            value = {
-                    "planningFactoryInstanceProducingArrangements",
-                    "planningFactoryInstanceProducingArrangements[].shadowFactoryProcessSequence"
-            }
-    )
-    public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> factoryProcessToDateTimePairMapSupplier() {
-        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> completedMap
-                = (TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>) prepareProducingAndCompletedMap(
-                this.planningFactoryInstanceProducingArrangements.stream()
-                        .map(SchedulingProducingArrangement::getShadowFactoryProcessSequence)
-                        .collect(Collectors.toCollection(TreeSet::new))
-        );
-        log.info("completedMap={}",completedMap);
-        return completedMap;
+    @ShadowSources(value = {"planningFactoryInstanceProducingArrangements[].shadowFactoryProcessSequence"})
+    public Long arrangementComputedDateTimeDispatch() {
+        this.planningFactoryInstanceProducingArrangements.forEach(schedulingProducingArrangement -> {
+            schedulingProducingArrangement.setShadowFactoryComputedDateTimePair(schedulingProducingArrangement.shadowFactoryComputedDateTimePairSupplier());
+        });
+        return System.currentTimeMillis();
+    }
+
+    public NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
+        return Collections.unmodifiableNavigableMap(this.factoryProcessToDateTimePairMap);
     }
 
     public void setupFactoryReadableIdentifier() {
@@ -78,29 +71,6 @@ public class SchedulingFactoryInstance {
         return schedulingFactoryInfo.getCategoryName();
     }
 
-    public boolean addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
-        return shadowFactorySequenceSet.add(factoryProcessSequence);
-    }
-
-    public boolean removeFactoryProcessSequence(Object o) {
-        return shadowFactorySequenceSet.remove(o);
-    }
-
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
-    }
-
-    public FactoryComputedDateTimePair queryProducingAndCompletedPair(SchedulingProducingArrangement schedulingProducingArrangement) {
-        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processSequenceDateTimePairMap
-                = prepareProducingAndCompletedMap();
-        return processSequenceDateTimePairMap.get(factoryProcessSequence);
-    }
-
-    public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
-        return this.useComputeStrategy().prepareProducingAndCompletedMap(new TreeSet<>(getShadowFactorySequenceSet()));
-    }
-
     public int getMaxPossibleOccupancyDurationMinutes() {
         return producingLength * this.getSchedulingFactoryInfo().calcMaxSupportedProductDurationMinutes();
     }
@@ -108,7 +78,7 @@ public class SchedulingFactoryInstance {
     public void addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
 
         if (!weatherFactoryProducingTypeIsQueue()) {
-            this.shadowProcessSequenceToComputePairMap.put(
+            this.factoryProcessToDateTimePairMap.put(
                     factoryProcessSequence,
                     new FactoryComputedDateTimePair(
                             factoryProcessSequence.getArrangeDateTime(),
@@ -120,24 +90,28 @@ public class SchedulingFactoryInstance {
         }
 
         Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prefixProducingPairEntry =
-                this.shadowProcessSequenceToComputePairMap.lowerEntry(factoryProcessSequence);
+                this.factoryProcessToDateTimePairMap.lowerEntry(factoryProcessSequence);
 
         LocalDateTime producingDateTime = calcProducingDateTime(
                 factoryProcessSequence,
                 prefixProducingPairEntry
         );
         LocalDateTime completedDateTime = calcCompletedDateTime(factoryProcessSequence, producingDateTime);
-        this.shadowProcessSequenceToComputePairMap.put(
+        this.factoryProcessToDateTimePairMap.put(
                 factoryProcessSequence,
                 new FactoryComputedDateTimePair(producingDateTime, completedDateTime)
         );
 
         NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailOfProcessSequencePairMap
-                = this.shadowProcessSequenceToComputePairMap.tailMap(
+                = this.factoryProcessToDateTimePairMap.tailMap(
                 factoryProcessSequence,
                 false
         );
         cascade(tailOfProcessSequencePairMap);
+    }
+
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
     }
 
     private void cascade(NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailOfProcessSequencePairMap) {
@@ -148,7 +122,7 @@ public class SchedulingFactoryInstance {
         List<FactoryProcessSequence> taiKeyList = new ArrayList<>(tailOfProcessSequencePairMap.keySet());
 
         Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prefixEntry
-                = this.shadowProcessSequenceToComputePairMap.lowerEntry(taiKeyList.get(0));
+                = this.factoryProcessToDateTimePairMap.lowerEntry(taiKeyList.get(0));
 
         LocalDateTime prefixMaxCompletedDateTime
                 = (prefixEntry == null)
@@ -164,7 +138,7 @@ public class SchedulingFactoryInstance {
                     factoryProcessSequence,
                     producingDateTime
             );
-            this.shadowProcessSequenceToComputePairMap.put(
+            this.factoryProcessToDateTimePairMap.put(
                     factoryProcessSequence,
                     new FactoryComputedDateTimePair(producingDateTime, completedDateTime)
             );
@@ -205,7 +179,7 @@ public class SchedulingFactoryInstance {
 
     public void removeFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
 
-        if (this.shadowProcessSequenceToComputePairMap.remove(factoryProcessSequence) == null) {
+        if (this.factoryProcessToDateTimePairMap.remove(factoryProcessSequence) == null) {
             return;
         }
 
@@ -214,7 +188,7 @@ public class SchedulingFactoryInstance {
         }
 
         NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tail =
-                this.shadowProcessSequenceToComputePairMap.tailMap(factoryProcessSequence, false);
+                this.factoryProcessToDateTimePairMap.tailMap(factoryProcessSequence, false);
         cascade(tail);
     }
 
@@ -230,10 +204,6 @@ public class SchedulingFactoryInstance {
         return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted))
                 ? arrangeDateTime
                 : previousCompleted;
-    }
-
-    public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
-        return Collections.unmodifiableNavigableMap(this.shadowProcessSequenceToComputePairMap);
     }
 
     @Override

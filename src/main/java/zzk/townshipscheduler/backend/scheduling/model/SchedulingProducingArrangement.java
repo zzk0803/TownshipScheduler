@@ -18,6 +18,7 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Log4j2
@@ -97,7 +98,6 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "shadowFactoryProcessSequenceSupplier")
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
-    @ShadowVariable(supplierName = "shadowFactoryComputedDateTimePairSupplier")
     private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
     private SchedulingProducingArrangement(
@@ -120,30 +120,21 @@ public class SchedulingProducingArrangement {
         return producingArrangement;
     }
 
-    @ShadowSources(
-            {
-                    "shadowFactoryProcessSequence",
-                    "planningFactoryInstance.factoryProcessToDateTimePairMap"
-            }
-    )
-    private FactoryComputedDateTimePair shadowFactoryComputedDateTimePairSupplier() {
+    public FactoryComputedDateTimePair shadowFactoryComputedDateTimePairSupplier() {
         log.info(
                 "schedulingFactoryInstance={},shadowFactoryProcessSequence={}",
                 this.planningFactoryInstance, this.shadowFactoryProcessSequence
         );
-        SchedulingFactoryInstance schedulingFactoryInstance = this.getPlanningFactoryInstance();
-        if (Objects.isNull(schedulingFactoryInstance)) {
+        if (Objects.isNull(this.planningFactoryInstance)) {
             return null;
         }
-        if (Objects.isNull(getShadowFactoryProcessSequence())) {
+        if (Objects.isNull(this.shadowFactoryProcessSequence)) {
             return null;
         }
 
-        FactoryProcessSequence factoryProcessSequence
-                = this.getShadowFactoryProcessSequence();
         TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> computedMap
-                = schedulingFactoryInstance.getFactoryProcessToDateTimePairMap();
-        FactoryComputedDateTimePair dateTimePair = computedMap.get(factoryProcessSequence);
+                = this.planningFactoryInstance.getFactoryProcessToDateTimePairMap();
+        FactoryComputedDateTimePair dateTimePair = computedMap.get(this.shadowFactoryProcessSequence);
         log.info("dateTimePair={}", dateTimePair);
         return dateTimePair;
     }
@@ -154,23 +145,16 @@ public class SchedulingProducingArrangement {
                     "planningDateTimeSlot"
             }
     )
-    private FactoryProcessSequence shadowFactoryProcessSequenceSupplier() {
-        log.info(
-                "schedulingFactoryInstance={},planningDateTimeSlot={}",
-                this.planningFactoryInstance, this.planningDateTimeSlot
-        );
-        SchedulingFactoryInstance planningFactoryInstance
-                = this.getPlanningFactoryInstance();
-        SchedulingDateTimeSlot planningDateTimeSlot
-                = this.getPlanningDateTimeSlot();
-        if (Objects.isNull(planningFactoryInstance)
-            || Objects.isNull(planningDateTimeSlot)
-        ) {
+    public FactoryProcessSequence shadowFactoryProcessSequenceSupplier() {
+        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.planningDateTimeSlot)) {
             return null;
         }
 
+        if (Objects.nonNull(this.shadowFactoryProcessSequence)) {
+            this.shadowFactoryProcessSequence.trigRemove();
+        }
         FactoryProcessSequence factoryProcessSequence = new FactoryProcessSequence(this);
-        log.info("factoryProcessSequence={}", factoryProcessSequence);
+        this.planningFactoryInstance.addFactoryProcessSequence(factoryProcessSequence);
         return factoryProcessSequence;
     }
 
@@ -323,6 +307,26 @@ public class SchedulingProducingArrangement {
 
     public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    }
+
+    public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
+        return this.prerequisiteProducingArrangements.stream()
+                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .whole(this)
+                        .partial(schedulingProducingArrangement)
+                        .build()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
+        return this.deepPrerequisiteProducingArrangements.stream()
+                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .whole(this)
+                        .partial(schedulingProducingArrangement)
+                        .build()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
 }
