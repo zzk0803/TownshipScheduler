@@ -85,7 +85,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 = factoryInstanceList.stream()
                 .filter(slotFactoryInstance -> schedulingProducingArrangement.getRequiredFactoryInfo()
                         .typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
-                .findAny()
+                .findFirst()
                 .get();
         SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
@@ -105,29 +105,28 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         scoreDirector.triggerVariableListeners();
 
         int size = schedulingFactoryInstance.getPlanningProducingArrangements().size();
-        scoreDirector.beforeListVariableElementAssigned(
-                schedulingFactoryInstance,
-                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
-                schedulingProducingArrangement
-        );
         scoreDirector.beforeListVariableChanged(
                 schedulingFactoryInstance,
                 SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
                 size,
                 size+1
         );
-        schedulingProducingArrangement.setPlanningFactoryInstance(schedulingFactoryInstance);
+        scoreDirector.beforeListVariableElementAssigned(
+                schedulingFactoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                schedulingProducingArrangement
+        );
         schedulingFactoryInstance.getPlanningProducingArrangements().add(schedulingProducingArrangement);
+        scoreDirector.afterListVariableElementAssigned(
+                schedulingFactoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                schedulingProducingArrangement
+        );
         scoreDirector.afterListVariableChanged(
                 schedulingFactoryInstance,
                 SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
                 size,
                 size+1
-        );
-        scoreDirector.afterListVariableElementAssigned(
-                schedulingFactoryInstance,
-                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
-                schedulingProducingArrangement
         );
 
         scoreDirector.triggerVariableListeners();
