@@ -89,6 +89,7 @@ public class OrderFormView extends VerticalLayout {
             FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository,
             TownshipAuthenticationContext townshipAuthenticationContext
     ) {
+
         this.orderEntityRepository = orderEntityRepository;
         this.productEntityRepository = productEntityRepository;
         this.fieldFactoryInfoEntityRepository = fieldFactoryInfoEntityRepository;
@@ -97,8 +98,8 @@ public class OrderFormView extends VerticalLayout {
                 = new ProductsAmountPanel(() -> {
             Optional<PlayerEntity> playerEntity = townshipAuthenticationContext.getPlayerEntity();
             return playerEntity.<Supplier<Collection<FieldFactoryInfoEntity>>>map(
-                    player -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
-                            player.getLevel(),
+                    entity -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                            entity.getLevel(),
                             Sort.by(Sort.Direction.ASC, "level")
                     )).orElseGet(() -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
                     Sort.by(Sort.Direction.ASC, "level")
@@ -181,6 +182,91 @@ public class OrderFormView extends VerticalLayout {
         return formLayout;
     }
 
+    private Grid<BillItem> assembleBillItemGrid() {
+        Grid<BillItem> grid = new Grid<>(BillItem.class, false);
+        grid.setWidthFull();
+        grid.addThemeVariants(
+                GridVariant.LUMO_NO_ROW_BORDERS,
+                GridVariant.LUMO_NO_ROW_BORDERS
+        );
+        grid.addColumn(BillItem::getSerial)
+                .setHeader("#");
+        grid.addColumn(buildItemCard())
+                .setHeader("Item");
+        grid.addComponentColumn(buildItemAmountField())
+                .setHeader("Amount Operation");
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+        return grid;
+    }
+
+    private Button assembleItemAppendBtn() {
+        Button addItemButton = new Button(VaadinIcon.PLUS.create());
+        addItemButton.addThemeVariants(
+                ButtonVariant.LUMO_PRIMARY,
+                ButtonVariant.LUMO_LARGE
+        );
+        addItemButton.addClickListener(_ -> {
+            Dialog dialog = new Dialog("Select Goods...");
+            dialog.setSizeFull();
+            dialog.addComponentAsFirst(this.productsAmountPanel);
+
+            Button button = new Button("OK");
+            button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+            button.addClickListener(_ -> {
+                dialog.close();
+                setupDataProviderForItems(billItemGrid);
+            });
+            dialog.getFooter().add(button);
+            dialog.open();
+        });
+
+        return addItemButton;
+    }
+
+    private Component assembleFooterPanel() {
+        HorizontalLayout footerLayout = new HorizontalLayout();
+
+        Button submit = new Button("Submit");
+        submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        submit.addClickListener(_ -> {
+            onSubmit();
+            UiEventBus.publish(
+                    new OrderFormViewHasSubmitEvent(
+                            this,
+                            false
+                    )
+            );
+        });
+
+        Button cancel = new Button("Cancel");
+        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+        cancel.addClickListener(_ -> UI.getCurrent().navigate(OrderListView.class));
+
+        footerLayout.add(submit, cancel);
+        footerLayout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        footerLayout.setAlignItems(Alignment.BASELINE);
+        return footerLayout;
+    }
+
+    private void addBillItem(BillItem billItem) {
+        getGridBillItems().stream()
+                .filter(iterating -> iterating.getProductEntity()
+                        .getProductId()
+                        .equals(billItem.getProductEntity().getProductId()))
+                .findFirst()
+                .ifPresentOrElse(
+                        optionalPresent -> {
+                            int amount = optionalPresent.getAmount();
+                            optionalPresent.setAmount(amount);
+                        }, () -> getGridBillItems().add(billItem)
+                );
+    }
+
+    private void setupDataProviderForItems(Grid<BillItem> grid) {
+        billItemGridDataProvider = new ListDataProvider<>(this.gridBillItems);
+        billItemGridListDataView = grid.setItems(this.billItemGridDataProvider);
+    }
+
     private static void settingDeadlineFieldGroupAvailableStatus(
             boolean boolOpen,
             BillDurationField durationCountdownField,
@@ -213,24 +299,6 @@ public class OrderFormView extends VerticalLayout {
         });
     }
 
-    public Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
-        return new Converter<>() {
-
-            @Override
-            public Result<LocalDateTime> convertToModel(Duration duration, ValueContext valueContext) {
-                return Result.ok(LocalDateTime.now().plus(duration));
-            }
-
-            @Override
-            public Duration convertToPresentation(LocalDateTime localDateTime, ValueContext valueContext) {
-                if (localDateTime == null) {
-                    return Duration.ZERO;
-                }
-                return Duration.between(LocalDateTime.now(), localDateTime);
-            }
-        };
-    }
-
     private void settingBinder(
             RadioButtonGroup<OrderType> billTypeGroup,
             Checkbox boolDeadlineCheckbox,
@@ -254,31 +322,9 @@ public class OrderFormView extends VerticalLayout {
                 .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
     }
 
-    private void renewBinderAndObject() {
-        this.binder.readBean(this.orderEntity = new OrderEntity());
-    }
-
-    private Grid<BillItem> assembleBillItemGrid() {
-        Grid<BillItem> grid = new Grid<>(BillItem.class, false);
-        grid.setWidthFull();
-        grid.addThemeVariants(
-                GridVariant.LUMO_NO_ROW_BORDERS,
-                GridVariant.LUMO_NO_ROW_BORDERS
-        );
-        grid.addColumn(BillItem::getSerial)
-                .setHeader("#");
-        grid.addColumn(buildItemCard())
-                .setHeader("Item");
-        grid.addComponentColumn(buildItemAmountField())
-                .setHeader("Amount Operation");
-        grid.setSelectionMode(Grid.SelectionMode.NONE);
-        return grid;
-    }
-
     private ComponentRenderer<Div, BillItem> buildItemCard() {
         return new ComponentRenderer<>(billItem -> {
             ProductEntity productEntity = billItem.getProductEntity();
-            WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
 
             Div card = new Div();
             card.addClassNames(
@@ -290,9 +336,9 @@ public class OrderFormView extends VerticalLayout {
                     LumoUtility.Margin.XSMALL
             );
 
-            Image image = ProductImages.productImage(
+            Image image =ProductImages.productImage(
                     productEntity.getName(),
-                    crawledAsImage
+                    productEntity.getCrawledAsImage().getImageBytes()
             );
             image.addClassNames(
                     LumoUtility.Display.FLEX,
@@ -309,23 +355,6 @@ public class OrderFormView extends VerticalLayout {
         });
     }
 
-    private Div createProductDescriptionDiv(ProductEntity productEntity) {
-        Div description = new Div();
-        description.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.FlexDirection.COLUMN,
-                LumoUtility.AlignItems.BASELINE,
-                LumoUtility.JustifyContent.END,
-                LumoUtility.TextColor.SECONDARY
-        );
-        Span item = new Span("Item:" + productEntity.getName());
-        item.addClassNames(LumoUtility.Display.FLEX);
-        Span factory = new Span("Factory:" + productEntity.getCategory());
-        factory.addClassNames(LumoUtility.Display.FLEX);
-        description.add(item, factory);
-        return description;
-    }
-
     private ValueProvider<BillItem, IntegerField> buildItemAmountField() {
         return (item) -> {
             IntegerField integerField = new IntegerField();
@@ -339,60 +368,6 @@ public class OrderFormView extends VerticalLayout {
             });
             return integerField;
         };
-    }
-
-    private Button assembleItemAppendBtn() {
-        Button addItemButton = new Button(VaadinIcon.PLUS.create());
-        addItemButton.addThemeVariants(
-                ButtonVariant.LUMO_PRIMARY,
-                ButtonVariant.LUMO_LARGE
-        );
-        addItemButton.addClickListener(_ -> {
-            Dialog dialog = new Dialog("Select Goods...");
-            dialog.setSizeFull();
-            dialog.addComponentAsFirst(this.productsAmountPanel);
-
-            Button button = new Button("OK");
-            button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
-            button.addClickListener(_ -> {
-                dialog.close();
-                setupDataProviderForItems(billItemGrid);
-            });
-            dialog.getFooter().add(button);
-            dialog.open();
-        });
-
-        return addItemButton;
-    }
-
-    private void setupDataProviderForItems(Grid<BillItem> grid) {
-        billItemGridDataProvider = new ListDataProvider<>(this.gridBillItems);
-        billItemGridListDataView = grid.setItems(this.billItemGridDataProvider);
-    }
-
-    private Component assembleFooterPanel() {
-        HorizontalLayout footerLayout = new HorizontalLayout();
-
-        Button submit = new Button("Submit");
-        submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        submit.addClickListener(_ -> {
-            onSubmit();
-            UiEventBus.publish(
-                    new OrderFormViewHasSubmitEvent(
-                            this,
-                            false
-                    )
-            );
-        });
-
-        Button cancel = new Button("Cancel");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        cancel.addClickListener(_ -> UI.getCurrent().navigate(OrderListView.class));
-
-        footerLayout.add(submit, cancel);
-        footerLayout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        footerLayout.setAlignItems(Alignment.BASELINE);
-        return footerLayout;
     }
 
     private void onSubmit() {
@@ -424,18 +399,43 @@ public class OrderFormView extends VerticalLayout {
         }
     }
 
-    private void addBillItem(BillItem billItem) {
-        getGridBillItems().stream()
-                .filter(iterating -> iterating.getProductEntity()
-                        .getProductId()
-                        .equals(billItem.getProductEntity().getProductId()))
-                .findFirst()
-                .ifPresentOrElse(
-                        optionalPresent -> {
-                            int amount = optionalPresent.getAmount();
-                            optionalPresent.setAmount(amount);
-                        }, () -> getGridBillItems().add(billItem)
-                );
+    public Converter<Duration, LocalDateTime> getDurationLocalDateTimeConverter() {
+        return new Converter<>() {
+
+            @Override
+            public Result<LocalDateTime> convertToModel(Duration duration, ValueContext valueContext) {
+                return Result.ok(LocalDateTime.now().plus(duration));
+            }
+
+            @Override
+            public Duration convertToPresentation(LocalDateTime localDateTime, ValueContext valueContext) {
+                if (localDateTime == null) {
+                    return Duration.ZERO;
+                }
+                return Duration.between(LocalDateTime.now(), localDateTime);
+            }
+        };
+    }
+
+    private void renewBinderAndObject() {
+        this.binder.readBean(this.orderEntity = new OrderEntity());
+    }
+
+    private Div createProductDescriptionDiv(ProductEntity productEntity) {
+        Div description = new Div();
+        description.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.AlignItems.BASELINE,
+                LumoUtility.JustifyContent.END,
+                LumoUtility.TextColor.SECONDARY
+        );
+        Span item = new Span("Item:" + productEntity.getName());
+        item.addClassNames(LumoUtility.Display.FLEX);
+        Span factory = new Span("Factory:" + productEntity.getCategory());
+        factory.addClassNames(LumoUtility.Display.FLEX);
+        description.add(item, factory);
+        return description;
     }
 
     public static class OrderFormViewHasSubmitEvent extends ComponentEvent<OrderFormView> {

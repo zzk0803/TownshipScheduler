@@ -156,9 +156,6 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>zzk.townshipscheduler.Application</mainClass>
-<!--                    <jvmArguments>-->
-<!--                        -XX:+UseZGC-->
-<!--                    </jvmArguments>-->
                 </configuration>
             </plugin>
             <plugin>
