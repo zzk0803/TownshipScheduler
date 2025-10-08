@@ -98,6 +98,7 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "shadowFactoryProcessSequenceSupplier")
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
+    @ShadowVariable(supplierName = "shadowFactoryComputedDateTimePairSupplier")
     private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
     private SchedulingProducingArrangement(
@@ -120,21 +121,25 @@ public class SchedulingProducingArrangement {
         return producingArrangement;
     }
 
+    @ShadowSources({"shadowFactoryProcessSequence"})
     public FactoryComputedDateTimePair shadowFactoryComputedDateTimePairSupplier() {
         log.info(
                 "schedulingFactoryInstance={},shadowFactoryProcessSequence={}",
                 this.planningFactoryInstance, this.shadowFactoryProcessSequence
         );
-        if (Objects.isNull(this.planningFactoryInstance)) {
-            return null;
-        }
-        if (Objects.isNull(this.shadowFactoryProcessSequence)) {
+        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.shadowFactoryProcessSequence)) {
+            if (Objects.nonNull(this.shadowFactoryComputedDateTimePair)) {
+                return this.shadowFactoryComputedDateTimePair;
+            }
             return null;
         }
 
-        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> computedMap
-                = this.planningFactoryInstance.getFactoryProcessToDateTimePairMap();
-        FactoryComputedDateTimePair dateTimePair = computedMap.get(this.shadowFactoryProcessSequence);
+        this.planningFactoryInstance.addFactoryProcessSequence(this.shadowFactoryProcessSequence);
+
+        FactoryComputedDateTimePair dateTimePair = this.planningFactoryInstance.arrangementComputedDateTimeDispatch(this.shadowFactoryProcessSequence);
+        if (dateTimePair == null) {
+            return this.shadowFactoryComputedDateTimePair;
+        }
         log.info("dateTimePair={}", dateTimePair);
         return dateTimePair;
     }
@@ -153,9 +158,7 @@ public class SchedulingProducingArrangement {
         if (Objects.nonNull(this.shadowFactoryProcessSequence)) {
             this.shadowFactoryProcessSequence.trigRemove();
         }
-        FactoryProcessSequence factoryProcessSequence = new FactoryProcessSequence(this);
-        this.planningFactoryInstance.addFactoryProcessSequence(factoryProcessSequence);
-        return factoryProcessSequence;
+        return new FactoryProcessSequence(this);
     }
 
     @JsonIgnore

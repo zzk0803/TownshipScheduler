@@ -120,7 +120,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.HARD_BROKEN_DEADLINE,
-                                1L
+                                0L
                         ),
                         ((schedulingOrder, producingArrangement) -> {
                             LocalDateTime deadline = schedulingOrder.getDeadline();
@@ -141,7 +141,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::isOrderDirect)
                 .filter(schedulingProducingArrangement -> {
-                            return schedulingProducingArrangement.getCompletedDateTime()
+                            return schedulingProducingArrangement.getCompletedDateTime()!=null&&schedulingProducingArrangement.getCompletedDateTime()
                                     .isAfter(
                                             schedulingProducingArrangement.getSchedulingWorkCalendar()
                                                     .getEndDateTime()
@@ -153,19 +153,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_TOLERANCE,
-                                10L
+                                0L
                         ),
                         schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
-                            LocalDateTime workCalendarStart = schedulingProducingArrangement.getSchedulingWorkCalendar()
-                                    .getStartDateTime();
                             LocalDateTime workCalendarEnd = schedulingProducingArrangement.getSchedulingWorkCalendar()
                                     .getEndDateTime();
-                            if (completedDateTime != null) {
                                 return Duration.between(workCalendarEnd, completedDateTime).toMinutes();
-                            } else {
-                                return Duration.between(workCalendarStart, workCalendarEnd).toMinutes();
-                            }
                         }
                 )
                 .asConstraint("shouldNotBrokenCalendarEnd");
@@ -188,7 +182,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_TOLERANCE,
-                                500L
+                                0L
                         )
                 )
                 .asConstraint("shouldNotArrangeInPlayerSleepTime");
@@ -202,12 +196,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
-                                1L
+                                0L
                         ),
                         (arrangement) -> {
                             var calendarStartDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
-                            var completedDateTime = arrangement.getCompletedDateTime();
-                            Duration between = Duration.between(calendarStartDateTime, completedDateTime);
+                            var computedDateTimePair = arrangement.getShadowFactoryComputedDateTimePair();
+                            Duration between = Duration.between(calendarStartDateTime, computedDateTimePair.completedDateTime());
                             return calcFactor(arrangement) * between.toMinutes();
                         }
                 )
@@ -237,7 +231,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
-                                1L
+                                0L
                         ), (arrangement) -> {
                             LocalDateTime workCalendarStart = arrangement.getSchedulingWorkCalendar()
                                     .getStartDateTime();
@@ -260,7 +254,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
-                                700L
+                                0L
                         )
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
