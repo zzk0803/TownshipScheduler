@@ -94,10 +94,6 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @JsonIgnore
-    @ShadowVariable(supplierName = "shadowFactoryProcessSequenceSupplier")
-    private FactoryProcessSequence shadowFactoryProcessSequence;
-
     @ShadowVariable(supplierName = "shadowFactoryComputedDateTimePairSupplier")
     private FactoryComputedDateTimePair shadowFactoryComputedDateTimePair;
 
@@ -121,44 +117,20 @@ public class SchedulingProducingArrangement {
         return producingArrangement;
     }
 
-    @ShadowSources({"shadowFactoryProcessSequence"})
+    @ShadowSources({"planningFactoryInstance.factoryProcessToDateTimePairMap"})
     public FactoryComputedDateTimePair shadowFactoryComputedDateTimePairSupplier() {
-        log.info(
-                "schedulingFactoryInstance={},shadowFactoryProcessSequence={}",
-                this.planningFactoryInstance, this.shadowFactoryProcessSequence
-        );
-        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.shadowFactoryProcessSequence)) {
+        if (Objects.isNull(this.planningFactoryInstance) ) {
             if (Objects.nonNull(this.shadowFactoryComputedDateTimePair)) {
                 return this.shadowFactoryComputedDateTimePair;
             }
             return null;
         }
 
-        this.planningFactoryInstance.addFactoryProcessSequence(this.shadowFactoryProcessSequence);
-
-        FactoryComputedDateTimePair dateTimePair = this.planningFactoryInstance.arrangementComputedDateTimeDispatch(this.shadowFactoryProcessSequence);
+        FactoryComputedDateTimePair dateTimePair = this.planningFactoryInstance.queryComputedDateTimePair(this);
         if (dateTimePair == null) {
             return this.shadowFactoryComputedDateTimePair;
         }
-        log.info("dateTimePair={}", dateTimePair);
         return dateTimePair;
-    }
-
-    @ShadowSources(
-            {
-                    "planningFactoryInstance",
-                    "planningDateTimeSlot"
-            }
-    )
-    public FactoryProcessSequence shadowFactoryProcessSequenceSupplier() {
-        if (Objects.isNull(this.planningFactoryInstance) || Objects.isNull(this.planningDateTimeSlot)) {
-            return null;
-        }
-
-        if (Objects.nonNull(this.shadowFactoryProcessSequence)) {
-            this.shadowFactoryProcessSequence.trigRemove();
-        }
-        return new FactoryProcessSequence(this);
     }
 
     @JsonIgnore

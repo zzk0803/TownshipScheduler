@@ -25,7 +25,6 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
     @EqualsAndHashCode.Include
     Integer arrangementId;
 
-    SchedulingFactoryInstance schedulingFactoryInstance;
 
     @ToString.Include
     @EqualsAndHashCode.Include
@@ -42,8 +41,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
-        this.schedulingFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
-        this.schedulingFactoryInstanceReadableIdentifier = this.schedulingFactoryInstance.getFactoryReadableIdentifier();
+        this.schedulingFactoryInstanceReadableIdentifier = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
     }
 
     public static FactoryProcessSequence of(SchedulingProducingArrangement schedulingProducingArrangement) {
@@ -53,13 +51,6 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
     @Override
     public int compareTo(FactoryProcessSequence that) {
         return COMPARATOR.compare(this, that);
-    }
-
-    public void trigRemove() {
-        if (this.schedulingFactoryInstance != null) {
-            this.schedulingFactoryInstance.removeFactoryProcessSequence(this);
-        }
-
     }
 
 }
