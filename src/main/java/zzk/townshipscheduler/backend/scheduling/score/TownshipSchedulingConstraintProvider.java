@@ -78,7 +78,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 Function.identity()
                         )
                 )
-                .filter((_, whole, partial) -> {
+                .groupBy(
+                        (hierarchies, whole, partial) -> whole,
+                        (hierarchies, whole, partial) -> partial,
+                        (hierarchies, whole, partial) -> whole.getPlanningFactoryInstance()
+                                .getArrangementToComputedPairMap(),
+                        (hierarchies, whole, partial) -> partial.getPlanningFactoryInstance()
+                                .getArrangementToComputedPairMap()
+                )
+                .filter((whole, partial, wholeFactoryComputedMap, partialFactoryComputedMap) -> {
                     LocalDateTime wholeArrangeDateTime = whole.getArrangeDateTime();
                     LocalDateTime partialCompletedDateTime = partial.getCompletedDateTime();
                     boolean nonNull = Objects.nonNull(wholeArrangeDateTime) && Objects.nonNull(partialCompletedDateTime);
@@ -91,7 +99,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
                                 1L
                         ),
-                        (_, whole, partial) ->
+                        (whole, partial, wholeFactoryComputedMap, partialFactoryComputedMap) ->
                                 Duration.between(whole.getArrangeDateTime(), partial.getCompletedDateTime()).toMinutes()
                 )
                 .asConstraint("forbidBrokenPrerequisiteStock");
@@ -139,6 +147,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::isOrderDirect)
+                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
                 .filter(schedulingProducingArrangement -> {
                             return schedulingProducingArrangement.getCompletedDateTime()
                                     .isAfter(
@@ -156,15 +165,9 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ),
                         schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
-                            LocalDateTime workCalendarStart = schedulingProducingArrangement.getSchedulingWorkCalendar()
-                                    .getStartDateTime();
                             LocalDateTime workCalendarEnd = schedulingProducingArrangement.getSchedulingWorkCalendar()
                                     .getEndDateTime();
-                            if (completedDateTime != null) {
-                                return Duration.between(workCalendarEnd, completedDateTime).toMinutes();
-                            } else {
-                                return Duration.between(workCalendarStart, workCalendarEnd).toMinutes();
-                            }
+                            return Duration.between(workCalendarEnd, completedDateTime).toMinutes();
                         }
                 )
                 .asConstraint("shouldNotBrokenCalendarEnd");
@@ -174,6 +177,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
             @NonNull ConstraintFactory constraintFactory
     ) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
                 .filter(schedulingProducingArrangement -> {
                     LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
                     LocalTime sleepStart = schedulingProducingArrangement.getSchedulingPlayer().getSleepStart();
@@ -196,6 +200,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint preferMinimizeOrderCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::isOrderDirect)
+                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
                 .penalizeLong(
                         BendableLongScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -231,6 +236,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
                 .penalizeLong(
                         BendableLongScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -250,6 +256,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint preferMinimizeProductArrangeDateTimeSlotUsage(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
                 .groupBy(
                         SchedulingProducingArrangement::getPlanningFactoryInstance,
                         ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)

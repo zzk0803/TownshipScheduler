@@ -152,15 +152,9 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                 : null;
     }
 
-    @ShadowSources(
-            {
-                    "planningDateTimeSlot",
-                    "planningFactoryInstance",
-                    "planningFactoryInstance.arrangementToComputedPairMap"
-            }
-    )
+    @ShadowSources({"planningFactoryInstance.arrangementToComputedPairMap"})
     public FactoryComputedDateTimePair computedDateTimePairSupplier() {
-        if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.planningFactoryInstance)) {
+        if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.indexInFactoryArrangements)) {
             return null;
         }
 
