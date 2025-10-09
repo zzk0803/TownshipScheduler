@@ -87,6 +87,9 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @InverseRelationShadowVariable(sourceVariableName = SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS)
     private SchedulingFactoryInstance planningFactoryInstance;
 
+    @PreviousElementShadowVariable(sourceVariableName = SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS)
+    private SchedulingProducingArrangement previousProducingArrangement;
+
     @IndexShadowVariable(sourceVariableName = SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS)
     private Integer indexInFactoryArrangements;
 
@@ -152,13 +155,35 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                 : null;
     }
 
-    @ShadowSources({"planningFactoryInstance.arrangementToComputedPairMap"})
+    @ShadowSources(
+            {
+                    "planningFactoryInstance",
+                    "planningDateTimeSlot",
+                    "previousProducingArrangement",
+                    "previousProducingArrangement.computedDateTimePair"
+            }
+    )
     public FactoryComputedDateTimePair computedDateTimePairSupplier() {
-        if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.indexInFactoryArrangements)) {
+        if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.planningFactoryInstance)) {
             return null;
         }
 
-        return this.planningFactoryInstance.getArrangementToComputedPairMap().get(this);
+        LocalDateTime arrangeDateTime = this.planningDateTimeSlot.getStart();
+        if (this.previousProducingArrangement == null) {
+            return new FactoryComputedDateTimePair(arrangeDateTime, arrangeDateTime.plus(getProducingDuration()));
+        } else {
+            FactoryComputedDateTimePair previousProducingArrangementComputedDateTimePair = this.previousProducingArrangement.getComputedDateTimePair();
+            LocalDateTime previousCompletedDateTime = previousProducingArrangementComputedDateTimePair.completedDateTime();
+            LocalDateTime producingDateTime = previousCompletedDateTime.isAfter(arrangeDateTime)
+                    ? previousCompletedDateTime
+                    : arrangeDateTime;
+            return new FactoryComputedDateTimePair(producingDateTime, producingDateTime.plus(getProducingDuration()));
+        }
+    }
+
+    @JsonProperty("producingDuration")
+    public Duration getProducingDuration() {
+        return getProducingExecutionMode().getExecuteDuration();
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -177,11 +202,6 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonProperty("schedulingProduct")
     public SchedulingProduct getSchedulingProduct() {
         return (SchedulingProduct) getCurrentActionObject();
-    }
-
-    @JsonProperty("producingDuration")
-    public Duration getProducingDuration() {
-        return getProducingExecutionMode().getExecuteDuration();
     }
 
     @JsonIgnore
