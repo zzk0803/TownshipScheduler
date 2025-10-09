@@ -20,6 +20,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     @Override
     public Constraint @NonNull [] defineConstraints(@NonNull ConstraintFactory constraintFactory) {
         return new Constraint[]{
+                forbidShadowInconsistency(constraintFactory),
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteStock(constraintFactory),
                 forbidBrokenDeadlineOrder(constraintFactory),
@@ -35,7 +36,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
                 .join(
-                        SchedulingProducingArrangement.class,
+                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+                                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null),
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 )
                 .filter((current, other) -> !other.getArrangeDateTime().isAfter(current.getArrangeDateTime())
@@ -191,6 +193,17 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint preferMinimizeOrderCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::isOrderDirect)
+                .join(
+                        SchedulingOrder.class,
+                        Joiners.equal(SchedulingProducingArrangement::getSchedulingOrder, Function.identity())
+                )
+                .groupBy(
+                        (schedulingProducingArrangement, order) -> order,
+                        ConstraintCollectors.max(
+                                (schedulingProducingArrangement, order) -> schedulingProducingArrangement,
+                                SchedulingProducingArrangement::getCompletedDateTime
+                        )
+                )
                 .penalizeLong(
                         BendableLongScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -198,15 +211,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.SOFT_BATTER,
                                 1L
                         ),
-                        (arrangement) -> {
-                            var calendarStartDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
-                            var computedDateTimePair = arrangement.getShadowFactoryComputedDateTimePair();
-                            Duration between = Duration.between(
-                                    calendarStartDateTime,
-                                    computedDateTimePair.completedDateTime()
-                            );
-                            return calcFactor(arrangement) * between.toMinutes();
-                        }
+                        (order, mostLateArrangement) -> calcFactor(mostLateArrangement) * mostLateArrangement.completedDateTimeBetweenWorkCalendarEnd()
                 )
                 .asConstraint("preferMinimizeOrderCompletedDateTime");
     }
@@ -261,6 +266,20 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         )
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
+    }
+
+    private Constraint forbidShadowInconsistency(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(SchedulingProducingArrangement::getInconsistency)
+                .penalizeLong(
+                        BendableLongScore.ofHard(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.HARD_SHADOW_INCONSISTENCY,
+                                1L
+                        )
+                )
+                .asConstraint("forbidShadowInconsistency");
     }
 
 }
