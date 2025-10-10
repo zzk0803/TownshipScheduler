@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement implements Comparable<SchedulingProducingArrangement> {
+public class SchedulingProducingArrangement  {
 
     public static final Comparator<SchedulingProducingArrangement> COMPARATOR
             = Comparator.comparing(
@@ -346,14 +346,14 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         return new FactoryProcessSequence(this);
     }
 
-    public boolean arrangeDataTimeIsIllegal() {
-        return Objects.isNull(this.prerequisiteProducingArrangementsCompletedDateTime)
-               || this.arrangeDateTime.isBefore(this.prerequisiteProducingArrangementsCompletedDateTime);
+    public boolean boolArrangeDataTimeBrokenPrerequisite() {
+        return Objects.nonNull(this.prerequisiteProducingArrangementsCompletedDateTime)
+               && this.arrangeDateTime.isBefore(this.prerequisiteProducingArrangementsCompletedDateTime);
     }
 
     public Long arrangeDateTimeBetweenPrerequisiteArrangementsCompletedDateTime() {
-        if (this.prerequisiteProducingArrangementsCompletedDateTime == null) {
-            return null;
+        if (Objects.isNull(this.prerequisiteProducingArrangementsCompletedDateTime)) {
+            return 0L;
         }
 
         if (this.arrangeDateTime.isAfter(this.prerequisiteProducingArrangementsCompletedDateTime)) {
@@ -375,9 +375,5 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         return Duration.between(this.completedDateTime, this.schedulingWorkCalendar.getEndDateTime()).toMinutes();
     }
 
-    @Override
-    public int compareTo(@NotNull SchedulingProducingArrangement that) {
-        return COMPARATOR.compare(this, that);
-    }
 
 }

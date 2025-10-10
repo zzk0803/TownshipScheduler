@@ -97,7 +97,7 @@ public class SchedulingFactoryInstance {
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
     @ShadowVariable(supplierName = "supplierForArrangementToComputedPairMap")
-    private TreeMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> arrangementToComputedPairMap = new TreeMap<>();
+    private TreeMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> arrangementToComputedPairMap = new TreeMap<>(SchedulingProducingArrangement.COMPARATOR);
 
     @ShadowSources(
             {
@@ -107,10 +107,10 @@ public class SchedulingFactoryInstance {
     )
     public TreeMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> supplierForArrangementToComputedPairMap() {
         return this.planningFactoryInstanceProducingArrangements.stream()
-                .sorted(SchedulingProducingArrangement::compareTo)
+                .sorted(SchedulingProducingArrangement.COMPARATOR)
                 .gather(weatherFactoryProducingTypeIsQueue() ? QUEUE_GATHERER : SLOT_GATHERER)
                 .collect(
-                        TreeMap::new,
+                        () -> new TreeMap<>(SchedulingProducingArrangement.COMPARATOR),
                         (treeMap, pair) -> treeMap.put(
                                 pair.getValue0(),
                                 pair.getValue1()
