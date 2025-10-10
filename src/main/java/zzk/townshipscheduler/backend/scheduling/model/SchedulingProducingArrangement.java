@@ -46,7 +46,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "arrangeDateTimeSupplier")
+    @ShadowVariable(supplierName = "supplierForArrangeDateTime")
     public LocalDateTime arrangeDateTime;
 
     @EqualsAndHashCode.Include
@@ -80,7 +80,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
-    @ShadowVariable(supplierName = "prerequisiteProducingArrangementsCompletedDateTimeSupplier")
+    @ShadowVariable(supplierName = "supplierForPrerequisiteProducingArrangementsCompletedDateTime")
     private LocalDateTime prerequisiteProducingArrangementsCompletedDateTime;
 
     @JsonIgnore
@@ -103,21 +103,18 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @ShadowVariable(supplierName = "previousFactoryProducingArrangementCompletedDateTimeSupplier")
-    private LocalDateTime previousFactoryProducingArrangementCompletedDateTime;
-
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "producingDateTimeSupplier")
+    @ShadowVariable(supplierName = "supplierForProducingDateTime")
     private LocalDateTime producingDateTime;
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "completedDateTimeSupplier")
+    @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
 
     @ShadowVariablesInconsistent
@@ -144,29 +141,15 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     }
 
     @ShadowSources({"planningDateTimeSlot"})
-    public LocalDateTime arrangeDateTimeSupplier() {
+    public LocalDateTime supplierForArrangeDateTime() {
         return this.planningDateTimeSlot != null ? this.planningDateTimeSlot.getStart() : null;
-    }
-
-    @ShadowSources(
-            {
-                    "planningFactoryInstance",
-                    "planningDateTimeSlot",
-                    "planningFactoryInstance.planningFactoryInstanceProducingArrangements"
-            }
-    )
-    public LocalDateTime previousFactoryProducingArrangementCompletedDateTimeSupplier() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
-            return null;
-        }
-        return this.planningFactoryInstance.queryPreviousFactoryProducingArrangementCompletedDateTime(this);
     }
 
     @ShadowSources(
             value = {"prerequisiteProducingArrangements[].completedDateTime"},
             alignmentKey = "prerequisiteProducingArrangements"
     )
-    public LocalDateTime prerequisiteProducingArrangementsCompletedDateTimeSupplier() {
+    public LocalDateTime supplierForPrerequisiteProducingArrangementsCompletedDateTime() {
         if (this.prerequisiteProducingArrangements.isEmpty()) {
             return getSchedulingWorkCalendar().getStartDateTime();
         }
@@ -181,23 +164,20 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @ShadowSources(
             value = {
                     "planningFactoryInstance",
-                    "arrangeDateTime",
-                    "previousFactoryProducingArrangementCompletedDateTime"
+                    "planningDateTimeSlot",
+                    "planningFactoryInstance.arrangementToComputedPairMap"
             }
     )
-    public LocalDateTime producingDateTimeSupplier() {
-        if (this.arrangeDateTime == null || this.planningFactoryInstance == null) {
+    public LocalDateTime supplierForProducingDateTime() {
+        if (this.planningDateTimeSlot == null || this.planningFactoryInstance == null) {
             return null;
         }
 
         if (weatherFactoryProducingTypeIsQueue()) {
-            return this.previousFactoryProducingArrangementCompletedDateTime == null
-                    ? this.arrangeDateTime
-                    : this.previousFactoryProducingArrangementCompletedDateTime;
+            return this.planningFactoryInstance.queryArrangementProducingDateTime(this);
         } else {
-            return this.arrangeDateTime;
+            return this.planningDateTimeSlot.getStart();
         }
-
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -218,13 +198,30 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         return (SchedulingProduct) getCurrentActionObject();
     }
 
-    @ShadowSources({"producingDateTime"})
-    public LocalDateTime completedDateTimeSupplier() {
+    @ShadowSources(
+            value = {
+                    "producingDateTime",
+                    "planningFactoryInstance.arrangementToComputedPairMap"
+            }
+    )
+    public LocalDateTime supplierForCompletedDateTime() {
         if (this.producingDateTime == null) {
             return null;
         }
 
-        return this.producingDateTime.plus(getProducingDuration());
+        LocalDateTime computedArrangementCompletedDateTime = this.producingDateTime.plus(getProducingDuration());
+        if (weatherFactoryProducingTypeIsQueue()) {
+            LocalDateTime queryArrangementCompletedDateTime
+                    = this.planningFactoryInstance.queryArrangementCompletedDateTime(this);
+            if (!Objects.equals(queryArrangementCompletedDateTime, computedArrangementCompletedDateTime)) {
+                log.warn(
+                        "not equal(queryArrangementCompletedDateTime={}, computedArrangementCompletedDateTime={})",
+                        queryArrangementCompletedDateTime,
+                        computedArrangementCompletedDateTime
+                );
+            }
+        }
+        return computedArrangementCompletedDateTime;
     }
 
     @JsonProperty("producingDuration")
@@ -343,6 +340,10 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                         .build()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public FactoryProcessSequence toFactoryProcessSequence() {
+        return new FactoryProcessSequence(this);
     }
 
     public boolean arrangeDataTimeIsIllegal() {

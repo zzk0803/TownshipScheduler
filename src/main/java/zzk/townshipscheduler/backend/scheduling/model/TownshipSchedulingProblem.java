@@ -130,7 +130,7 @@ public class TownshipSchedulingProblem {
     public List<SchedulingArrangementHierarchies> toSchedulingArrangementHierarchies() {
         return this.schedulingProducingArrangementList.stream()
                 .flatMap(
-                        schedulingProducingArrangement -> schedulingProducingArrangement.toPrerequisiteHierarchies()
+                        schedulingProducingArrangement -> schedulingProducingArrangement.toDeepPrerequisiteHierarchies()
                                 .stream()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
