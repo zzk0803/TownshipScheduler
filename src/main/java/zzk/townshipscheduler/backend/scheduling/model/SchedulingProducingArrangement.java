@@ -28,15 +28,11 @@ import java.util.stream.Collectors;
 @PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
 
-//    public static final String VALUE_RANGE_FOR_FACTORIES_IN_ARRANGEMENT = "valueRangeForFactoriesInArrangement";
-
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
 
     public static final String SHADOW_FACTORY_PROCESS_SEQUENCE = "shadowFactoryProcessSequence";
-
-    public static final String SHADOW_COMPUTED_DATE_TIME_PAIR = "shadowFactoryComputedDateTimePair";
 
     public static final String SHADOW_PRODUCING_DATE_TIME = "producingDateTime";
 
