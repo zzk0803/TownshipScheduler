@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TownshipSchedulingProblem {
 
-    public static final int BENDABLE_SCORE_HARD_SIZE = 4;
+    public static final int BENDABLE_SCORE_HARD_SIZE = 3;
 
     public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
 
@@ -25,8 +25,6 @@ public class TownshipSchedulingProblem {
     public static final int HARD_BROKEN_PRODUCE_PREREQUISITE = 1;
 
     public static final int HARD_BROKEN_DEADLINE = 2;
-
-    public static final int HARD_SHADOW_INCONSISTENCY = 3;
 
     public static final int SOFT_TOLERANCE = 0;
 

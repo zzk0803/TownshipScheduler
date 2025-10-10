@@ -5,14 +5,12 @@ import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariablesInconsistent;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
@@ -29,7 +27,7 @@ import java.util.stream.Collectors;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement  {
+public class SchedulingProducingArrangement {
 
     public static final Comparator<SchedulingProducingArrangement> COMPARATOR
             = Comparator.comparing(
@@ -103,6 +101,10 @@ public class SchedulingProducingArrangement  {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
+    @ShadowVariable(supplierName = "supplierForArrangementToComputedPairMap")
+    private LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> arrangementToComputedPairMap
+            = new LinkedHashMap<>();
+
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -116,9 +118,6 @@ public class SchedulingProducingArrangement  {
     @ToString.Include
     @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
-
-    @ShadowVariablesInconsistent
-    private Boolean inconsistency;
 
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -138,6 +137,19 @@ public class SchedulingProducingArrangement  {
         );
         producingArrangement.setUuid(UUID.randomUUID().toString());
         return producingArrangement;
+    }
+
+    @ShadowSources(
+            {
+                    "planningFactoryInstance",
+                    "planningFactoryInstance.arrangementToComputedPairMap"
+            }
+    )
+    public LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> supplierForArrangementToComputedPairMap() {
+        if (this.planningFactoryInstance == null) {
+            return null;
+        }
+        return this.planningFactoryInstance.getArrangementToComputedPairMap();
     }
 
     @ShadowSources({"planningDateTimeSlot"})
@@ -161,24 +173,21 @@ public class SchedulingProducingArrangement  {
                 .orElse(null);
     }
 
-    @ShadowSources(
-            value = {
-                    "planningFactoryInstance",
-                    "planningDateTimeSlot",
-                    "planningFactoryInstance.arrangementToComputedPairMap"
-            }
-    )
+    @ShadowSources({"arrangementToComputedPairMap", "planningDateTimeSlot"})
     public LocalDateTime supplierForProducingDateTime() {
-        if (this.planningDateTimeSlot == null || this.planningFactoryInstance == null) {
+        if (this.arrangementToComputedPairMap == null || this.planningDateTimeSlot == null) {
             return null;
         }
 
         if (weatherFactoryProducingTypeIsQueue()) {
-            return this.planningFactoryInstance.queryArrangementProducingDateTime(this);
+            FactoryComputedDateTimePair computedDateTimePair
+                    = this.arrangementToComputedPairMap.get(this);
+            return Objects.nonNull(computedDateTimePair) ? computedDateTimePair.producingDateTime() : null;
         } else {
             return this.planningDateTimeSlot.getStart();
         }
     }
+
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
@@ -201,7 +210,7 @@ public class SchedulingProducingArrangement  {
     @ShadowSources(
             value = {
                     "producingDateTime",
-                    "planningFactoryInstance.arrangementToComputedPairMap"
+                    "arrangementToComputedPairMap"
             }
     )
     public LocalDateTime supplierForCompletedDateTime() {
@@ -211,8 +220,10 @@ public class SchedulingProducingArrangement  {
 
         LocalDateTime computedArrangementCompletedDateTime = this.producingDateTime.plus(getProducingDuration());
         if (weatherFactoryProducingTypeIsQueue()) {
+            FactoryComputedDateTimePair computedDateTimePair
+                    = this.arrangementToComputedPairMap.get(this);
             LocalDateTime queryArrangementCompletedDateTime
-                    = this.planningFactoryInstance.queryArrangementCompletedDateTime(this);
+                    = Objects.nonNull(computedDateTimePair) ? computedDateTimePair.completedDateTime() : null;
             if (!Objects.equals(queryArrangementCompletedDateTime, computedArrangementCompletedDateTime)) {
                 log.warn(
                         "not equal(queryArrangementCompletedDateTime={}, computedArrangementCompletedDateTime={})",
