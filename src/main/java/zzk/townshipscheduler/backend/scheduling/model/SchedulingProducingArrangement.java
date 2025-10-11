@@ -31,10 +31,7 @@ import java.util.stream.Collectors;
 public class SchedulingProducingArrangement {
 
     public static final Comparator<SchedulingProducingArrangement> COMPARATOR
-            = Comparator.comparing(
-                    SchedulingProducingArrangement::getPlanningDateTimeSlot,
-                    Comparator.nullsFirst(Comparator.naturalOrder())
-            )
+            = Comparator.comparing(SchedulingProducingArrangement::getPlanningDateTimeSlot)
             .thenComparingInt(SchedulingProducingArrangement::getId);
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
@@ -48,13 +45,14 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "supplierForArrangeDateTime")
     public LocalDateTime arrangeDateTime;
 
+    @EqualsAndHashCode.Include
     @ToString.Include
     private Integer id;
 
     @EqualsAndHashCode.Include
     @ToString.Include
     @PlanningId
-    private String uuid;
+    private UUID uuid;
 
     @JsonIdentityReference
     private SchedulingOrder schedulingOrder;
@@ -115,6 +113,8 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
 
+    private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
+
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
             IGameArrangeObject currentActionObject
@@ -131,7 +131,7 @@ public class SchedulingProducingArrangement {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6());
         return producingArrangement;
     }
 
@@ -156,25 +156,13 @@ public class SchedulingProducingArrangement {
                 .orElse(null);
     }
 
-    @ShadowSources(
-            {
-                    "planningFactoryInstance",
-                    "planningFactoryInstance.arrangementToComputedPairMap",
-                    "planningDateTimeSlot"
-            }
-    )
+    @ShadowSources({"schedulingArrangementsGlobalState.map"})
     public LocalDateTime supplierForProducingDateTime() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
+        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this);
+        if (computedDateTimePair == null) {
             return null;
         }
-
-        if (weatherFactoryProducingTypeIsQueue()) {
-            FactoryComputedDateTimePair computedDateTimePair
-                    = this.planningFactoryInstance.queryComputedDateTimePair(this);
-            return Objects.nonNull(computedDateTimePair) ? computedDateTimePair.producingDateTime() : null;
-        } else {
-            return this.planningDateTimeSlot.getStart();
-        }
+        return computedDateTimePair.producingDateTime();
     }
 
 
@@ -196,35 +184,13 @@ public class SchedulingProducingArrangement {
         return (SchedulingProduct) getCurrentActionObject();
     }
 
-    @ShadowSources(
-            {
-                    "planningFactoryInstance",
-                    "planningFactoryInstance.arrangementToComputedPairMap",
-                    "planningDateTimeSlot",
-                    "producingDateTime"
-            }
-    )
+    @ShadowSources({"schedulingArrangementsGlobalState.map"})
     public LocalDateTime supplierForCompletedDateTime() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
+        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this);
+        if (computedDateTimePair == null) {
             return null;
         }
-
-        LocalDateTime computedArrangementCompletedDateTime = this.producingDateTime.plus(getProducingDuration());
-        if (weatherFactoryProducingTypeIsQueue()) {
-            FactoryComputedDateTimePair computedDateTimePair
-                    = this.planningFactoryInstance.queryComputedDateTimePair(this);;
-            LocalDateTime queryArrangementCompletedDateTime
-                    = Objects.nonNull(computedDateTimePair) ? computedDateTimePair.completedDateTime() : null;
-            if (!Objects.equals(queryArrangementCompletedDateTime, computedArrangementCompletedDateTime)) {
-                log.warn(
-                        "not equal(queryArrangementCompletedDateTime={}, computedArrangementCompletedDateTime={})",
-                        queryArrangementCompletedDateTime,
-                        computedArrangementCompletedDateTime
-                );
-            }
-            return queryArrangementCompletedDateTime;
-        }
-        return computedArrangementCompletedDateTime;
+        return computedDateTimePair.producingDateTime();
     }
 
     @JsonProperty("producingDuration")
