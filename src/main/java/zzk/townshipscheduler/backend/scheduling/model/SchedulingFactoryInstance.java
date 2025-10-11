@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -98,20 +97,19 @@ public class SchedulingFactoryInstance {
 
     @JsonIgnore
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
-    private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
+    private List<SchedulingProducingArrangement> planningProducingArrangements = new ArrayList<>();
 
     @ShadowVariable(supplierName = "supplierForArrangementToComputedPairMap")
-    @DeepPlanningClone
     private LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> arrangementToComputedPairMap = new LinkedHashMap<>();
 
     @ShadowSources(
             {
-                    "planningFactoryInstanceProducingArrangements",
-                    "planningFactoryInstanceProducingArrangements[].planningDateTimeSlot"
+                    "planningProducingArrangements",
+                    "planningProducingArrangements[].planningDateTimeSlot"
             }
     )
     public LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> supplierForArrangementToComputedPairMap() {
-        return this.planningFactoryInstanceProducingArrangements.stream()
+        return this.planningProducingArrangements.stream()
                 .sorted(SchedulingProducingArrangement.COMPARATOR)
                 .gather(weatherFactoryProducingTypeIsQueue() ? QUEUE_GATHERER : SLOT_GATHERER)
                 .collect(
@@ -148,6 +146,10 @@ public class SchedulingFactoryInstance {
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
         return this.getSchedulingFactoryInfo().typeEqual(that.getSchedulingFactoryInfo());
+    }
+
+    public FactoryComputedDateTimePair queryComputedDateTimePair(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return this.arrangementToComputedPairMap.get(schedulingProducingArrangement);
     }
 
     private static final class FormerCompletedDateTimeRef {

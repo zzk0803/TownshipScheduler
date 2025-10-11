@@ -12,10 +12,8 @@ public class SchedulingArrangementHierarchies {
     @PlanningId
     String uuid;
 
-    @DeepPlanningClone
     SchedulingProducingArrangement whole;
 
-    @DeepPlanningClone
     SchedulingProducingArrangement partial;
 
 }
