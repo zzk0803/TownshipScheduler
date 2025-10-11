@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -258,6 +259,10 @@ public class SchedulingProducingArrangement {
 
     public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    }
+
+    public boolean weatherPrerequisiteRequire() {
+        return !getDeepPrerequisiteProducingArrangements().isEmpty();
     }
 
     public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
