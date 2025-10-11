@@ -10,9 +10,6 @@
         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
     </entityClass>
     <entityClass>
-        zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot
-    </entityClass>
-    <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
 
