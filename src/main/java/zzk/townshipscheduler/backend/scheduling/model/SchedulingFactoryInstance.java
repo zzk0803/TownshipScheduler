@@ -25,58 +25,6 @@ import java.util.stream.Gatherer;
 @PlanningEntity
 public class SchedulingFactoryInstance {
 
-    private static final Gatherer<SchedulingProducingArrangement, Void, Pair<SchedulingProducingArrangement, FactoryComputedDateTimePair>>
-            SLOT_GATHERER
-            = Gatherer.of(
-            () -> null,
-            (_, schedulingProducingArrangement, downstream) -> {
-                SchedulingDateTimeSlot schedulingDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
-                if (schedulingDateTimeSlot == null) {
-                    return true;
-                }
-
-                LocalDateTime start = schedulingDateTimeSlot.getStart();
-                return downstream.push(new Pair<>(
-                        schedulingProducingArrangement,
-                        new FactoryComputedDateTimePair(
-                                start,
-                                start.plus(schedulingProducingArrangement.getProducingDuration())
-                        )
-                )) && !downstream.isRejecting();
-            },
-            Gatherer.defaultCombiner(),
-            Gatherer.defaultFinisher()
-    );
-
-    private static final Gatherer<SchedulingProducingArrangement, FormerCompletedDateTimeRef, Pair<SchedulingProducingArrangement, FactoryComputedDateTimePair>>
-            QUEUE_GATHERER
-            = Gatherer.ofSequential(
-            FormerCompletedDateTimeRef::new,
-            (formerCompletedDateTimeRef, schedulingProducingArrangement, downstream) -> {
-                SchedulingDateTimeSlot schedulingDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
-                if (schedulingDateTimeSlot == null) {
-                    return true;
-                }
-
-                LocalDateTime arrangeDateTime = schedulingDateTimeSlot.getStart();
-                LocalDateTime start = (formerCompletedDateTimeRef.value == null)
-                        ? arrangeDateTime
-                        : formerCompletedDateTimeRef.value.isAfter(arrangeDateTime)
-                                ? formerCompletedDateTimeRef.value
-                                : arrangeDateTime;
-                LocalDateTime end = start.plus(schedulingProducingArrangement.getProducingDuration());
-                return downstream.push(
-                        new Pair<>(
-                                schedulingProducingArrangement,
-                                new FactoryComputedDateTimePair(
-                                        start,
-                                        formerCompletedDateTimeRef.value = end
-                                )
-                        )
-                ) && !downstream.isRejecting();
-            }
-    );
-
     private Integer id;
 
     @PlanningId
@@ -98,29 +46,6 @@ public class SchedulingFactoryInstance {
     @JsonIgnore
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
     private List<SchedulingProducingArrangement> planningProducingArrangements = new ArrayList<>();
-
-    @ShadowVariable(supplierName = "supplierForArrangementToComputedPairMap")
-    private LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> arrangementToComputedPairMap = new LinkedHashMap<>();
-
-    @ShadowSources(
-            {
-                    "planningProducingArrangements",
-                    "planningProducingArrangements[].planningDateTimeSlot"
-            }
-    )
-    public LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> supplierForArrangementToComputedPairMap() {
-        return this.planningProducingArrangements.stream()
-                .sorted(SchedulingProducingArrangement.COMPARATOR)
-                .gather(weatherFactoryProducingTypeIsQueue() ? QUEUE_GATHERER : SLOT_GATHERER)
-                .collect(
-                        LinkedHashMap::new,
-                        (treeMap, pair) -> treeMap.put(
-                                pair.getValue0(),
-                                pair.getValue1()
-                        ),
-                        LinkedHashMap::putAll
-                );
-    }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
@@ -146,16 +71,6 @@ public class SchedulingFactoryInstance {
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
         return this.getSchedulingFactoryInfo().typeEqual(that.getSchedulingFactoryInfo());
-    }
-
-    public FactoryComputedDateTimePair queryComputedDateTimePair(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return this.arrangementToComputedPairMap.get(schedulingProducingArrangement);
-    }
-
-    private static final class FormerCompletedDateTimeRef {
-
-        public LocalDateTime value = null;
-
     }
 
 }

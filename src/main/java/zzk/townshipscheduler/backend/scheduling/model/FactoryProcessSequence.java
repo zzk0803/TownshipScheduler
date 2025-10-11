@@ -25,7 +25,6 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
     @EqualsAndHashCode.Include
     Integer arrangementId;
 
-
     @ToString.Include
     @EqualsAndHashCode.Include
     FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;

@@ -15,6 +15,9 @@
     <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
+    <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementsGlobalState
+    </entityClass>
 
     <scoreDirectorFactory>
         <constraintProviderClass>

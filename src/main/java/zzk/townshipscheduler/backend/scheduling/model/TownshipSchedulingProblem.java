@@ -56,6 +56,9 @@ public class TownshipSchedulingProblem {
     @PlanningEntityCollectionProperty
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
+    @PlanningEntityProperty
+    private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
+
     @ProblemFactProperty
     private SchedulingWorkCalendar schedulingWorkCalendar;
 
@@ -80,6 +83,7 @@ public class TownshipSchedulingProblem {
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
             List<SchedulingDateTimeSlot> schedulingDateTimeSlots,
             List<SchedulingProducingArrangement> schedulingProducingArrangementList,
+            SchedulingArrangementsGlobalState schedulingArrangementsGlobalState,
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
             BendableLongScore score,
@@ -93,6 +97,7 @@ public class TownshipSchedulingProblem {
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
+        this.schedulingArrangementsGlobalState = schedulingArrangementsGlobalState;
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;
         this.score = score;

@@ -25,6 +25,8 @@ public class TownshipSchedulingProblemBuilder {
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
+    private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
+
     private SchedulingWorkCalendar schedulingWorkCalendar;
 
     private SchedulingPlayer schedulingPlayer;
@@ -109,6 +111,12 @@ public class TownshipSchedulingProblemBuilder {
                 dateTimeValueRangeCount
         );
 
+        this.schedulingArrangementsGlobalState = new SchedulingArrangementsGlobalState();
+        this.schedulingArrangementsGlobalState.setSchedulingProducingArrangements(this.schedulingProducingArrangementList);
+        this.schedulingProducingArrangementList.forEach(schedulingProducingArrangement -> schedulingProducingArrangement.setSchedulingArrangementsGlobalState(
+                this.schedulingArrangementsGlobalState)
+        );
+
         return new TownshipSchedulingProblem(
                 this.uuid,
                 this.schedulingProductList,
@@ -117,6 +125,7 @@ public class TownshipSchedulingProblemBuilder {
                 this.schedulingFactoryInstanceList,
                 this.schedulingDateTimeSlots,
                 this.schedulingProducingArrangementList,
+                this.schedulingArrangementsGlobalState,
                 this.schedulingWorkCalendar,
                 this.schedulingPlayer,
                 this.score,
