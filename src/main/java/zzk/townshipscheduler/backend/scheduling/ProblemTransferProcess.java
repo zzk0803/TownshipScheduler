@@ -5,6 +5,7 @@ import org.springframework.util.Assert;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -231,6 +232,7 @@ class ProblemTransferProcess {
                                         = buildOrGetSchedulingFactoryInfo(fieldFactoryEntity.getFieldFactoryInfoEntity());
                                 int factoryInstanceId = factoryInstanceIdRoller.getAndIncrement();
                                 fieldInstance.setId(factoryInstanceId);
+                                fieldInstance.setUuid(UuidGenerator.timeOrderedV6().toString());
                                 fieldInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
                                 fieldInstance.setProducingLength(size);
                                 fieldInstance.setReapWindowSize(size);
@@ -253,6 +255,7 @@ class ProblemTransferProcess {
                                         SchedulingFactoryInstance factoryInstance
                                                 = new SchedulingFactoryInstance();
                                         factoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
+                                        factoryInstance.setUuid(UuidGenerator.timeOrderedV6().toString());
                                         factoryInstance.setSeqNum(i + 1);
                                         factoryInstance.setSchedulingFactoryInfo(
                                                 schedulingFactoryInfo

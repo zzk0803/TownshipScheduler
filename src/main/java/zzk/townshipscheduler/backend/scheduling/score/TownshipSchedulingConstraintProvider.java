@@ -5,14 +5,12 @@ import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.function.Function;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
@@ -35,7 +33,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
                 .join(
-                        SchedulingProducingArrangement.class,
+                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+                                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null),
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
                         Joiners.lessThan(SchedulingProducingArrangement::getId)
                 )
@@ -205,11 +204,16 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .groupBy(
                         (schedulingProducingArrangement, order) -> order,
-                        ConstraintCollectors.max(
-                                (schedulingProducingArrangement, order) -> schedulingProducingArrangement,
-                                SchedulingProducingArrangement::getCompletedDateTime
+                        ConstraintCollectors.collectAndThen(
+                                ConstraintCollectors.toList(
+                                        (schedulingProducingArrangement, order) -> schedulingProducingArrangement
+                                ),
+                                (list) -> list.stream()
+                                        .map(SchedulingProducingArrangement::getCompletedDateTime)
+                                        .max(Comparator.nullsFirst(Comparator.naturalOrder()))
                         )
                 )
+                .join(SchedulingWorkCalendar.class)
                 .penalizeLong(
                         BendableLongScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -217,27 +221,25 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.SOFT_BATTER,
                                 1L
                         ),
-                        (order, arrangement) -> {
-                            var calendarStartDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
-                            var completedDateTime = arrangement.getCompletedDateTime();
+                        (order, localDateTimeOptional, workCalendar) -> {
+                            var calendarStartDateTime = workCalendar.getStartDateTime();
+                            var completedDateTime = localDateTimeOptional.orElse(workCalendar.getEndDateTime());
                             Duration between = Duration.between(calendarStartDateTime, completedDateTime);
-                            return calcFactor(arrangement) * between.toMinutes();
+                            return calcFactor(order) * between.toMinutes();
                         }
                 )
                 .asConstraint("preferMinimizeOrderCompletedDateTime");
     }
 
-    private int calcFactor(SchedulingProducingArrangement arrangement) {
+    private int calcFactor(SchedulingOrder schedulingOrder) {
         int factor = 1;
-        if (arrangement.getSchedulingOrder() != null) {
-            OrderType orderType = arrangement.getSchedulingOrder().getOrderType();
-            switch (orderType) {
-                case TRAIN -> {
-                    factor = 10;
-                }
-                case AIRPLANE -> {
-                    factor = 100;
-                }
+        OrderType orderType = schedulingOrder.getOrderType();
+        switch (orderType) {
+            case TRAIN -> {
+                factor = 10;
+            }
+            case AIRPLANE -> {
+                factor = 100;
             }
         }
         return factor;
@@ -260,6 +262,22 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         }
                 )
                 .asConstraint("preferArrangeDateTimeAsSoonAsPassible");
+    }
+
+    private int calcFactor(SchedulingProducingArrangement arrangement) {
+        int factor = 1;
+        if (arrangement.getSchedulingOrder() != null) {
+            OrderType orderType = arrangement.getSchedulingOrder().getOrderType();
+            switch (orderType) {
+                case TRAIN -> {
+                    factor = 10;
+                }
+                case AIRPLANE -> {
+                    factor = 100;
+                }
+            }
+        }
+        return factor;
     }
 
     private Constraint preferMinimizeProductArrangeDateTimeSlotUsage(@NonNull ConstraintFactory constraintFactory) {

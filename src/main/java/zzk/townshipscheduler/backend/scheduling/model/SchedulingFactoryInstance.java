@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -14,7 +15,9 @@ import lombok.extern.log4j.Log4j2;
 import org.javatuples.Pair;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Gatherer;
 
 @Log4j2
@@ -75,12 +78,13 @@ public class SchedulingFactoryInstance {
             }
     );
 
-    @PlanningId
-    @EqualsAndHashCode.Include
     private Integer id;
 
-    @JsonIgnore
+    @PlanningId
     @EqualsAndHashCode.Include
+    private String uuid;
+
+    @JsonIgnore
     private SchedulingFactoryInfo schedulingFactoryInfo;
 
     private int seqNum;
@@ -97,6 +101,7 @@ public class SchedulingFactoryInstance {
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
     @ShadowVariable(supplierName = "supplierForArrangementToComputedPairMap")
+    @DeepPlanningClone
     private LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> arrangementToComputedPairMap = new LinkedHashMap<>();
 
     @ShadowSources(

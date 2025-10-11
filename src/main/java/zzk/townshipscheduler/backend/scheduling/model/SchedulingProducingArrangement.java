@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -14,6 +15,7 @@ import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -47,7 +49,6 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "supplierForArrangeDateTime")
     public LocalDateTime arrangeDateTime;
 
-    @EqualsAndHashCode.Include
     @ToString.Include
     private Integer id;
 
@@ -71,9 +72,11 @@ public class SchedulingProducingArrangement {
     @ToString.Include
     private IGameArrangeObject currentActionObject;
 
+    @DeepPlanningClone
     @JsonBackReference
     private Set<SchedulingProducingArrangement> prerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @DeepPlanningClone
     @JsonBackReference
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
@@ -102,6 +105,7 @@ public class SchedulingProducingArrangement {
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
     @ShadowVariable(supplierName = "supplierForArrangementToComputedPairMap")
+    @DeepPlanningClone
     private LinkedHashMap<SchedulingProducingArrangement, FactoryComputedDateTimePair> arrangementToComputedPairMap
             = new LinkedHashMap<>();
 
@@ -135,7 +139,7 @@ public class SchedulingProducingArrangement {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UUID.randomUUID().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
         return producingArrangement;
     }
 
@@ -231,6 +235,7 @@ public class SchedulingProducingArrangement {
                         computedArrangementCompletedDateTime
                 );
             }
+            return queryArrangementCompletedDateTime;
         }
         return computedArrangementCompletedDateTime;
     }
@@ -336,6 +341,7 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
         return this.prerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UuidGenerator.timeOrderedV6().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -346,6 +352,7 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UuidGenerator.timeOrderedV6().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -385,6 +392,5 @@ public class SchedulingProducingArrangement {
 
         return Duration.between(this.completedDateTime, this.schedulingWorkCalendar.getEndDateTime()).toMinutes();
     }
-
 
 }
