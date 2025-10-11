@@ -14,6 +14,7 @@ import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
+import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -130,7 +131,7 @@ public class SchedulingProducingArrangement {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UUID.randomUUID().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
         return producingArrangement;
     }
 
@@ -262,6 +263,7 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
         return this.prerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UuidGenerator.timeOrderedV6().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -272,6 +274,7 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UuidGenerator.timeOrderedV6().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
