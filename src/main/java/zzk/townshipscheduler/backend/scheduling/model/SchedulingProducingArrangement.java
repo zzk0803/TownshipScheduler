@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
@@ -22,7 +23,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-@Log4j2
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -75,9 +75,6 @@ public class SchedulingProducingArrangement {
     @JsonBackReference
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
-
-    @ShadowVariable(supplierName = "supplierForPrerequisiteProducingArrangementsCompletedDateTime")
-    private LocalDateTime prerequisiteProducingArrangementsCompletedDateTime;
 
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
@@ -140,31 +137,18 @@ public class SchedulingProducingArrangement {
         return this.planningDateTimeSlot != null ? this.planningDateTimeSlot.getStart() : null;
     }
 
-    @ShadowSources(
-            value = {"prerequisiteProducingArrangements[].completedDateTime"},
-            alignmentKey = "prerequisiteProducingArrangements"
-    )
-    public LocalDateTime supplierForPrerequisiteProducingArrangementsCompletedDateTime() {
-        if (this.prerequisiteProducingArrangements.isEmpty()) {
-            return getSchedulingWorkCalendar().getStartDateTime();
-        }
-
-        return this.prerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
-                .filter(Objects::nonNull)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
-    }
-
     @ShadowSources({"schedulingArrangementsGlobalState.map"})
     public LocalDateTime supplierForProducingDateTime() {
         FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this);
         if (computedDateTimePair == null) {
-            return null;
+            return this.producingDateTime;
         }
         return computedDateTimePair.producingDateTime();
     }
 
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return getFactoryProducingType() == ProducingStructureType.SLOT;
+    }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
@@ -188,7 +172,7 @@ public class SchedulingProducingArrangement {
     public LocalDateTime supplierForCompletedDateTime() {
         FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this);
         if (computedDateTimePair == null) {
-            return null;
+            return this.completedDateTime;
         }
         return computedDateTimePair.producingDateTime();
     }
@@ -315,27 +299,6 @@ public class SchedulingProducingArrangement {
 
     public FactoryProcessSequence toFactoryProcessSequence() {
         return new FactoryProcessSequence(this);
-    }
-
-    public boolean boolArrangeDataTimeBrokenPrerequisite() {
-        return Objects.nonNull(this.prerequisiteProducingArrangementsCompletedDateTime)
-               && this.arrangeDateTime.isBefore(this.prerequisiteProducingArrangementsCompletedDateTime);
-    }
-
-    public Long arrangeDateTimeBetweenPrerequisiteArrangementsCompletedDateTime() {
-        if (Objects.isNull(this.prerequisiteProducingArrangementsCompletedDateTime)) {
-            return 0L;
-        }
-
-        if (this.arrangeDateTime.isAfter(this.prerequisiteProducingArrangementsCompletedDateTime)) {
-            return Duration.between(this.prerequisiteProducingArrangementsCompletedDateTime, this.arrangeDateTime)
-                    .toMinutes();
-        } else if (this.arrangeDateTime.isBefore(this.prerequisiteProducingArrangementsCompletedDateTime)) {
-            return Duration.between(this.arrangeDateTime, this.prerequisiteProducingArrangementsCompletedDateTime)
-                    .toMinutes();
-        } else {
-            return 0L;
-        }
     }
 
     public Long completedDateTimeBetweenWorkCalendarEnd() {

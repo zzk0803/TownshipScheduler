@@ -8,6 +8,7 @@ import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 
 import java.time.Duration;
@@ -19,30 +20,59 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Gatherer;
 
+@Slf4j
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity
 public class SchedulingArrangementsGlobalState {
 
-    private static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>
-            QUEUE_GATHERER
+    public static final Gatherer<SchedulingProducingArrangement, FormerCompletedDateTimeRef, Pair<SchedulingProducingArrangement, FactoryComputedDateTimePair>> SLOT_GATHERER =
+            Gatherer.of(
+                    () -> null,
+                    (_, arrangement, downstream) -> {
+
+                        var arrangeDateTime = arrangement.getArrangeDateTime();
+                        var producingDuration = arrangement.getProducingDuration();
+                        if (arrangeDateTime == null) {
+                            return true;
+                        }
+
+                        return downstream.push(
+                                new Pair<>(
+                                        arrangement,
+                                        new FactoryComputedDateTimePair(
+                                                arrangeDateTime,
+                                                arrangeDateTime.plus(producingDuration)
+                                        )
+                                )
+                        ) && !downstream.isRejecting();
+
+                    },
+                    Gatherer.defaultCombiner(),
+                    Gatherer.defaultFinisher()
+            );
+
+    public static final Gatherer<SchedulingProducingArrangement, FormerCompletedDateTimeRef, Pair<SchedulingProducingArrangement, FactoryComputedDateTimePair>> QUEUE_GATHERER
             = Gatherer.ofSequential(
             FormerCompletedDateTimeRef::new,
-            (formerCompletedDateTimeRef, factoryProcessSequence, downstream) -> {
-                LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-                LocalDateTime start = (formerCompletedDateTimeRef.value == null)
+            (formerCompletedRef, arrangement, downstream) -> {
+                LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
+                LocalDateTime previousCompletedDateTime = formerCompletedRef.value;
+                LocalDateTime start = (previousCompletedDateTime == null)
                         ? arrangeDateTime
-                        : formerCompletedDateTimeRef.value.isAfter(arrangeDateTime)
-                                ? formerCompletedDateTimeRef.value
+                        : previousCompletedDateTime.isAfter(
+                                arrangeDateTime)
+                                ? previousCompletedDateTime
                                 : arrangeDateTime;
-                LocalDateTime end = start.plus(factoryProcessSequence.getProducingDuration());
+                LocalDateTime end = start.plus(arrangement.getProducingDuration());
+                formerCompletedRef.value = end;
                 return downstream.push(
                         new Pair<>(
-                                factoryProcessSequence,
+                                arrangement,
                                 new FactoryComputedDateTimePair(
                                         start,
-                                        formerCompletedDateTimeRef.value = end
+                                        end
                                 )
                         )
                 ) && !downstream.isRejecting();
@@ -58,7 +88,6 @@ public class SchedulingArrangementsGlobalState {
 
     @ToString.Include
     @ShadowVariable(supplierName = "supplierForMap")
-    @DeepPlanningClone
     private Map<SchedulingFactoryInstance, Map<UUID, FactoryComputedDateTimePair>> map = new LinkedHashMap<>();
 
     @ShadowSources(
@@ -67,18 +96,18 @@ public class SchedulingArrangementsGlobalState {
                     "schedulingProducingArrangements[].planningDateTimeSlot"
             }
     )
-    public Map<SchedulingFactoryInstance, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> supplierForMap() {
-        return this.schedulingProducingArrangements.stream()
-                .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue)
+    public Map<SchedulingFactoryInstance, Map<SchedulingProducingArrangement, FactoryComputedDateTimePair>> supplierForMap() {
+        Map<SchedulingFactoryInstance, Map<SchedulingProducingArrangement, FactoryComputedDateTimePair>> result
+                = this.schedulingProducingArrangements.stream()
                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
+                .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue)
                 .collect(
                         Collectors.groupingBy(
                                 SchedulingProducingArrangement::getPlanningFactoryInstance,
                                 Collectors.collectingAndThen(
                                         Collectors.toList(),
                                         producingArrangements -> producingArrangements.stream()
-                                                .map(SchedulingProducingArrangement::toFactoryProcessSequence)
-                                                .sorted(FactoryProcessSequence.COMPARATOR)
+                                                .sorted(SchedulingProducingArrangement.COMPARATOR)
                                                 .gather(QUEUE_GATHERER)
                                                 .collect(
                                                         LinkedHashMap::new,
@@ -91,6 +120,34 @@ public class SchedulingArrangementsGlobalState {
                                 )
                         )
                 );
+
+        Map<SchedulingFactoryInstance, Map<SchedulingProducingArrangement, FactoryComputedDateTimePair>> slotCollected
+                = this.schedulingProducingArrangements.stream()
+                .filter(SchedulingProducingArrangement::isPlanningAssigned)
+                .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot)
+                .collect(
+                        Collectors.groupingBy(
+                                SchedulingProducingArrangement::getPlanningFactoryInstance,
+                                Collectors.collectingAndThen(
+                                        Collectors.toList(),
+                                        producingArrangements -> producingArrangements.stream()
+                                                .sorted(SchedulingProducingArrangement.COMPARATOR)
+                                                .gather(SLOT_GATHERER)
+                                                .collect(
+                                                        LinkedHashMap::new,
+                                                        (treeMap, pair) -> treeMap.put(
+                                                                pair.getValue0(),
+                                                                pair.getValue1()
+                                                        ),
+                                                        LinkedHashMap::putAll
+                                                )
+                                )
+                        )
+                );
+
+        result.putAll(slotCollected);
+        log.info("<==* * * * *global computed map :: {}",result);
+        return result;
     }
 
     public FactoryComputedDateTimePair query(SchedulingProducingArrangement schedulingProducingArrangement) {
@@ -98,24 +155,15 @@ public class SchedulingArrangementsGlobalState {
             return null;
         }
 
-        if (schedulingProducingArrangement.weatherFactoryProducingTypeIsQueue()) {
-            Map<UUID, FactoryComputedDateTimePair> uuidFactoryComputedDateTimePairMap =
-                    map.get(schedulingProducingArrangement.getPlanningFactoryInstance());
-            if (uuidFactoryComputedDateTimePairMap == null) {
-                return null;
-            }
-            return uuidFactoryComputedDateTimePairMap.get(schedulingProducingArrangement.getUuid());
-        } else {
-            LocalDateTime producingDateTime = schedulingProducingArrangement.getPlanningDateTimeSlot().getStart();
-            Duration producingDuration = schedulingProducingArrangement.getProducingDuration();
-            return new FactoryComputedDateTimePair(
-                    producingDateTime,
-                    producingDateTime.plus(producingDuration)
-            );
+        Map<UUID, FactoryComputedDateTimePair> uuidFactoryComputedDateTimePairMap =
+                map.get(schedulingProducingArrangement.getPlanningFactoryInstance());
+        if (uuidFactoryComputedDateTimePairMap == null) {
+            return null;
         }
+        return uuidFactoryComputedDateTimePairMap.get(schedulingProducingArrangement.getUuid());
     }
 
-    private static final class FormerCompletedDateTimeRef {
+    public static class FormerCompletedDateTimeRef {
 
         public LocalDateTime value = null;
 
