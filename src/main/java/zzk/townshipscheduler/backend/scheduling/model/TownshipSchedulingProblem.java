@@ -103,6 +103,11 @@ public class TownshipSchedulingProblem {
         this.score = score;
         this.dateTimeSlotSize = dateTimeSlotSize;
         this.solverStatus = solverStatus;
+
+        this.schedulingArrangementsGlobalState.setSchedulingProducingArrangements(this.schedulingProducingArrangementList);
+        this.schedulingProducingArrangementList.forEach(schedulingProducingArrangement -> schedulingProducingArrangement.setSchedulingArrangementsGlobalState(
+                this.schedulingArrangementsGlobalState)
+        );
     }
 
     public static TownshipSchedulingProblemBuilder builder() {

@@ -24,7 +24,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteStock(constraintFactory),
                 forbidBrokenDeadlineOrder(constraintFactory),
-//                shouldNotBrokenCalendarEnd(constraintFactory),
+                shouldNotBrokenCalendarEnd(constraintFactory),
                 shouldNotArrangeInPlayerSleepTime(constraintFactory),
                 preferMinimizeOrderCompletedDateTime(constraintFactory),
                 preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
@@ -144,38 +144,38 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("shouldNotBrokenDeadlineOrder");
     }
 
-//    private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
-//        return constraintPrepare(constraintFactory)
-//                .filter((globalState, arrangement) -> {
-//                            return arrangement.isOrderDirect() && arrangement.getCompletedDateTime()
-//                                    .isAfter(
-//                                            arrangement.getSchedulingWorkCalendar()
-//                                                    .getEndDateTime()
-//                                    );
-//                        }
-//                )
-//                .penalizeLong(
-//                        BendableLongScore.ofSoft(
-//                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-//                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-//                                TownshipSchedulingProblem.SOFT_TOLERANCE,
-//                                10L
-//                        ),
-//                        (globalState, arrangement) -> {
-//                            LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
-//                            LocalDateTime workCalendarStart = arrangement.getSchedulingWorkCalendar()
-//                                    .getStartDateTime();
-//                            LocalDateTime workCalendarEnd = arrangement.getSchedulingWorkCalendar()
-//                                    .getEndDateTime();
-//                            if (completedDateTime != null) {
-//                                return Duration.between(workCalendarEnd, completedDateTime).toMinutes();
-//                            } else {
-//                                return Duration.between(workCalendarStart, workCalendarEnd).toMinutes();
-//                            }
-//                        }
-//                )
-//                .asConstraint("shouldNotBrokenCalendarEnd");
-//    }
+    private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
+        return constraintPrepare(constraintFactory)
+                .filter((globalState, arrangement) -> {
+                            return arrangement.isOrderDirect() && arrangement.getCompletedDateTime()
+                                    .isAfter(
+                                            arrangement.getSchedulingWorkCalendar()
+                                                    .getEndDateTime()
+                                    );
+                        }
+                )
+                .penalizeLong(
+                        BendableLongScore.ofSoft(
+                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
+                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
+                                TownshipSchedulingProblem.SOFT_TOLERANCE,
+                                10L
+                        ),
+                        (globalState, arrangement) -> {
+                            LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
+                            LocalDateTime workCalendarStart = arrangement.getSchedulingWorkCalendar()
+                                    .getStartDateTime();
+                            LocalDateTime workCalendarEnd = arrangement.getSchedulingWorkCalendar()
+                                    .getEndDateTime();
+                            if (completedDateTime != null) {
+                                return Duration.between(workCalendarEnd, completedDateTime).toMinutes();
+                            } else {
+                                return Duration.between(workCalendarStart, workCalendarEnd).toMinutes();
+                            }
+                        }
+                )
+                .asConstraint("shouldNotBrokenCalendarEnd");
+    }
 
     private Constraint shouldNotArrangeInPlayerSleepTime(
             @NonNull ConstraintFactory constraintFactory

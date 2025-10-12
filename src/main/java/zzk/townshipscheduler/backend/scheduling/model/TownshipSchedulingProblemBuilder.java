@@ -112,10 +112,6 @@ public class TownshipSchedulingProblemBuilder {
         );
 
         this.schedulingArrangementsGlobalState = new SchedulingArrangementsGlobalState();
-        this.schedulingArrangementsGlobalState.setSchedulingProducingArrangements(this.schedulingProducingArrangementList);
-        this.schedulingProducingArrangementList.forEach(schedulingProducingArrangement -> schedulingProducingArrangement.setSchedulingArrangementsGlobalState(
-                this.schedulingArrangementsGlobalState)
-        );
 
         return new TownshipSchedulingProblem(
                 this.uuid,
