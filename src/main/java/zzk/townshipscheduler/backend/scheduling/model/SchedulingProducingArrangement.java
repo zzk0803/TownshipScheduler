@@ -10,8 +10,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
@@ -96,6 +94,9 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
+    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
+    private FactoryProcessSequence factoryProcessSequence;
+
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -137,9 +138,22 @@ public class SchedulingProducingArrangement {
         return this.planningDateTimeSlot != null ? this.planningDateTimeSlot.getStart() : null;
     }
 
-    @ShadowSources({"schedulingArrangementsGlobalState.map"})
+    @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
+    public FactoryProcessSequence supplierForFactoryProcessSequence() {
+        if (this.planningFactoryInstance == null | this.planningDateTimeSlot == null) {
+            return null;
+        }
+
+        return new FactoryProcessSequence(this);
+    }
+
+    @ShadowSources({"schedulingArrangementsGlobalState.map", "factoryProcessSequence"})
     public LocalDateTime supplierForProducingDateTime() {
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this);
+        if (this.factoryProcessSequence == null) {
+            return this.producingDateTime;
+        }
+
+        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
         if (computedDateTimePair == null) {
             return this.producingDateTime;
         }
@@ -148,10 +162,6 @@ public class SchedulingProducingArrangement {
 
     public boolean weatherFactoryProducingTypeIsSlot() {
         return getFactoryProducingType() == ProducingStructureType.SLOT;
-    }
-
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
 
     public ProducingStructureType getFactoryProducingType() {
@@ -168,13 +178,21 @@ public class SchedulingProducingArrangement {
         return (SchedulingProduct) getCurrentActionObject();
     }
 
-    @ShadowSources({"schedulingArrangementsGlobalState.map"})
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return getFactoryProducingType() == ProducingStructureType.QUEUE;
+    }
+
+    @ShadowSources({"schedulingArrangementsGlobalState.map", "factoryProcessSequence"})
     public LocalDateTime supplierForCompletedDateTime() {
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this);
+        if (this.factoryProcessSequence == null) {
+            return this.completedDateTime;
+        }
+
+        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
         if (computedDateTimePair == null) {
             return this.completedDateTime;
         }
-        return computedDateTimePair.producingDateTime();
+        return computedDateTimePair.completedDateTime();
     }
 
     @JsonProperty("producingDuration")

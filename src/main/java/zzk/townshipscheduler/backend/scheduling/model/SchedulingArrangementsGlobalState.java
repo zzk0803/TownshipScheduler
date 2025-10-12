@@ -11,12 +11,10 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Gatherer;
 
@@ -27,7 +25,7 @@ import java.util.stream.Gatherer;
 @PlanningEntity
 public class SchedulingArrangementsGlobalState {
 
-    public static final Gatherer<SchedulingProducingArrangement, FormerCompletedDateTimeRef, Pair<SchedulingProducingArrangement, FactoryComputedDateTimePair>> SLOT_GATHERER =
+    public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> SLOT_GATHERER =
             Gatherer.of(
                     () -> null,
                     (_, arrangement, downstream) -> {
@@ -53,7 +51,7 @@ public class SchedulingArrangementsGlobalState {
                     Gatherer.defaultFinisher()
             );
 
-    public static final Gatherer<SchedulingProducingArrangement, FormerCompletedDateTimeRef, Pair<SchedulingProducingArrangement, FactoryComputedDateTimePair>> QUEUE_GATHERER
+    public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> QUEUE_GATHERER
             = Gatherer.ofSequential(
             FormerCompletedDateTimeRef::new,
             (formerCompletedRef, arrangement, downstream) -> {
@@ -88,26 +86,29 @@ public class SchedulingArrangementsGlobalState {
 
     @ToString.Include
     @ShadowVariable(supplierName = "supplierForMap")
-    private Map<SchedulingFactoryInstance, Map<UUID, FactoryComputedDateTimePair>> map = new LinkedHashMap<>();
+    private Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> map = new LinkedHashMap<>();
 
     @ShadowSources(
             value = {
                     "schedulingProducingArrangements[].planningFactoryInstance",
                     "schedulingProducingArrangements[].planningDateTimeSlot"
-            }
+            },
+            alignmentKey = "schedulingProducingArrangements"
     )
-    public Map<SchedulingFactoryInstance, Map<SchedulingProducingArrangement, FactoryComputedDateTimePair>> supplierForMap() {
-        Map<SchedulingFactoryInstance, Map<SchedulingProducingArrangement, FactoryComputedDateTimePair>> result
+    public Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> supplierForMap() {
+        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> result
                 = this.schedulingProducingArrangements.stream()
                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue)
                 .collect(
                         Collectors.groupingBy(
-                                SchedulingProducingArrangement::getPlanningFactoryInstance,
+                                schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
+                                        .getFactoryReadableIdentifier(),
                                 Collectors.collectingAndThen(
                                         Collectors.toList(),
                                         producingArrangements -> producingArrangements.stream()
-                                                .sorted(SchedulingProducingArrangement.COMPARATOR)
+                                                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                                                .sorted(FactoryProcessSequence.COMPARATOR)
                                                 .gather(QUEUE_GATHERER)
                                                 .collect(
                                                         LinkedHashMap::new,
@@ -121,17 +122,19 @@ public class SchedulingArrangementsGlobalState {
                         )
                 );
 
-        Map<SchedulingFactoryInstance, Map<SchedulingProducingArrangement, FactoryComputedDateTimePair>> slotCollected
+        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotCollected
                 = this.schedulingProducingArrangements.stream()
                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot)
                 .collect(
                         Collectors.groupingBy(
-                                SchedulingProducingArrangement::getPlanningFactoryInstance,
+                                schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
+                                        .getFactoryReadableIdentifier(),
                                 Collectors.collectingAndThen(
                                         Collectors.toList(),
                                         producingArrangements -> producingArrangements.stream()
-                                                .sorted(SchedulingProducingArrangement.COMPARATOR)
+                                                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                                                .sorted(FactoryProcessSequence.COMPARATOR)
                                                 .gather(SLOT_GATHERER)
                                                 .collect(
                                                         LinkedHashMap::new,
@@ -146,21 +149,26 @@ public class SchedulingArrangementsGlobalState {
                 );
 
         result.putAll(slotCollected);
-        log.info("<==* * * * *global computed map :: {}",result);
+        log.info("<==* * * * *global computed map :: {}", result);
         return result;
     }
 
-    public FactoryComputedDateTimePair query(SchedulingProducingArrangement schedulingProducingArrangement) {
-        if (schedulingProducingArrangement.getPlanningDateTimeSlot() == null || schedulingProducingArrangement.getPlanningFactoryInstance() == null) {
-            return null;
-        }
+//    public FactoryComputedDateTimePair query(SchedulingProducingArrangement schedulingProducingArrangement) {
+//        if (schedulingProducingArrangement.getPlanningDateTimeSlot() == null || schedulingProducingArrangement.getPlanningFactoryInstance() == null) {
+//            return null;
+//        }
+//
+//        Map<UUID, FactoryComputedDateTimePair> uuidFactoryComputedDateTimePairMap =
+//                map.get(schedulingProducingArrangement.getPlanningFactoryInstance());
+//        if (uuidFactoryComputedDateTimePairMap == null) {
+//            return null;
+//        }
+//        return uuidFactoryComputedDateTimePairMap.get(schedulingProducingArrangement.getUuid());
+//    }
 
-        Map<UUID, FactoryComputedDateTimePair> uuidFactoryComputedDateTimePairMap =
-                map.get(schedulingProducingArrangement.getPlanningFactoryInstance());
-        if (uuidFactoryComputedDateTimePairMap == null) {
-            return null;
-        }
-        return uuidFactoryComputedDateTimePairMap.get(schedulingProducingArrangement.getUuid());
+    public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
+        return this.map.get(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())
+                .get(factoryProcessSequence);
     }
 
     public static class FormerCompletedDateTimeRef {
