@@ -149,7 +149,6 @@ public class SchedulingArrangementsGlobalState {
                 );
 
         result.putAll(slotCollected);
-        log.info("<==* * * * *global computed map :: {}", result);
         return result;
     }
 
