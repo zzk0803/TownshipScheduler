@@ -1,7 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -23,7 +22,7 @@ import java.util.stream.Gatherer;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity
-public class SchedulingArrangementsGlobalState {
+public class SchedulingArrangementsFactoriesState {
 
     public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> SLOT_GATHERER =
             Gatherer.of(
@@ -80,9 +79,8 @@ public class SchedulingArrangementsGlobalState {
             }
     );
 
-    @PlanningId
     @EqualsAndHashCode.Include
-    private String id = "SchedulingArrangementsGlobalState";
+    private SchedulingFactoryInfo schedulingFactoryInfo;
 
     @DeepPlanningClone
     private List<SchedulingProducingArrangement> schedulingProducingArrangements;
@@ -98,10 +96,8 @@ public class SchedulingArrangementsGlobalState {
             alignmentKey = "schedulingProducingArrangements"
     )
     public Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> supplierForMap() {
-        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> result
-                = this.schedulingProducingArrangements.stream()
+        return this.schedulingProducingArrangements.stream()
                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue)
                 .collect(
                         Collectors.groupingBy(
                                 schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
@@ -111,7 +107,9 @@ public class SchedulingArrangementsGlobalState {
                                         producingArrangements -> producingArrangements.stream()
                                                 .map(SchedulingProducingArrangement::getFactoryProcessSequence)
                                                 .sorted(FactoryProcessSequence.COMPARATOR)
-                                                .gather(QUEUE_GATHERER)
+                                                .gather(getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue()
+                                                        ? QUEUE_GATHERER
+                                                        : SLOT_GATHERER)
                                                 .collect(
                                                         LinkedHashMap::new,
                                                         (treeMap, pair) -> treeMap.put(
@@ -123,35 +121,6 @@ public class SchedulingArrangementsGlobalState {
                                 )
                         )
                 );
-
-        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotCollected
-                = this.schedulingProducingArrangements.stream()
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot)
-                .collect(
-                        Collectors.groupingBy(
-                                schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
-                                        .getFactoryReadableIdentifier(),
-                                Collectors.collectingAndThen(
-                                        Collectors.toList(),
-                                        producingArrangements -> producingArrangements.stream()
-                                                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
-                                                .sorted(FactoryProcessSequence.COMPARATOR)
-                                                .gather(SLOT_GATHERER)
-                                                .collect(
-                                                        LinkedHashMap::new,
-                                                        (treeMap, pair) -> treeMap.put(
-                                                                pair.getValue0(),
-                                                                pair.getValue1()
-                                                        ),
-                                                        LinkedHashMap::putAll
-                                                )
-                                )
-                        )
-                );
-
-        result.putAll(slotCollected);
-        return result;
     }
 
     public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {

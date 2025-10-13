@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
@@ -56,8 +55,8 @@ public class TownshipSchedulingProblem {
     @PlanningEntityCollectionProperty
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
-    @PlanningEntityProperty
-    private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
+    @PlanningEntityCollectionProperty
+    private List<SchedulingArrangementsFactoriesState> schedulingArrangementsFactoriesState;
 
     @ProblemFactProperty
     private SchedulingWorkCalendar schedulingWorkCalendar;
@@ -83,7 +82,7 @@ public class TownshipSchedulingProblem {
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
             List<SchedulingDateTimeSlot> schedulingDateTimeSlots,
             List<SchedulingProducingArrangement> schedulingProducingArrangementList,
-            SchedulingArrangementsGlobalState schedulingArrangementsGlobalState,
+            List<SchedulingArrangementsFactoriesState> schedulingArrangementsFactoriesState,
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
             BendableLongScore score,
@@ -97,41 +96,16 @@ public class TownshipSchedulingProblem {
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
-        this.schedulingArrangementsGlobalState = schedulingArrangementsGlobalState;
+        this.schedulingArrangementsFactoriesState = schedulingArrangementsFactoriesState;
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;
         this.score = score;
         this.dateTimeSlotSize = dateTimeSlotSize;
         this.solverStatus = solverStatus;
-
-        this.schedulingArrangementsGlobalState.setSchedulingProducingArrangements(this.schedulingProducingArrangementList);
-        this.schedulingProducingArrangementList.forEach(schedulingProducingArrangement -> schedulingProducingArrangement.setSchedulingArrangementsGlobalState(
-                this.schedulingArrangementsGlobalState)
-        );
     }
 
     public static TownshipSchedulingProblemBuilder builder() {
         return new TownshipSchedulingProblemBuilder();
-    }
-
-    public List<SchedulingProducingArrangement> lookupProducingArrangements(SchedulingFactoryInstance schedulingFactoryInstance) {
-        return getSchedulingProducingArrangementList().stream()
-                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance() == schedulingFactoryInstance)
-                .toList();
-    }
-
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryReadableIdentifier factoryReadableIdentifier) {
-        return getSchedulingFactoryInstanceList().stream()
-                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
-                        .equals(factoryReadableIdentifier))
-                .findFirst();
-    }
-
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryProcessSequence factoryProcessSequence) {
-        return getSchedulingFactoryInstanceList().stream()
-                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
-                        .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
-                .findFirst();
     }
 
     @ProblemFactCollectionProperty

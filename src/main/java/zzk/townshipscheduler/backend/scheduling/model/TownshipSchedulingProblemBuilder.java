@@ -25,7 +25,7 @@ public class TownshipSchedulingProblemBuilder {
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
-    private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
+    private List<SchedulingArrangementsFactoriesState> schedulingArrangementsFactoriesStateList;
 
     private SchedulingWorkCalendar schedulingWorkCalendar;
 
@@ -111,7 +111,25 @@ public class TownshipSchedulingProblemBuilder {
                 dateTimeValueRangeCount
         );
 
-        this.schedulingArrangementsGlobalState = new SchedulingArrangementsGlobalState();
+        this.schedulingArrangementsFactoriesStateList = new ArrayList<>();
+        this.schedulingProducingArrangementList.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                SchedulingProducingArrangement::getRequiredFactoryInfo,
+                                LinkedHashMap::new,
+                                Collectors.toCollection(ArrayList::new)
+                        )
+                ).forEach(
+                        (schedulingFactoryInfo, producingArrangements) -> {
+                            SchedulingArrangementsFactoriesState schedulingArrangementsFactoriesState = new SchedulingArrangementsFactoriesState();
+                            schedulingArrangementsFactoriesState.setSchedulingFactoryInfo(schedulingFactoryInfo);
+                            schedulingArrangementsFactoriesState.setSchedulingProducingArrangements(producingArrangements);
+                            this.schedulingArrangementsFactoriesStateList.add(schedulingArrangementsFactoriesState);
+
+                            producingArrangements.forEach(schedulingProducingArrangement -> schedulingProducingArrangement.setSchedulingArrangementsFactoriesState(schedulingArrangementsFactoriesState));
+                        }
+                );
+
 
         return new TownshipSchedulingProblem(
                 this.uuid,
@@ -121,7 +139,7 @@ public class TownshipSchedulingProblemBuilder {
                 this.schedulingFactoryInstanceList,
                 this.schedulingDateTimeSlots,
                 this.schedulingProducingArrangementList,
-                this.schedulingArrangementsGlobalState,
+                this.schedulingArrangementsFactoriesStateList,
                 this.schedulingWorkCalendar,
                 this.schedulingPlayer,
                 this.score,

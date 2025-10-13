@@ -111,7 +111,7 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
 
-    private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
+    private SchedulingArrangementsFactoriesState schedulingArrangementsFactoriesState;
 
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -148,15 +148,14 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            value = {"schedulingArrangementsGlobalState.map", "factoryProcessSequence"},
-            alignmentKey = "schedulingArrangementsGlobalState"
+            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"}
     )
     public LocalDateTime supplierForProducingDateTime() {
         if (this.factoryProcessSequence == null) {
             return this.producingDateTime;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
+        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsFactoriesState.query(this.factoryProcessSequence);
         if (computedDateTimePair == null) {
             return this.producingDateTime;
         }
@@ -186,15 +185,14 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            value = {"schedulingArrangementsGlobalState.map", "factoryProcessSequence"},
-            alignmentKey = "schedulingArrangementsGlobalState"
+            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"}
     )
     public LocalDateTime supplierForCompletedDateTime() {
         if (this.factoryProcessSequence == null) {
             return this.completedDateTime;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
+        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsFactoriesState.query(this.factoryProcessSequence);
         if (computedDateTimePair == null) {
             return this.completedDateTime;
         }
