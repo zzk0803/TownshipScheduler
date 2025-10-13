@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.backend.crawling;
 
-import org.javatuples.Pair;
+
+import io.arxila.javatuples.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -315,8 +316,8 @@ class TownshipDataCrawlingProcessor {
                                 );
                             })
                             .map(Pair_RawDataImg_CrawledEntity -> {
-                                CrawledDataCell.Img img = Pair_RawDataImg_CrawledEntity.getValue0();
-                                WikiCrawledEntity wikiCrawledEntity = Pair_RawDataImg_CrawledEntity.getValue1();
+                                CrawledDataCell.Img img = Pair_RawDataImg_CrawledEntity.value0();
+                                WikiCrawledEntity wikiCrawledEntity = Pair_RawDataImg_CrawledEntity.value1();
                                 return this.downloadImage(img)
                                         .thenApplyAsync(
                                                 (bytes) -> {

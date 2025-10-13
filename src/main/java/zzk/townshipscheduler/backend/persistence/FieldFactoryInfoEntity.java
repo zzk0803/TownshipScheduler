@@ -44,21 +44,29 @@ public class FieldFactoryInfoEntity {
             mappedBy = "fieldFactoryInfo"
     )
     @ToString.Exclude
+    @Builder.Default
     private Set<ProductEntity> portfolioGoods = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private ProducingStructureType producingType = ProducingStructureType.QUEUE;
 
+    @Builder.Default
     private Integer defaultInstanceAmount = 1;
 
+    @Builder.Default
     private Integer defaultProducingCapacity = 3;
 
+    @Builder.Default
     private Integer defaultReapWindowCapacity = 6;
 
+    @Builder.Default
     private Integer maxProducingCapacity = 7;
 
+    @Builder.Default
     private Integer maxReapWindowCapacity = 8;
 
+    @Builder.Default
     private Integer maxInstanceAmount = 1;
 
     public void attacheProductEntity(ProductEntity productEntity) {
