@@ -148,7 +148,8 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"}
+            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"},
+            alignmentKey = "schedulingArrangementsFactoriesState"
     )
     public LocalDateTime supplierForProducingDateTime() {
         if (this.factoryProcessSequence == null) {
@@ -185,7 +186,8 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"}
+            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"},
+            alignmentKey = "schedulingArrangementsFactoriesState"
     )
     public LocalDateTime supplierForCompletedDateTime() {
         if (this.factoryProcessSequence == null) {
