@@ -56,6 +56,9 @@ public class SchedulingArrangementsGlobalState {
             FormerCompletedDateTimeRef::new,
             (formerCompletedRef, arrangement, downstream) -> {
                 LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
+                if (arrangeDateTime == null) {
+                    return true;
+                }
                 LocalDateTime previousCompletedDateTime = formerCompletedRef.value;
                 LocalDateTime start = (previousCompletedDateTime == null)
                         ? arrangeDateTime
@@ -90,8 +93,7 @@ public class SchedulingArrangementsGlobalState {
 
     @ShadowSources(
             value = {
-                    "schedulingProducingArrangements[].planningFactoryInstance",
-                    "schedulingProducingArrangements[].planningDateTimeSlot"
+                    "schedulingProducingArrangements[].factoryProcessSequence"
             },
             alignmentKey = "schedulingProducingArrangements"
     )
@@ -151,19 +153,6 @@ public class SchedulingArrangementsGlobalState {
         result.putAll(slotCollected);
         return result;
     }
-
-//    public FactoryComputedDateTimePair query(SchedulingProducingArrangement schedulingProducingArrangement) {
-//        if (schedulingProducingArrangement.getPlanningDateTimeSlot() == null || schedulingProducingArrangement.getPlanningFactoryInstance() == null) {
-//            return null;
-//        }
-//
-//        Map<UUID, FactoryComputedDateTimePair> uuidFactoryComputedDateTimePairMap =
-//                map.get(schedulingProducingArrangement.getPlanningFactoryInstance());
-//        if (uuidFactoryComputedDateTimePairMap == null) {
-//            return null;
-//        }
-//        return uuidFactoryComputedDateTimePairMap.get(schedulingProducingArrangement.getUuid());
-//    }
 
     public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
         return this.map.get(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())

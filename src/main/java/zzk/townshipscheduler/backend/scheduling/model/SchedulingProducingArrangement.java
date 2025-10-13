@@ -147,7 +147,10 @@ public class SchedulingProducingArrangement {
         return new FactoryProcessSequence(this);
     }
 
-    @ShadowSources({"schedulingArrangementsGlobalState.map", "factoryProcessSequence"})
+    @ShadowSources(
+            value = {"schedulingArrangementsGlobalState.map", "factoryProcessSequence"},
+            alignmentKey = "schedulingArrangementsGlobalState"
+    )
     public LocalDateTime supplierForProducingDateTime() {
         if (this.factoryProcessSequence == null) {
             return this.producingDateTime;
@@ -182,7 +185,10 @@ public class SchedulingProducingArrangement {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
 
-    @ShadowSources({"schedulingArrangementsGlobalState.map", "factoryProcessSequence"})
+    @ShadowSources(
+            value = {"schedulingArrangementsGlobalState.map", "factoryProcessSequence"},
+            alignmentKey = "schedulingArrangementsGlobalState"
+    )
     public LocalDateTime supplierForCompletedDateTime() {
         if (this.factoryProcessSequence == null) {
             return this.completedDateTime;
