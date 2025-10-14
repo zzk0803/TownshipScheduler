@@ -74,6 +74,9 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @ShadowVariable(supplierName = "supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime")
+    private LocalDateTime deepPrerequisiteProducingArrangementsCompletedDateTime;
+
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
 
@@ -199,6 +202,24 @@ public class SchedulingProducingArrangement {
             return this.completedDateTime;
         }
         return computedDateTimePair.completedDateTime();
+    }
+    @ShadowSources(
+            value = {"deepPrerequisiteProducingArrangements[].completedDateTime"},
+            alignmentKey = "deepPrerequisiteProducingArrangements"
+    )
+    public LocalDateTime supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime() {
+        boolean prerequisiteDone = this.deepPrerequisiteProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .allMatch(Objects::nonNull);
+
+        if (prerequisiteDone) {
+            return this.deepPrerequisiteProducingArrangements.stream()
+                    .map(SchedulingProducingArrangement::getCompletedDateTime)
+                    .max(Comparator.naturalOrder())
+                    .orElse(LocalDateTime.MAX);
+        }
+
+        return LocalDateTime.MAX;
     }
 
     @JsonProperty("producingDuration")

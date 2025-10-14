@@ -38,11 +38,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .join(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(
-                                (globalState, arrangement1) -> arrangement1.getPlanningFactoryInstance(),
+                                (globalState, arrangement) -> arrangement.getPlanningFactoryInstance(),
                                 SchedulingProducingArrangement::getPlanningFactoryInstance
                         ),
                         Joiners.lessThan(
-                                (globalState, arrangement1) -> arrangement1.getId(),
+                                (globalState, arrangement) -> arrangement.getId(),
                                 SchedulingProducingArrangement::getId
                         )
                 )
@@ -91,11 +91,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 arrangement -> !arrangement.getDeepPrerequisiteProducingArrangements().isEmpty()
         )
                 .groupBy(
-                        (globalState, arrangement) -> arrangement,
-                        (globalState, arrangement) -> arrangement.getDeepPrerequisiteProducingArrangements()
+                        (globalState, arrangement) -> arrangement.getArrangeDateTime(),
+                        (globalState, arrangement) -> arrangement.getDeepPrerequisiteProducingArrangementsCompletedDateTime()
                 )
-                .flattenLast(schedulingProducingArrangements -> schedulingProducingArrangements)
-                .filter((whole, partial) -> whole.getArrangeDateTime().isBefore(partial.getCompletedDateTime()))
+                .filter(LocalDateTime::isBefore)
                 .penalizeLong(
                         BendableLongScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -103,8 +102,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
                                 1L
                         ),
-                        (whole, partial) ->
-                                Duration.between(whole.getArrangeDateTime(), partial.getCompletedDateTime()).toMinutes()
+                        (arrangementDateTime, arrangementPrerequisiteCompleted) ->
+                                Duration.between(arrangementDateTime, arrangementPrerequisiteCompleted).toMinutes()
                 )
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
@@ -168,12 +167,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintPrepare(
                 constraintFactory,
                 (arrangement) -> {
-                    return arrangement.isOrderDirect() && arrangement.getCompletedDateTime()
-                            .isAfter(
-                                    arrangement.getSchedulingWorkCalendar()
-                                            .getEndDateTime()
-                            );
-                })
+                    return arrangement.isOrderDirect() && arrangement.getCompletedDateTime().isAfter(
+                            arrangement.getSchedulingWorkCalendar().getEndDateTime());
+                }
+        )
+                .groupBy(
+                        (globalState, arrangement) -> arrangement,
+                        (globalState, arrangement) -> arrangement.getSchedulingWorkCalendar().getEndDateTime(),
+                        (globalState, arrangement) -> arrangement.getCompletedDateTime()
+                )
                 .penalizeLong(
                         BendableLongScore.ofSoft(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
@@ -181,17 +183,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.SOFT_TOLERANCE,
                                 10L
                         ),
-                        (globalState, arrangement) -> {
-                            LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
-                            LocalDateTime workCalendarStart = arrangement.getSchedulingWorkCalendar()
-                                    .getStartDateTime();
-                            LocalDateTime workCalendarEnd = arrangement.getSchedulingWorkCalendar()
-                                    .getEndDateTime();
-                            if (completedDateTime != null) {
-                                return Duration.between(workCalendarEnd, completedDateTime).toMinutes();
-                            } else {
-                                return Duration.between(workCalendarStart, workCalendarEnd).toMinutes();
-                            }
+                        (arrangement, workCalendarEnd, arrangementCompleted) -> {
+                            return Duration.between(workCalendarEnd, arrangementCompleted).toMinutes();
                         }
                 )
                 .asConstraint("shouldNotBrokenCalendarEnd");
