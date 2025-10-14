@@ -86,7 +86,8 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return factoryInstance.getSlotIdToLastCompletedMap().headMap(
                         this.getFactoryDateTimeReadableIdentifier(),
                         false
-                ).entrySet().stream()
+                ).entrySet()
+                .stream()
                 .filter((entry) -> entry.getValue().isAfter(this.getStart()))
                 .max(Map.Entry.comparingByKey())
                 .map(Map.Entry::getValue)
@@ -129,6 +130,14 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     public int getReapWindowSize() {
         return factoryInstance.getReapWindowSize();
+    }
+
+    public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
+        return that.getTailArrangementCompletedDateTime().isAfter(this.getStart());
+    }
+
+    public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
+        return this.getTailArrangementCompletedDateTime().isAfter(that.getStart());
     }
 
     @Override

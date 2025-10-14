@@ -256,6 +256,7 @@ public class SchedulingProducingArrangement {
         thisProducingDateTime = this.previousSchedulingProducingArrangement != null
                 ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
                 : this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
+
         return new FactoryComputedDateTimePair(
                 thisProducingDateTime,
                 thisProducingDateTime.plus(getProducingDuration())
