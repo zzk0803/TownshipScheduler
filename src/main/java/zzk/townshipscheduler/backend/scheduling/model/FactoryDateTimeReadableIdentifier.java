@@ -9,8 +9,8 @@ import java.util.Comparator;
 @Getter
 public class FactoryDateTimeReadableIdentifier extends FactoryReadableIdentifier {
 
-    public static final Comparator<FactoryDateTimeReadableIdentifier> COMPARATOR = Comparator.comparing(
-            FactoryDateTimeReadableIdentifier::getStart);
+    public static final Comparator<FactoryDateTimeReadableIdentifier> COMPARATOR
+            = Comparator.comparing(FactoryDateTimeReadableIdentifier::getStart);
 
     private final LocalDateTime start;
 

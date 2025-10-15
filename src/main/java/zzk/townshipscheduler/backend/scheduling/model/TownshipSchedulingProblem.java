@@ -43,7 +43,7 @@ public class TownshipSchedulingProblem {
     @ProblemFactCollectionProperty
     private List<SchedulingOrder> schedulingOrderList;
 
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @ProblemFactCollectionProperty
@@ -51,6 +51,9 @@ public class TownshipSchedulingProblem {
 
     @PlanningEntityCollectionProperty
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList;
+
+    @PlanningEntityProperty
+    private SchedulingFactoryInstanceDateTimeSlotsState schedulingFactoryInstanceDateTimeSlotsState;
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider(id = VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS)
@@ -80,6 +83,7 @@ public class TownshipSchedulingProblem {
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
             List<SchedulingDateTimeSlot> schedulingDateTimeSlots,
             List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList,
+            SchedulingFactoryInstanceDateTimeSlotsState schedulingFactoryInstanceDateTimeSlotsState,
             List<SchedulingProducingArrangement> schedulingProducingArrangementList,
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
@@ -94,6 +98,7 @@ public class TownshipSchedulingProblem {
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlotList;
+        this.schedulingFactoryInstanceDateTimeSlotsState = schedulingFactoryInstanceDateTimeSlotsState;
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;

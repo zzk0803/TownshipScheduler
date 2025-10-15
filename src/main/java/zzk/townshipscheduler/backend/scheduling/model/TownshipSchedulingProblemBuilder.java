@@ -26,6 +26,8 @@ public class TownshipSchedulingProblemBuilder {
 
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList;
 
+    private SchedulingFactoryInstanceDateTimeSlotsState schedulingFactoryInstanceDateTimeSlotsState;
+
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
     private SchedulingWorkCalendar schedulingWorkCalendar;
@@ -96,6 +98,7 @@ public class TownshipSchedulingProblemBuilder {
         this.setupGameActions();
         this.trimUnrelatedObject();
         this.setupFactoryDateTimeSlot();
+        this.setupSlotsStateIntoArrangement();
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
@@ -121,6 +124,7 @@ public class TownshipSchedulingProblemBuilder {
                 this.schedulingFactoryInstanceList,
                 this.schedulingDateTimeSlots,
                 this.schedulingFactoryInstanceDateTimeSlotList,
+                this.schedulingFactoryInstanceDateTimeSlotsState,
                 this.schedulingProducingArrangementList,
                 this.schedulingWorkCalendar,
                 this.schedulingPlayer,
@@ -128,6 +132,10 @@ public class TownshipSchedulingProblemBuilder {
                 this.slotSize,
                 this.solverStatus
         );
+    }
+
+    private void setupSlotsStateIntoArrangement() {
+        this.schedulingProducingArrangementList.forEach(arrangement -> arrangement.setFactorySlotsState(this.schedulingFactoryInstanceDateTimeSlotsState));
     }
 
     private void setupDateTimeSlot() {
@@ -227,10 +235,12 @@ public class TownshipSchedulingProblemBuilder {
                 schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
                 factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
             }
-            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlotList()
-                    .addAll(factoryInstanceDateTimeSlots);
         }
         this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
+        this.schedulingFactoryInstanceDateTimeSlotsState = new SchedulingFactoryInstanceDateTimeSlotsState();
+        this.schedulingFactoryInstanceDateTimeSlotsState.setSchedulingFactoryInstanceDateTimeSlotList(
+                this.schedulingFactoryInstanceDateTimeSlotList
+        );
     }
 
     private void trimUnrelatedObject() {

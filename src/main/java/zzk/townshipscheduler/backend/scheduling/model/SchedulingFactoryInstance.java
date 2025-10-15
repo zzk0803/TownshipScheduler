@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
 public class SchedulingFactoryInstance {
 
     @PlanningId
@@ -41,27 +40,6 @@ public class SchedulingFactoryInstance {
     @ToString.Include
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
-    private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
-
-    @DeepPlanningClone
-    @ShadowVariable(supplierName = "slotIdToLastCompletedMapSupplier")
-    private TreeMap<FactoryDateTimeReadableIdentifier, LocalDateTime> slotIdToLastCompletedMap = new TreeMap<>();
-
-    @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
-    private TreeMap<FactoryDateTimeReadableIdentifier, LocalDateTime> slotIdToLastCompletedMapSupplier() {
-        return schedulingFactoryInstanceDateTimeSlotList.stream()
-                .collect(
-                        TreeMap::new,
-                        (treeMap, factoryInstanceDateTimeSlot) -> {
-                            treeMap.compute(
-                                    factoryInstanceDateTimeSlot.getFactoryDateTimeReadableIdentifier(),
-                                    (_, _) -> factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
-                            );
-                        },
-                        TreeMap::putAll
-                );
-    }
-
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(
                 new FactoryReadableIdentifier(getCategoryName(), getSeqNum())
@@ -74,10 +52,6 @@ public class SchedulingFactoryInstance {
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
-    }
-
-    public Stream<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotStream() {
-        return this.schedulingFactoryInstanceDateTimeSlotList.stream();
     }
 
     @Override
