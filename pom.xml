@@ -13,7 +13,7 @@
     <properties>
         <java.version>25</java.version>
         <vaadin.version>24.9.2</vaadin.version>
-        <timefold-solver.version>1.26.2</timefold-solver.version>
+        <timefold-solver.version>1.27.0</timefold-solver.version>
     </properties>
 
     <parent>
@@ -162,9 +162,9 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>zzk.townshipscheduler.Application</mainClass>
-<!--                    <jvmArguments>-->
-<!--                        -XX:+UseZGC-->
-<!--                    </jvmArguments>-->
+                    <jvmArguments>
+                        -XX:+UseParallelGC
+                    </jvmArguments>
                 </configuration>
             </plugin>
             <plugin>
