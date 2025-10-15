@@ -24,34 +24,37 @@ import java.util.stream.Gatherer;
 @PlanningEntity
 public class SchedulingArrangementsFactoriesState {
 
-    public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> SLOT_GATHERER =
-            Gatherer.of(
-                    () -> null,
-                    (_, arrangement, downstream) -> {
+    //<editor-fold desc="SLOT_GATHERER">
+    public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>
+            SLOT_GATHERER = Gatherer.of(
+            () -> null,
+            (_, arrangement, downstream) -> {
 
-                        var arrangeDateTime = arrangement.getArrangeDateTime();
-                        var producingDuration = arrangement.getProducingDuration();
-                        if (arrangeDateTime == null) {
-                            return true;
-                        }
+                var arrangeDateTime = arrangement.getArrangeDateTime();
+                var producingDuration = arrangement.getProducingDuration();
+                if (arrangeDateTime == null) {
+                    return true;
+                }
 
-                        return downstream.push(
-                                new Pair<>(
-                                        arrangement,
-                                        new FactoryComputedDateTimePair(
-                                                arrangeDateTime,
-                                                arrangeDateTime.plus(producingDuration)
-                                        )
+                return downstream.push(
+                        new Pair<>(
+                                arrangement,
+                                new FactoryComputedDateTimePair(
+                                        arrangeDateTime,
+                                        arrangeDateTime.plus(producingDuration)
                                 )
-                        ) && !downstream.isRejecting();
+                        )
+                ) && !downstream.isRejecting();
 
-                    },
-                    Gatherer.defaultCombiner(),
-                    Gatherer.defaultFinisher()
-            );
+            },
+            Gatherer.defaultCombiner(),
+            Gatherer.defaultFinisher()
+    );
+    //</editor-fold>
 
-    public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> QUEUE_GATHERER
-            = Gatherer.ofSequential(
+    //<editor-fold desc="QUEUE_GATHERER">
+    public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>
+            QUEUE_GATHERER = Gatherer.ofSequential(
             FormerCompletedDateTimeRef::new,
             (formerCompletedRef, arrangement, downstream) -> {
                 LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
@@ -78,6 +81,7 @@ public class SchedulingArrangementsFactoriesState {
                 ) && !downstream.isRejecting();
             }
     );
+    //</editor-fold>
 
     @EqualsAndHashCode.Include
     private SchedulingFactoryInfo schedulingFactoryInfo;

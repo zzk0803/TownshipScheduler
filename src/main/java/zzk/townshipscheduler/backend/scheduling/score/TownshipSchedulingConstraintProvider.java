@@ -5,10 +5,12 @@ import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.bi.BiConstraintStream;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintStream;
-import org.javatuples.Pair;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementsFactoriesState;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -83,8 +85,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
         return prepareWholePartialArrangementsConstraint(constraintFactory)
                 .groupBy(
-                        (whole,partial,wholeState,partialState) -> whole,
-                        (whole,partial,wholeState,partialState) -> partial
+                        (whole, partial, wholeState, partialState) -> whole,
+                        (whole, partial, wholeState, partialState) -> partial
                 )
                 .filter((whole, partial) -> whole.getArrangeDateTime().isBefore(partial.getCompletedDateTime()))
                 .penalizeLong(
@@ -100,19 +102,26 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
 
-    private BiConstraintStream<SchedulingArrangementsFactoriesState, SchedulingProducingArrangement> prepareArrangementsConstraint(
-            @NonNull ConstraintFactory constraintFactory,
-            Predicate<SchedulingProducingArrangement> arrangementPredicate
-    ) {
-        return constraintFactory.forEach(SchedulingArrangementsFactoriesState.class)
+    //<whole,partial,wholeState,partialState>
+    private QuadConstraintStream<SchedulingProducingArrangement, SchedulingProducingArrangement, SchedulingArrangementsFactoriesState, SchedulingArrangementsFactoriesState>
+    prepareWholePartialArrangementsConstraint(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEachUniquePair(
+                        SchedulingProducingArrangement.class,
+                        Joiners.lessThan(SchedulingProducingArrangement::getId),
+                        Joiners.filtering(SchedulingProducingArrangement::isDeepPrerequisiteArrangement)
+                )
                 .join(
-                        constraintFactory.forEach(SchedulingProducingArrangement.class)
-                                .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                                .filter(arrangementPredicate)
-                        ,
+                        SchedulingArrangementsFactoriesState.class,
                         Joiners.equal(
-                                Function.identity(),
-                                SchedulingProducingArrangement::getSchedulingArrangementsFactoriesState
+                                (whole, partial) -> whole.getSchedulingArrangementsFactoriesState(),
+                                Function.identity()
+                        )
+                )
+                .join(
+                        SchedulingArrangementsFactoriesState.class,
+                        Joiners.equal(
+                                (whole, partial, wholeState) -> partial.getSchedulingArrangementsFactoriesState(),
+                                Function.identity()
                         )
                 );
     }
@@ -153,6 +162,23 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         })
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");
+    }
+
+    private BiConstraintStream<SchedulingArrangementsFactoriesState, SchedulingProducingArrangement> prepareArrangementsConstraint(
+            @NonNull ConstraintFactory constraintFactory,
+            Predicate<SchedulingProducingArrangement> arrangementPredicate
+    ) {
+        return constraintFactory.forEach(SchedulingArrangementsFactoriesState.class)
+                .join(
+                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+                                .filter(SchedulingProducingArrangement::isPlanningAssigned)
+                                .filter(arrangementPredicate)
+                        ,
+                        Joiners.equal(
+                                Function.identity(),
+                                SchedulingProducingArrangement::getSchedulingArrangementsFactoriesState
+                        )
+                );
     }
 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
@@ -288,30 +314,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ), (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
-    }
-
-    //<whole,partial,wholeState,partialState>
-    private QuadConstraintStream<SchedulingProducingArrangement, SchedulingProducingArrangement, SchedulingArrangementsFactoriesState, SchedulingArrangementsFactoriesState>
-    prepareWholePartialArrangementsConstraint(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(
-                        SchedulingProducingArrangement.class,
-                        Joiners.lessThan(SchedulingProducingArrangement::getId),
-                        Joiners.filtering(SchedulingProducingArrangement::isDeepPrerequisiteArrangement)
-                )
-                .join(
-                        SchedulingArrangementsFactoriesState.class,
-                        Joiners.equal(
-                                (whole, partial) -> whole.getSchedulingArrangementsFactoriesState(),
-                                Function.identity()
-                        )
-                )
-                .join(
-                        SchedulingArrangementsFactoriesState.class,
-                        Joiners.equal(
-                                (whole, partial, wholeState) -> partial.getSchedulingArrangementsFactoriesState(),
-                                Function.identity()
-                        )
-                );
     }
 
 }
