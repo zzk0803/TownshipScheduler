@@ -52,8 +52,13 @@ public class SchedulingFactoryInstanceDateTimeSlotsState {
     }
 
     public LocalDateTime queryFirstProducingDateTimeArrangement(SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot) {
+        SchedulingFactoryInstance factoryInstance = schedulingFactoryInstanceDateTimeSlot.getFactoryInstance();
+        if (factoryInstance.weatherFactoryProducingTypeIsSlot()) {
+            return schedulingFactoryInstanceDateTimeSlot.getStart();
+        }
+
         TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> instanceDateTimeSlotLocalDateTimeTreeMap
-                = this.slotToLastCompletedMap.get(schedulingFactoryInstanceDateTimeSlot.getFactoryInstance());
+                = this.slotToLastCompletedMap.get(factoryInstance);
         if (instanceDateTimeSlotLocalDateTimeTreeMap == null) {
             return schedulingFactoryInstanceDateTimeSlot.getStart();
         }

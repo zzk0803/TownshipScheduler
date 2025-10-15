@@ -118,7 +118,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     ) {
         return constraintFactory.forEach(SchedulingFactoryInstanceDateTimeSlotsState.class)
                 .join(
-                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+                        constraintFactory.forEachIncludingUnassigned(SchedulingProducingArrangement.class)
                                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
                                 .filter(arrangementPredicate)
                         ,
@@ -218,7 +218,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint preferMinimizeOrderCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintPrepare(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
+        return constraintPrepare(constraintFactory,SchedulingProducingArrangement::isOrderDirect)
                 .join(
                         SchedulingFactoryInstanceDateTimeSlot.class,
                         Joiners.equal(
@@ -228,13 +228,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .groupBy(
                         (factorySlotsState, schedulingProducingArrangement, factorySlot) -> schedulingProducingArrangement.getSchedulingOrder(),
-                        (factorySlotsState, schedulingProducingArrangement, factorySlot) -> schedulingProducingArrangement
+                        (factorySlotsState, schedulingProducingArrangement, factorySlot) -> schedulingProducingArrangement,
+                        (factorySlotsState, schedulingProducingArrangement, factorySlot) -> schedulingProducingArrangement.getCompletedDateTime()
                 )
                 .groupBy(
-                        (order, arrangement) -> arrangement.getSchedulingOrder(),
+                        (order, arrangement,arrangementCompletedDateTime) -> arrangement.getSchedulingWorkCalendar().getStartDateTime(),
+                        (order, arrangement,arrangementCompletedDateTime) -> arrangement,
                         ConstraintCollectors.max(
-                                (order, arrangement) -> arrangement,
-                                SchedulingProducingArrangement::getCompletedDateTime
+                                (order, arrangement,arrangementCompletedDateTime) -> arrangementCompletedDateTime,
+                                arrangementCompletedDateTime->arrangementCompletedDateTime
                         )
                 )
                 .penalizeLong(
@@ -244,10 +246,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.SOFT_BATTER,
                                 1L
                         ),
-                        (order, arrangement) -> {
-                            var calendarStartDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
-                            var completedDateTime = arrangement.getCompletedDateTime();
-                            Duration between = Duration.between(calendarStartDateTime, completedDateTime);
+                        (calendarStartDateTime, arrangement,maxArrangementCompletedDateTime) -> {
+                            Duration between = Duration.between(calendarStartDateTime, maxArrangementCompletedDateTime);
                             return calcFactor(arrangement) * between.toMinutes();
                         }
                 )

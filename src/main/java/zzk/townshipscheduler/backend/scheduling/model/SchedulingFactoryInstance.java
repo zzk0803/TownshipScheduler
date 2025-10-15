@@ -7,6 +7,7 @@ import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -51,7 +52,11 @@ public class SchedulingFactoryInstance {
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
-        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
+        return ProducingStructureType.QUEUE.equals(getSchedulingFactoryInfo().getProducingStructureType());
+    }
+
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return ProducingStructureType.SLOT.equals(getSchedulingFactoryInfo().getProducingStructureType());
     }
 
     @Override

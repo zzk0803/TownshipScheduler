@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -85,6 +86,9 @@ public class SchedulingProducingArrangement {
 
     private SchedulingFactoryInstanceDateTimeSlotsState factorySlotsState;
 
+    @ShadowVariable(supplierName = "firstArrangementProducingDateTimeSupplier")
+    private LocalDateTime firstArrangementProducingDateTime;
+
     @JsonProperty("arrangeDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -97,12 +101,6 @@ public class SchedulingProducingArrangement {
             sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
     )
     private SchedulingProducingArrangement previousSchedulingProducingArrangement;
-
-    @JsonIgnore
-    @NextElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
-    )
-    private SchedulingProducingArrangement nextSchedulingProducingArrangement;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -241,8 +239,8 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return getFactoryProducingType() == ProducingStructureType.QUEUE;
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return ProducingStructureType.SLOT.equals(getFactoryProducingType());
     }
 
     public ProducingStructureType getFactoryProducingType() {
@@ -254,39 +252,57 @@ public class SchedulingProducingArrangement {
         return getSchedulingProduct().getRequireFactory();
     }
 
-    @JsonProperty("producingDuration")
-    public Duration getProducingDuration() {
-        return getProducingExecutionMode().getExecuteDuration();
+    @ShadowSources(
+            {
+                    "planningFactoryDateTimeSlot",
+                    "factorySlotsState.slotToLastCompletedMap"
+            }
+    )
+    public LocalDateTime firstArrangementProducingDateTimeSupplier() {
+        if (this.planningFactoryDateTimeSlot == null) {
+            return null;
+        }
+        if (this.weatherFactoryProducingTypeIsSlot()) {
+            return this.planningFactoryDateTimeSlot.getStart();
+        }
+        return this.factorySlotsState.queryFirstProducingDateTimeArrangement(this.planningFactoryDateTimeSlot);
+    }
+
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return ProducingStructureType.QUEUE.equals(getFactoryProducingType());
     }
 
     @ShadowSources(
             {
-                    "planningFactoryDateTimeSlot",
-                    "factorySlotsState.slotToLastCompletedMap",
+                    "firstArrangementProducingDateTime",
                     "previousSchedulingProducingArrangement",
                     "previousSchedulingProducingArrangement.completedDateTime"
             }
     )
     public LocalDateTime producingDateTimeSupplier() {
-
-        if (this.planningFactoryDateTimeSlot == null) {
+        if (this.firstArrangementProducingDateTime == null) {
             return null;
         }
 
-        if (!weatherFactoryProducingTypeIsQueue()) {
-            return this.planningFactoryDateTimeSlot.getStart();
+        if (weatherFactoryProducingTypeIsSlot()) {
+            return this.firstArrangementProducingDateTime;
         }
 
 
         return this.previousSchedulingProducingArrangement != null
                 ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
-                : this.factorySlotsState.queryFirstProducingDateTimeArrangement(this.planningFactoryDateTimeSlot);
+                : this.firstArrangementProducingDateTime;
 
     }
 
     @ShadowSources({"producingDateTime"})
     public LocalDateTime completedDateTimeSupplier() {
         return this.producingDateTime != null ? this.producingDateTime.plus(getProducingDuration()) : null;
+    }
+
+    @JsonProperty("producingDuration")
+    public Duration getProducingDuration() {
+        return getProducingExecutionMode().getExecuteDuration();
     }
 
     @ShadowSources({"planningFactoryDateTimeSlot"})
@@ -328,6 +344,7 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
         return this.prerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UuidGenerator.timeOrderedV6().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -338,6 +355,7 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UuidGenerator.timeOrderedV6().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
