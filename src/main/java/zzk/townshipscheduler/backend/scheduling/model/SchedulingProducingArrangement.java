@@ -54,7 +54,7 @@ public class SchedulingProducingArrangement {
     @EqualsAndHashCode.Include
     @ToString.Include
     @PlanningId
-    private String uuid;
+    private UUID uuid;
 
     @JsonIdentityReference
     private SchedulingOrder schedulingOrder;
@@ -101,6 +101,9 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
+    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
+    private FactoryProcessSequence factoryProcessSequence;
+
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -131,13 +134,22 @@ public class SchedulingProducingArrangement {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6());
         return producingArrangement;
     }
 
     @ShadowSources({"planningDateTimeSlot"})
     public LocalDateTime supplierForArrangeDateTime() {
         return this.planningDateTimeSlot != null ? this.planningDateTimeSlot.getStart() : null;
+    }
+
+    @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
+    public FactoryProcessSequence supplierForFactoryProcessSequence() {
+        if (this.planningFactoryInstance == null | this.planningDateTimeSlot == null) {
+            return null;
+        }
+
+        return new FactoryProcessSequence(this);
     }
 
     @ShadowSources(
@@ -157,24 +169,27 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            {
-                    "planningFactoryInstance",
-                    "planningFactoryInstance.arrangementToComputedPairMap",
-                    "planningDateTimeSlot"
+            value = {
+                    "planningFactoryInstance.shadowDeltaComputeFactorySequenceToComputedPairMap",
+                    "factoryProcessSequence"
             }
     )
     public LocalDateTime supplierForProducingDateTime() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
+
+        if (this.factoryProcessSequence == null) {
             return null;
         }
 
-        if (weatherFactoryProducingTypeIsQueue()) {
-            FactoryComputedDateTimePair computedDateTimePair
-                    = this.planningFactoryInstance.queryComputedDateTimePair(this);
-            return Objects.nonNull(computedDateTimePair) ? computedDateTimePair.producingDateTime() : null;
-        } else {
-            return this.planningDateTimeSlot.getStart();
+        if (this.planningFactoryInstance == null) {
+            return null;
         }
+
+        FactoryComputedDateTimePair computedDateTimePair
+                = this.planningFactoryInstance.deltaCompute(factoryProcessSequence);
+        return Objects.nonNull(computedDateTimePair)
+                ? computedDateTimePair.producingDateTime()
+                : null;
+
     }
 
 
@@ -197,18 +212,25 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            {
-                    "planningFactoryInstance",
-                    "planningFactoryInstance.arrangementToComputedPairMap",
-                    "planningDateTimeSlot"
+            value = {
+                    "planningFactoryInstance.shadowDeltaComputeFactorySequenceToComputedPairMap",
+                    "factoryProcessSequence"
             }
     )
     public LocalDateTime supplierForCompletedDateTime() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
+        if (this.factoryProcessSequence == null) {
             return null;
         }
 
-        return this.planningFactoryInstance.queryComputedDateTimePair(this).completedDateTime();
+        if (this.planningFactoryInstance == null) {
+            return null;
+        }
+
+        FactoryComputedDateTimePair computedDateTimePair
+                = this.planningFactoryInstance.deltaCompute(factoryProcessSequence);
+        return Objects.nonNull(computedDateTimePair)
+                ? computedDateTimePair.completedDateTime()
+                : null;
     }
 
     @JsonProperty("producingDuration")

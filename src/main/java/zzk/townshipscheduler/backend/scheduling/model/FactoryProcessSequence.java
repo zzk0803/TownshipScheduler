@@ -25,7 +25,6 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
     @EqualsAndHashCode.Include
     Integer arrangementId;
 
-
     @ToString.Include
     @EqualsAndHashCode.Include
     FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
@@ -35,8 +34,10 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
 
     int slotGapDuration;
 
+     SchedulingDateTimeSlot planningDateTimeSlot;
+
     public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
-        SchedulingDateTimeSlot planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
+        this.planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
         this.arrangeDateTime = planningDateTimeSlot.getStart();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
