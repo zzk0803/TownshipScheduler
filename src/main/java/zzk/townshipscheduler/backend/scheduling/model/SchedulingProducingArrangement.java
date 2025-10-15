@@ -200,8 +200,7 @@ public class SchedulingProducingArrangement {
             {
                     "planningFactoryInstance",
                     "planningFactoryInstance.arrangementToComputedPairMap",
-                    "planningDateTimeSlot",
-                    "producingDateTime"
+                    "planningDateTimeSlot"
             }
     )
     public LocalDateTime supplierForCompletedDateTime() {
@@ -209,22 +208,7 @@ public class SchedulingProducingArrangement {
             return null;
         }
 
-        LocalDateTime computedArrangementCompletedDateTime = this.producingDateTime.plus(getProducingDuration());
-        if (weatherFactoryProducingTypeIsQueue()) {
-            FactoryComputedDateTimePair computedDateTimePair
-                    = this.planningFactoryInstance.queryComputedDateTimePair(this);;
-            LocalDateTime queryArrangementCompletedDateTime
-                    = Objects.nonNull(computedDateTimePair) ? computedDateTimePair.completedDateTime() : null;
-            if (!Objects.equals(queryArrangementCompletedDateTime, computedArrangementCompletedDateTime)) {
-                log.warn(
-                        "not equal(queryArrangementCompletedDateTime={}, computedArrangementCompletedDateTime={})",
-                        queryArrangementCompletedDateTime,
-                        computedArrangementCompletedDateTime
-                );
-            }
-            return queryArrangementCompletedDateTime;
-        }
-        return computedArrangementCompletedDateTime;
+        return this.planningFactoryInstance.queryComputedDateTimePair(this).completedDateTime();
     }
 
     @JsonProperty("producingDuration")
@@ -378,6 +362,10 @@ public class SchedulingProducingArrangement {
         }
 
         return Duration.between(this.completedDateTime, this.schedulingWorkCalendar.getEndDateTime()).toMinutes();
+    }
+
+    public boolean weatherPrerequisiteRequire() {
+        return !getPrerequisiteProducingArrangements().isEmpty();
     }
 
 }
