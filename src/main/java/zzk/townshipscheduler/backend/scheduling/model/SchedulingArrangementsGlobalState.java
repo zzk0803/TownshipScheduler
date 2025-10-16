@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Gatherer;
 
@@ -105,8 +106,13 @@ public class SchedulingArrangementsGlobalState {
     public static final BiPredicate<FactoryProcessSequence, FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_BI_PREDICATE
             = BI_PREDICATE_1.and(
             BI_PREDICATE_2.negate()
-                    .or(BI_PREDICATE_3.negate())
+                    .or(
+                            BI_PREDICATE_3.negate()
+                    )
     );
+
+    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE = factoryProcessSequence -> Objects.nonNull(
+            factoryProcessSequence.getFactoryReadableIdentifier()) && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
 
 
     @PlanningId
@@ -115,29 +121,22 @@ public class SchedulingArrangementsGlobalState {
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangements;
 
-    @DeepPlanningClone
-    private Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> companyComputedMap
-            = new LinkedHashMap<>();
+//    @DeepPlanningClone
+//    private Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> companyComputedMap
+//            = new LinkedHashMap<>();
 
     @ToString.Include
     @ShadowVariable(supplierName = "supplierForShadowComputedMap")
-    private Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> shadowComputedMap = new LinkedHashMap<>();
+    private Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> shadowComputedMap = new LinkedHashMap<>();
 
     @ShadowSources(value = {"schedulingProducingArrangements[].factoryProcessSequence"})
-    public Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> supplierForShadowComputedMap() {
-        Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> result = null;
-        if ( companyComputedMap.isEmpty()) {
-            result = fullCompute();
-        } else {
-            result = deltaCompute();
-        }
-        companyComputedMap = result;
-        return result;
+    public Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> supplierForShadowComputedMap() {
+        return fullCompute();
     }
 
     @NotNull
-    private Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> fullCompute() {
-        Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> slotCollected
+    private Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> fullCompute() {
+        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotCollected
                 = this.schedulingProducingArrangements.stream()
                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot)
@@ -149,21 +148,22 @@ public class SchedulingArrangementsGlobalState {
                                         Collectors.toList(),
                                         producingArrangements -> producingArrangements.stream()
                                                 .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                                                .filter(FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE)
                                                 .sorted(FactoryProcessSequence.COMPARATOR)
                                                 .gather(SLOT_GATHERER)
                                                 .collect(
-                                                        TreeMap::new,
+                                                        HashMap::new,
                                                         (treeMap, pair) -> treeMap.put(
                                                                 pair.getValue0(),
                                                                 pair.getValue1()
                                                         ),
-                                                        TreeMap::putAll
+                                                        HashMap::putAll
                                                 )
                                 )
                         )
                 );
 
-        Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> result
+        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> result
                 = this.schedulingProducingArrangements.stream()
                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue)
@@ -175,15 +175,16 @@ public class SchedulingArrangementsGlobalState {
                                         Collectors.toList(),
                                         producingArrangements -> producingArrangements.stream()
                                                 .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                                                .filter(FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE)
                                                 .sorted(FactoryProcessSequence.COMPARATOR)
                                                 .gather(QUEUE_GATHERER)
                                                 .collect(
-                                                        TreeMap::new,
+                                                        HashMap::new,
                                                         (treeMap, pair) -> treeMap.put(
                                                                 pair.getValue0(),
                                                                 pair.getValue1()
                                                         ),
-                                                        TreeMap::putAll
+                                                        HashMap::putAll
                                                 )
                                 )
                         )
@@ -193,22 +194,23 @@ public class SchedulingArrangementsGlobalState {
         return result;
     }
 
-    @NotNull
-    private Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> deltaCompute() {
-        this.schedulingProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
-                .forEach(factoryProcessSequence -> {
-                    FactoryReadableIdentifier factoryReadableIdentifier = factoryProcessSequence.getFactoryReadableIdentifier();
-                    companyComputedMap.compute(
-                            factoryReadableIdentifier,
-                            (keyInMap, oldPartMap) -> deltaCompute(
-                                    factoryProcessSequence,
-                                    Objects.requireNonNullElseGet(oldPartMap, TreeMap::new)
-                            )
-                    );
-                });
-        return companyComputedMap;
-    }
+//    @NotNull
+//    private Map<FactoryReadableIdentifier, TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair>> deltaCompute() {
+//        this.schedulingProducingArrangements.stream()
+//                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+//                .filter(FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE)
+//                .forEach(factoryProcessSequence -> {
+//                    FactoryReadableIdentifier factoryReadableIdentifier = factoryProcessSequence.getFactoryReadableIdentifier();
+//                    companyComputedMap.compute(
+//                            factoryReadableIdentifier,
+//                            (keyInMap, oldPartMap) -> deltaCompute(
+//                                    factoryProcessSequence,
+//                                    Objects.requireNonNullElseGet(oldPartMap, TreeMap::new)
+//                            )
+//                    );
+//                });
+//        return companyComputedMap;
+//    }
 
     public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> deltaCompute(
             FactoryProcessSequence argProcessSequence,
@@ -216,7 +218,10 @@ public class SchedulingArrangementsGlobalState {
     ) {
 
         List<FactoryProcessSequence> toDel = partMap.keySet().stream()
-                .filter(existProcessSequence -> FACTORY_PROCESS_SEQUENCE_BI_PREDICATE.test(existProcessSequence, argProcessSequence))
+                .filter(existProcessSequence -> FACTORY_PROCESS_SEQUENCE_BI_PREDICATE.test(
+                        existProcessSequence,
+                        argProcessSequence
+                ))
                 .collect(Collectors.toCollection(ArrayList::new));
 
         if (!toDel.isEmpty()) {
@@ -277,12 +282,35 @@ public class SchedulingArrangementsGlobalState {
     }
 
     public void removeFactoryProcessSequence(
+            Integer arrangementId,
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> partMap
+    ) {
+        List<FactoryProcessSequence> toDel = partMap.keySet()
+                .stream()
+                .filter(factoryProcessSequence -> Objects.equals(
+                        factoryProcessSequence.getArrangementId(),
+                        arrangementId
+                ))
+                .toList();
+
+        if (!toDel.isEmpty()) {
+            for (FactoryProcessSequence sequence : toDel) {
+                this.removeFactoryProcessSequence(
+                        sequence,
+                        sequence.getFactoryReadableIdentifier().isBoolFactorySlotType(),
+                        partMap
+                );
+            }
+        }
+    }
+
+    public void removeFactoryProcessSequence(
             FactoryProcessSequence factoryProcessSequence,
             boolean boolFactorySlotType,
             TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> partMap
     ) {
-
-        if (partMap.remove(factoryProcessSequence) == null) {
+        FactoryComputedDateTimePair removed = partMap.remove(factoryProcessSequence);
+        if (removed == null) {
             return;
         }
 
@@ -340,6 +368,13 @@ public class SchedulingArrangementsGlobalState {
                 : previousCompletedDateTime;
     }
 
+    private LocalDateTime calcCompletedDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            LocalDateTime producingDateTime
+    ) {
+        return producingDateTime.plus(factoryProcessSequence.getProducingDuration());
+    }
+
     private LocalDateTime calcProducingDateTime(
             FactoryProcessSequence factoryProcessSequence,
             Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> previousEntry
@@ -368,16 +403,8 @@ public class SchedulingArrangementsGlobalState {
                 : previousCompleted;
     }
 
-    private LocalDateTime calcCompletedDateTime(
-            FactoryProcessSequence factoryProcessSequence,
-            LocalDateTime producingDateTime
-    ) {
-        return producingDateTime.plus(factoryProcessSequence.getProducingDuration());
-    }
-
-
     public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
-        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairTreeMap
+        Map<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairTreeMap
                 = this.shadowComputedMap.get(factoryProcessSequence.getFactoryReadableIdentifier());
         if (Objects.isNull(computedDateTimePairTreeMap)) {
             return null;

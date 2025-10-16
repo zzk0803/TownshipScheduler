@@ -152,12 +152,12 @@ public class SchedulingProducingArrangement {
     )
     public LocalDateTime supplierForProducingDateTime() {
         if (this.factoryProcessSequence == null) {
-            return this.producingDateTime;
+            return null;
         }
 
         FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
         if (computedDateTimePair == null) {
-            return this.producingDateTime;
+            return null;
         }
         return computedDateTimePair.producingDateTime();
     }
@@ -190,12 +190,12 @@ public class SchedulingProducingArrangement {
     )
     public LocalDateTime supplierForCompletedDateTime() {
         if (this.factoryProcessSequence == null) {
-            return this.completedDateTime;
+            return null;
         }
 
         FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
         if (computedDateTimePair == null) {
-            return this.completedDateTime;
+            return null;
         }
         return computedDateTimePair.completedDateTime();
     }
