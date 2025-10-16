@@ -53,7 +53,7 @@ public class SchedulingFactoryInstance {
 
 
     public void setupFactoryReadableIdentifier() {
-        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+        setFactoryReadableIdentifier(new FactoryReadableIdentifier(this));
     }
 
     public String getCategoryName() {

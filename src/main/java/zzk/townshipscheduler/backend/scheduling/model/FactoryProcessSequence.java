@@ -15,6 +15,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
 
     public static final Comparator<FactoryProcessSequence> COMPARATOR
             = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
+            .thenComparing(FactoryProcessSequence::getSchedulingFactoryInstanceReadableIdentifier)
             .thenComparingInt(FactoryProcessSequence::getArrangementId);
 
     @ToString.Include

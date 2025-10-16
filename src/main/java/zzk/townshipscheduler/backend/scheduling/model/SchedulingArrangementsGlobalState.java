@@ -84,19 +84,13 @@ public class SchedulingArrangementsGlobalState {
     @EqualsAndHashCode.Include
     private String id = "SchedulingArrangementsGlobalState";
 
-    @DeepPlanningClone
     private List<SchedulingProducingArrangement> schedulingProducingArrangements;
 
     @ToString.Include
     @ShadowVariable(supplierName = "supplierForMap")
     private Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> map = new LinkedHashMap<>();
 
-    @ShadowSources(
-            value = {
-                    "schedulingProducingArrangements[].factoryProcessSequence"
-            },
-            alignmentKey = "schedulingProducingArrangements"
-    )
+    @ShadowSources({"schedulingProducingArrangements[].factoryProcessSequence"})
     public Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> supplierForMap() {
         Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> result
                 = this.schedulingProducingArrangements.stream()
