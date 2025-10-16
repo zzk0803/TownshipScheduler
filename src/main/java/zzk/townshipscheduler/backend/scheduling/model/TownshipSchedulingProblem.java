@@ -21,11 +21,11 @@ public class TownshipSchedulingProblem {
 
     public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
 
-    public static final int HARD_BAD_ARRANGE_DATE_TIME_SLOT_IN_FACTORY_SEQUENCES = 0;
-
     public static final int HARD_BROKEN_PRODUCE_PREREQUISITE = 1;
 
     public static final int HARD_BROKEN_FACTORY_ABILITY = 2;
+
+    public static final int HARD_BAD_ARRANGE_DATE_TIME_SLOT_IN_FACTORY_SEQUENCES = 0;
 
     public static final int SOFT_TOLERANCE = 0;
 

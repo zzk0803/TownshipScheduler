@@ -133,8 +133,7 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>8</fadingEntityTabuSize>
-            <fadingValueTabuSize>15</fadingValueTabuSize>
+            <valueTabuSize>6</valueTabuSize>
             <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
