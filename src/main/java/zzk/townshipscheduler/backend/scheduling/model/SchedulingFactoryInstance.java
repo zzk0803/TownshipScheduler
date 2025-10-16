@@ -40,34 +40,17 @@ public class SchedulingFactoryInstance {
 
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
 
-    @ShadowVariable(supplierName = "factorySlotToLastCompletedMapSupplier")
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToLastCompletedMap = new TreeMap<>();
-
     @ShadowVariable(supplierName = "factorySlotToFirstArrangementProducingDateTimeMapSupplier")
     private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMap
             = new TreeMap<>();
 
     @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToLastCompletedMapSupplier() {
-        return schedulingFactoryInstanceDateTimeSlotList.stream()
-                .collect(
-                        TreeMap::new,
-                        (treeMap, factoryInstanceDateTimeSlot) -> {
-                            treeMap.compute(
-                                    factoryInstanceDateTimeSlot,
-                                    (_, _) -> factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
-                            );
-                        },
-                        TreeMap::putAll
-                );
-    }
-
-    @ShadowSources({"factorySlotToLastCompletedMap"})
     private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMapSupplier() {
         TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> result = new TreeMap<>();
-        for (SchedulingFactoryInstanceDateTimeSlot current : this.factorySlotToLastCompletedMap.keySet()) {
+        TreeSet<SchedulingFactoryInstanceDateTimeSlot> instanceDateTimeSlots = new TreeSet<>(schedulingFactoryInstanceDateTimeSlotList);
+        for (SchedulingFactoryInstanceDateTimeSlot current : instanceDateTimeSlots) {
             Set<SchedulingFactoryInstanceDateTimeSlot> headSetOfCurrent
-                    = this.factorySlotToLastCompletedMap.headMap(current, false).keySet();
+                    = instanceDateTimeSlots.headSet(current, false);
             Optional<SchedulingFactoryInstanceDateTimeSlot> findInfluenceBy
                     = current.boolInfluenceBy(headSetOfCurrent);
             result.put(

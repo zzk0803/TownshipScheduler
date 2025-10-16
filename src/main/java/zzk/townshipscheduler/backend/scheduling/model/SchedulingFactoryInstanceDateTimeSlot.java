@@ -124,7 +124,11 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     }
 
     public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
-        return that.getTailArrangementCompletedDateTime().isAfter(this.getStart());
+        LocalDateTime tailArrangementCompletedDateTime = that.getTailArrangementCompletedDateTime();
+        if (tailArrangementCompletedDateTime == null) {
+            return false;
+        }
+        return tailArrangementCompletedDateTime.isAfter(this.getStart());
     }
 
     public Optional<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceBy(Collection<SchedulingFactoryInstanceDateTimeSlot> those) {
@@ -138,7 +142,12 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     }
 
     public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
-        return this.getTailArrangementCompletedDateTime().isAfter(that.getStart());
+        LocalDateTime thisTailArrangementDateTime = this.getTailArrangementCompletedDateTime();
+        LocalDateTime thatStart = that.getStart();
+        if (thisTailArrangementDateTime == null) {
+            return false;
+        }
+        return thisTailArrangementDateTime.isAfter(thatStart);
     }
 
     public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(Collection<SchedulingFactoryInstanceDateTimeSlot> those) {

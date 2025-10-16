@@ -245,11 +245,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint preferMinimizeOrderCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
-        return prepareArrangementStreamAsIt(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
+        return prepareArrangementStream(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
                 .groupBy(
-                        SchedulingProducingArrangement::getSchedulingOrder,
+                        (arrangement, factoryInstance, factoryInstanceDateTimeSlot) ->arrangement.getSchedulingOrder(),
                         ConstraintCollectors.max(
-                                Function.identity(),
+                                (arrangement, factoryInstance, factoryInstanceDateTimeSlot)->arrangement,
                                 SchedulingProducingArrangement::getCompletedDateTime
                         )
                 )
