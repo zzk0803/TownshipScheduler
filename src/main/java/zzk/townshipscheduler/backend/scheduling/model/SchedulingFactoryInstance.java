@@ -2,16 +2,13 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Data
@@ -43,23 +40,43 @@ public class SchedulingFactoryInstance {
 
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
 
-    @DeepPlanningClone
-    @ShadowVariable(supplierName = "slotIdToLastCompletedMapSupplier")
-    private TreeMap<FactoryDateTimeReadableIdentifier, LocalDateTime> slotIdToLastCompletedMap = new TreeMap<>();
+    @ShadowVariable(supplierName = "factorySlotToLastCompletedMapSupplier")
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToLastCompletedMap = new TreeMap<>();
+
+    @ShadowVariable(supplierName = "factorySlotToFirstArrangementProducingDateTimeMapSupplier")
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMap
+            = new TreeMap<>();
 
     @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
-    private TreeMap<FactoryDateTimeReadableIdentifier, LocalDateTime> slotIdToLastCompletedMapSupplier() {
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToLastCompletedMapSupplier() {
         return schedulingFactoryInstanceDateTimeSlotList.stream()
                 .collect(
                         TreeMap::new,
                         (treeMap, factoryInstanceDateTimeSlot) -> {
                             treeMap.compute(
-                                    factoryInstanceDateTimeSlot.getFactoryDateTimeReadableIdentifier(),
+                                    factoryInstanceDateTimeSlot,
                                     (_, _) -> factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
                             );
                         },
                         TreeMap::putAll
                 );
+    }
+
+    @ShadowSources({"factorySlotToLastCompletedMap"})
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMapSupplier() {
+        TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> result = new TreeMap<>();
+        for (SchedulingFactoryInstanceDateTimeSlot current : this.factorySlotToLastCompletedMap.keySet()) {
+            Set<SchedulingFactoryInstanceDateTimeSlot> headSetOfCurrent
+                    = this.factorySlotToLastCompletedMap.headMap(current, false).keySet();
+            Optional<SchedulingFactoryInstanceDateTimeSlot> findInfluenceBy
+                    = current.boolInfluenceBy(headSetOfCurrent);
+            result.put(
+                    current,
+                    findInfluenceBy.map(SchedulingFactoryInstanceDateTimeSlot::getTailArrangementCompletedDateTime)
+                            .orElse(current.getStart())
+            );
+        }
+        return result;
     }
 
     public void setupFactoryReadableIdentifier() {

@@ -13,9 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Data
@@ -81,17 +80,9 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return factoryInstance.getSchedulingFactoryInfo();
     }
 
-    @ShadowSources({"factoryInstance.slotIdToLastCompletedMap"})
+    @ShadowSources({"factoryInstance.factorySlotToFirstArrangementProducingDateTimeMap"})
     public LocalDateTime firstArrangementProducingDateTimeSupplier() {
-        return factoryInstance.getSlotIdToLastCompletedMap().headMap(
-                        this.getFactoryDateTimeReadableIdentifier(),
-                        false
-                ).entrySet()
-                .stream()
-                .filter((entry) -> entry.getValue().isAfter(this.getStart()))
-                .max(Map.Entry.comparingByKey())
-                .map(Map.Entry::getValue)
-                .orElse(this.getStart());
+        return factoryInstance.getFactorySlotToFirstArrangementProducingDateTimeMap().getOrDefault(this,this.getStart());
     }
 
     @EqualsAndHashCode.Include
@@ -136,8 +127,25 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return that.getTailArrangementCompletedDateTime().isAfter(this.getStart());
     }
 
+    public Optional<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceBy(Collection<SchedulingFactoryInstanceDateTimeSlot> those) {
+        if (those == null || those.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return those.stream()
+                .filter(this::boolInfluenceBy)
+                .min(Comparator.naturalOrder());
+    }
+
     public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
         return this.getTailArrangementCompletedDateTime().isAfter(that.getStart());
+    }
+
+    public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(Collection<SchedulingFactoryInstanceDateTimeSlot> those) {
+        return those.stream()
+                .sorted(Comparator.naturalOrder())
+                .filter(this::boolInfluenceTo)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     @Override

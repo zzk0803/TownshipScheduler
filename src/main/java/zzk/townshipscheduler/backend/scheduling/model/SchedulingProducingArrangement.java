@@ -109,10 +109,6 @@ public class SchedulingProducingArrangement {
     )
     private Integer indexInFactorySlot;
 
-    @JsonIgnore
-    @ShadowVariable(supplierName = "computedDateTimePairSupplier")
-    private FactoryComputedDateTimePair computedDateTimePair;
-
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -282,16 +278,39 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getExecuteDuration();
     }
 
-    @ShadowSources({"computedDateTimePair"})
+    @ShadowSources(
+            {
+                    "planningFactoryDateTimeSlot",
+                    "planningFactoryDateTimeSlot.firstArrangementProducingDateTime",
+                    "previousSchedulingProducingArrangement",
+                    "previousSchedulingProducingArrangement.completedDateTime"
+            }
+    )
     public LocalDateTime producingDateTimeSupplier() {
-        var computedDateTimePair = getComputedDateTimePair();
-        return computedDateTimePair != null ? computedDateTimePair.producingDateTime() : null;
+
+        if (this.planningFactoryDateTimeSlot == null) {
+            return null;
+        }
+
+        LocalDateTime thisProducingDateTime;
+        if (weatherFactoryProducingTypeIsQueue()) {
+            thisProducingDateTime = this.previousSchedulingProducingArrangement != null
+                    ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
+                    : this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
+
+        } else {
+            thisProducingDateTime = this.planningFactoryDateTimeSlot.getStart();
+        }
+        return thisProducingDateTime;
     }
 
-    @ShadowSources({"computedDateTimePair"})
+    @ShadowSources({"producingDateTime"})
     public LocalDateTime completedDateTimeSupplier() {
-        var computedDateTimePair = getComputedDateTimePair();
-        return computedDateTimePair != null ? computedDateTimePair.completedDateTime() : null;
+        if (this.producingDateTime == null) {
+            return null;
+        }
+
+        return this.producingDateTime.plus(this.getProducingDuration());
     }
 
     @ShadowSources({"planningFactoryDateTimeSlot"})
