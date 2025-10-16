@@ -19,7 +19,7 @@ public class TownshipSchedulingProblem {
 
     public static final int BENDABLE_SCORE_HARD_SIZE = 3;
 
-    public static final int BENDABLE_SCORE_SOFT_SIZE = 3;
+    public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
 
     public static final int HARD_BAD_ARRANGE_DATE_TIME_SLOT_IN_FACTORY_SEQUENCES = 0;
 
@@ -27,11 +27,9 @@ public class TownshipSchedulingProblem {
 
     public static final int HARD_BROKEN_FACTORY_ABILITY = 2;
 
-    public static final int SOFT_OFFSET_BETWEEN_DATE_TIME_SLOT_AND_PREREQUISITE = 0;
+    public static final int SOFT_TOLERANCE = 0;
 
-    public static final int SOFT_TOLERANCE = 1;
-
-    public static final int SOFT_BATTER = 2;
+    public static final int SOFT_BATTER = 1;
 
     public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 

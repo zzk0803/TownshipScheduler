@@ -74,6 +74,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @JsonIgnore
     @ShadowVariable(supplierName = "supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime")
     private LocalDateTime deepPrerequisiteProducingArrangementsCompletedDateTime;
 
@@ -142,14 +143,6 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         return computedDateTimePair == null ? null : computedDateTimePair.producingDateTime();
     }
 
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getCompletedDateTime() {
-        return computedDateTimePair == null ? null : computedDateTimePair.completedDateTime();
-    }
-
     @ShadowSources({"planningDateTimeSlot"})
     public LocalDateTime supplierArrangeDateTime() {
         SchedulingDateTimeSlot schedulingDateTimeSlot = this.getPlanningDateTimeSlot();
@@ -191,17 +184,6 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         }
     }
 
-    @ShadowSources(
-            value = {"deepPrerequisiteProducingArrangements[].computedDateTimePair"}
-    )
-    public LocalDateTime supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime() {
-        return this.deepPrerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
-                .filter(Objects::nonNull)
-                .max(Comparator.naturalOrder())
-                .orElse(schedulingWorkCalendar.getEndDateTime());
-    }
-
     @JsonProperty("producingDuration")
     public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();
@@ -223,6 +205,31 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonProperty("schedulingProduct")
     public SchedulingProduct getSchedulingProduct() {
         return (SchedulingProduct) getCurrentActionObject();
+    }
+
+    @ShadowSources(
+            value = {"deepPrerequisiteProducingArrangements[].computedDateTimePair"}
+    )
+    public LocalDateTime supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime() {
+        List<LocalDateTime> deepPrerequisiteProducingArrangementsCompletedDateTimeList
+                = this.deepPrerequisiteProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .toList();
+        if (deepPrerequisiteProducingArrangementsCompletedDateTimeList.stream().anyMatch(Objects::isNull)) {
+            return this.getSchedulingWorkCalendar().getEndDateTime();
+        }
+
+        return deepPrerequisiteProducingArrangementsCompletedDateTimeList.stream()
+                .max(Comparator.naturalOrder())
+                .orElse(this.getSchedulingWorkCalendar().getEndDateTime());
+    }
+
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getCompletedDateTime() {
+        return computedDateTimePair == null ? null : computedDateTimePair.completedDateTime();
     }
 
     @JsonIgnore
