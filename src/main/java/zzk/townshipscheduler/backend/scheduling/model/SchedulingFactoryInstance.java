@@ -3,21 +3,15 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.ShadowSources;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import org.javatuples.Pair;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Gatherer;
 
 @Log4j2
 @Data
@@ -51,6 +45,9 @@ public class SchedulingFactoryInstance {
         return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
     }
 
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsSlot();
+    }
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(new FactoryReadableIdentifier(this));

@@ -107,6 +107,10 @@ public class SchedulingFactoryInfo {
                '}';
     }
 
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return this.producingStructureType == ProducingStructureType.SLOT;
+    }
+
     @Value
     public static class Id implements Comparable<Id> {
 
@@ -122,11 +126,11 @@ public class SchedulingFactoryInfo {
             return of(fieldFactoryInfoEntity.getId());
         }
 
-        public static Id of(long value) {
+        public static Id of(Long value) {
             return new Id(value);
         }
 
-        public static Id of(Long value) {
+        public static Id of(long value) {
             return new Id(value);
         }
 

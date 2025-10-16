@@ -34,7 +34,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
-        return constraintPrepare(constraintFactory)
+        return prepareArrangementsStream(constraintFactory)
                 .join(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(
@@ -71,7 +71,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidBrokenFactoryAbility");
     }
 
-    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> constraintPrepare(
+    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> prepareArrangementsStream(
             @NonNull ConstraintFactory constraintFactory
     ) {
         return constraintFactory.forEach(SchedulingArrangementsGlobalState.class)
@@ -86,7 +86,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
-        return constraintPrepare(
+        return prepareArrangementsStream(
                 constraintFactory,
                 arrangement -> !arrangement.getDeepPrerequisiteProducingArrangements().isEmpty()
         )
@@ -108,7 +108,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
 
-    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> constraintPrepare(
+    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> prepareArrangementsStream(
             @NonNull ConstraintFactory constraintFactory,
             Predicate<SchedulingProducingArrangement> arrangementPredicate
     ) {
@@ -126,7 +126,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
-        return constraintPrepare(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
+        return prepareArrangementsStream(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
                 .join(
                         constraintFactory.forEach(SchedulingOrder.class)
                                 .filter(SchedulingOrder::boolHasDeadline),
@@ -164,7 +164,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
-        return constraintPrepare(
+        return prepareArrangementsStream(
                 constraintFactory,
                 (arrangement) -> {
                     return arrangement.isOrderDirect() && arrangement.getCompletedDateTime().isAfter(
@@ -214,7 +214,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint preferMinimizeOrderCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintPrepare(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
+        return prepareArrangementsStream(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
                 .groupBy(
                         (schedulingArrangementsGlobalState, schedulingProducingArrangement) -> schedulingProducingArrangement.getSchedulingOrder(),
                         ConstraintCollectors.max(

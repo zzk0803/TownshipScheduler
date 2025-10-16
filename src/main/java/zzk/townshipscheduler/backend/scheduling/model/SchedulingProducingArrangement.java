@@ -143,15 +143,11 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
     public FactoryProcessSequence supplierForFactoryProcessSequence() {
-        if (this.planningFactoryInstance == null | this.planningDateTimeSlot == null) {
-            return null;
-        }
-
         return new FactoryProcessSequence(this);
     }
 
     @ShadowSources(
-            value = {"schedulingArrangementsGlobalState.map", "factoryProcessSequence"},
+            value = {"schedulingArrangementsGlobalState.shadowComputedMap", "factoryProcessSequence"},
             alignmentKey = "schedulingArrangementsGlobalState"
     )
     public LocalDateTime supplierForProducingDateTime() {
@@ -189,7 +185,7 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            value = {"schedulingArrangementsGlobalState.map", "factoryProcessSequence"},
+            value = {"schedulingArrangementsGlobalState.shadowComputedMap", "factoryProcessSequence"},
             alignmentKey = "schedulingArrangementsGlobalState"
     )
     public LocalDateTime supplierForCompletedDateTime() {
@@ -203,6 +199,7 @@ public class SchedulingProducingArrangement {
         }
         return computedDateTimePair.completedDateTime();
     }
+
     @ShadowSources(
             value = {"deepPrerequisiteProducingArrangements[].completedDateTime"},
             alignmentKey = "deepPrerequisiteProducingArrangements"

@@ -8,16 +8,20 @@ import java.util.Comparator;
 import java.util.stream.IntStream;
 
 @Getter
-@EqualsAndHashCode
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public final class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier> {
 
+    @EqualsAndHashCode.Include
     private final int factoryId;
 
     private final int factoryLevel;
 
     private final String factoryCategory;
 
+    @EqualsAndHashCode.Include
     private final int seqNum;
+
+    private final boolean boolFactorySlotType;
 
     @JsonCreator
     public FactoryReadableIdentifier(SchedulingFactoryInstance schedulingFactoryInstance) {
@@ -25,14 +29,22 @@ public final class FactoryReadableIdentifier implements CharSequence, Comparable
         this.factoryLevel = schedulingFactoryInstance.getSchedulingFactoryInfo().getLevel();
         this.factoryCategory = schedulingFactoryInstance.getCategoryName();
         this.seqNum = schedulingFactoryInstance.getSeqNum();
+        this.boolFactorySlotType = schedulingFactoryInstance.weatherFactoryProducingTypeIsSlot();
     }
 
     @JsonCreator
-    public FactoryReadableIdentifier(int factoryId, int factoryLevel, String factoryCategory, int seqNum) {
+    public FactoryReadableIdentifier(
+            int factoryId,
+            int factoryLevel,
+            String factoryCategory,
+            int seqNum,
+            boolean boolFactorySlotType
+    ) {
         this.factoryId = factoryId;
         this.factoryLevel = factoryLevel;
         this.factoryCategory = factoryCategory;
         this.seqNum = seqNum;
+        this.boolFactorySlotType = boolFactorySlotType;
     }
 
     @Override

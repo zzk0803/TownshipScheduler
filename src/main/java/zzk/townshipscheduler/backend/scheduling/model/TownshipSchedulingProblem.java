@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
@@ -130,7 +129,7 @@ public class TownshipSchedulingProblem {
     public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryProcessSequence factoryProcessSequence) {
         return getSchedulingFactoryInstanceList().stream()
                 .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
-                        .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
+                        .equals(factoryProcessSequence.getFactoryReadableIdentifier()))
                 .findFirst();
     }
 
