@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
-            = Comparator.comparing(SchedulingDateTimeSlot::getStart);
+            = Comparator.comparing(SchedulingDateTimeSlot::getId).thenComparing(SchedulingDateTimeSlot::getStart);
 
     @PlanningId
     @EqualsAndHashCode.Include
