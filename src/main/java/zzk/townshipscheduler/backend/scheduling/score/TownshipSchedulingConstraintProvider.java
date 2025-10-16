@@ -5,7 +5,10 @@ import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -34,10 +37,12 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .join(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.lessThan(SchedulingProducingArrangement::getId)
-                )
-                .filter((current, other) -> !other.getArrangeDateTime().isAfter(current.getArrangeDateTime())
-                                            && other.getCompletedDateTime().isAfter(current.getArrangeDateTime())
+                        Joiners.lessThan(SchedulingProducingArrangement::getId),
+                        Joiners.filtering((current, other) -> {
+                            boolean b1 = !other.getArrangeDateTime().isAfter(current.getArrangeDateTime());
+                            boolean b2 = other.getCompletedDateTime().isAfter(current.getArrangeDateTime());
+                            return b1 && b2;
+                        })
                 )
                 .groupBy(
                         (current, other) -> current,
