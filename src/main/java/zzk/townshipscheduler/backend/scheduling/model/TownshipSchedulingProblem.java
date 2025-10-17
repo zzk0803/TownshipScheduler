@@ -2,13 +2,14 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Data
@@ -16,19 +17,19 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TownshipSchedulingProblem {
 
-    public static final int BENDABLE_SCORE_HARD_SIZE = 3;
+    public static final int BENDABLE_SCORE_HARD_SIZE = 2;
 
-    public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
+    public static final int BENDABLE_SCORE_SOFT_SIZE = 3;
 
-    public static final int HARD_BROKEN_FACTORY_ABILITY = 0;
+    public static final int HARD_BROKEN_PRODUCE_PREREQUISITE = 0;
 
-    public static final int HARD_BROKEN_PRODUCE_PREREQUISITE = 1;
+    public static final int HARD_BROKEN_FACTORY_ABILITY = 1;
 
-    public static final int HARD_BROKEN_DEADLINE = 2;
+    public static final int SOFT_BATTER = 0;
 
-    public static final int SOFT_TOLERANCE = 0;
+    public static final int SOFT_BROKEN_DEADLINE = 1;
 
-    public static final int SOFT_BATTER = 1;
+    public static final int SOFT_TOLERANCE = 2;
 
     public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 

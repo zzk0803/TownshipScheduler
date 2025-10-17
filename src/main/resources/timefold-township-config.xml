@@ -135,14 +135,14 @@
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>8</fadingEntityTabuSize>
-            <fadingValueTabuSize>15</fadingValueTabuSize>
-            <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
+            <entityTabuSize>3</entityTabuSize>
+            <valueTabuSize>3</valueTabuSize>
+            <stepCountingHillClimbingSize>257</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>3</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>

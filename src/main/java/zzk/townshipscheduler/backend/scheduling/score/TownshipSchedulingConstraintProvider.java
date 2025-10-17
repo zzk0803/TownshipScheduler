@@ -33,16 +33,16 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .join(
                         SchedulingProducingArrangement.class,
-                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.lessThan(SchedulingProducingArrangement::getId),
-                        Joiners.filtering((current, other) -> {
+                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance)
+                )
+                .filter(
+                        (current, other) -> {
                             boolean b1 = !other.getArrangeDateTime().isAfter(current.getArrangeDateTime());
                             boolean b2 = other.getCompletedDateTime().isAfter(current.getArrangeDateTime());
                             return b1 && b2;
-                        })
+                        }
                 )
                 .groupBy(
                         (current, other) -> current,
@@ -123,7 +123,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         BendableLongScore.ofHard(
                                 TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_DEADLINE,
+                                TownshipSchedulingProblem.SOFT_BROKEN_DEADLINE,
                                 1L
                         ),
                         ((schedulingOrder, producingArrangement) -> {
