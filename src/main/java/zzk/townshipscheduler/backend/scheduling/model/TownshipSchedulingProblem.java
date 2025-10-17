@@ -15,21 +15,19 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TownshipSchedulingProblem {
 
-    public static final int BENDABLE_SCORE_HARD_SIZE = 3;
+    public static final int BENDABLE_SCORE_HARD_SIZE = 2;
 
-    public static final int BENDABLE_SCORE_SOFT_SIZE = 2;
+    public static final int BENDABLE_SCORE_SOFT_SIZE = 3;
 
-    public static final int HARD_BROKEN_FACTORY_ABILITY = 0;
+    public static final int HARD_BROKEN_PRODUCE_PREREQUISITE = 0;
 
-    public static final int HARD_BROKEN_PRODUCE_PREREQUISITE = 1;
+    public static final int HARD_BROKEN_FACTORY_ABILITY = 1;
 
-    public static final int HARD_BROKEN_DEADLINE = 2;
+    public static final int SOFT_BATTER = 0;
 
-    public static final int SOFT_TOLERANCE = 0;
+    public static final int SOFT_BROKEN_DEADLINE = 1;
 
-    public static final int SOFT_BATTER = 1;
-
-    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
+    public static final int SOFT_TOLERANCE = 2;
 
     public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT = "valueRangeForDateTimeSlot";
 
@@ -38,14 +36,13 @@ public class TownshipSchedulingProblem {
     @ProblemFactCollectionProperty
     private List<SchedulingProduct> schedulingProductList;
 
-    @ProblemFactCollectionProperty
+    @PlanningEntityCollectionProperty
     private List<SchedulingFactoryInfo> schedulingFactoryInfoList;
 
     @ProblemFactCollectionProperty
     private List<SchedulingOrder> schedulingOrderList;
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @PlanningEntityCollectionProperty
@@ -55,8 +52,6 @@ public class TownshipSchedulingProblem {
     @PlanningEntityCollectionProperty
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
-    @PlanningEntityCollectionProperty
-    private List<SchedulingArrangementsFactoriesState> schedulingArrangementsFactoriesState;
 
     @ProblemFactProperty
     private SchedulingWorkCalendar schedulingWorkCalendar;
@@ -82,7 +77,6 @@ public class TownshipSchedulingProblem {
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
             List<SchedulingDateTimeSlot> schedulingDateTimeSlots,
             List<SchedulingProducingArrangement> schedulingProducingArrangementList,
-            List<SchedulingArrangementsFactoriesState> schedulingArrangementsFactoriesState,
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
             BendableLongScore score,
@@ -96,7 +90,6 @@ public class TownshipSchedulingProblem {
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
-        this.schedulingArrangementsFactoriesState = schedulingArrangementsFactoriesState;
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;
         this.score = score;

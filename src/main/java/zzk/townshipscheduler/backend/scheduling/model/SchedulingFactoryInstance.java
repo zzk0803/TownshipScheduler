@@ -47,13 +47,26 @@ public class SchedulingFactoryInstance {
     @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
     private List<SchedulingProducingArrangement> planningProducingArrangements = new ArrayList<>();
 
+    @ShadowVariable(supplierName = "supplierForFactoryProcessSequenceList")
+    private List<FactoryProcessSequence> factoryProcessSequenceList = new ArrayList<>();
+
+    @ShadowSources({"planningProducingArrangements[].factoryProcessSequence"})
+    public List<FactoryProcessSequence> supplierForFactoryProcessSequenceList() {
+        return this.planningProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                .toList();
+    }
+
     public boolean weatherFactoryProducingTypeIsQueue() {
         return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
     }
 
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsSlot();
+    }
 
     public void setupFactoryReadableIdentifier() {
-        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+        setFactoryReadableIdentifier(new FactoryReadableIdentifier(this));
     }
 
     public String getCategoryName() {

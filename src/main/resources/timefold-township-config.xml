@@ -16,7 +16,7 @@
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
     <entityClass>
-        zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementsFactoriesState
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo
     </entityClass>
 
     <scoreDirectorFactory>

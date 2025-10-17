@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -27,6 +28,8 @@ import java.util.stream.Collectors;
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
+
+    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 
     public static final Comparator<SchedulingProducingArrangement> COMPARATOR
             = Comparator.comparing(SchedulingProducingArrangement::getPlanningDateTimeSlot)
@@ -84,7 +87,10 @@ public class SchedulingProducingArrangement {
     private SchedulingProducingExecutionMode producingExecutionMode;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_FACTORIES})
+    private SchedulingFactoryInfo schedulingFactoryInfo;
+
+    @JsonIgnore
+    @PlanningVariable(valueRangeProviderRefs = {VALUE_RANGE_FOR_FACTORIES})
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
@@ -110,8 +116,6 @@ public class SchedulingProducingArrangement {
     @ToString.Include
     @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
-
-    private SchedulingArrangementsFactoriesState schedulingArrangementsFactoriesState;
 
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -147,16 +151,13 @@ public class SchedulingProducingArrangement {
         return new FactoryProcessSequence(this);
     }
 
-    @ShadowSources(
-            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"},
-            alignmentKey = "schedulingArrangementsFactoriesState"
-    )
+    @ShadowSources({"schedulingFactoryInfo.shadowComputedMap"})
     public LocalDateTime supplierForProducingDateTime() {
         if (this.factoryProcessSequence == null) {
             return this.producingDateTime;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsFactoriesState.query(this.factoryProcessSequence);
+        FactoryComputedDateTimePair computedDateTimePair = schedulingFactoryInfo.query(this);
         if (computedDateTimePair == null) {
             return this.producingDateTime;
         }
@@ -185,16 +186,13 @@ public class SchedulingProducingArrangement {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
 
-    @ShadowSources(
-            value = {"schedulingArrangementsFactoriesState.map", "factoryProcessSequence"},
-            alignmentKey = "schedulingArrangementsFactoriesState"
-    )
+    @ShadowSources({"schedulingFactoryInfo.shadowComputedMap"})
     public LocalDateTime supplierForCompletedDateTime() {
         if (this.factoryProcessSequence == null) {
             return this.completedDateTime;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsFactoriesState.query(this.factoryProcessSequence);
+        FactoryComputedDateTimePair computedDateTimePair = this.schedulingFactoryInfo.query(this);
         if (computedDateTimePair == null) {
             return this.completedDateTime;
         }
@@ -224,6 +222,7 @@ public class SchedulingProducingArrangement {
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+        setSchedulingFactoryInfo(this.getRequiredFactoryInfo());
     }
 
     public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
@@ -331,6 +330,15 @@ public class SchedulingProducingArrangement {
         }
 
         return Duration.between(this.completedDateTime, this.schedulingWorkCalendar.getEndDateTime()).toMinutes();
+    }
+
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
+    public Collection<SchedulingFactoryInstance> valueRangeForSchedulingFactoryInstances() {
+        return schedulingFactoryInfo.getFactoryInstances();
+    }
+
+    public boolean weatherPrerequisiteRequire() {
+        return !getPrerequisiteProducingArrangements().isEmpty();
     }
 
 }
