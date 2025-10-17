@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
@@ -17,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Gatherer;
 
+@Slf4j
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity

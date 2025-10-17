@@ -144,22 +144,22 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
     public FactoryProcessSequence supplierForFactoryProcessSequence() {
-        if (this.planningFactoryInstance == null | this.planningDateTimeSlot == null) {
+        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
             return null;
         }
 
         return new FactoryProcessSequence(this);
     }
 
-    @ShadowSources({"schedulingFactoryInfo.shadowComputedMap"})
+    @ShadowSources({"schedulingFactoryInfo.shadowComputedMap","factoryProcessSequence"})
     public LocalDateTime supplierForProducingDateTime() {
         if (this.factoryProcessSequence == null) {
-            return this.producingDateTime;
+            return null;
         }
 
         FactoryComputedDateTimePair computedDateTimePair = schedulingFactoryInfo.query(this);
         if (computedDateTimePair == null) {
-            return this.producingDateTime;
+            return null;
         }
         return computedDateTimePair.producingDateTime();
     }
@@ -186,15 +186,15 @@ public class SchedulingProducingArrangement {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
 
-    @ShadowSources({"schedulingFactoryInfo.shadowComputedMap"})
+    @ShadowSources({"schedulingFactoryInfo.shadowComputedMap","factoryProcessSequence"})
     public LocalDateTime supplierForCompletedDateTime() {
         if (this.factoryProcessSequence == null) {
-            return this.completedDateTime;
+            return null;
         }
 
         FactoryComputedDateTimePair computedDateTimePair = this.schedulingFactoryInfo.query(this);
         if (computedDateTimePair == null) {
-            return this.completedDateTime;
+            return null;
         }
         return computedDateTimePair.completedDateTime();
     }

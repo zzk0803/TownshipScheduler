@@ -10,16 +10,12 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
-import org.javatuples.Pair;
+import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Gatherer;
 
-@Log4j2
+@Slf4j
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
@@ -50,9 +46,10 @@ public class SchedulingFactoryInstance {
     @ShadowVariable(supplierName = "supplierForFactoryProcessSequenceList")
     private List<FactoryProcessSequence> factoryProcessSequenceList = new ArrayList<>();
 
-    @ShadowSources({"planningProducingArrangements[].factoryProcessSequence"})
+    @ShadowSources({"planningProducingArrangements", "planningProducingArrangements[].factoryProcessSequence"})
     public List<FactoryProcessSequence> supplierForFactoryProcessSequenceList() {
         return this.planningProducingArrangements.stream()
+                .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .map(SchedulingProducingArrangement::getFactoryProcessSequence)
                 .toList();
     }
