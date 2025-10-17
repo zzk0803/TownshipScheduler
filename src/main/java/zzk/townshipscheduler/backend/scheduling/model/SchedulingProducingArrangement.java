@@ -242,7 +242,10 @@ public class SchedulingProducingArrangement {
                 .max(Duration::compareTo)
                 .orElse(Duration.ZERO);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
+    }
 
+    public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {
+        return argDateTime.plus(calcStaticProducingDuration());
     }
 
     public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {

@@ -78,7 +78,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
     private void setupArrangement(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement schedulingProducingArrangement,
-            List<SchedulingDateTimeSlot> dateTimeSlotSet,
+            List<SchedulingDateTimeSlot> dateTimeSlotList,
             List<SchedulingFactoryInstance> factoryInstanceList
     ) {
         SchedulingFactoryInstance schedulingFactoryInstance
@@ -90,7 +90,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
                 schedulingProducingArrangement,
-                dateTimeSlotSet
+                dateTimeSlotList
         );
 
         scoreDirector.beforeVariableChanged(
@@ -120,14 +120,12 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
             SchedulingProducingArrangement producingArrangement,
             List<SchedulingDateTimeSlot> dateTimeSlotSet
     ) {
-
         SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
-        Duration calcStaticProducingDuration = producingArrangement.calcStaticProducingDuration();
 
         if (!producingArrangement.getDeepPrerequisiteProducingArrangements().isEmpty()) {
              result =  SchedulingDateTimeSlot.fromRangeJumpCeil(
                     dateTimeSlotSet,
-                    result.getStart().plus(calcStaticProducingDuration)
+                     producingArrangement.calcStaticCompleteDateTime(result.getStart())
             ).orElse(dateTimeSlotSet.getLast());
 
         }

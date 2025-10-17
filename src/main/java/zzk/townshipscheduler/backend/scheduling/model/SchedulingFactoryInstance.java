@@ -51,8 +51,20 @@ public class SchedulingFactoryInstance {
         return schedulingFactoryInfo.getCategoryName();
     }
 
-    public int getMaxPossibleOccupancyDurationMinutes() {
-        return producingLength * this.getSchedulingFactoryInfo().calcMaxSupportedProductDurationMinutes();
+    public long calcRemainProducingQueueSize(SchedulingDateTimeSlot schedulingDateTimeSlot) {
+        return calcRemainProducingQueueSize(schedulingDateTimeSlot.getStart());
+    }
+
+    public long calcRemainProducingQueueSize(LocalDateTime argDateTime) {
+        return this.planningFactoryInstanceProducingArrangements.stream()
+                .filter(arrangement -> {
+                    LocalDateTime arrangementArrangeDateTime = arrangement.getArrangeDateTime();
+                    LocalDateTime arrangementCompletedDateTime = arrangement.getCompletedDateTime();
+                    boolean b1 = !arrangementArrangeDateTime.isAfter(argDateTime);
+                    boolean b2 = arrangementCompletedDateTime.isAfter(argDateTime);
+                    return b1 & b2;
+                })
+                .count();
     }
 
     public void addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
