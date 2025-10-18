@@ -1,14 +1,13 @@
 package zzk.townshipscheduler.backend.scheduling.score;
 
 
-import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
+import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -52,12 +51,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         queueSize > current.getPlanningFactoryInstance().getProducingLength()
                 )
                 .penalizeLong(
-                        BendableLongScore.ofHard(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_FACTORY_ABILITY,
-                                1L
-                        ),
+                        HardMediumSoftLongScore.ONE_HARD,
                         (current, queueSize) -> queueSize - current.getPlanningFactoryInstance().getProducingLength()
                 )
                 .asConstraint("forbidBrokenFactoryAbility");
@@ -90,12 +84,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .filter((whole, partial) -> whole.getArrangeDateTime().isBefore(partial.getCompletedDateTime()))
                 .penalizeLong(
-                        BendableLongScore.ofHard(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.HARD_BROKEN_PRODUCE_PREREQUISITE,
-                                1L
-                        ),
+                        HardMediumSoftLongScore.ONE_HARD,
                         (whole, partial) ->
                                 Duration.between(whole.getArrangeDateTime(), partial.getCompletedDateTime()).toMinutes()
                 )
@@ -120,12 +109,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         )
                 )
                 .penalizeLong(
-                        BendableLongScore.ofHard(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_BROKEN_DEADLINE,
-                                1L
-                        ),
+                        HardMediumSoftLongScore.ONE_MEDIUM,
                         ((schedulingOrder, producingArrangement) -> {
                             LocalDateTime deadline = schedulingOrder.getDeadline();
                             LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
@@ -152,12 +136,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         }
                 )
                 .penalizeLong(
-                        BendableLongScore.ofSoft(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_TOLERANCE,
-                                10L
-                        ),
+                        HardMediumSoftLongScore.ofMedium(10L),
                         schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                             LocalDateTime workCalendarStart = schedulingProducingArrangement.getSchedulingWorkCalendar()
@@ -187,12 +166,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                            || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
                 })
                 .penalizeLong(
-                        BendableLongScore.ofSoft(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_TOLERANCE,
-                                500L
-                        )
+                        HardMediumSoftLongScore.ofMedium(500L)
                 )
                 .asConstraint("shouldNotArrangeInPlayerSleepTime");
     }
@@ -208,12 +182,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         )
                 )
                 .penalizeLong(
-                        BendableLongScore.ofSoft(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_BATTER,
-                                1L
-                        ),
+                        HardMediumSoftLongScore.ONE_SOFT,
                         (order, arrangement) -> {
                             var calendarStartDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
                             var completedDateTime = arrangement.getCompletedDateTime();
@@ -243,12 +212,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .penalizeLong(
-                        BendableLongScore.ofSoft(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_BATTER,
-                                1L
-                        ), (arrangement) -> {
+                        HardMediumSoftLongScore.ONE_SOFT, (arrangement) -> {
                             return Duration.between(
                                     arrangement.getSchedulingWorkCalendar().getStartDateTime(),
                                     arrangement.getArrangeDateTime()
@@ -265,12 +229,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                 )
                 .penalizeLong(
-                        BendableLongScore.ofSoft(
-                                TownshipSchedulingProblem.BENDABLE_SCORE_HARD_SIZE,
-                                TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
-                                TownshipSchedulingProblem.SOFT_BATTER,
-                                1000L
-                        ), (factoryInstance, slotAmount) -> slotAmount - 1
+                        HardMediumSoftLongScore.ofSoft(1000L), (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }
