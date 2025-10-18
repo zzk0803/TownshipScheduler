@@ -145,11 +145,27 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
     public FactoryProcessSequence supplierForFactoryProcessSequence() {
-        if (this.planningFactoryInstance == null | this.planningDateTimeSlot == null) {
+        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
             return null;
         }
 
-        return new FactoryProcessSequence(this);
+        if (this.factoryProcessSequence != null
+            && (
+                    Objects.equals(
+                            this.factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier(),
+                            this.planningFactoryInstance.getFactoryReadableIdentifier()
+                    )
+                    &
+                    Objects.equals(
+                            this.factoryProcessSequence.getArrangeDateTime(),
+                            this.planningDateTimeSlot.getStart()
+                    )
+            )
+        ) {
+            return this.factoryProcessSequence;
+        }
+
+        return FactoryProcessSequence.of(this);
     }
 
     @ShadowSources(
@@ -170,7 +186,8 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources(
             value = {
-                    "planningFactoryInstance.shadowDeltaComputeFactorySequenceToComputedPairMap",
+                    "planningFactoryInstance.shadowComputedPairMap",
+                    "planningFactoryInstance",
                     "factoryProcessSequence"
             }
     )
@@ -180,16 +197,15 @@ public class SchedulingProducingArrangement {
             return null;
         }
 
-        if (this.planningFactoryInstance == null) {
-            return null;
+        if (this.planningFactoryInstance != null) {
+            FactoryComputedDateTimePair computedDateTimePair
+                    = this.planningFactoryInstance.query(factoryProcessSequence);
+            return Objects.nonNull(computedDateTimePair)
+                    ? computedDateTimePair.producingDateTime()
+                    : null;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair
-                = this.planningFactoryInstance.deltaCompute(factoryProcessSequence);
-        return Objects.nonNull(computedDateTimePair)
-                ? computedDateTimePair.producingDateTime()
-                : null;
-
+        return this.producingDateTime;
     }
 
 
@@ -213,7 +229,8 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources(
             value = {
-                    "planningFactoryInstance.shadowDeltaComputeFactorySequenceToComputedPairMap",
+                    "planningFactoryInstance.shadowComputedPairMap",
+                    "planningFactoryInstance",
                     "factoryProcessSequence"
             }
     )
@@ -222,15 +239,15 @@ public class SchedulingProducingArrangement {
             return null;
         }
 
-        if (this.planningFactoryInstance == null) {
-            return null;
+        if (this.planningFactoryInstance != null) {
+            FactoryComputedDateTimePair computedDateTimePair
+                    = this.planningFactoryInstance.query(factoryProcessSequence);
+            return Objects.nonNull(computedDateTimePair)
+                    ? computedDateTimePair.completedDateTime()
+                    : null;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair
-                = this.planningFactoryInstance.deltaCompute(factoryProcessSequence);
-        return Objects.nonNull(computedDateTimePair)
-                ? computedDateTimePair.completedDateTime()
-                : null;
+        return this.completedDateTime;
     }
 
     @JsonProperty("producingDuration")
@@ -351,10 +368,6 @@ public class SchedulingProducingArrangement {
                         .build()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    public FactoryProcessSequence toFactoryProcessSequence() {
-        return new FactoryProcessSequence(this);
     }
 
     public boolean boolArrangeDataTimeBrokenPrerequisite() {

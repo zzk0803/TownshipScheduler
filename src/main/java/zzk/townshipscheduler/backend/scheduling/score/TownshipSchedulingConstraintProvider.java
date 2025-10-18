@@ -3,19 +3,18 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
-import ai.timefold.solver.core.api.score.stream.bi.BiConstraintStream;
-import ai.timefold.solver.core.api.score.stream.tri.TriConstraintStream;
-import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
-import org.javatuples.Triplet;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
 
@@ -143,12 +142,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(schedulingProducingArrangement -> {
+                            LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                             return schedulingProducingArrangement.isOrderDirect()
-                                   && schedulingProducingArrangement.getCompletedDateTime()
-                                           .isAfter(
-                                                   schedulingProducingArrangement.getSchedulingWorkCalendar()
-                                                           .getEndDateTime()
-                                           );
+                                   && (Objects.isNull(completedDateTime)
+                                       || completedDateTime.isAfter(
+                                    schedulingProducingArrangement.getSchedulingWorkCalendar()
+                                            .getEndDateTime()
+                            ));
                         }
                 )
                 .penalizeLong(
