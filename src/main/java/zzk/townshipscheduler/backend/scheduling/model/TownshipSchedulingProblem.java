@@ -1,12 +1,16 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
+import ai.timefold.solver.core.api.domain.valuerange.CountableValueRange;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,9 +54,9 @@ public class TownshipSchedulingProblem {
     @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
-    @ProblemFactCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
-    private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+//    @ProblemFactCollectionProperty
+//    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
+//    private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
@@ -79,7 +83,6 @@ public class TownshipSchedulingProblem {
             List<SchedulingFactoryInfo> schedulingFactoryInfoList,
             List<SchedulingOrder> schedulingOrderList,
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
-            List<SchedulingDateTimeSlot> schedulingDateTimeSlots,
             List<SchedulingProducingArrangement> schedulingProducingArrangementList,
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
@@ -92,7 +95,6 @@ public class TownshipSchedulingProblem {
         this.schedulingFactoryInfoList = schedulingFactoryInfoList;
         this.schedulingOrderList = schedulingOrderList;
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;
-        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;
@@ -123,6 +125,16 @@ public class TownshipSchedulingProblem {
                 .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
                         .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
                 .findFirst();
+    }
+
+    @ValueRangeProvider
+    public CountableValueRange< LocalDateTime> valueRangeForQueuedDateTime() {
+        return ValueRangeFactory.createLocalDateTimeValueRange(
+                getSchedulingWorkCalendar().getStartDateTime(),
+                getSchedulingWorkCalendar().getEndDateTime(),
+                getDateTimeSlotSize().getMinute(),
+                ChronoUnit.MINUTES
+        );
     }
 
     @ProblemFactCollectionProperty

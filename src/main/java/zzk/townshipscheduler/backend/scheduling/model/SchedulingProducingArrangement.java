@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -12,7 +11,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 import zzk.townshipscheduler.utility.UuidGenerator;
@@ -30,7 +28,9 @@ import java.util.stream.Collectors;
 @PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
 
-    public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
+//    public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
+
+    public static final String PLANNING_QUEUED_DATA_TIME = "planningQueuedDateTime";
 
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
 
@@ -84,12 +84,16 @@ public class SchedulingProducingArrangement {
     @PlanningVariable(valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_FACTORIES})
     private SchedulingFactoryInstance planningFactoryInstance;
 
+//    @JsonIgnore
+//    @PlanningVariable(
+//            valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT},
+//            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
+//    )
+//    private SchedulingDateTimeSlot planningDateTimeSlot;
+
     @JsonIgnore
-    @PlanningVariable(
-            valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT},
-            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
-    )
-    private SchedulingDateTimeSlot planningDateTimeSlot;
+    @PlanningVariable
+    private LocalDateTime planningQueuedDateTime;
 
     @JsonIgnore
     @ShadowVariable(
@@ -97,7 +101,7 @@ public class SchedulingProducingArrangement {
             variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
     )
     @ShadowVariable(
-            sourceVariableName = PLANNING_DATA_TIME_SLOT,
+            sourceVariableName = PLANNING_QUEUED_DATA_TIME,
             variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
     )
     private FactoryProcessSequence shadowFactoryProcessSequence;
@@ -149,7 +153,7 @@ public class SchedulingProducingArrangement {
     }
 
     public boolean isPlanningAssigned() {
-        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
+        return getPlanningQueuedDateTime() != null && getPlanningFactoryInstance() != null;
     }
 
     public void readyElseThrow() {
@@ -204,8 +208,7 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getArrangeDateTime() {
-        SchedulingDateTimeSlot dateTimeSlot = getPlanningDateTimeSlot();
-        return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
+        return getPlanningQueuedDateTime();
     }
 
     public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
