@@ -12,6 +12,7 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrange
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
@@ -127,16 +128,19 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(schedulingProducingArrangement -> {
+                            LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                             return schedulingProducingArrangement.isOrderDirect()
-                                   && schedulingProducingArrangement.getCompletedDateTime()
-                                           .isAfter(
+                                   && (
+                                           Objects.isNull(completedDateTime)
+                                           || completedDateTime.isAfter(
                                                    schedulingProducingArrangement.getSchedulingWorkCalendar()
                                                            .getEndDateTime()
-                                           );
+                                           )
+                                   );
                         }
                 )
                 .penalizeLong(
-                        HardMediumSoftLongScore.ofMedium(10L),
+                        HardMediumSoftLongScore.ofMedium(100L),
                         schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                             LocalDateTime workCalendarStart = schedulingProducingArrangement.getSchedulingWorkCalendar()
