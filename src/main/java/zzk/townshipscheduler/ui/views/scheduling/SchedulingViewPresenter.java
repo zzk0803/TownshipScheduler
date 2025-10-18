@@ -352,12 +352,14 @@ public class SchedulingViewPresenter {
                 .count();
         int totalItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
                 .size();
+        int dateTimeValueRangeCount = currentProblem.getSchedulingDateTimeSlots().size();
         int factoryCount = currentProblem.getSchedulingFactoryInstanceList().size();
-        String formatted = "your township scheduling problem include %s order,contain %s final product item to make,and include all materials  need %s arrangement.factory value range size:%s".formatted(
+        String formatted = "your township scheduling problem include %s order,contain %s final product item to make,and include all materials  need %s arrangement.factory value range size:%s,date times slot size:%s".formatted(
                 orderSize,
                 orderItemProducingArrangementCount,
                 totalItemProducingArrangementCount,
-                factoryCount
+                factoryCount,
+                dateTimeValueRangeCount
         );
         return new Text(formatted);
     }

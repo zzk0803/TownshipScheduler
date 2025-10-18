@@ -27,18 +27,16 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
 
         TownshipSchedulingProblem workingSolution
                 = scoreDirector.getWorkingSolution();
-        CountableValueRange<LocalDateTime> dateTimeValueRange
-                = workingSolution.valueRangeForQueuedDateTime();
+        List<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
+                = workingSolution.getSchedulingDateTimeSlots();
         List<SchedulingProducingArrangement> producingArrangements
                 = workingSolution.getSchedulingProducingArrangementList();
         List<SchedulingFactoryInstance> queueFactoryInstanceValueRange
                 = workingSolution.getSchedulingFactoryInstanceList();
 
 
-        Spliterator<LocalDateTime> spliterator =
-                Spliterators.spliteratorUnknownSize(dateTimeValueRange.createOriginalIterator(), Spliterator.ORDERED);
-        StreamSupport.stream(spliterator, false);
-        List<LocalDateTime> sortedDataTimeSlotValueRange = StreamSupport.stream(spliterator, false)
+        List<SchedulingDateTimeSlot> sortedDataTimeSlotValueRange = dateTimeSlotSetValueRange.stream()
+                .sorted()
                 .toList();
         List<SchedulingProducingArrangement> difficultySortedProducingArrangements
                 = producingArrangements.stream()
@@ -62,14 +60,14 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
     }
 
     private boolean shouldInitiating(SchedulingProducingArrangement arrangement) {
-        LocalDateTime planningDateTime = arrangement.getArrangeDateTime();
+        SchedulingDateTimeSlot planningDateTimeSlot = arrangement.getPlanningDateTimeSlot();
         LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
         SchedulingFactoryInstance planningFactoryInstance = arrangement.getPlanningFactoryInstance();
         LocalDateTime producingDateTime = arrangement.getProducingDateTime();
         LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
 
         return Stream.of(
-                planningDateTime,
+                planningDateTimeSlot,
                 arrangeDateTime,
                 planningFactoryInstance,
                 producingDateTime,
@@ -80,7 +78,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
     private void setupArrangement(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement schedulingProducingArrangement,
-            List<LocalDateTime> dateTimeSlotList,
+            List<SchedulingDateTimeSlot> dateTimeSlotList,
             List<SchedulingFactoryInstance> factoryInstanceList
     ) {
         SchedulingFactoryInstance schedulingFactoryInstance
@@ -89,7 +87,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                         .typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
                 .findAny()
                 .get();
-        LocalDateTime computedDataTime
+        SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
                 schedulingProducingArrangement,
                 dateTimeSlotList
@@ -97,12 +95,12 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
 
         scoreDirector.beforeVariableChanged(
                 schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_QUEUED_DATA_TIME
+                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
         );
-        schedulingProducingArrangement.setPlanningQueuedDateTime(computedDataTime);
+        schedulingProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
         scoreDirector.afterVariableChanged(
                 schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_QUEUED_DATA_TIME
+                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
         );
         scoreDirector.triggerVariableListeners();
 
@@ -118,14 +116,17 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         scoreDirector.triggerVariableListeners();
     }
 
-    private LocalDateTime calcApproximateArrangeDateTimeSlot(
+    private SchedulingDateTimeSlot calcApproximateArrangeDateTimeSlot(
             SchedulingProducingArrangement producingArrangement,
-            List<LocalDateTime> localDateTimeList
+            List<SchedulingDateTimeSlot> dateTimeSlotSet
     ) {
-        LocalDateTime result = localDateTimeList.getFirst();
+        SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
 
         if (!producingArrangement.getDeepPrerequisiteProducingArrangements().isEmpty()) {
-            result = producingArrangement.calcStaticCompleteDateTime(result);
+            result =  SchedulingDateTimeSlot.fromRangeJumpCeil(
+                    dateTimeSlotSet,
+                    producingArrangement.calcStaticCompleteDateTime(result.getStart())
+            ).orElse(dateTimeSlotSet.getLast());
 
         }
 

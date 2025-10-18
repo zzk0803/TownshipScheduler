@@ -31,8 +31,8 @@
     <!--            </valueSelector>-->
     <!--        </changeMoveSelector>-->
     <!--        <changeMoveSelector>-->
-    <!--            <valueSelector variableName="planningQueuedDateTime"-->
-    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningQueuedDateTime">-->
+    <!--            <valueSelector variableName="planningDateTimeSlot"-->
+    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">-->
     <!--            </valueSelector>-->
     <!--        </changeMoveSelector>-->
     <!--    </constructionHeuristic>-->
@@ -73,62 +73,62 @@
             </changeMoveSelector>
 
             <changeMoveSelector>
-                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningQueuedDateTime">
+                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
                 </entitySelector>
-                <valueSelector variableName="planningQueuedDateTime"
-                               id="localSearch_changeMoveSelector_vs_Arrangement_planningQueuedDateTime">
+                <valueSelector variableName="planningDateTimeSlot"
+                               id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
                 </valueSelector>
             </changeMoveSelector>
 
             <swapMoveSelector>
-                <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningQueuedDateTime_p">
+                <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
                 </entitySelector>
-                <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningQueuedDateTime_q">
+                <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
                 </secondaryEntitySelector>
                 <variableNameIncludes>
-                    <variableNameInclude>planningQueuedDateTime</variableNameInclude>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
                 </variableNameIncludes>
             </swapMoveSelector>
 
             <pillarChangeMoveSelector>
                 <pillarSelector>
-                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningQueuedDateTime">
+                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
                         <entityClass>
                             zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                         </entityClass>
                     </entitySelector>
                 </pillarSelector>
-                <valueSelector variableName="planningQueuedDateTime"
-                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningQueuedDateTime">
+                <valueSelector variableName="planningDateTimeSlot"
+                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">
                 </valueSelector>
             </pillarChangeMoveSelector>
 
             <pillarSwapMoveSelector>
                 <pillarSelector>
-                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningQueuedDateTime_p">
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
                         <entityClass>
                             zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                         </entityClass>
                     </entitySelector>
                 </pillarSelector>
                 <secondaryPillarSelector>
-                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningQueuedDateTime_q">
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
                         <entityClass>
                             zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                         </entityClass>
                     </entitySelector>
                 </secondaryPillarSelector>
                 <variableNameIncludes>
-                    <variableNameInclude>planningQueuedDateTime</variableNameInclude>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
                 </variableNameIncludes>
             </pillarSwapMoveSelector>
 
