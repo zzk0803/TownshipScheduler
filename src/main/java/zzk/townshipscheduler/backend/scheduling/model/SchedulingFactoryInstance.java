@@ -51,10 +51,6 @@ public class SchedulingFactoryInstance {
         return schedulingFactoryInfo.getCategoryName();
     }
 
-    public long calcRemainProducingQueueSize(SchedulingDateTimeSlot schedulingDateTimeSlot) {
-        return calcRemainProducingQueueSize(schedulingDateTimeSlot.getStart());
-    }
-
     public long calcRemainProducingQueueSize(LocalDateTime argDateTime) {
         return this.planningFactoryInstanceProducingArrangements.stream()
                 .filter(arrangement -> {

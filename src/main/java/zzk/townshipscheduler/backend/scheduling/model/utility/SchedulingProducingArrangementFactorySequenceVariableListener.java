@@ -52,11 +52,11 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
         TownshipSchedulingProblem scoreDirectorWorkingSolution = scoreDirector.getWorkingSolution();
         SchedulingFactoryInstance planningFactoryInstance
                 = schedulingProducingArrangement.getPlanningFactoryInstance();
-        SchedulingDateTimeSlot planningDateTimeSlot
-                = schedulingProducingArrangement.getPlanningDateTimeSlot();
+        LocalDateTime planningArrangeDateTime
+                = schedulingProducingArrangement.getArrangeDateTime();
         FactoryProcessSequence oldFactoryProcessSequence
                 = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        if (Objects.isNull(planningFactoryInstance) || Objects.isNull(planningDateTimeSlot)) {
+        if (Objects.isNull(planningFactoryInstance) || Objects.isNull(planningArrangeDateTime)) {
             doShadowVariableUpdate(
                     scoreDirector,
                     schedulingProducingArrangement,
