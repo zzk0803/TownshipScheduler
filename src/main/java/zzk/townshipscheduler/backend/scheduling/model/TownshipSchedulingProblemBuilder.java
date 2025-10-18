@@ -153,7 +153,7 @@ public class TownshipSchedulingProblemBuilder {
                 .flatMap(Collection::stream)
                 .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
                 .flatMap(Collection::stream)
-                .peek(SchedulingProducingArrangement::readyElseThrow)
+                .peek(SchedulingProducingArrangement::advancedSetupOrThrow)
                 .collect(Collectors.toCollection(ArrayList::new));
 
         schedulingProducingArrangementList(producingArrangementArrayList);
@@ -170,7 +170,7 @@ public class TownshipSchedulingProblemBuilder {
         while (!dealingChain.isEmpty()) {
             SchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
-            iteratingArrangement.activate(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
+            iteratingArrangement.elementarySetup(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
             resultArrangementList.add(iteratingArrangement);
 
             SchedulingProducingExecutionMode producingExecutionMode

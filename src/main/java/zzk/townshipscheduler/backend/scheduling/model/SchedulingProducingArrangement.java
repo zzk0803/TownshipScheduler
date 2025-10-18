@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -154,7 +153,7 @@ public class SchedulingProducingArrangement {
         return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
 
-    public void readyElseThrow() {
+    public void advancedSetupOrThrow() {
         Objects.requireNonNull(this.getCurrentActionObject());
         Objects.requireNonNull(getId());
         Objects.requireNonNull(getUuid());
@@ -164,7 +163,7 @@ public class SchedulingProducingArrangement {
         setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
-    public void activate(
+    public void elementarySetup(
             ArrangementIdRoller idRoller,
             SchedulingWorkCalendar workTimeLimit,
             SchedulingPlayer schedulingPlayer
@@ -251,7 +250,7 @@ public class SchedulingProducingArrangement {
         return argDateTime.plus(getStaticDeepProducingDuration());
     }
 
-    public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {
+    protected <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {
         this.prerequisiteProducingArrangements.addAll(prerequisiteArrangements);
     }
 
@@ -271,7 +270,7 @@ public class SchedulingProducingArrangement {
         return !getDeepPrerequisiteProducingArrangements().isEmpty();
     }
 
-    public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
+    protected List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
         return this.prerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
                         .uuid(UuidGenerator.timeOrderedV6().toString())
@@ -282,7 +281,7 @@ public class SchedulingProducingArrangement {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
+    protected List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
                         .uuid(UuidGenerator.timeOrderedV6().toString())
