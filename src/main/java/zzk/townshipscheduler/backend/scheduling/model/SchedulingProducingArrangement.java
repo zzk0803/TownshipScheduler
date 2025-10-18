@@ -71,6 +71,8 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    private Duration staticDeepProducingDuration;
+
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
 
@@ -159,6 +161,7 @@ public class SchedulingProducingArrangement {
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+        setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
     public void activate(
@@ -208,7 +211,7 @@ public class SchedulingProducingArrangement {
         return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
     }
 
-    public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
+    private Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
         LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
         Set<SchedulingProducingArrangement> visited = new HashSet<>();
         Set<SchedulingProducingArrangement> result = new LinkedHashSet<>();
@@ -234,7 +237,7 @@ public class SchedulingProducingArrangement {
         return result;
     }
 
-    public Duration calcStaticProducingDuration() {
+    private Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
@@ -245,7 +248,7 @@ public class SchedulingProducingArrangement {
     }
 
     public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {
-        return argDateTime.plus(calcStaticProducingDuration());
+        return argDateTime.plus(getStaticDeepProducingDuration());
     }
 
     public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {
