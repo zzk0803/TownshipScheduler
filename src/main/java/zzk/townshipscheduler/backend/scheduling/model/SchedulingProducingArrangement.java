@@ -35,7 +35,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                     Comparator.nullsFirst(Comparator.naturalOrder())
             )
             .thenComparing(
-                    SchedulingProducingArrangement::getIndexInFactoryArrangements,
+                    SchedulingProducingArrangement::getId,
                     Comparator.nullsFirst(Comparator.naturalOrder())
             );
 
