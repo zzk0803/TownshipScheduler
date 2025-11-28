@@ -12,14 +12,14 @@
 
     <properties>
         <java.version>25</java.version>
-        <vaadin.version>24.9.3</vaadin.version>
-        <timefold-solver.version>1.27.0</timefold-solver.version>
+        <vaadin.version>24.9.6</vaadin.version>
+        <timefold-solver.version>1.28.0</timefold-solver.version>
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.6</version>
+        <version>3.5.8</version>
     </parent>
 
     <dependencyManagement>
@@ -146,6 +146,12 @@
             <version>1.14.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator -->
+        <dependency>
+            <groupId>com.fasterxml.uuid</groupId>
+            <artifactId>java-uuid-generator</artifactId>
+            <version>5.1.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -156,6 +162,9 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>zzk.townshipscheduler.Application</mainClass>
+                    <jvmArguments>
+                        -XX:+UseParallelGC
+                    </jvmArguments>
                 </configuration>
             </plugin>
             <plugin>
@@ -259,6 +268,10 @@
                                 <phase>compile</phase>
                             </execution>
                         </executions>
+                        <configuration>
+                            <pnpmEnable>true</pnpmEnable>
+                            <useGlobalPnpm>true</useGlobalPnpm>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
