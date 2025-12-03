@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -17,7 +18,12 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
 
     public static final Comparator<FactoryProcessSequence> COMPARATOR
             = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
+            .thenComparing(FactoryProcessSequence::getSequenceInFactory)
             .thenComparingInt(FactoryProcessSequence::getArrangementId);
+
+    @ToString.Include
+    @EqualsAndHashCode.Include
+    BigDecimal sequenceInFactory;
 
     @ToString.Include
     @EqualsAndHashCode.Include
@@ -44,6 +50,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
+        this.sequenceInFactory = schedulingProducingArrangement.getSequenceInFactory();
         this.schedulingFactoryInstanceReadableIdentifier = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
     }
 
