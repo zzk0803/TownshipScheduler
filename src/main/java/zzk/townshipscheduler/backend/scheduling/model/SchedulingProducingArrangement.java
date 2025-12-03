@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
+@PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement implements Comparable<SchedulingProducingArrangement> {
 
     public static final Comparator<SchedulingProducingArrangement> COMPARATOR
@@ -100,7 +101,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonIgnore
     @PlanningVariable(
             valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT},
-            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
+            comparatorClass = SchedulingDateTimeSlotStrengthComparator.class
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
@@ -141,7 +142,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UUID.randomUUID().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
         return producingArrangement;
     }
 
@@ -327,6 +328,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
         return this.prerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UUID.randomUUID().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -337,6 +339,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UUID.randomUUID().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()

@@ -63,7 +63,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .join(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.greaterThan(SchedulingProducingArrangement::getPlanningDateTimeSlot),
+                        Joiners.greaterThanOrEqual(SchedulingProducingArrangement::getPlanningDateTimeSlot),
                         Joiners.lessThan(SchedulingProducingArrangement::getIndexInFactoryArrangements)
                 )
                 .penalizeLong(
