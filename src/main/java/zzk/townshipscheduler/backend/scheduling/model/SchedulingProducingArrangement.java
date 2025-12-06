@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
+@PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
@@ -88,7 +88,7 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     @PlanningVariable(
             valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT},
-            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
+            comparatorClass = SchedulingDateTimeSlotStrengthComparator.class
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
