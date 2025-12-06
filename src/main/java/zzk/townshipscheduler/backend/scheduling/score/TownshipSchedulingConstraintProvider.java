@@ -59,9 +59,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 //    }
 
     private Constraint forbidBadDateTimeSlotAssignInFactorySequences(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .join(
-                        SchedulingProducingArrangement.class,
+        return constraintFactory.forEachUniquePair(
+                SchedulingProducingArrangement.class,
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
                         Joiners.greaterThanOrEqual(SchedulingProducingArrangement::getPlanningDateTimeSlot),
                         Joiners.lessThan(SchedulingProducingArrangement::getIndexInFactoryArrangements)

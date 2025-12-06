@@ -76,8 +76,10 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
     @JsonIgnore
-    @ShadowVariable(supplierName = "supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime")
+    @ShadowVariable(supplierName = "supplierNameDeepPrerequisiteProducingArrangementsCompletedDateTime")
     private LocalDateTime deepPrerequisiteProducingArrangementsCompletedDateTime;
+
+    private Duration staticDeepProducingDuration;
 
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
@@ -109,21 +111,21 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "supplierArrangeDateTime")
+    @ShadowVariable(supplierName = "supplierNameArrangeDateTime")
     private LocalDateTime arrangeDateTime;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "producingDateTimeSupplier")
+    @ShadowVariable(supplierName = "supplierNameProducingDateTime")
     private LocalDateTime producingDateTime;
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @ShadowVariable(supplierName = "completedDateTimeSupplier")
+    @ShadowVariable(supplierName = "supplierNameCompletedDateTime")
     private LocalDateTime completedDateTime;
 
     private SchedulingProducingArrangement(
@@ -142,13 +144,14 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
+                .toString());
         return producingArrangement;
     }
 
 
     @ShadowSources({"planningDateTimeSlot"})
-    public LocalDateTime supplierArrangeDateTime() {
+    public LocalDateTime supplierNameArrangeDateTime() {
         SchedulingDateTimeSlot schedulingDateTimeSlot = this.getPlanningDateTimeSlot();
         return schedulingDateTimeSlot != null
                 ? schedulingDateTimeSlot.getStart()
@@ -163,7 +166,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                     "previousProducingArrangement.completedDateTime"
             }
     )
-    public LocalDateTime producingDateTimeSupplier() {
+    public LocalDateTime supplierNameProducingDateTime() {
         if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.planningFactoryInstance)) {
             return null;
         }
@@ -211,7 +214,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     }
 
     @ShadowSources({"producingDateTime"})
-    public LocalDateTime completedDateTimeSupplier() {
+    public LocalDateTime supplierNameCompletedDateTime() {
         return Objects.nonNull(this.producingDateTime)
                 ? this.producingDateTime.plus(this.getProducingDuration())
                 : null;
@@ -225,18 +228,21 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @ShadowSources(
             value = {"deepPrerequisiteProducingArrangements[].completedDateTime"}
     )
-    public LocalDateTime supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime() {
+    public LocalDateTime supplierNameDeepPrerequisiteProducingArrangementsCompletedDateTime() {
         List<LocalDateTime> deepPrerequisiteProducingArrangementsCompletedDateTimeList
                 = this.deepPrerequisiteProducingArrangements.stream()
                 .map(SchedulingProducingArrangement::getCompletedDateTime)
                 .toList();
-        if (deepPrerequisiteProducingArrangementsCompletedDateTimeList.stream().anyMatch(Objects::isNull)) {
-            return this.getSchedulingWorkCalendar().getEndDateTime();
+        if (deepPrerequisiteProducingArrangementsCompletedDateTimeList.stream()
+                .anyMatch(Objects::isNull)) {
+            return this.getSchedulingWorkCalendar()
+                    .getEndDateTime();
         }
 
         return deepPrerequisiteProducingArrangementsCompletedDateTimeList.stream()
                 .max(Comparator.naturalOrder())
-                .orElse(this.getSchedulingWorkCalendar().getEndDateTime());
+                .orElse(this.getSchedulingWorkCalendar()
+                        .getEndDateTime());
     }
 
     @JsonIgnore
@@ -257,6 +263,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+        setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
     public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
@@ -306,7 +313,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     }
 
 
-    public Duration calcStaticProducingDuration() {
+    private Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
@@ -314,7 +321,10 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                 .max(Duration::compareTo)
                 .orElse(Duration.ZERO);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
+    }
 
+    public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {
+        return argDateTime.plus(getStaticDeepProducingDuration());
     }
 
     public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {
@@ -328,7 +338,8 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
         return this.prerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UUID.randomUUID().toString())
+                        .uuid(UUID.randomUUID()
+                                .toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -339,7 +350,8 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UUID.randomUUID().toString())
+                        .uuid(UUID.randomUUID()
+                                .toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -349,7 +361,10 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
 
     @Override
     public int compareTo(@NotNull SchedulingProducingArrangement that) {
-        return COMPARATOR.compare(this, that);
+        return COMPARATOR.compare(
+                this,
+                that
+        );
     }
 
     public boolean weatherPrerequisiteRequire() {
