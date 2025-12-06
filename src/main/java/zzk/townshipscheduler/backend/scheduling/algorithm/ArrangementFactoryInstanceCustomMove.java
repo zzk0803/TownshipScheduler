@@ -10,28 +10,44 @@ import java.util.List;
 
 public class ArrangementFactoryInstanceCustomMove extends AbstractMove<TownshipSchedulingProblem> {
 
+    private SchedulingFactoryInstance schedulingFactoryInstance;
 
-    public ArrangementFactoryInstanceCustomMove() {
+    public ArrangementFactoryInstanceCustomMove(SchedulingFactoryInstance schedulingFactoryInstance) {
+        this.schedulingFactoryInstance = schedulingFactoryInstance;
     }
 
     @Override
     protected void doMoveOnGenuineVariables(ScoreDirector<TownshipSchedulingProblem> scoreDirector) {
-        scoreDirector.getWorkingSolution()
-                .getSchedulingFactoryInstanceList()
-                .forEach(schedulingFactoryInstance -> {
-                    List<SchedulingProducingArrangement> planningProducingArrangements = schedulingFactoryInstance.getPlanningProducingArrangements();
-                    scoreDirector.beforeListVariableElementAssigned(
-                            schedulingFactoryInstance,
-                            SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
-                            planningProducingArrangements
-                    );
-                    planningProducingArrangements.sort(SchedulingProducingArrangement::compareTo);
-                    scoreDirector.afterListVariableElementAssigned(
-                            schedulingFactoryInstance,
-                            SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
-                            planningProducingArrangements
-                    );
-                });
+        SchedulingFactoryInstance factoryInstance = scoreDirector.lookUpWorkingObjectOrReturnNull(schedulingFactoryInstance);
+        if (factoryInstance == null) {
+            throw new IllegalStateException("factoryInstance is null");
+        }
+
+        List<SchedulingProducingArrangement> planningProducingArrangements = factoryInstance.getPlanningProducingArrangements();
+        scoreDirector.beforeListVariableElementUnassigned(
+                factoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                planningProducingArrangements
+        );
+        factoryInstance.setPlanningProducingArrangements(null);
+        scoreDirector.afterListVariableElementUnassigned(
+                factoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                planningProducingArrangements
+        );
+
+        scoreDirector.beforeListVariableElementAssigned(
+                factoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                planningProducingArrangements
+        );
+        planningProducingArrangements.sort(SchedulingProducingArrangement::compareTo);
+        factoryInstance.setPlanningProducingArrangements(planningProducingArrangements);
+        scoreDirector.afterListVariableElementAssigned(
+                factoryInstance,
+                SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
+                planningProducingArrangements
+        );
     }
 
     @Override
