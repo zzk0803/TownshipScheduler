@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Tag("scheduling-vis-timeline-panel")
-@NpmPackage(value = "vis-timeline", version = "8.4.0")
+@NpmPackage(value = "vis-timeline", version = "8.4.1")
 @NpmPackage(value = "@js-joda/core", version = "5.6.5")
 @JsModule("./src/components/scheduling-vis-timeline-panel.ts")
 @JsModule("./src/components/by-factory-timeline-components.ts")
