@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
 import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.ProductsCategoriesPanel;
@@ -49,15 +50,15 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
         grid = new Grid<>();
         grid.addColumn(new ComponentRenderer<>(productEntityIntegerEntry -> {
             HorizontalLayout result = new HorizontalLayout();
+            ProductEntity productEntity = productEntityIntegerEntry.getKey();
+            WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
             result.add(
                     new VerticalLayout(
                             ProductImages.productImage(
-                                    productEntityIntegerEntry.getKey().getName(),
-                                    productEntityIntegerEntry.getKey()
-                                            .getCrawledAsImage()
-                                            .getImageBytes()
+                                    productEntity.getName(),
+                                    crawledAsImage
                             ),
-                            new Text(productEntityIntegerEntry.getKey().getName())
+                            new Text(productEntity.getName())
                     ),
                     new Text(" X" + productEntityIntegerEntry.getValue())
             );

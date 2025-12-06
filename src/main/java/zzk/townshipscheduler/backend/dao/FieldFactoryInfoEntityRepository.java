@@ -18,11 +18,9 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
 
     <T> Set<T> findBy(Class<T> projectionClass);
 
-    @EntityGraph(attributePaths = {"portfolioGoods"}, type = EntityGraph.EntityGraphType.LOAD)
-    <T> Set<T> findBy(Class<T> projectionClass, Sort sort);
+    List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelLessThan(Integer level);
 
-    @Query("select f from FieldFactoryInfoEntity f where f.level <= ?1  and f.boolCategoryField=false order by f.level")
-    List<FieldFactoryInfoEntity> queryFactoryInfoByLevelLessThanOrEqual(@Param("level") Integer level);
+    List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelBetween(Integer levelAfter, Integer levelBefore);
 
     @Query("select f from FieldFactoryInfoEntity f join fetch f.portfolioGoods as fpg where f.level<=:level and fpg.level<=:level ")
     Set<FieldFactoryInfoEntity> queryForPrepareScheduling(@Param("level") Integer level);

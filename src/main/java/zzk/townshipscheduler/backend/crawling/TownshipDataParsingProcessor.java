@@ -18,14 +18,16 @@ class TownshipDataParsingProcessor {
 
     public ParsedResult process(CrawledResult crawledResult) {
         logger.info("ParsedResult working...");
-        LinkedHashMap<String, ParsedResultSegment> result = new LinkedHashMap<>();
-        TreeMap<CrawledDataCoordinate, CrawledDataCell> coordinateToDataCellMap = crawledResult.get();
+        LinkedHashMap<String, ParsedResultSegment> result
+                = new LinkedHashMap<>();
+        TreeMap<CrawledDataCoordinate, CrawledDataCell> coordinateToDataCellMap
+                = crawledResult.crawledDataCellTreeMap();
 
         LinkedList<CrawledDataCoordinate> oneCoordRowAsHeadRowList
                 = filterCoordTypeHeadAsList(coordinateToDataCellMap);
 
         int headRowSize = oneCoordRowAsHeadRowList.size();
-        Assert.isTrue(headRowSize >= 2, "should be more than 2");
+        Assert.isTrue(headRowSize >= 2, "headRowSize should be more than 2");
 
         Iterator<CrawledDataCoordinate> rowIterator = oneCoordRowAsHeadRowList.iterator();
         CrawledDataCoordinate formerRowCoord = null;
@@ -36,7 +38,7 @@ class TownshipDataParsingProcessor {
         if (rowIterator.hasNext()) {
             latterRowCoord = rowIterator.next();
         } else {
-            logger.error("should be more than two");
+            logger.error("headRow should be more than two");
             throw new IllegalStateException("FIX ME");
         }
 

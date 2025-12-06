@@ -3,6 +3,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.extern.slf4j.Slf4j;
+import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -44,7 +45,7 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     public TownshipSchedulingProblemBuilder uuid() {
-        this.uuid = UUID.randomUUID().toString();
+        this.uuid = UuidGenerator.timeOrderedV6().toString();
         return this;
     }
 

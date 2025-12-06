@@ -2,16 +2,12 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
 import java.util.Comparator;
 import java.util.stream.IntStream;
 
-@Getter
 @EqualsAndHashCode
-public class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier> {
-
-    public static final Comparator<FactoryReadableIdentifier> COMPARATOR = Comparator.comparingInt(FactoryReadableIdentifier::getSeqNum);
+public final class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier> {
 
     private final String factoryCategory;
 
@@ -60,7 +56,9 @@ public class FactoryReadableIdentifier implements CharSequence, Comparable<Facto
 
     @Override
     public int compareTo(FactoryReadableIdentifier that) {
-        return COMPARATOR.compare(this, that);
+        return Comparator.comparing(FactoryReadableIdentifier::getFactoryCategory)
+                .thenComparingInt(FactoryReadableIdentifier::getSeqNum)
+                .compare(this, that);
     }
 
     public String getFactoryCategory() {

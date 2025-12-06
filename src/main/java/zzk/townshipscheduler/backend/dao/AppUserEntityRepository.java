@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 
-public interface AppUserEntityRepository extends JpaRepository<AccountEntity, Long>, JpaSpecificationExecutor<AccountEntity> {
+public interface AppUserEntityRepository extends JpaRepository<AccountEntity, Long> {
 
     boolean existsAppUserEntitiesByUsername(String username);
 

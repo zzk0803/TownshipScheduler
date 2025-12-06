@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import lombok.Data;
@@ -21,31 +20,32 @@ public class SchedulingFactoryInstanceDateTimeSlotsState {
     @EqualsAndHashCode.Include
     private String id = "SchedulingFactoryInstanceDateTimeSlotsState";
 
-    @DeepPlanningClone
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
 
     @ShadowVariable(supplierName = "slotToLastCompletedMapSupplier")
-    private LinkedHashMap<SchedulingFactoryInstance, TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime>> slotToLastCompletedMap = new LinkedHashMap<>();
+    private LinkedHashMap<SchedulingFactoryInstance, TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime>> slotToLastCompletedMap
+            = new LinkedHashMap<>();
 
     @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
     private LinkedHashMap<SchedulingFactoryInstance, TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime>> slotToLastCompletedMapSupplier() {
-       return this.schedulingFactoryInstanceDateTimeSlotList.stream()
+        return this.schedulingFactoryInstanceDateTimeSlotList.stream()
                 .collect(
                         Collectors.groupingBy(
                                 SchedulingFactoryInstanceDateTimeSlot::getFactoryInstance,
                                 LinkedHashMap::new,
                                 Collectors.collectingAndThen(
                                         Collectors.toList(),
-                                        list -> list.stream().collect(
-                                                TreeMap::new,
-                                                (treeMap, factoryInstanceDateTimeSlot) -> {
-                                                    treeMap.put(
-                                                            factoryInstanceDateTimeSlot,
-                                                            factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
-                                                    );
-                                                },
-                                                TreeMap::putAll
-                                        )
+                                        list -> list.stream()
+                                                .collect(
+                                                        TreeMap::new,
+                                                        (treeMap, factoryInstanceDateTimeSlot) -> {
+                                                            treeMap.put(
+                                                                    factoryInstanceDateTimeSlot,
+                                                                    factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
+                                                            );
+                                                        },
+                                                        TreeMap::putAll
+                                                )
                                 )
                         )
                 );
@@ -64,10 +64,14 @@ public class SchedulingFactoryInstanceDateTimeSlotsState {
         }
 
         return instanceDateTimeSlotLocalDateTimeTreeMap
-                .headMap(schedulingFactoryInstanceDateTimeSlot, false)
+                .headMap(
+                        schedulingFactoryInstanceDateTimeSlot,
+                        false
+                )
                 .entrySet()
                 .stream()
-                .filter((entry) -> entry.getValue().isAfter(schedulingFactoryInstanceDateTimeSlot.getStart()))
+                .filter((entry) -> entry.getValue()
+                        .isAfter(schedulingFactoryInstanceDateTimeSlot.getStart()))
                 .max(Map.Entry.comparingByKey())
                 .map(Map.Entry::getValue)
                 .orElse(schedulingFactoryInstanceDateTimeSlot.getStart());

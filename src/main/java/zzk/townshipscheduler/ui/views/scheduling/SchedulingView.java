@@ -293,9 +293,9 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 }))
                 .setResizable(true)
                 .setHeader("Order");
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getSchedulingFactoryInstance)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 .setRenderer(new TextRenderer<>(producingArrangement -> {
-                    return Optional.ofNullable(producingArrangement.getSchedulingFactoryInstance())
+                    return Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
                             .map(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
                                     .toString())
                             .orElse("N/A");
@@ -305,7 +305,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Assign Factory");
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::calcStaticProducingDuration)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getStaticDeepProducingDuration)
                 .setSortable(true)
                 .setSortable(true)
                 .setResizable(true)

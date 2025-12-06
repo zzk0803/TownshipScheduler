@@ -278,6 +278,7 @@ public class OrderFormView extends VerticalLayout {
     private ComponentRenderer<Div, BillItem> buildItemCard() {
         return new ComponentRenderer<>(billItem -> {
             ProductEntity productEntity = billItem.getProductEntity();
+            WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
 
             Div card = new Div();
             card.addClassNames(
@@ -291,7 +292,7 @@ public class OrderFormView extends VerticalLayout {
 
             Image image = ProductImages.productImage(
                     productEntity.getName(),
-                    productEntity.getCrawledAsImage().getImageBytes()
+                    crawledAsImage
             );
             image.addClassNames(
                     LumoUtility.Display.FLEX,

@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Tag("scheduling-vis-timeline-panel")
-@NpmPackage(value = "vis-timeline", version = "8.3.1")
+@NpmPackage(value = "vis-timeline", version = "8.4.1")
 @NpmPackage(value = "@js-joda/core", version = "5.6.5")
 @JsModule("./src/components/scheduling-vis-timeline-panel.ts")
 @JsModule("./src/components/by-factory-timeline-components.ts")
@@ -109,7 +109,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
                     Integer id = schedulingFactoryInstance.getId();
                     String categoryName = schedulingFactoryInstance.getCategoryName();
                     int seqNum = schedulingFactoryInstance.getSeqNum();
-                    int producingLength = schedulingFactoryInstance.getProducingQueue();
+                    int producingLength = schedulingFactoryInstance.getProducingLength();
                     int reapWindowSize = schedulingFactoryInstance.getReapWindowSize();
                     FactoryReadableIdentifier factoryReadableIdentifier
                             = schedulingFactoryInstance.getFactoryReadableIdentifier();

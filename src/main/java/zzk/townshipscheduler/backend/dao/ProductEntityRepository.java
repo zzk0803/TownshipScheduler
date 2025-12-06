@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public interface ProductEntityRepository
         extends JpaRepository<ProductEntity, Long> {
@@ -61,6 +62,22 @@ public interface ProductEntityRepository
                     "crawledAsImage.imageBytes"
             }
     )
+    @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.id=:id")
+    CompletableFuture<byte[]> futureProductImageById(Serializable id);
+
+    @EntityGraph(
+            attributePaths = {
+                    "crawledAsImage.imageBytes"
+            }
+    )
     @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.name=:name")
     Optional<byte[]> queryProductImageByName(String name);
+
+    @EntityGraph(
+            attributePaths = {
+                    "crawledAsImage.imageBytes"
+            }
+    )
+    @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.name=:name")
+    CompletableFuture<byte[]> futureProductImageByName(String name);
 }
