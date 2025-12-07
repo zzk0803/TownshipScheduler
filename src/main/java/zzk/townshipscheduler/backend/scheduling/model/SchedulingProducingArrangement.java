@@ -175,8 +175,7 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            value = {"deepPrerequisiteProducingArrangements[].completedDateTime"},
-            alignmentKey = "deepPrerequisiteProducingArrangements"
+            value = {"schedulingArrangementsGlobalState.shadowComputedMap"}
     )
     public LocalDateTime supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime() {
         boolean prerequisiteDone = this.deepPrerequisiteProducingArrangements.stream()
