@@ -305,7 +305,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Assign Factory");
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::calcStaticProducingDuration)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getStaticDeepProducingDuration)
                 .setSortable(true)
                 .setSortable(true)
                 .setResizable(true)

@@ -87,6 +87,8 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "supplierForPrerequisiteProducingArrangementsCompletedDateTime")
     private LocalDateTime prerequisiteProducingArrangementsCompletedDateTime;
 
+    private Duration staticDeepProducingDuration;
+
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
 
@@ -155,9 +157,9 @@ public class SchedulingProducingArrangement {
                 : null;
     }
 
-    @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot","sequenceInFactory"})
+    @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot", "sequenceInFactory"})
     public FactoryProcessSequence supplierForFactoryProcessSequence() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null || this.sequenceInFactory==null) {
+        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null || this.sequenceInFactory == null) {
             return null;
         }
 
@@ -237,7 +239,7 @@ public class SchedulingProducingArrangement {
     }
 
     public boolean isPlanningAssigned() {
-        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null&&getShadowComputedDateTimePair()!=null;
+        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null && getShadowComputedDateTimePair() != null;
     }
 
     public void readyElseThrow() {
@@ -247,6 +249,7 @@ public class SchedulingProducingArrangement {
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+        setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
     public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
@@ -275,6 +278,20 @@ public class SchedulingProducingArrangement {
         return result;
     }
 
+    private Duration calcStaticProducingDuration() {
+        Duration selfDuration = getProducingDuration();
+        Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
+                .map(SchedulingProducingArrangement::calcStaticProducingDuration)
+                .filter(Objects::nonNull)
+                .max(Duration::compareTo)
+                .orElse(Duration.ZERO);
+        return selfDuration.plus(prerequisiteStaticProducingDuration);
+    }
+
+    public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {
+        return argDateTime.plus(getStaticDeepProducingDuration());
+    }
+
     public void activate(
             ArrangementIdRoller idRoller,
             SchedulingWorkCalendar workTimeLimit,
@@ -293,17 +310,6 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     public ProductAmountBill getMaterials() {
         return getProducingExecutionMode().getMaterials();
-    }
-
-    public Duration calcStaticProducingDuration() {
-        Duration selfDuration = getProducingDuration();
-        Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
-                .map(SchedulingProducingArrangement::calcStaticProducingDuration)
-                .filter(Objects::nonNull)
-                .max(Duration::compareTo)
-                .orElse(Duration.ZERO);
-        return selfDuration.plus(prerequisiteStaticProducingDuration);
-
     }
 
     public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {
