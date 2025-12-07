@@ -67,7 +67,7 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     }
 
     @ShadowSources({"planningSchedulingProducingArrangements"})
-    private LocalDateTime tailArrangementCompletedDateTimeSupplier() {
+    public LocalDateTime tailArrangementCompletedDateTimeSupplier() {
         if (getPlanningSchedulingProducingArrangements().isEmpty()) {
             return null;
         }

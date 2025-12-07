@@ -9,7 +9,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Stream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -38,7 +37,7 @@ public class SchedulingFactoryInstance {
     @ToString.Include
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
-    private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList = new ArrayList<>();
+    private NavigableSet<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new TreeSet<>();
 
     @ShadowVariable(supplierName = "factorySlotToFirstArrangementProducingDateTimeMapSupplier")
     private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMap
@@ -47,10 +46,9 @@ public class SchedulingFactoryInstance {
     @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
     private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMapSupplier() {
         TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> result = new TreeMap<>();
-        TreeSet<SchedulingFactoryInstanceDateTimeSlot> instanceDateTimeSlots = new TreeSet<>(schedulingFactoryInstanceDateTimeSlotList);
-        for (SchedulingFactoryInstanceDateTimeSlot current : instanceDateTimeSlots) {
+        for (SchedulingFactoryInstanceDateTimeSlot current : schedulingFactoryInstanceDateTimeSlots) {
             Set<SchedulingFactoryInstanceDateTimeSlot> headSetOfCurrent
-                    = instanceDateTimeSlots.headSet(current, false);
+                    = schedulingFactoryInstanceDateTimeSlots.headSet(current, false);
             Optional<SchedulingFactoryInstanceDateTimeSlot> findInfluenceBy
                     = current.boolInfluenceBy(headSetOfCurrent);
             result.put(
@@ -74,10 +72,6 @@ public class SchedulingFactoryInstance {
 
     public boolean weatherFactoryProducingTypeIsQueue() {
         return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
-    }
-
-    public Stream<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotStream() {
-        return this.schedulingFactoryInstanceDateTimeSlotList.stream();
     }
 
     @Override

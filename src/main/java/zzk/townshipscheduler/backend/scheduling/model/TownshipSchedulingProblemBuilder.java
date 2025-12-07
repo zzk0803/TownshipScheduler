@@ -211,7 +211,7 @@ public class TownshipSchedulingProblemBuilder {
         AtomicInteger idRoller = new AtomicInteger(1);
         List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
         for (SchedulingFactoryInstance schedulingFactoryInstance : this.schedulingFactoryInstanceList) {
-            List<SchedulingFactoryInstanceDateTimeSlot> factoryInstanceDateTimeSlots = new ArrayList<>();
+            NavigableSet<SchedulingFactoryInstanceDateTimeSlot> factoryInstanceDateTimeSlots = new TreeSet<>();
             SchedulingFactoryInstanceDateTimeSlot previous = null;
             for (SchedulingDateTimeSlot schedulingDateTimeSlot : this.schedulingDateTimeSlots) {
                 SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot
@@ -228,8 +228,8 @@ public class TownshipSchedulingProblemBuilder {
                 schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
                 factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
             }
-            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlotList()
-                    .addAll(factoryInstanceDateTimeSlots);
+            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots().clear();
+            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots().addAll(factoryInstanceDateTimeSlots);
         }
         this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
     }
