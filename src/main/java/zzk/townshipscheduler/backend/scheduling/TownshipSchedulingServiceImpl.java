@@ -36,12 +36,19 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     private final Consumer<TownshipSchedulingProblem> defaultConsumer
             = townshipSchedulingProblem -> {
         var uuid = townshipSchedulingProblem.getUuid();
-        idProblemMap.put(uuid, townshipSchedulingProblem);
+        idProblemMap.put(
+                uuid,
+                townshipSchedulingProblem
+        );
     };
 
     private final BiConsumer<String, Throwable> defaultExceptionHandler
             = (uuid, throwable) -> {
-        log.error("problem {} exception {}", uuid, throwable);
+        log.error(
+                "problem {} exception {}",
+                uuid,
+                throwable
+        );
     };
 
     private final Map<String, SolverJob<TownshipSchedulingProblem, String>> idSolverJobMap = new ConcurrentHashMap<>();
@@ -63,7 +70,10 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         ProblemTransferProcess process = new ProblemTransferProcess(townshipSchedulingRequest);
         TownshipSchedulingProblem townshipSchedulingProblem = process.buildProblem();
         var uuid = townshipSchedulingProblem.getUuid();
-        idProblemMap.put(uuid, townshipSchedulingProblem);
+        idProblemMap.put(
+                uuid,
+                townshipSchedulingProblem
+        );
         return townshipSchedulingProblem;
     }
 
@@ -73,23 +83,32 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
                 = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionConsumer(defaultConsumer)
+                .withBestSolutionEventConsumer(BestSolutionEventConsumerAdapter.of(defaultConsumer))
                 .withExceptionHandler(defaultExceptionHandler)
                 .run();
-        idSolverJobMap.put(problemId, solverJob);
+        idSolverJobMap.put(
+                problemId,
+                solverJob
+        );
     }
 
     @Override
-    public void scheduling(String problemId, Consumer<TownshipSchedulingProblem> problemConsumer) {
+    public void scheduling(
+            String problemId,
+            Consumer<TownshipSchedulingProblem> problemConsumer
+    ) {
         SolverJob<TownshipSchedulingProblem, String> solverJob
                 = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionConsumer(
-                        defaultConsumer.andThen(problemConsumer)
+                .withBestSolutionEventConsumer(
+                        BestSolutionEventConsumerAdapter.of(defaultConsumer.andThen(problemConsumer))
                 )
                 .run();
-        idSolverJobMap.put(problemId, solverJob);
+        idSolverJobMap.put(
+                problemId,
+                solverJob
+        );
     }
 
     @Override
@@ -102,12 +121,15 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
                 = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionConsumer(
-                        defaultConsumer.andThen(problemConsumer)
+                .withBestSolutionEventConsumer(
+                        BestSolutionEventConsumerAdapter.of(defaultConsumer.andThen(problemConsumer))
                 )
                 .withExceptionHandler(defaultExceptionHandler.andThen(solveExceptionConsumer))
                 .run();
-        idSolverJobMap.put(problemId, solverJob);
+        idSolverJobMap.put(
+                problemId,
+                solverJob
+        );
     }
 
     @Override
@@ -146,13 +168,19 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
                 = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionConsumer(
-                        defaultConsumer.andThen(problemConsumer)
+                .withBestSolutionEventConsumer(
+                        BestSolutionEventConsumerAdapter.of(defaultConsumer.andThen(problemConsumer))
                 )
-                .withFinalBestSolutionConsumer(defaultConsumer.andThen(finalProblemConsumer))
+                .withFinalBestSolutionEventConsumer(finalBestSolutionEvent -> {
+                    defaultConsumer.andThen(finalProblemConsumer)
+                            .accept(finalBestSolutionEvent.solution());
+                })
                 .withExceptionHandler(defaultExceptionHandler.andThen(solveExceptionConsumer))
                 .run();
-        idSolverJobMap.put(problemId, solverJob);
+        idSolverJobMap.put(
+                problemId,
+                solverJob
+        );
     }
 
     public void schedulingWithSolverManager(
@@ -164,7 +192,10 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         SolverJob<TownshipSchedulingProblem, String> solverJob
                 = solverManagerConsumer.apply(this.solverManager);
         String problemId = solverJob.getProblemId();
-        idSolverJobMap.put(problemId, solverJob);
+        idSolverJobMap.put(
+                problemId,
+                solverJob
+        );
     }
 
     public Collection<SchedulingProblemVo> allSchedulingProblem() {
