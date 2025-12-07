@@ -61,10 +61,6 @@ public class TownshipFandomCrawlingProcessFacade {
                 );
     }
 
-    public CompletableFuture<byte[]> downloadImage(String url) {
-        return crawlingProcessor.downloadImage(url);
-    }
-
     public void clean() {
         crawledResult = null;
         parsedResult = null;

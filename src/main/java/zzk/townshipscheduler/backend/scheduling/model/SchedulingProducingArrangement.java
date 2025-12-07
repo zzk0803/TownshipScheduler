@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
+@PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
 
     public static final Comparator<SchedulingProducingArrangement> COMPARATOR
@@ -60,6 +61,8 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements
             = new LinkedHashSet<>();
+
+    private Duration staticDeepProducingDuration;
 
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
@@ -139,7 +142,7 @@ public class SchedulingProducingArrangement {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UUID.randomUUID().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
         return producingArrangement;
     }
 
@@ -179,6 +182,7 @@ public class SchedulingProducingArrangement {
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+        setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
     public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
@@ -322,7 +326,7 @@ public class SchedulingProducingArrangement {
         return factoryDateTimeSlot.getFactoryInstance();
     }
 
-    public Duration calcStaticProducingDuration() {
+    private Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
@@ -330,7 +334,10 @@ public class SchedulingProducingArrangement {
                 .max(Duration::compareTo)
                 .orElse(Duration.ZERO);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
+    }
 
+    public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {
+        return argDateTime.plus(getStaticDeepProducingDuration());
     }
 
     public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {

@@ -39,7 +39,7 @@ class TownshipDataPersistProcessor {
 
     public void process(CrawledResult crawledResult) {
         logger.info(" persist TownshipCoordCell and TownshipCrawled");
-        TreeMap<CrawledDataCoordinate, CrawledDataCell> crawledResultMap = crawledResult.map();
+        TreeMap<CrawledDataCoordinate, CrawledDataCell> crawledResultMap = crawledResult.crawledDataCellTreeMap();
         crawledResultMap.forEach((coordinate, cell) -> {
             wikiCrawledParsedCoordCellEntityRepository.save(new WikiCrawledParsedCoordCellEntity(coordinate, cell));
         });

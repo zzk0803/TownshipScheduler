@@ -89,36 +89,56 @@ public class PlayerService {
     }
 
     @Transactional
+    public List<FieldFactoryInfoEntity> playerUpdate(PlayerEntity playerEntity) {
+        PlayerEntity managedPlayer = emergeAndUpdate(playerEntity);
+        List<FieldFactoryInfoEntity> fieldFactoryInfoEntitiesByLevelBetween = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelBetween(
+                playerEntity.getLevel() - 1,
+                playerEntity.getLevel()
+        );
+        fieldFactoryInfoEntitiesByLevelBetween.forEach(fieldFactoryInfoEntity -> {
+            FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(
+                    () -> managedPlayer);
+            fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getDefaultProducingCapacity());
+            fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getDefaultReapWindowCapacity());
+            fieldFactoryEntityRepository.save(fieldFactoryEntity);
+        });
+
+        return fieldFactoryInfoEntitiesByLevelBetween;
+    }
+
+    @Transactional
     public PlayerEntity emergeAndUpdate(PlayerEntity player) {
         return playerEntityRepository.save(player);
     }
 
     @Transactional
     public void playerFactoryToCorrespondedLevelInBatch(PlayerEntity playerEntity) {
-        List<FieldFactoryInfoEntity> availableFieldFactoryInfoAsList
-                = fieldFactoryInfoEntityRepository.queryFactoryInfoByLevelLessThanOrEqual(
-                playerEntity.getLevel()
-        );
+        PlayerEntity managedPlayer = playerEntityRepository.findPlayerById(playerEntity.getId()).orElse(playerEntity);
+        fieldFactoryEntityRepository.deleteAll(managedPlayer.getFieldFactoryEntities());
 
-        PlayerEntity managedPlayer = playerEntityRepository.save(playerEntity);
+        List<FieldFactoryInfoEntity> availableFieldFactoryInfoAsList
+                = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelLessThan(playerEntity.getLevel());
+
         FieldFactoryInfoEntity field
                 = fieldFactoryInfoEntityRepository.findByCategory(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA)
                 .orElseThrow();
         IntStream.range(0, managedPlayer.getFieldAmount())
-                .mapToObj(i -> field.toFieldFactoryEntity(()->managedPlayer))
+                .mapToObj(i -> field.toFieldFactoryEntity(() -> managedPlayer))
                 .forEach(fieldFactoryEntityRepository::save);
 
-        availableFieldFactoryInfoAsList.forEach(
-                fieldFactoryInfoEntity -> {
-                    IntStream.range(0, fieldFactoryInfoEntity.getMaxInstanceAmount())
-                            .forEach(_ -> {
-                                FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(() -> managedPlayer);
-                                fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getMaxProducingCapacity());
-                                fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getMaxReapWindowCapacity());
-                                fieldFactoryEntityRepository.save(fieldFactoryEntity);
-                            });
-                }
-        );
+        availableFieldFactoryInfoAsList
+                .forEach(
+                        fieldFactoryInfoEntity -> {
+                            IntStream.range(0, fieldFactoryInfoEntity.getMaxInstanceAmount())
+                                    .forEach(_ -> {
+                                        FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(
+                                                () -> managedPlayer);
+                                        fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getMaxProducingCapacity());
+                                        fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getMaxReapWindowCapacity());
+                                        fieldFactoryEntityRepository.save(fieldFactoryEntity);
+                                    });
+                        }
+                );
 
     }
 
