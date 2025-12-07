@@ -122,7 +122,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
     ) {
 
         SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
-        Duration calcStaticProducingDuration = producingArrangement.calcStaticProducingDuration();
+        Duration calcStaticProducingDuration = producingArrangement.getStaticDeepProducingDuration();
 
         if (!producingArrangement.getDeepPrerequisiteProducingArrangements().isEmpty()) {
              result =  SchedulingDateTimeSlot.fromRangeJumpCeil(

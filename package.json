@@ -20,7 +20,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router": "7.6.3",
-    "vis-timeline": "8.4.0"
+    "vis-timeline": "8.4.1"
   },
   "devDependencies": {
     "@babel/preset-react": "7.27.1",
@@ -62,7 +62,7 @@
       "react": "18.3.1",
       "react-dom": "18.3.1",
       "react-router": "7.6.3",
-      "vis-timeline": "8.4.0"
+      "vis-timeline": "8.4.1"
     },
     "devDependencies": {
       "@babel/preset-react": "7.27.1",
@@ -85,7 +85,7 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "0658d9ea530656f6f111320a577fcfea7c9e42ac4a17d9575153c6d23d99790d"
+    "hash": "697863b03d2233f5ec366023f0203885f0235b996e94a9387c7cfdf1253e69ca"
   },
   "pnpm": {
     "overrides": {

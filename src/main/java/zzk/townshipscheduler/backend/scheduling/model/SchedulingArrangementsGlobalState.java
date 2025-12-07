@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import lombok.Data;
@@ -111,8 +110,12 @@ public class SchedulingArrangementsGlobalState {
                     )
     );
 
-    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE = factoryProcessSequence -> Objects.nonNull(
-            factoryProcessSequence.getFactoryReadableIdentifier()) && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
+    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE
+            = factoryProcessSequence -> Objects.nonNull(
+            factoryProcessSequence.getFactoryReadableIdentifier()
+    ) && Objects.nonNull(
+            factoryProcessSequence.getArrangeDateTime()
+    );
 
 
     @PlanningId
@@ -217,7 +220,8 @@ public class SchedulingArrangementsGlobalState {
             TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> partMap
     ) {
 
-        List<FactoryProcessSequence> toDel = partMap.keySet().stream()
+        List<FactoryProcessSequence> toDel = partMap.keySet()
+                .stream()
                 .filter(existProcessSequence -> FACTORY_PROCESS_SEQUENCE_BI_PREDICATE.test(
                         existProcessSequence,
                         argProcessSequence
@@ -228,7 +232,8 @@ public class SchedulingArrangementsGlobalState {
             for (FactoryProcessSequence sequence : toDel) {
                 this.removeFactoryProcessSequence(
                         sequence,
-                        sequence.getFactoryReadableIdentifier().isBoolFactorySlotType(),
+                        sequence.getFactoryReadableIdentifier()
+                                .isBoolFactorySlotType(),
                         partMap
                 );
             }
@@ -236,7 +241,8 @@ public class SchedulingArrangementsGlobalState {
 
         addFactoryProcessSequence(
                 argProcessSequence,
-                argProcessSequence.getFactoryReadableIdentifier().isBoolFactorySlotType(),
+                argProcessSequence.getFactoryReadableIdentifier()
+                        .isBoolFactorySlotType(),
                 partMap
         );
 
@@ -244,7 +250,8 @@ public class SchedulingArrangementsGlobalState {
     }
 
     public void addFactoryProcessSequence(
-            FactoryProcessSequence factoryProcessSequence, boolean boolFactorySlotType,
+            FactoryProcessSequence factoryProcessSequence,
+            boolean boolFactorySlotType,
             TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> partMap
     ) {
 
@@ -267,10 +274,16 @@ public class SchedulingArrangementsGlobalState {
                 factoryProcessSequence,
                 prefixProducingPairEntry
         );
-        LocalDateTime completedDateTime = calcCompletedDateTime(factoryProcessSequence, producingDateTime);
+        LocalDateTime completedDateTime = calcCompletedDateTime(
+                factoryProcessSequence,
+                producingDateTime
+        );
         partMap.put(
                 factoryProcessSequence,
-                new FactoryComputedDateTimePair(producingDateTime, completedDateTime)
+                new FactoryComputedDateTimePair(
+                        producingDateTime,
+                        completedDateTime
+                )
         );
 
         NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailOfProcessSequencePairMap
@@ -278,7 +291,10 @@ public class SchedulingArrangementsGlobalState {
                 factoryProcessSequence,
                 false
         );
-        cascade(tailOfProcessSequencePairMap, partMap);
+        cascade(
+                tailOfProcessSequencePairMap,
+                partMap
+        );
     }
 
     public void removeFactoryProcessSequence(
@@ -297,7 +313,8 @@ public class SchedulingArrangementsGlobalState {
             for (FactoryProcessSequence sequence : toDel) {
                 this.removeFactoryProcessSequence(
                         sequence,
-                        sequence.getFactoryReadableIdentifier().isBoolFactorySlotType(),
+                        sequence.getFactoryReadableIdentifier()
+                                .isBoolFactorySlotType(),
                         partMap
                 );
             }
@@ -319,8 +336,14 @@ public class SchedulingArrangementsGlobalState {
         }
 
         NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tail =
-                partMap.tailMap(factoryProcessSequence, false);
-        cascade(tail, partMap);
+                partMap.tailMap(
+                        factoryProcessSequence,
+                        false
+                );
+        cascade(
+                tail,
+                partMap
+        );
     }
 
     private void cascade(
@@ -339,7 +362,8 @@ public class SchedulingArrangementsGlobalState {
         LocalDateTime prefixMaxCompletedDateTime
                 = (prefixEntry == null)
                 ? null
-                : prefixEntry.getValue().completedDateTime();
+                : prefixEntry.getValue()
+                        .completedDateTime();
 
         for (FactoryProcessSequence factoryProcessSequence : taiKeyList) {
             LocalDateTime producingDateTime = calcProducingDateTime(
@@ -352,7 +376,10 @@ public class SchedulingArrangementsGlobalState {
             );
             partMap.put(
                     factoryProcessSequence,
-                    new FactoryComputedDateTimePair(producingDateTime, completedDateTime)
+                    new FactoryComputedDateTimePair(
+                            producingDateTime,
+                            completedDateTime
+                    )
             );
             prefixMaxCompletedDateTime = completedDateTime;
         }
@@ -381,7 +408,8 @@ public class SchedulingArrangementsGlobalState {
     ) {
         LocalDateTime previousCompleted = (previousEntry == null)
                 ? null
-                : previousEntry.getValue().completedDateTime();
+                : previousEntry.getValue()
+                        .completedDateTime();
 
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
         return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted))
@@ -403,13 +431,37 @@ public class SchedulingArrangementsGlobalState {
                 : previousCompleted;
     }
 
+    public LocalDateTime queryProducingDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
+        FactoryComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
+        if (computedDateTimePair == null) {
+            return null;
+        }
+        return computedDateTimePair.producingDateTime();
+    }
+
+    public FactoryComputedDateTimePair query(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return query(schedulingProducingArrangement.getFactoryProcessSequence());
+    }
+
     public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
+        if (Objects.isNull(factoryProcessSequence)) {
+            return null;
+        }
+
         Map<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairTreeMap
                 = this.shadowComputedMap.get(factoryProcessSequence.getFactoryReadableIdentifier());
         if (Objects.isNull(computedDateTimePairTreeMap)) {
             return null;
         }
         return computedDateTimePairTreeMap.get(factoryProcessSequence);
+    }
+
+    public LocalDateTime queryCompletedDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
+        FactoryComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
+        if (computedDateTimePair == null) {
+            return null;
+        }
+        return computedDateTimePair.completedDateTime();
     }
 
     public static class FormerCompletedDateTimeRef {

@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@PlanningEntity(difficultyComparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
+@PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
 
     public static final Comparator<SchedulingProducingArrangement> COMPARATOR
@@ -77,6 +77,8 @@ public class SchedulingProducingArrangement {
     @ShadowVariable(supplierName = "supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime")
     private LocalDateTime deepPrerequisiteProducingArrangementsCompletedDateTime;
 
+    private Duration staticDeepProducingDuration;
+
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
 
@@ -93,26 +95,12 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     @PlanningVariable(
             valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT},
-            strengthComparatorClass = SchedulingDateTimeSlotStrengthComparator.class
+            comparatorClass = SchedulingDateTimeSlotStrengthComparator.class
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
     @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
     private FactoryProcessSequence factoryProcessSequence;
-
-    @JsonProperty("producingDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    @ShadowVariable(supplierName = "supplierForProducingDateTime")
-    private LocalDateTime producingDateTime;
-
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    @ShadowVariable(supplierName = "supplierForCompletedDateTime")
-    private LocalDateTime completedDateTime;
 
     private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
 
@@ -138,7 +126,9 @@ public class SchedulingProducingArrangement {
 
     @ShadowSources({"planningDateTimeSlot"})
     public LocalDateTime supplierForArrangeDateTime() {
-        return this.planningDateTimeSlot != null ? this.planningDateTimeSlot.getStart() : null;
+        return this.planningDateTimeSlot != null
+                ? this.planningDateTimeSlot.getStart()
+                : null;
     }
 
     @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
@@ -146,20 +136,12 @@ public class SchedulingProducingArrangement {
         return new FactoryProcessSequence(this);
     }
 
-    @ShadowSources(
-            value = {"schedulingArrangementsGlobalState.shadowComputedMap", "factoryProcessSequence"},
-            alignmentKey = "schedulingArrangementsGlobalState"
-    )
-    public LocalDateTime supplierForProducingDateTime() {
-        if (this.factoryProcessSequence == null) {
-            return null;
-        }
-
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
-        if (computedDateTimePair == null) {
-            return null;
-        }
-        return computedDateTimePair.producingDateTime();
+    @JsonProperty("producingDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getProducingDateTime() {
+        return schedulingArrangementsGlobalState.queryProducingDateTime(this);
     }
 
     public boolean weatherFactoryProducingTypeIsSlot() {
@@ -184,20 +166,12 @@ public class SchedulingProducingArrangement {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
 
-    @ShadowSources(
-            value = {"schedulingArrangementsGlobalState.shadowComputedMap", "factoryProcessSequence"},
-            alignmentKey = "schedulingArrangementsGlobalState"
-    )
-    public LocalDateTime supplierForCompletedDateTime() {
-        if (this.factoryProcessSequence == null) {
-            return null;
-        }
-
-        FactoryComputedDateTimePair computedDateTimePair = schedulingArrangementsGlobalState.query(this.factoryProcessSequence);
-        if (computedDateTimePair == null) {
-            return null;
-        }
-        return computedDateTimePair.completedDateTime();
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getCompletedDateTime() {
+        return schedulingArrangementsGlobalState.queryCompletedDateTime(this);
     }
 
     @ShadowSources(
@@ -206,12 +180,12 @@ public class SchedulingProducingArrangement {
     )
     public LocalDateTime supplierForDeepPrerequisiteProducingArrangementsCompletedDateTime() {
         boolean prerequisiteDone = this.deepPrerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .map(schedulingProducingArrangement -> getSchedulingArrangementsGlobalState().queryCompletedDateTime(schedulingProducingArrangement))
                 .allMatch(Objects::nonNull);
 
         if (prerequisiteDone) {
             return this.deepPrerequisiteProducingArrangements.stream()
-                    .map(SchedulingProducingArrangement::getCompletedDateTime)
+                    .map(schedulingProducingArrangement -> getSchedulingArrangementsGlobalState().queryCompletedDateTime(schedulingProducingArrangement))
                     .max(Comparator.naturalOrder())
                     .orElse(LocalDateTime.MAX);
         }
@@ -242,6 +216,7 @@ public class SchedulingProducingArrangement {
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+        setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
     public Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
@@ -290,7 +265,7 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    public Duration calcStaticProducingDuration() {
+    private Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
@@ -298,7 +273,10 @@ public class SchedulingProducingArrangement {
                 .max(Duration::compareTo)
                 .orElse(Duration.ZERO);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
+    }
 
+    public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {
+        return argDateTime.plus(getStaticDeepProducingDuration());
     }
 
     public <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {
@@ -320,7 +298,8 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
         return this.prerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UuidGenerator.timeOrderedV6().toString())
+                        .uuid(UuidGenerator.timeOrderedV6()
+                                .toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -331,7 +310,8 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UuidGenerator.timeOrderedV6().toString())
+                        .uuid(UuidGenerator.timeOrderedV6()
+                                .toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
@@ -343,12 +323,8 @@ public class SchedulingProducingArrangement {
         return new FactoryProcessSequence(this);
     }
 
-    public Long completedDateTimeBetweenWorkCalendarEnd() {
-        if (this.completedDateTime == null) {
-            return null;
-        }
-
-        return Duration.between(this.completedDateTime, this.schedulingWorkCalendar.getEndDateTime()).toMinutes();
+    public boolean weatherPrerequisiteRequire() {
+        return !getDeepPrerequisiteProducingArrangements().isEmpty();
     }
 
 }

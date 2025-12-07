@@ -4,6 +4,8 @@ package zzk.townshipscheduler.backend.scheduling.score;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.bi.BiConstraintStream;
+import org.javatuples.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementsGlobalState;
@@ -34,7 +36,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
-        return prepareArrangementsStream(constraintFactory)
+        return prepareStateAndArrangementsStream(constraintFactory)
                 .join(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(
@@ -47,8 +49,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         )
                 )
                 .filter((globalState, current, other) -> {
-                            boolean b1 = !other.getArrangeDateTime().isAfter(current.getArrangeDateTime());
-                            boolean b2 = other.getCompletedDateTime().isAfter(current.getArrangeDateTime());
+                            boolean b1 = !other.getArrangeDateTime()
+                                    .isAfter(current.getArrangeDateTime());
+                            boolean b2 = globalState.queryCompletedDateTime(other)
+                                    .isAfter(current.getArrangeDateTime());
                             return b1 && b2;
                         }
                 )
@@ -57,7 +61,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ConstraintCollectors.countDistinct((globalState, current, other) -> other)
                 )
                 .filter((current, queueSize) ->
-                        queueSize > current.getPlanningFactoryInstance().getProducingLength()
+                        queueSize > current.getPlanningFactoryInstance()
+                                .getProducingLength()
                 )
                 .penalizeLong(
                         BendableLongScore.ofHard(
@@ -66,12 +71,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.HARD_BROKEN_FACTORY_ABILITY,
                                 1L
                         ),
-                        (current, queueSize) -> queueSize - current.getPlanningFactoryInstance().getProducingLength()
+                        (current, queueSize) -> queueSize - current.getPlanningFactoryInstance()
+                                .getProducingLength()
                 )
                 .asConstraint("forbidBrokenFactoryAbility");
     }
 
-    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> prepareArrangementsStream(
+    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> prepareStateAndArrangementsStream(
             @NonNull ConstraintFactory constraintFactory
     ) {
         return constraintFactory.forEach(SchedulingArrangementsGlobalState.class)
@@ -86,9 +92,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
-        return prepareArrangementsStream(
+        return prepareStateAndArrangementsStream(
                 constraintFactory,
-                arrangement -> !arrangement.getDeepPrerequisiteProducingArrangements().isEmpty()
+                arrangement -> !arrangement.getDeepPrerequisiteProducingArrangements()
+                        .isEmpty()
         )
                 .groupBy(
                         (globalState, arrangement) -> arrangement.getArrangeDateTime(),
@@ -103,21 +110,23 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 1L
                         ),
                         (arrangementDateTime, arrangementPrerequisiteCompleted) ->
-                                Duration.between(arrangementDateTime, arrangementPrerequisiteCompleted).toMinutes()
+                                Duration.between(
+                                                arrangementDateTime,
+                                                arrangementPrerequisiteCompleted
+                                        )
+                                        .toMinutes()
                 )
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
 
-    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> prepareArrangementsStream(
+    private BiConstraintStream<SchedulingArrangementsGlobalState, SchedulingProducingArrangement> prepareStateAndArrangementsStream(
             @NonNull ConstraintFactory constraintFactory,
             Predicate<SchedulingProducingArrangement> arrangementPredicate
     ) {
         return constraintFactory.forEach(SchedulingArrangementsGlobalState.class)
                 .join(
                         constraintFactory.forEach(SchedulingProducingArrangement.class)
-                                .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                                .filter(arrangementPredicate)
-                        ,
+                                .filter(arrangementPredicate),
                         Joiners.equal(
                                 Function.identity(),
                                 SchedulingProducingArrangement::getSchedulingArrangementsGlobalState
@@ -126,7 +135,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
-        return prepareArrangementsStream(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
+        return prepareStateAndArrangementsStream(
+                constraintFactory,
+                SchedulingProducingArrangement::isOrderDirect
+        )
                 .join(
                         constraintFactory.forEach(SchedulingOrder.class)
                                 .filter(SchedulingOrder::boolHasDeadline),
@@ -136,7 +148,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ),
                         Joiners.filtering((globalState, arrangement, schedulingOrder) -> {
                                     LocalDateTime deadline = schedulingOrder.getDeadline();
-                                    LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
+                                    LocalDateTime completedDateTime = globalState.queryCompletedDateTime(arrangement);
                                     return completedDateTime == null || completedDateTime.isAfter(deadline);
                                 }
                         )
@@ -150,13 +162,20 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ),
                         ((globalState, arrangement, schedulingOrder) -> {
                             LocalDateTime deadline = schedulingOrder.getDeadline();
-                            LocalDateTime completedDateTime = arrangement.getCompletedDateTime();
+                            LocalDateTime completedDateTime = globalState.queryCompletedDateTime(arrangement);
                             return completedDateTime != null
-                                    ? Duration.between(deadline, completedDateTime).toMinutes()
+                                    ? Duration.between(
+                                            deadline,
+                                            completedDateTime
+                                    )
+                                    .toMinutes()
                                     : Duration.between(
-                                            arrangement.getSchedulingWorkCalendar().getStartDateTime(),
-                                            arrangement.getSchedulingWorkCalendar().getEndDateTime()
-                                    ).toMinutes()
+                                                    arrangement.getSchedulingWorkCalendar()
+                                                            .getStartDateTime(),
+                                                    arrangement.getSchedulingWorkCalendar()
+                                                            .getEndDateTime()
+                                            )
+                                            .toMinutes()
                                     ;
                         })
                 )
@@ -164,17 +183,20 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
-        return prepareArrangementsStream(
-                constraintFactory,
-                (arrangement) -> {
-                    return arrangement.isOrderDirect() && arrangement.getCompletedDateTime().isAfter(
-                            arrangement.getSchedulingWorkCalendar().getEndDateTime());
-                }
-        )
+        return prepareStateAndArrangementsStream(constraintFactory)
+                .filter((globalState, schedulingProducingArrangement) -> {
+                    boolean orderDirect = schedulingProducingArrangement.isOrderDirect();
+                    LocalDateTime arrangementCompletedDateTime = globalState.queryCompletedDateTime(schedulingProducingArrangement);
+                    boolean completedDateTimeAfterWorkCalendar
+                            = arrangementCompletedDateTime.isAfter(schedulingProducingArrangement.getSchedulingWorkCalendar()
+                            .getEndDateTime());
+                    return orderDirect && completedDateTimeAfterWorkCalendar;
+                })
                 .groupBy(
                         (globalState, arrangement) -> arrangement,
-                        (globalState, arrangement) -> arrangement.getSchedulingWorkCalendar().getEndDateTime(),
-                        (globalState, arrangement) -> arrangement.getCompletedDateTime()
+                        (globalState, arrangement) -> arrangement.getSchedulingWorkCalendar()
+                                .getEndDateTime(),
+                        (globalState, arrangement) -> globalState.queryCompletedDateTime(arrangement)
                 )
                 .penalizeLong(
                         BendableLongScore.ofSoft(
@@ -184,7 +206,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 10L
                         ),
                         (arrangement, workCalendarEnd, arrangementCompleted) -> {
-                            return Duration.between(workCalendarEnd, arrangementCompleted).toMinutes();
+                            return Duration.between(
+                                            workCalendarEnd,
+                                            arrangementCompleted
+                                    )
+                                    .toMinutes();
                         }
                 )
                 .asConstraint("shouldNotBrokenCalendarEnd");
@@ -196,8 +222,10 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(schedulingProducingArrangement -> {
                     LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
-                    LocalTime sleepStart = schedulingProducingArrangement.getSchedulingPlayer().getSleepStart();
-                    LocalTime sleepEnd = schedulingProducingArrangement.getSchedulingPlayer().getSleepEnd();
+                    LocalTime sleepStart = schedulingProducingArrangement.getSchedulingPlayer()
+                            .getSleepStart();
+                    LocalTime sleepEnd = schedulingProducingArrangement.getSchedulingPlayer()
+                            .getSleepEnd();
                     LocalTime arrangeTime = arrangeDateTime.toLocalTime();
                     return (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX))
                            || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
@@ -214,12 +242,31 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint preferMinimizeOrderCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
-        return prepareArrangementsStream(constraintFactory, SchedulingProducingArrangement::isOrderDirect)
+        return constraintFactory.forEach(SchedulingOrder.class)
+                .join(
+                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+                                .filter(SchedulingProducingArrangement::isOrderDirect),
+                        Joiners.equal(
+                                Function.identity(),
+                                SchedulingProducingArrangement::getSchedulingOrder
+                        )
+                )
+                .join(
+                        SchedulingArrangementsGlobalState.class,
+                        Joiners.equal(
+                                (order, arrangement) -> arrangement.getSchedulingArrangementsGlobalState(),
+                                Function.identity()
+                        )
+                )
+
                 .groupBy(
-                        (schedulingArrangementsGlobalState, schedulingProducingArrangement) -> schedulingProducingArrangement.getSchedulingOrder(),
+                        (schedulingOrder, schedulingProducingArrangement, schedulingArrangementsGlobalState) -> schedulingOrder,
                         ConstraintCollectors.max(
-                                (schedulingArrangementsGlobalState, schedulingProducingArrangement) -> schedulingProducingArrangement,
-                                SchedulingProducingArrangement::getCompletedDateTime
+                                (schedulingOrder, producingArrangement, globalState) -> new Pair<>(
+                                        producingArrangement,
+                                        globalState
+                                ),
+                                funcForArrangementAndStateToCompletedDateTime()
                         )
                 )
                 .penalizeLong(
@@ -229,20 +276,32 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.SOFT_BATTER,
                                 1L
                         ),
-                        (order, arrangement) -> {
-                            var calendarStartDateTime = arrangement.getSchedulingWorkCalendar().getStartDateTime();
-                            var completedDateTime = arrangement.getCompletedDateTime();
-                            Duration between = Duration.between(calendarStartDateTime, completedDateTime);
+                        (order, pair) -> {
+                            SchedulingProducingArrangement arrangement = pair.getValue0();
+                            var calendarStartDateTime = arrangement.getSchedulingWorkCalendar()
+                                    .getStartDateTime();
+                            var completedDateTime = funcForArrangementAndStateToCompletedDateTime().apply(pair);
+                            Duration between = Duration.between(
+                                    calendarStartDateTime,
+                                    completedDateTime
+                            );
                             return calcFactor(arrangement) * between.toMinutes();
                         }
                 )
                 .asConstraint("preferMinimizeOrderCompletedDateTime");
     }
 
+    @NotNull
+    private static Function<Pair<SchedulingProducingArrangement, SchedulingArrangementsGlobalState>, LocalDateTime> funcForArrangementAndStateToCompletedDateTime() {
+        return (pair) -> pair.getValue1()
+                .queryCompletedDateTime(pair.getValue0());
+    }
+
     private int calcFactor(SchedulingProducingArrangement arrangement) {
         int factor = 1;
         if (arrangement.getSchedulingOrder() != null) {
-            OrderType orderType = arrangement.getSchedulingOrder().getOrderType();
+            OrderType orderType = arrangement.getSchedulingOrder()
+                    .getOrderType();
             switch (orderType) {
                 case TRAIN -> {
                     factor = 10;
@@ -263,11 +322,15 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
                                 1L
-                        ), (arrangement) -> {
+                        ),
+                        (arrangement) -> {
                             LocalDateTime workCalendarStart = arrangement.getSchedulingWorkCalendar()
                                     .getStartDateTime();
                             LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
-                            return Duration.between(workCalendarStart, arrangeDateTime).toMinutes()
+                            return Duration.between(
+                                            workCalendarStart,
+                                            arrangeDateTime
+                                    ).toMinutes()
                                    * calcFactor(arrangement);
                         }
                 )
@@ -286,9 +349,25 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 TownshipSchedulingProblem.BENDABLE_SCORE_SOFT_SIZE,
                                 TownshipSchedulingProblem.SOFT_BATTER,
                                 1000L
-                        ), (factoryInstance, slotAmount) -> slotAmount - 1
+                        ),
+                        (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
+    }
+
+    private BiConstraintStream<SchedulingProducingArrangement, SchedulingArrangementsGlobalState> prepareArrangementsAndStateStream(
+            @NonNull ConstraintFactory constraintFactory,
+            Predicate<SchedulingProducingArrangement> arrangementPredicate
+    ) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(arrangementPredicate)
+                .join(
+                        SchedulingArrangementsGlobalState.class,
+                        Joiners.equal(
+                                SchedulingProducingArrangement::getSchedulingArrangementsGlobalState,
+                                Function.identity()
+                        )
+                );
     }
 
 }
