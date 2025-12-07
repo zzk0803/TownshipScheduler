@@ -62,8 +62,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEachUniquePair(
                 SchedulingProducingArrangement.class,
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.greaterThanOrEqual(SchedulingProducingArrangement::getPlanningDateTimeSlot),
-                        Joiners.lessThan(SchedulingProducingArrangement::getIndexInFactoryArrangements)
+                        Joiners.lessThan(SchedulingProducingArrangement::getIndexInFactoryArrangements),
+                        Joiners.greaterThan(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                 )
                 .penalizeLong(
                         BendableLongScore.ofHard(
