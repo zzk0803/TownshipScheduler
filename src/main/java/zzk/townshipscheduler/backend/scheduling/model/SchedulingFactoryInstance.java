@@ -11,7 +11,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import org.javatuples.Pair;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,7 +25,7 @@ import java.util.stream.Gatherer;
 public class SchedulingFactoryInstance {
 
     //<editor-fold desc="SLOT_GATHERER">
-    private static final Gatherer<FactoryProcessSequence, Void, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>
+    private static final Gatherer<FactoryProcessSequence, Void, FactoryComputedDateTimeTuple>
             SLOT_GATHERER
             = Gatherer.of(
             () -> null,
@@ -37,13 +36,13 @@ public class SchedulingFactoryInstance {
                 }
 
                 LocalDateTime start = schedulingDateTimeSlot.getStart();
-                return downstream.push(new Pair<>(
-                        factoryProcessSequence,
-                        new FactoryComputedDateTimePair(
+                return downstream.push(
+                        new FactoryComputedDateTimeTuple(
+                                factoryProcessSequence,
                                 start,
                                 start.plus(factoryProcessSequence.getProducingDuration())
                         )
-                )) && !downstream.isRejecting();
+                ) && !downstream.isRejecting();
             },
             Gatherer.defaultCombiner(),
             Gatherer.defaultFinisher()
@@ -51,7 +50,7 @@ public class SchedulingFactoryInstance {
     //</editor-fold>
 
     //<editor-fold desc="QUEUE_GATHERER">
-    private static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>
+    private static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, FactoryComputedDateTimeTuple>
             QUEUE_GATHERER
             = Gatherer.ofSequential(
             FormerCompletedDateTimeRef::new,
@@ -69,12 +68,10 @@ public class SchedulingFactoryInstance {
                                 : arrangeDateTime;
                 LocalDateTime end = start.plus(factoryProcessSequence.getProducingDuration());
                 return downstream.push(
-                        new Pair<>(
+                        new FactoryComputedDateTimeTuple(
                                 factoryProcessSequence,
-                                new FactoryComputedDateTimePair(
-                                        start,
-                                        formerCompletedDateTimeRef.value = end
-                                )
+                                start,
+                                formerCompletedDateTimeRef.value = end
                         )
                 ) && !downstream.isRejecting();
             }
@@ -104,36 +101,42 @@ public class SchedulingFactoryInstance {
     private List<SchedulingProducingArrangement> planningProducingArrangements = new ArrayList<>();
 
     @ShadowVariable(supplierName = "supplierForShadowComputedPairMap")
-    private LinkedHashMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowComputedPairMap
+    private LinkedHashMap<FactoryProcessSequence, FactoryComputedDateTimeTuple> shadowComputedPairMap
             = new LinkedHashMap<>();
-
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
-    }
 
     @ShadowSources(
             value = {
                     "planningProducingArrangements",
-                    "planningProducingArrangements[].factoryProcessSequence"
+                    "planningProducingArrangements[].planningDateTimeSlot"
             }
     )
-    public LinkedHashMap<FactoryProcessSequence, FactoryComputedDateTimePair> supplierForShadowComputedPairMap() {
+    public LinkedHashMap<FactoryProcessSequence, FactoryComputedDateTimeTuple> supplierForShadowComputedPairMap() {
         return this.planningProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                .map(SchedulingProducingArrangement::toFactoryProcessSequence)
                 .sorted(FactoryProcessSequence.COMPARATOR)
-                .gather(weatherFactoryProducingTypeIsQueue() ? QUEUE_GATHERER : SLOT_GATHERER)
+                .gather(weatherFactoryProducingTypeIsQueue()
+                        ? QUEUE_GATHERER
+                        : SLOT_GATHERER)
                 .collect(
                         LinkedHashMap::new,
-                        (treeMap, pair) -> treeMap.put(
-                                pair.getValue0(),
-                                pair.getValue1()
+                        (treeMap, tuple) -> treeMap.put(
+                                tuple.factoryProcessSequence(),
+                                tuple
                         ),
                         LinkedHashMap::putAll
                 );
     }
 
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return this.getSchedulingFactoryInfo()
+                .weatherFactoryProducingTypeIsQueue();
+    }
+
     public void setupFactoryReadableIdentifier() {
-        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+        setFactoryReadableIdentifier(new FactoryReadableIdentifier(
+                getCategoryName(),
+                getSeqNum()
+        ));
     }
 
     public String getCategoryName() {
@@ -150,10 +153,15 @@ public class SchedulingFactoryInstance {
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
-        return this.getSchedulingFactoryInfo().typeEqual(that.getSchedulingFactoryInfo());
+        return this.getSchedulingFactoryInfo()
+                .typeEqual(that.getSchedulingFactoryInfo());
     }
 
-    public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
+    public FactoryComputedDateTimeTuple query(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return query(schedulingProducingArrangement.toFactoryProcessSequence());
+    }
+
+    public FactoryComputedDateTimeTuple query(FactoryProcessSequence factoryProcessSequence) {
         return this.shadowComputedPairMap.get(factoryProcessSequence);
     }
 

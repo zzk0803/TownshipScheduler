@@ -2,9 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.valuerange.CountableValueRange;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -19,7 +16,6 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTime
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.utility.UuidGenerator;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -44,8 +40,6 @@ public class SchedulingProducingArrangement {
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
-
-    private static final String SEQUENCE_VALUE_RANGE = "sequence_value_range";
 
     @JsonProperty("arrangeDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -84,8 +78,8 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
-    @ShadowVariable(supplierName = "supplierForPrerequisiteProducingArrangementsCompletedDateTime")
-    private LocalDateTime prerequisiteProducingArrangementsCompletedDateTime;
+    @ShadowVariable(supplierName = "supplierForPrerequisiteArrangementsCompletedDateTime")
+    private LocalDateTime prerequisiteArrangementsCompletedDateTime;
 
     private Duration staticDeepProducingDuration;
 
@@ -109,16 +103,8 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @PlanningVariable(
-            valueRangeProviderRefs = SchedulingProducingArrangement.SEQUENCE_VALUE_RANGE
-    )
-    private BigDecimal sequenceInFactory;
-
-    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
-    private FactoryProcessSequence factoryProcessSequence;
-
-    @ShadowVariable(supplierName = "supplierForShadowComputedDateTimePair")
-    private FactoryComputedDateTimePair shadowComputedDateTimePair;
+    @ShadowVariable(supplierName = "supplierForFactoryComputedDateTimeTuple")
+    private FactoryComputedDateTimeTuple factoryComputedDateTimeTuple;
 
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -145,8 +131,8 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getProducingDateTime() {
-        return Optional.ofNullable(this.shadowComputedDateTimePair)
-                .map(FactoryComputedDateTimePair::producingDateTime)
+        return Optional.ofNullable(this.factoryComputedDateTimeTuple)
+                .map(FactoryComputedDateTimeTuple::producingDateTime)
                 .orElse(null);
     }
 
@@ -157,36 +143,28 @@ public class SchedulingProducingArrangement {
                 : null;
     }
 
-    @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot", "sequenceInFactory"})
-    public FactoryProcessSequence supplierForFactoryProcessSequence() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null || this.sequenceInFactory == null) {
+    @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot"})
+    private FactoryComputedDateTimeTuple supplierForFactoryComputedDateTimeTuple() {
+        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
             return null;
         }
 
-        if (this.factoryProcessSequence != null
-            && (
-                    Objects.equals(
-                            this.factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier(),
-                            this.planningFactoryInstance.getFactoryReadableIdentifier()
-                    )
-                    &
-                    Objects.equals(
-                            this.factoryProcessSequence.getArrangeDateTime(),
-                            this.planningDateTimeSlot.getStart()
-                    )
-            )
-        ) {
-            return this.factoryProcessSequence;
+        return this.planningFactoryInstance.query(this);
+    }
+
+    public FactoryProcessSequence toFactoryProcessSequence() {
+        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
+            return null;
         }
 
         return FactoryProcessSequence.of(this);
     }
 
     @ShadowSources(
-            value = {"prerequisiteProducingArrangements[].completedDateTime"},
+            value = {"prerequisiteProducingArrangements[].factoryComputedDateTimeTuple"},
             alignmentKey = "prerequisiteProducingArrangements"
     )
-    public LocalDateTime supplierForPrerequisiteProducingArrangementsCompletedDateTime() {
+    public LocalDateTime supplierForPrerequisiteArrangementsCompletedDateTime() {
         if (this.prerequisiteProducingArrangements.isEmpty()) {
             return getSchedulingWorkCalendar().getStartDateTime();
         }
@@ -203,8 +181,8 @@ public class SchedulingProducingArrangement {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getCompletedDateTime() {
-        return Optional.ofNullable(this.shadowComputedDateTimePair)
-                .map(FactoryComputedDateTimePair::completedDateTime)
+        return Optional.ofNullable(this.factoryComputedDateTimeTuple)
+                .map(FactoryComputedDateTimeTuple::completedDateTime)
                 .orElse(null);
     }
 
@@ -239,7 +217,7 @@ public class SchedulingProducingArrangement {
     }
 
     public boolean isPlanningAssigned() {
-        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null && getShadowComputedDateTimePair() != null;
+        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null && getFactoryComputedDateTimeTuple() != null;
     }
 
     public void readyElseThrow() {
@@ -278,7 +256,7 @@ public class SchedulingProducingArrangement {
         return result;
     }
 
-    private Duration calcStaticProducingDuration() {
+    private Duration  calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
@@ -328,50 +306,26 @@ public class SchedulingProducingArrangement {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
     }
 
-    public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
-        return this.prerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UuidGenerator.timeOrderedV6()
-                                .toString())
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
-        return this.deepPrerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UuidGenerator.timeOrderedV6()
-                                .toString())
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
     public boolean boolArrangeDataTimeBrokenPrerequisite() {
-        return Objects.nonNull(this.prerequisiteProducingArrangementsCompletedDateTime)
-               && this.arrangeDateTime.isBefore(this.prerequisiteProducingArrangementsCompletedDateTime);
+        return Objects.nonNull(this.prerequisiteArrangementsCompletedDateTime)
+               && this.arrangeDateTime.isBefore(this.prerequisiteArrangementsCompletedDateTime);
     }
 
     public Long arrangeDateTimeBetweenPrerequisiteArrangementsCompletedDateTime() {
-        if (Objects.isNull(this.prerequisiteProducingArrangementsCompletedDateTime)) {
+        if (Objects.isNull(this.prerequisiteArrangementsCompletedDateTime)) {
             return 0L;
         }
 
-        if (this.arrangeDateTime.isAfter(this.prerequisiteProducingArrangementsCompletedDateTime)) {
+        if (this.arrangeDateTime.isAfter(this.prerequisiteArrangementsCompletedDateTime)) {
             return Duration.between(
-                            this.prerequisiteProducingArrangementsCompletedDateTime,
+                            this.prerequisiteArrangementsCompletedDateTime,
                             this.arrangeDateTime
                     )
                     .toMinutes();
-        } else if (this.arrangeDateTime.isBefore(this.prerequisiteProducingArrangementsCompletedDateTime)) {
+        } else if (this.arrangeDateTime.isBefore(this.prerequisiteArrangementsCompletedDateTime)) {
             return Duration.between(
                             this.arrangeDateTime,
-                            this.prerequisiteProducingArrangementsCompletedDateTime
+                            this.prerequisiteArrangementsCompletedDateTime
                     )
                     .toMinutes();
         } else {
@@ -381,15 +335,6 @@ public class SchedulingProducingArrangement {
 
     public boolean weatherPrerequisiteRequire() {
         return !getPrerequisiteProducingArrangements().isEmpty();
-    }
-
-    @ValueRangeProvider(id = SEQUENCE_VALUE_RANGE)
-    public CountableValueRange<BigDecimal> sequenceValueRangeProvider() {
-        return ValueRangeFactory.createBigDecimalValueRange(
-                BigDecimal.ZERO,
-                BigDecimal.ONE,
-                BigDecimal.valueOf(0.01)
-        );
     }
 
 }

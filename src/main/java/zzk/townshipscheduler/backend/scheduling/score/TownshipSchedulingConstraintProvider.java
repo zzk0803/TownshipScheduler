@@ -5,7 +5,7 @@ import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
@@ -33,21 +33,36 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                .join(
+        return constraintFactory.forEachUniquePair(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.lessThan(SchedulingProducingArrangement::getId)
+                        Joiners.lessThan(SchedulingProducingArrangement::toFactoryProcessSequence)
                 )
-                .filter((current, other) -> !other.getArrangeDateTime()
-                        .isAfter(current.getArrangeDateTime())
-                                            && other.getCompletedDateTime()
-                                                    .isAfter(current.getArrangeDateTime())
+                .join(
+                        SchedulingDateTimeSlot.class,
+                        Joiners.equal(
+                                (current, other) -> current.getPlanningDateTimeSlot(),
+                                Function.identity()
+                        )
+                )
+                .join(
+                        SchedulingDateTimeSlot.class,
+                        Joiners.equal(
+                                (current, other, currentDateTimeSlot) -> other.getPlanningDateTimeSlot(),
+                                Function.identity()
+                        )
+                )
+                .filter((current, other, currentDateTimeSlot, otherDateTimeSlot) -> {
+                            boolean b1 = !other.getArrangeDateTime()
+                                    .isAfter(current.getArrangeDateTime());
+                            boolean b2 = other.getCompletedDateTime()
+                                    .isAfter(current.getArrangeDateTime());
+                            return b1 && b2;
+                        }
                 )
                 .groupBy(
-                        (current, other) -> current,
-                        ConstraintCollectors.countDistinct((current, other) -> other)
+                        (current, other, currentDateTimeSlot, otherDateTimeSlot) -> current,
+                        ConstraintCollectors.countDistinct((current, other, currentDateTimeSlot, otherDateTimeSlot) -> other)
                 )
                 .filter((current, queueSize) ->
                         queueSize > current.getPlanningFactoryInstance()
@@ -67,28 +82,36 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEach(SchedulingProducingArrangement.class)
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::weatherPrerequisiteRequire)
                 .join(
-                        SchedulingArrangementHierarchies.class,
-                        Joiners.equal(
-                                Function.identity(),
-                                SchedulingArrangementHierarchies::getWhole
+                        SchedulingProducingArrangement.class,
+                        Joiners.filtering(
+                                (whole, partial) -> {
+                                    return whole.getDeepPrerequisiteProducingArrangements()
+                                            .contains(partial);
+                                }
                         )
                 )
                 .join(
-                        SchedulingProducingArrangement.class,
+                        SchedulingDateTimeSlot.class,
                         Joiners.equal(
-                                (whole, hierarchies) -> hierarchies.getPartial(),
+                                (whole, partial) -> whole.getPlanningDateTimeSlot(),
+                                Function.identity()
+                        )
+                )
+                .join(
+                        SchedulingDateTimeSlot.class,
+                        Joiners.equal(
+                                (whole, partial, wholeDateTimeSlot) -> partial.getPlanningDateTimeSlot(),
                                 Function.identity()
                         )
                 )
                 .groupBy(
-                        (whole, link, partial) -> whole,
-                        (whole, link, partial) -> partial,
+                        (whole, partial, wholeDateTimeSlot, partialDateTimeSlot) -> whole,
+                        (whole, partial, wholeDateTimeSlot, partialDateTimeSlot) -> partial,
                         ConstraintCollectors.max(
-                                (link, whole, partial) -> partial,
+                                (whole, partial, wholeDateTimeSlot, partialDateTimeSlot) -> partial,
                                 SchedulingProducingArrangement::getCompletedDateTime
                         )
                 )
@@ -104,7 +127,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         (whole, partial, partialMax) ->
                                 Duration.between(
                                                 whole.getArrangeDateTime(),
-                                                partial.getCompletedDateTime()
+                                                partialMax.getCompletedDateTime()
                                         )
                                         .toMinutes()
                 )

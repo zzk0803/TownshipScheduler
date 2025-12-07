@@ -124,14 +124,4 @@ public class TownshipSchedulingProblem {
                 .findFirst();
     }
 
-    @ProblemFactCollectionProperty
-    public List<SchedulingArrangementHierarchies> toSchedulingArrangementHierarchies() {
-        return this.schedulingProducingArrangementList.stream()
-                .flatMap(
-                        schedulingProducingArrangement -> schedulingProducingArrangement.toDeepPrerequisiteHierarchies()
-                                .stream()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
 }

@@ -1,12 +1,9 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -17,41 +14,31 @@ import java.util.Comparator;
 public class FactoryProcessSequence implements Comparable<FactoryProcessSequence> {
 
     public static final Comparator<FactoryProcessSequence> COMPARATOR
-            = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
-            .thenComparing(FactoryProcessSequence::getSequenceInFactory)
+            = Comparator.comparing(FactoryProcessSequence::getPlanningDateTimeSlot)
             .thenComparingInt(FactoryProcessSequence::getArrangementId);
 
     @ToString.Include
     @EqualsAndHashCode.Include
-    BigDecimal sequenceInFactory;
+    private Integer arrangementId;
 
     @ToString.Include
     @EqualsAndHashCode.Include
-    LocalDateTime arrangeDateTime;
+    private FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
 
     @ToString.Include
     @EqualsAndHashCode.Include
-    Integer arrangementId;
+    private Duration producingDuration;
 
     @ToString.Include
     @EqualsAndHashCode.Include
-    FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
-
-    @ToString.Include
-    Duration producingDuration;
-
-    int slotGapDuration;
-
-     SchedulingDateTimeSlot planningDateTimeSlot;
+    private SchedulingDateTimeSlot planningDateTimeSlot;
 
     public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
         this.planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
-        this.arrangeDateTime = planningDateTimeSlot.getStart();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
-        this.slotGapDuration = planningDateTimeSlot.getDurationInMinute();
         this.arrangementId = schedulingProducingArrangement.getId();
-        this.sequenceInFactory = schedulingProducingArrangement.getSequenceInFactory();
-        this.schedulingFactoryInstanceReadableIdentifier = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
+        this.schedulingFactoryInstanceReadableIdentifier = schedulingProducingArrangement.getPlanningFactoryInstance()
+                .getFactoryReadableIdentifier();
     }
 
     public static FactoryProcessSequence of(SchedulingProducingArrangement schedulingProducingArrangement) {
@@ -60,7 +47,10 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
 
     @Override
     public int compareTo(FactoryProcessSequence that) {
-        return COMPARATOR.compare(this, that);
+        return COMPARATOR.compare(
+                this,
+                that
+        );
     }
 
 }

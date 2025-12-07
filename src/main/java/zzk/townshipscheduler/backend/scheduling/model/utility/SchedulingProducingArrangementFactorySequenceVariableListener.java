@@ -84,7 +84,7 @@
 //                    SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
 //            );
 //
-//            SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processToPairMap
+//            SortedMap<FactoryProcessSequence, FactoryComputedDateTimeTuple> processToPairMap
 //                    = planningFactoryInstance.prepareProducingAndCompletedMap();
 //
 //            scoreDirectorWorkingSolution.lookupProducingArrangements(planningFactoryInstance)
@@ -110,15 +110,15 @@
 //    private void doUpdateDateTime(
 //            ScoreDirector<TownshipSchedulingProblem> scoreDirector,
 //            SchedulingProducingArrangement schedulingProducingArrangement,
-//            SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> preparedProducingAndCompletedMap
+//            SortedMap<FactoryProcessSequence, FactoryComputedDateTimeTuple> preparedProducingAndCompletedMap
 //    ) {
 //        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-//        FactoryComputedDateTimePair oldDateTimePair = schedulingProducingArrangement.getShadowFactoryComputedDateTimePair();
+//        FactoryComputedDateTimeTuple oldDateTimePair = schedulingProducingArrangement.getShadowFactoryComputedDateTimePair();
 //        if (factoryProcessSequence == null) {
 //            return;
 //        }
 //
-//        FactoryComputedDateTimePair newDateTimePair
+//        FactoryComputedDateTimeTuple newDateTimePair
 //                = preparedProducingAndCompletedMap.get(factoryProcessSequence);
 //        if (newDateTimePair == null) {
 //            return;
