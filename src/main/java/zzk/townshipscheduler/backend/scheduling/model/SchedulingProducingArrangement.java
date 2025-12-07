@@ -144,7 +144,7 @@ public class SchedulingProducingArrangement {
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    private LocalDateTime getProducingDateTime() {
+    public LocalDateTime getProducingDateTime() {
         return Optional.ofNullable(this.shadowComputedDateTimePair)
                 .map(FactoryComputedDateTimePair::producingDateTime)
                 .orElse(null);
