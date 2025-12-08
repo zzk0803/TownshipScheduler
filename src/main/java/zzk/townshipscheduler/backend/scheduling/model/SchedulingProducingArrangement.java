@@ -231,39 +231,6 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    @ShadowSources(
-            {
-                    "planningFactoryDateTimeSlot",
-                    "planningFactoryDateTimeSlot.firstArrangementProducingDateTime",
-                    "previousSchedulingProducingArrangement",
-                    "previousSchedulingProducingArrangement.completedDateTime"
-            }
-    )
-    public FactoryComputedDateTimePair computedDateTimePairSupplier() {
-        if (this.planningFactoryDateTimeSlot == null) {
-            return null;
-        }
-
-        LocalDateTime thisProducingDateTime;
-        if (!weatherFactoryProducingTypeIsQueue()) {
-            thisProducingDateTime = this.planningFactoryDateTimeSlot.getStart();
-            return new FactoryComputedDateTimePair(
-                    thisProducingDateTime,
-                    thisProducingDateTime.plus(getProducingDuration())
-            );
-        }
-
-        thisProducingDateTime = this.previousSchedulingProducingArrangement != null
-                ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
-                : this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
-
-        return new FactoryComputedDateTimePair(
-                thisProducingDateTime,
-                thisProducingDateTime.plus(getProducingDuration())
-        );
-
-    }
-
     public boolean weatherFactoryProducingTypeIsQueue() {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
@@ -285,7 +252,6 @@ public class SchedulingProducingArrangement {
     @ShadowSources(
             {
                     "planningFactoryDateTimeSlot",
-                    "planningFactoryDateTimeSlot.firstArrangementProducingDateTime",
                     "previousSchedulingProducingArrangement",
                     "previousSchedulingProducingArrangement.completedDateTime"
             }
@@ -300,7 +266,7 @@ public class SchedulingProducingArrangement {
         if (weatherFactoryProducingTypeIsQueue()) {
             thisProducingDateTime = this.previousSchedulingProducingArrangement != null
                     ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
-                    : this.planningFactoryDateTimeSlot.getFirstArrangementProducingDateTime();
+                    : this.planningFactoryDateTimeSlot.getStart();
 
         } else {
             thisProducingDateTime = this.planningFactoryDateTimeSlot.getStart();
@@ -369,11 +335,23 @@ public class SchedulingProducingArrangement {
     public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
         return this.deepPrerequisiteProducingArrangements.stream()
                 .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
+                        .uuid(UuidGenerator.timeOrderedV6().toString())
                         .whole(this)
                         .partial(schedulingProducingArrangement)
                         .build()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public boolean weatherPrerequisiteRequire() {
+        return !getPrerequisiteProducingArrangements().isEmpty();
+    }
+
+    public SchedulingFactoryInstance getPlanningFactoryInstance() {
+        if (Objects.isNull(getPlanningFactoryDateTimeSlot())) {
+            return null;
+        }
+        return getPlanningFactoryDateTimeSlot().getFactoryInstance();
     }
 
 }

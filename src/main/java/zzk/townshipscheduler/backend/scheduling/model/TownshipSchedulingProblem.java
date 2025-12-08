@@ -3,6 +3,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
+import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -62,11 +63,8 @@ public class TownshipSchedulingProblem {
     @ProblemFactProperty
     private SchedulingPlayer schedulingPlayer;
 
-    @PlanningScore(
-            bendableHardLevelsSize = BENDABLE_SCORE_HARD_SIZE,
-            bendableSoftLevelsSize = BENDABLE_SCORE_SOFT_SIZE
-    )
-    private BendableLongScore score;
+    @PlanningScore
+    private HardMediumSoftLongScore score;
 
     private DateTimeSlotSize dateTimeSlotSize;
 
@@ -83,7 +81,7 @@ public class TownshipSchedulingProblem {
             List<SchedulingProducingArrangement> schedulingProducingArrangementList,
             SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer,
-            BendableLongScore score,
+            HardMediumSoftLongScore score,
             DateTimeSlotSize dateTimeSlotSize,
             SolverStatus solverStatus
     ) {

@@ -1,6 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
+import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.utility.UuidGenerator;
@@ -33,7 +33,7 @@ public class TownshipSchedulingProblemBuilder {
 
     private SchedulingPlayer schedulingPlayer;
 
-    private BendableLongScore score;
+    private HardMediumSoftLongScore score;
 
     private DateTimeSlotSize slotSize;
 
@@ -43,7 +43,8 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     public TownshipSchedulingProblemBuilder uuid() {
-        this.uuid = UuidGenerator.timeOrderedV6().toString();
+        this.uuid = UuidGenerator.timeOrderedV6()
+                .toString();
         return this;
     }
 
@@ -77,7 +78,7 @@ public class TownshipSchedulingProblemBuilder {
         return this;
     }
 
-    public TownshipSchedulingProblemBuilder score(BendableLongScore score) {
+    public TownshipSchedulingProblemBuilder score(HardMediumSoftLongScore score) {
         this.score = score;
         return this;
     }
@@ -156,7 +157,10 @@ public class TownshipSchedulingProblemBuilder {
                 .stream()
                 .map(SchedulingOrder::calcFactoryActions)
                 .flatMap(Collection::stream)
-                .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
+                .map(productAction -> expandAndSetupIntoMaterials(
+                        idRoller,
+                        productAction
+                ))
                 .flatMap(Collection::stream)
                 .peek(SchedulingProducingArrangement::readyElseThrow)
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -175,11 +179,17 @@ public class TownshipSchedulingProblemBuilder {
         while (!dealingChain.isEmpty()) {
             SchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
-            iteratingArrangement.activate(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
+            iteratingArrangement.activate(
+                    idRoller,
+                    this.schedulingWorkCalendar,
+                    this.schedulingPlayer
+            );
             resultArrangementList.add(iteratingArrangement);
 
             SchedulingProducingExecutionMode producingExecutionMode
-                    = iteratingArrangement.getCurrentActionObject().getExecutionModeSet().stream()
+                    = iteratingArrangement.getCurrentActionObject()
+                    .getExecutionModeSet()
+                    .stream()
                     .min(Comparator.comparing(SchedulingProducingExecutionMode::getExecuteDuration))
                     .orElseThrow();
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
@@ -228,8 +238,10 @@ public class TownshipSchedulingProblemBuilder {
                 schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
                 factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
             }
-            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots().clear();
-            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots().addAll(factoryInstanceDateTimeSlots);
+            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots()
+                    .clear();
+            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots()
+                    .addAll(factoryInstanceDateTimeSlots);
         }
         this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
     }

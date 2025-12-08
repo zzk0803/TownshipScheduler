@@ -48,9 +48,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     @ShadowVariable(supplierName = "tailArrangementCompletedDateTimeSupplier")
     private LocalDateTime tailArrangementCompletedDateTime;
 
-    @ShadowVariable(supplierName = "firstArrangementProducingDateTimeSupplier")
-    private LocalDateTime firstArrangementProducingDateTime;
-
     public SchedulingFactoryInstanceDateTimeSlot(
             int id,
             SchedulingFactoryInstance schedulingFactoryInstance,
@@ -72,22 +69,13 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
             return null;
         }
 
-        return this.planningSchedulingProducingArrangements.getLast().getCompletedDateTime();
+        return this.planningSchedulingProducingArrangements.getLast()
+                .getCompletedDateTime();
     }
 
     @EqualsAndHashCode.Include
     public SchedulingFactoryInfo getSchedulingFactoryInfo() {
         return factoryInstance.getSchedulingFactoryInfo();
-    }
-
-    @ShadowSources({"factoryInstance.factorySlotToFirstArrangementProducingDateTimeMap"})
-    public LocalDateTime firstArrangementProducingDateTimeSupplier() {
-        return factoryInstance.getFactorySlotToFirstArrangementProducingDateTimeMap().getOrDefault(this,this.getStart());
-    }
-
-    @EqualsAndHashCode.Include
-    public LocalDateTime getStart() {
-        return dateTimeSlot.getStart();
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -123,14 +111,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return factoryInstance.getReapWindowSize();
     }
 
-    public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime tailArrangementCompletedDateTime = that.getTailArrangementCompletedDateTime();
-        if (tailArrangementCompletedDateTime == null) {
-            return false;
-        }
-        return tailArrangementCompletedDateTime.isAfter(this.getStart());
-    }
-
     public Optional<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceBy(Collection<SchedulingFactoryInstanceDateTimeSlot> those) {
         if (those == null || those.isEmpty()) {
             return Optional.empty();
@@ -139,6 +119,26 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return those.stream()
                 .filter(this::boolInfluenceBy)
                 .min(Comparator.naturalOrder());
+    }
+
+    public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
+        LocalDateTime tailArrangementCompletedDateTime = that.getTailArrangementCompletedDateTime();
+        if (tailArrangementCompletedDateTime == null) {
+            return false;
+        }
+        return tailArrangementCompletedDateTime.isAfter(this.getStart());
+    }
+
+    @EqualsAndHashCode.Include
+    public LocalDateTime getStart() {
+        return dateTimeSlot.getStart();
+    }
+
+    public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(Collection<SchedulingFactoryInstanceDateTimeSlot> those) {
+        return those.stream()
+                .sorted(Comparator.naturalOrder())
+                .filter(this::boolInfluenceTo)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
@@ -150,16 +150,12 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return thisTailArrangementDateTime.isAfter(thatStart);
     }
 
-    public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(Collection<SchedulingFactoryInstanceDateTimeSlot> those) {
-        return those.stream()
-                .sorted(Comparator.naturalOrder())
-                .filter(this::boolInfluenceTo)
-                .collect(Collectors.toCollection(TreeSet::new));
-    }
-
     @Override
     public int compareTo(@NotNull SchedulingFactoryInstanceDateTimeSlot that) {
-        return SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR.compare(this.dateTimeSlot, that.dateTimeSlot);
+        return SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR.compare(
+                this.dateTimeSlot,
+                that.dateTimeSlot
+        );
     }
 
 }

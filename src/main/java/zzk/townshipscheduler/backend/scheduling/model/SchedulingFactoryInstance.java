@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.NavigableSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -39,30 +41,31 @@ public class SchedulingFactoryInstance {
 
     private NavigableSet<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new TreeSet<>();
 
-    @ShadowVariable(supplierName = "factorySlotToFirstArrangementProducingDateTimeMapSupplier")
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMap
+    @ShadowVariable(supplierName = "supplierNameFactorySlotToFutureFinishedLocalDateTimeMap")
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFutureFinishedLocalDateTimeMap
             = new TreeMap<>();
 
-    @ShadowSources({"schedulingFactoryInstanceDateTimeSlotList[].tailArrangementCompletedDateTime"})
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFirstArrangementProducingDateTimeMapSupplier() {
-        TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> result = new TreeMap<>();
-        for (SchedulingFactoryInstanceDateTimeSlot current : schedulingFactoryInstanceDateTimeSlots) {
-            Set<SchedulingFactoryInstanceDateTimeSlot> headSetOfCurrent
-                    = schedulingFactoryInstanceDateTimeSlots.headSet(current, false);
-            Optional<SchedulingFactoryInstanceDateTimeSlot> findInfluenceBy
-                    = current.boolInfluenceBy(headSetOfCurrent);
-            result.put(
-                    current,
-                    findInfluenceBy.map(SchedulingFactoryInstanceDateTimeSlot::getTailArrangementCompletedDateTime)
-                            .orElse(current.getStart())
-            );
-        }
-        return result;
+    @ShadowSources({"schedulingFactoryInstanceDateTimeSlots[].tailArrangementCompletedDateTime"})
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> supplierNameFactorySlotToFutureFinishedLocalDateTimeMap() {
+        return this.schedulingFactoryInstanceDateTimeSlots.stream()
+                .collect(
+                        TreeMap::new,
+                        (treeMap, factoryInstanceDateTimeSlot) -> {
+                            treeMap.put(
+                                    factoryInstanceDateTimeSlot,
+                                    factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
+                            );
+                        },
+                        TreeMap::putAll
+                );
     }
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(
-                new FactoryReadableIdentifier(getCategoryName(), getSeqNum())
+                new FactoryReadableIdentifier(
+                        getCategoryName(),
+                        getSeqNum()
+                )
         );
     }
 
@@ -71,7 +74,8 @@ public class SchedulingFactoryInstance {
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
-        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
+        return this.getSchedulingFactoryInfo()
+                .weatherFactoryProducingTypeIsQueue();
     }
 
     @Override
@@ -84,7 +88,8 @@ public class SchedulingFactoryInstance {
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
-        return this.getSchedulingFactoryInfo().typeEqual(that.getSchedulingFactoryInfo());
+        return this.getSchedulingFactoryInfo()
+                .typeEqual(that.getSchedulingFactoryInfo());
     }
 
 }

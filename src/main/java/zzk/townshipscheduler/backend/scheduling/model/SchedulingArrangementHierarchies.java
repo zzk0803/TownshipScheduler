@@ -10,7 +10,6 @@ import lombok.Value;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class SchedulingArrangementHierarchies {
 
-    @PlanningId
     @EqualsAndHashCode.Include
     String uuid;
 
