@@ -19,7 +19,6 @@ import zzk.townshipscheduler.utility.UuidGenerator;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Log4j2
@@ -103,11 +102,28 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
-    private FactoryProcessSequence factoryProcessSequence;
+    @ShadowVariable(supplierName = "supplierNameAheadArrangementsInFactory")
+    private List<SchedulingProducingArrangement> aheadArrangementsInFactory = new ArrayList<>();
 
-    @ShadowVariable(supplierName = "supplierForFactoryComputedDateTimeTuple")
-    private FactoryComputedDateTimeTuple factoryComputedDateTimeTuple;
+//    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
+//    private FactoryProcessSequence factoryProcessSequence;
+
+//    @ShadowVariable(supplierName = "supplierForFactoryComputedDateTimeTuple")
+//    private FactoryComputedDateTimeTuple factoryComputedDateTimeTuple;
+
+    @JsonProperty("producingDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    @ShadowVariable(supplierName = "supplierForProducingDateTime")
+    private LocalDateTime producingDateTime;
+
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    @ShadowVariable(supplierName = "supplierForCompletedDateTime")
+    private LocalDateTime completedDateTime;
 
     private SchedulingProducingArrangement(
             IGameArrangeObject targetActionObject,
@@ -129,30 +145,11 @@ public class SchedulingProducingArrangement {
         return producingArrangement;
     }
 
-    @JsonProperty("producingDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getProducingDateTime() {
-        return Optional.ofNullable(this.factoryComputedDateTimeTuple)
-                .map(FactoryComputedDateTimeTuple::producingDateTime)
-                .orElse(null);
-    }
-
     @ShadowSources({"planningDateTimeSlot"})
     public LocalDateTime supplierForArrangeDateTime() {
         return this.planningDateTimeSlot != null
                 ? this.planningDateTimeSlot.getStart()
                 : null;
-    }
-
-    @ShadowSources(value = {"factoryProcessSequence"})
-    private FactoryComputedDateTimeTuple supplierForFactoryComputedDateTimeTuple() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
-            return null;
-        }
-
-        return this.planningFactoryInstance.query(this);
     }
 
     @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot"})
@@ -165,29 +162,60 @@ public class SchedulingProducingArrangement {
     }
 
     @ShadowSources(
-            value = {"prerequisiteProducingArrangements[].factoryComputedDateTimeTuple"},
-            alignmentKey = "prerequisiteProducingArrangements"
+            value = {
+                    "planningFactoryInstance",
+                    "planningDateTimeSlot",
+                    "planningFactoryInstance.planningProducingArrangements"
+            }
     )
-    public LocalDateTime supplierForPrerequisiteArrangementsCompletedDateTime() {
-        if (this.prerequisiteProducingArrangements.isEmpty()) {
-            return getSchedulingWorkCalendar().getStartDateTime();
+    private List<SchedulingProducingArrangement> supplierNameAheadArrangementsInFactory() {
+        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
+            return List.of();
         }
 
-        return this.prerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
-                .filter(Objects::nonNull)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
+        return this.planningFactoryInstance.getPlanningProducingArrangements()
+                .stream()
+                .filter(SchedulingProducingArrangement::isPlanningAssigned)
+                .filter(schedulingProducingArrangement -> {
+                    boolean b1 = !schedulingProducingArrangement.getArrangeDateTime()
+                            .isAfter(this.getArrangeDateTime());
+                    boolean b2 = schedulingProducingArrangement.getCompletedDateTime()
+                            .isAfter(this.getArrangeDateTime());
+                    return b1 && b2;
+                })
+                .sorted(
+                        Comparator.comparing(SchedulingProducingArrangement::getPlanningDateTimeSlot)
+                                .thenComparingInt(SchedulingProducingArrangement::getId)
+                )
+                .toList();
+
     }
 
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getCompletedDateTime() {
-        return Optional.ofNullable(this.factoryComputedDateTimeTuple)
-                .map(FactoryComputedDateTimeTuple::completedDateTime)
-                .orElse(null);
+//    @ShadowSources(value = {"factoryProcessSequence"})
+//    private FactoryComputedDateTimeTuple supplierForFactoryComputedDateTimeTuple() {
+//        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
+//            return null;
+//        }
+//
+//        return this.planningFactoryInstance.query(this);
+//    }
+
+    @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot", "aheadArrangementsInFactory"})
+    private LocalDateTime supplierForProducingDateTime() {
+        if (planningFactoryInstance == null || planningDateTimeSlot == null) {
+            return null;
+        }
+
+        LocalDateTime arrangeDateTime = getPlanningDateTimeSlot().getStart();
+        if (weatherFactoryProducingTypeIsQueue()) {
+            Duration producingDelay = this.aheadArrangementsInFactory.stream()
+                    .map(SchedulingProducingArrangement::getProducingDuration)
+                    .reduce(Duration::plus)
+                    .orElse(Duration.ZERO);
+            return arrangeDateTime.plus(producingDelay);
+        } else {
+            return arrangeDateTime;
+        }
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -211,6 +239,30 @@ public class SchedulingProducingArrangement {
     @JsonProperty("producingDuration")
     public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();
+    }
+
+    @ShadowSources(value = {"producingDateTime"})
+    private LocalDateTime supplierForCompletedDateTime() {
+        if (getProducingDateTime() == null) {
+            return null;
+        }
+        return getProducingDateTime().plus(getProducingDuration());
+    }
+
+    @ShadowSources(
+            value = {"prerequisiteProducingArrangements[].completedDateTime"},
+            alignmentKey = "prerequisiteProducingArrangements"
+    )
+    public LocalDateTime supplierForPrerequisiteArrangementsCompletedDateTime() {
+        if (this.prerequisiteProducingArrangements.isEmpty()) {
+            return getSchedulingWorkCalendar().getStartDateTime();
+        }
+
+        return this.prerequisiteProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
     }
 
     @JsonIgnore
@@ -260,7 +312,7 @@ public class SchedulingProducingArrangement {
         return result;
     }
 
-    private Duration  calcStaticProducingDuration() {
+    private Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
@@ -313,28 +365,6 @@ public class SchedulingProducingArrangement {
     public boolean boolArrangeDataTimeBrokenPrerequisite() {
         return Objects.nonNull(this.prerequisiteArrangementsCompletedDateTime)
                && this.arrangeDateTime.isBefore(this.prerequisiteArrangementsCompletedDateTime);
-    }
-
-    public Long arrangeDateTimeBetweenPrerequisiteArrangementsCompletedDateTime() {
-        if (Objects.isNull(this.prerequisiteArrangementsCompletedDateTime)) {
-            return 0L;
-        }
-
-        if (this.arrangeDateTime.isAfter(this.prerequisiteArrangementsCompletedDateTime)) {
-            return Duration.between(
-                            this.prerequisiteArrangementsCompletedDateTime,
-                            this.arrangeDateTime
-                    )
-                    .toMinutes();
-        } else if (this.arrangeDateTime.isBefore(this.prerequisiteArrangementsCompletedDateTime)) {
-            return Duration.between(
-                            this.arrangeDateTime,
-                            this.prerequisiteArrangementsCompletedDateTime
-                    )
-                    .toMinutes();
-        } else {
-            return 0L;
-        }
     }
 
     public boolean weatherPrerequisiteRequire() {
