@@ -108,7 +108,7 @@ public class SchedulingFactoryInfo {
     }
 
     @Value
-    public static class Id implements Comparable<Id> {
+    public static class Id {
 
         @JsonProperty("id")
         @Getter
@@ -128,11 +128,6 @@ public class SchedulingFactoryInfo {
 
         public static Id of(Long value) {
             return new Id(value);
-        }
-
-        @Override
-        public int compareTo(Id that) {
-            return Long.compare(this.value, that.value);
         }
 
         @Override

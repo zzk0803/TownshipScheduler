@@ -36,7 +36,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEachUniquePair(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.lessThan(SchedulingProducingArrangement::toFactoryProcessSequence)
+                        Joiners.lessThan(SchedulingProducingArrangement::getFactoryProcessSequence)
                 )
                 .join(
                         SchedulingDateTimeSlot.class,

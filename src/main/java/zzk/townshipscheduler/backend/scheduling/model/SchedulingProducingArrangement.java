@@ -103,6 +103,9 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
+    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
+    private FactoryProcessSequence factoryProcessSequence;
+
     @ShadowVariable(supplierName = "supplierForFactoryComputedDateTimeTuple")
     private FactoryComputedDateTimeTuple factoryComputedDateTimeTuple;
 
@@ -143,7 +146,7 @@ public class SchedulingProducingArrangement {
                 : null;
     }
 
-    @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot"})
+    @ShadowSources(value = {"factoryProcessSequence"})
     private FactoryComputedDateTimeTuple supplierForFactoryComputedDateTimeTuple() {
         if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
             return null;
@@ -152,7 +155,8 @@ public class SchedulingProducingArrangement {
         return this.planningFactoryInstance.query(this);
     }
 
-    public FactoryProcessSequence toFactoryProcessSequence() {
+    @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot"})
+    public FactoryProcessSequence supplierForFactoryProcessSequence() {
         if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
             return null;
         }
@@ -217,7 +221,7 @@ public class SchedulingProducingArrangement {
     }
 
     public boolean isPlanningAssigned() {
-        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null && getFactoryComputedDateTimeTuple() != null;
+        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
 
     public void readyElseThrow() {

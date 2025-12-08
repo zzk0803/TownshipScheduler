@@ -55,12 +55,9 @@ public class SchedulingFactoryInstance {
             = Gatherer.ofSequential(
             FormerCompletedDateTimeRef::new,
             (formerCompletedDateTimeRef, factoryProcessSequence, downstream) -> {
-                SchedulingDateTimeSlot schedulingDateTimeSlot = factoryProcessSequence.getPlanningDateTimeSlot();
-                if (schedulingDateTimeSlot == null) {
-                    return true;
-                }
 
-                LocalDateTime arrangeDateTime = schedulingDateTimeSlot.getStart();
+                LocalDateTime arrangeDateTime = factoryProcessSequence.getPlanningDateTimeSlot()
+                        .getStart();
                 LocalDateTime start = (formerCompletedDateTimeRef.value == null)
                         ? arrangeDateTime
                         : formerCompletedDateTimeRef.value.isAfter(arrangeDateTime)
@@ -107,12 +104,13 @@ public class SchedulingFactoryInstance {
     @ShadowSources(
             value = {
                     "planningProducingArrangements",
-                    "planningProducingArrangements[].planningDateTimeSlot"
+                    "planningProducingArrangements[].factoryProcessSequence"
             }
     )
     public LinkedHashMap<FactoryProcessSequence, FactoryComputedDateTimeTuple> supplierForShadowComputedPairMap() {
         return this.planningProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::toFactoryProcessSequence)
+                .filter(SchedulingProducingArrangement::isPlanningAssigned)
+                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
                 .sorted(FactoryProcessSequence.COMPARATOR)
                 .gather(weatherFactoryProducingTypeIsQueue()
                         ? QUEUE_GATHERER
@@ -158,7 +156,7 @@ public class SchedulingFactoryInstance {
     }
 
     public FactoryComputedDateTimeTuple query(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return query(schedulingProducingArrangement.toFactoryProcessSequence());
+        return query(schedulingProducingArrangement.getFactoryProcessSequence());
     }
 
     public FactoryComputedDateTimeTuple query(FactoryProcessSequence factoryProcessSequence) {

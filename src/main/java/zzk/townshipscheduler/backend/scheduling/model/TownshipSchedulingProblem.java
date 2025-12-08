@@ -2,14 +2,14 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Data
 @PlanningSolution
@@ -122,6 +122,24 @@ public class TownshipSchedulingProblem {
                 .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
                         .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
                 .findFirst();
+    }
+
+    @ProblemFactCollectionProperty
+    public List<FactoryProcessSequence> factoryProcessSequenceListProvider() {
+        List<FactoryProcessSequence> factoryProcessSequenceList = new ArrayList<>();
+        for (SchedulingProducingArrangement schedulingProducingArrangement : schedulingProducingArrangementList) {
+            for (SchedulingFactoryInstance factoryInstance : schedulingFactoryInstanceList) {
+                for (SchedulingDateTimeSlot schedulingDateTimeSlot : schedulingDateTimeSlots) {
+                    FactoryProcessSequence factoryProcessSequence = new FactoryProcessSequence(
+                            schedulingProducingArrangement,
+                            factoryInstance,
+                            schedulingDateTimeSlot
+                    );
+                    factoryProcessSequenceList.add(factoryProcessSequence);
+                }
+            }
+        }
+        return factoryProcessSequenceList;
     }
 
 }

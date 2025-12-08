@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
+import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -149,6 +150,7 @@ public class SchedulingViewPresenter {
                 Duration.ofSeconds(UPDATE_FREQUENCY)
         );
 
+        SolutionManager.updateShadowVariables(this.getTownshipSchedulingProblem());
         schedulingService.scheduling(
                 getTownshipSchedulingProblemId(),
                 solutionConsumer,

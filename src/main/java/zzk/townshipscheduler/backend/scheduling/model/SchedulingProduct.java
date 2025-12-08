@@ -90,7 +90,7 @@ public final class SchedulingProduct implements IGameArrangeObject {
     }
 
     @Value
-    public static class Id implements Comparable<Id> {
+    public static class Id  {
 
         @JsonProperty("id")
         private long value;
@@ -110,11 +110,6 @@ public final class SchedulingProduct implements IGameArrangeObject {
         @Override
         public String toString() {
             return String.valueOf(getValue());
-        }
-
-        @Override
-        public int compareTo(Id that) {
-            return Long.compare(this.value, that.value);
         }
 
         @Override
