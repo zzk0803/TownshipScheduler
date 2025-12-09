@@ -253,7 +253,9 @@ public class SchedulingProducingArrangement {
         return (SchedulingProduct) getCurrentActionObject();
     }
 
-    @ShadowSources(value = {"arrangementCompetitorsComputedTupleMap"})
+    @ShadowSources(
+            value = {"arrangementCompetitorsComputedTupleMap"}
+    )
     private LocalDateTime supplierForProducingDateTime() {
         FactoryComputedDateTimeTuple computedDateTimeTuple = getArrangementCompetitorsComputedTupleMap().getOrDefault(
                 this.uuid,
@@ -265,7 +267,9 @@ public class SchedulingProducingArrangement {
         return computedDateTimeTuple.producingDateTime();
     }
 
-    @ShadowSources(value = {"arrangementCompetitorsComputedTupleMap"})
+    @ShadowSources(
+            value = {"arrangementCompetitorsComputedTupleMap"}
+    )
     private LocalDateTime supplierForCompletedDateTime() {
         FactoryComputedDateTimeTuple computedDateTimeTuple = getArrangementCompetitorsComputedTupleMap().getOrDefault(
                 this.uuid,

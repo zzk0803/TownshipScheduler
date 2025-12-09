@@ -5,7 +5,6 @@ import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
@@ -33,26 +32,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .join(
                         SchedulingProducingArrangement.class,
-                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.lessThan(SchedulingProducingArrangement::getId)
+                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 )
-                .join(
-                        SchedulingDateTimeSlot.class,
-                        Joiners.equal(
-                                (current, other) -> current.getPlanningDateTimeSlot(),
-                                Function.identity()
-                        )
-                )
-                .join(
-                        SchedulingDateTimeSlot.class,
-                        Joiners.equal(
-                                (current, other, currentDateTimeSlot) -> other.getPlanningDateTimeSlot(),
-                                Function.identity()
-                        )
-                )
-                .filter((current, other, currentDateTimeSlot, otherDateTimeSlot) -> {
+                .filter(
+                        (current, other) -> {
                             boolean b1 = !other.getArrangeDateTime()
                                     .isAfter(current.getArrangeDateTime());
                             boolean b2 = other.getCompletedDateTime()
@@ -61,8 +47,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         }
                 )
                 .groupBy(
-                        (current, other, currentDateTimeSlot, otherDateTimeSlot) -> current,
-                        ConstraintCollectors.countDistinct((current, other, currentDateTimeSlot, otherDateTimeSlot) -> other)
+                        (current, other) -> current,
+                        ConstraintCollectors.countDistinct((current, other) -> other)
                 )
                 .filter((current, queueSize) ->
                         queueSize > current.getPlanningFactoryInstance()
@@ -93,25 +79,11 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                                 }
                         )
                 )
-                .join(
-                        SchedulingDateTimeSlot.class,
-                        Joiners.equal(
-                                (whole, partial) -> whole.getPlanningDateTimeSlot(),
-                                Function.identity()
-                        )
-                )
-                .join(
-                        SchedulingDateTimeSlot.class,
-                        Joiners.equal(
-                                (whole, partial, wholeDateTimeSlot) -> partial.getPlanningDateTimeSlot(),
-                                Function.identity()
-                        )
-                )
                 .groupBy(
-                        (whole, partial, wholeDateTimeSlot, partialDateTimeSlot) -> whole,
-                        (whole, partial, wholeDateTimeSlot, partialDateTimeSlot) -> partial,
+                        (whole, partial) -> whole,
+                        (whole, partial) -> partial,
                         ConstraintCollectors.max(
-                                (whole, partial, wholeDateTimeSlot, partialDateTimeSlot) -> partial,
+                                (whole, partial) -> partial,
                                 SchedulingProducingArrangement::getCompletedDateTime
                         )
                 )
