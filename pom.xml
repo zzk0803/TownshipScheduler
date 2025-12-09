@@ -162,9 +162,6 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>zzk.townshipscheduler.Application</mainClass>
-                    <jvmArguments>
-                        -XX:+UseParallelGC
-                    </jvmArguments>
                 </configuration>
             </plugin>
             <plugin>

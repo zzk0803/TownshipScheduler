@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
+import org.javatuples.Pair;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
@@ -19,6 +20,7 @@ import zzk.townshipscheduler.utility.UuidGenerator;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Gatherer;
 
 
 @Log4j2
@@ -35,6 +37,61 @@ public class SchedulingProducingArrangement {
                     Comparator.nullsFirst(Comparator.naturalOrder())
             )
             .thenComparingInt(SchedulingProducingArrangement::getId);
+
+    //<editor-fold desc="SLOT_GATHERER">
+    public static final Gatherer<SchedulingProducingArrangement, Void, Pair<SchedulingProducingArrangement, FactoryComputedDateTimeTuple>>
+            SLOT_GATHERER
+            = Gatherer.of(
+            () -> null,
+            (_, schedulingProducingArrangement, downstream) -> {
+                SchedulingDateTimeSlot schedulingDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
+                if (schedulingDateTimeSlot == null) {
+                    return true;
+                }
+
+                LocalDateTime start = schedulingDateTimeSlot.getStart();
+                return downstream.push(
+                        new Pair<>(
+                                schedulingProducingArrangement,
+                                new FactoryComputedDateTimeTuple(
+                                        start,
+                                        start.plus(schedulingProducingArrangement.getProducingDuration())
+                                )
+                        )
+                ) && !downstream.isRejecting();
+            },
+            Gatherer.defaultCombiner(),
+            Gatherer.defaultFinisher()
+    );
+    //</editor-fold>
+
+    //<editor-fold desc="QUEUE_GATHERER">
+    public static final Gatherer<SchedulingProducingArrangement, FormerCompletedDateTimeRef, Pair<SchedulingProducingArrangement, FactoryComputedDateTimeTuple>>
+            QUEUE_GATHERER
+            = Gatherer.ofSequential(
+            FormerCompletedDateTimeRef::new,
+            (formerCompletedDateTimeRef, schedulingProducingArrangement, downstream) -> {
+
+                LocalDateTime arrangeDateTime = schedulingProducingArrangement.getPlanningDateTimeSlot()
+                        .getStart();
+                LocalDateTime start = (formerCompletedDateTimeRef.value == null)
+                        ? arrangeDateTime
+                        : formerCompletedDateTimeRef.value.isAfter(arrangeDateTime)
+                                ? formerCompletedDateTimeRef.value
+                                : arrangeDateTime;
+                LocalDateTime end = start.plus(schedulingProducingArrangement.getProducingDuration());
+                return downstream.push(
+                        new Pair<>(
+                                schedulingProducingArrangement,
+                                new FactoryComputedDateTimeTuple(
+                                        start,
+                                        formerCompletedDateTimeRef.value = end
+                                )
+                        )
+                ) && !downstream.isRejecting();
+            }
+    );
+    //</editor-fold>
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
@@ -77,9 +134,6 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
-    @ShadowVariable(supplierName = "supplierForPrerequisiteArrangementsCompletedDateTime")
-    private LocalDateTime prerequisiteArrangementsCompletedDateTime;
-
     private Duration staticDeepProducingDuration;
 
     @JsonIgnore
@@ -102,14 +156,13 @@ public class SchedulingProducingArrangement {
     )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @ShadowVariable(supplierName = "supplierNameAheadArrangementsInFactory")
-    private List<SchedulingProducingArrangement> aheadArrangementsInFactory = new ArrayList<>();
+    @JsonIgnore
+    private List<SchedulingProducingArrangement> arrangementCompetitors = new ArrayList<>();
 
-//    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
-//    private FactoryProcessSequence factoryProcessSequence;
-
-//    @ShadowVariable(supplierName = "supplierForFactoryComputedDateTimeTuple")
-//    private FactoryComputedDateTimeTuple factoryComputedDateTimeTuple;
+    @JsonIgnore
+    @ShadowVariable(supplierName = "supplierForArrangementCompetitorsComputedTupleMap")
+    private LinkedHashMap<UUID, FactoryComputedDateTimeTuple> arrangementCompetitorsComputedTupleMap
+            = new LinkedHashMap<>();
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -152,70 +205,34 @@ public class SchedulingProducingArrangement {
                 : null;
     }
 
-    @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot"})
-    public FactoryProcessSequence supplierForFactoryProcessSequence() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
-            return null;
-        }
-
-        return FactoryProcessSequence.of(this);
-    }
-
     @ShadowSources(
             value = {
-                    "planningFactoryInstance",
-                    "planningDateTimeSlot",
-                    "planningFactoryInstance.planningProducingArrangements"
-            }
+                    "arrangementCompetitors[].planningFactoryInstance",
+                    "arrangementCompetitors[].planningDateTimeSlot"
+            },
+            alignmentKey = "arrangementCompetitors"
     )
-    private List<SchedulingProducingArrangement> supplierNameAheadArrangementsInFactory() {
-        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
-            return List.of();
-        }
-
-        return this.planningFactoryInstance.getPlanningProducingArrangements()
-                .stream()
+    private Map<UUID, FactoryComputedDateTimeTuple> supplierForArrangementCompetitorsComputedTupleMap() {
+        return this.arrangementCompetitors.stream()
                 .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                .filter(schedulingProducingArrangement -> {
-                    boolean b1 = !schedulingProducingArrangement.getArrangeDateTime()
-                            .isAfter(this.getArrangeDateTime());
-                    boolean b2 = schedulingProducingArrangement.getCompletedDateTime()
-                            .isAfter(this.getArrangeDateTime());
-                    return b1 && b2;
-                })
-                .sorted(
-                        Comparator.comparing(SchedulingProducingArrangement::getPlanningDateTimeSlot)
-                                .thenComparingInt(SchedulingProducingArrangement::getId)
-                )
-                .toList();
-
+                .sorted(Comparator.comparing(SchedulingProducingArrangement::getPlanningDateTimeSlot)
+                        .thenComparingInt(SchedulingProducingArrangement::getId))
+                .gather(weatherFactoryProducingTypeIsQueue()
+                        ? QUEUE_GATHERER
+                        : SLOT_GATHERER)
+                .collect(
+                        LinkedHashMap::new,
+                        (linkedHashMap, tuple) -> linkedHashMap.put(
+                                tuple.getValue0()
+                                        .getUuid(),
+                                tuple.getValue1()
+                        ),
+                        LinkedHashMap::putAll
+                );
     }
 
-//    @ShadowSources(value = {"factoryProcessSequence"})
-//    private FactoryComputedDateTimeTuple supplierForFactoryComputedDateTimeTuple() {
-//        if (this.planningFactoryInstance == null || this.planningDateTimeSlot == null) {
-//            return null;
-//        }
-//
-//        return this.planningFactoryInstance.query(this);
-//    }
-
-    @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot", "aheadArrangementsInFactory"})
-    private LocalDateTime supplierForProducingDateTime() {
-        if (planningFactoryInstance == null || planningDateTimeSlot == null) {
-            return null;
-        }
-
-        LocalDateTime arrangeDateTime = getPlanningDateTimeSlot().getStart();
-        if (weatherFactoryProducingTypeIsQueue()) {
-            Duration producingDelay = this.aheadArrangementsInFactory.stream()
-                    .map(SchedulingProducingArrangement::getProducingDuration)
-                    .reduce(Duration::plus)
-                    .orElse(Duration.ZERO);
-            return arrangeDateTime.plus(producingDelay);
-        } else {
-            return arrangeDateTime;
-        }
+    public boolean isPlanningAssigned() {
+        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -236,33 +253,33 @@ public class SchedulingProducingArrangement {
         return (SchedulingProduct) getCurrentActionObject();
     }
 
+    @ShadowSources(value = {"arrangementCompetitorsComputedTupleMap"})
+    private LocalDateTime supplierForProducingDateTime() {
+        FactoryComputedDateTimeTuple computedDateTimeTuple = getArrangementCompetitorsComputedTupleMap().getOrDefault(
+                this.uuid,
+                null
+        );
+        if (computedDateTimeTuple == null) {
+            return null;
+        }
+        return computedDateTimeTuple.producingDateTime();
+    }
+
+    @ShadowSources(value = {"arrangementCompetitorsComputedTupleMap"})
+    private LocalDateTime supplierForCompletedDateTime() {
+        FactoryComputedDateTimeTuple computedDateTimeTuple = getArrangementCompetitorsComputedTupleMap().getOrDefault(
+                this.uuid,
+                null
+        );
+        if (computedDateTimeTuple == null) {
+            return null;
+        }
+        return computedDateTimeTuple.completedDateTime();
+    }
+
     @JsonProperty("producingDuration")
     public Duration getProducingDuration() {
         return getProducingExecutionMode().getExecuteDuration();
-    }
-
-    @ShadowSources(value = {"producingDateTime"})
-    private LocalDateTime supplierForCompletedDateTime() {
-        if (getProducingDateTime() == null) {
-            return null;
-        }
-        return getProducingDateTime().plus(getProducingDuration());
-    }
-
-    @ShadowSources(
-            value = {"prerequisiteProducingArrangements[].completedDateTime"},
-            alignmentKey = "prerequisiteProducingArrangements"
-    )
-    public LocalDateTime supplierForPrerequisiteArrangementsCompletedDateTime() {
-        if (this.prerequisiteProducingArrangements.isEmpty()) {
-            return getSchedulingWorkCalendar().getStartDateTime();
-        }
-
-        return this.prerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
-                .filter(Objects::nonNull)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
     }
 
     @JsonIgnore
@@ -270,10 +287,6 @@ public class SchedulingProducingArrangement {
         return Objects.nonNull(getPlanningFactoryInstance())
                && getPlanningFactoryInstance().getSchedulingFactoryInfo()
                        .typeEqual(getSchedulingProduct().getRequireFactory());
-    }
-
-    public boolean isPlanningAssigned() {
-        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
 
     public void readyElseThrow() {
@@ -362,13 +375,14 @@ public class SchedulingProducingArrangement {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
     }
 
-    public boolean boolArrangeDataTimeBrokenPrerequisite() {
-        return Objects.nonNull(this.prerequisiteArrangementsCompletedDateTime)
-               && this.arrangeDateTime.isBefore(this.prerequisiteArrangementsCompletedDateTime);
-    }
-
     public boolean weatherPrerequisiteRequire() {
         return !getPrerequisiteProducingArrangements().isEmpty();
+    }
+
+    public static final class FormerCompletedDateTimeRef {
+
+        public LocalDateTime value = null;
+
     }
 
 }

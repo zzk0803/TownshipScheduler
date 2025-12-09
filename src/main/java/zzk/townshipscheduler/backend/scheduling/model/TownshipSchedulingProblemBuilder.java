@@ -39,7 +39,8 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     public TownshipSchedulingProblemBuilder uuid() {
-        this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID()
+                .toString();
         return this;
     }
 
@@ -92,6 +93,7 @@ public class TownshipSchedulingProblemBuilder {
         this.setupDateTimeSlot();
         this.setupGameActions();
         this.trimUnrelatedObject();
+        this.setupArrangementsCompetitor();
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
@@ -101,7 +103,7 @@ public class TownshipSchedulingProblemBuilder {
         int dateTimeValueRangeCount = this.schedulingDateTimeSlots.size();
         int factoryCount = this.schedulingFactoryInstanceList.size();
         log.info(
-                "your township scheduling problem include {} order,contain {} final product item to make,and include all materials  need {} arrangement.factory value range size:{},date times slot size:{}",
+                "your township scheduling problem include {} order,contain {} final product item to make,and include all materials need count in  {} arrangements.factory value range size:{},date times slot size:{}",
                 orderSize,
                 orderItemProducingArrangementCount,
                 totalItemProducingArrangementCount,
@@ -150,7 +152,10 @@ public class TownshipSchedulingProblemBuilder {
                 .stream()
                 .map(SchedulingOrder::calcFactoryActions)
                 .flatMap(Collection::stream)
-                .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
+                .map(productAction -> expandAndSetupIntoMaterials(
+                        idRoller,
+                        productAction
+                ))
                 .flatMap(Collection::stream)
                 .peek(SchedulingProducingArrangement::readyElseThrow)
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -169,11 +174,17 @@ public class TownshipSchedulingProblemBuilder {
         while (!dealingChain.isEmpty()) {
             SchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
-            iteratingArrangement.activate(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
+            iteratingArrangement.activate(
+                    idRoller,
+                    this.schedulingWorkCalendar,
+                    this.schedulingPlayer
+            );
             resultArrangementList.add(iteratingArrangement);
 
             SchedulingProducingExecutionMode producingExecutionMode
-                    = iteratingArrangement.getCurrentActionObject().getExecutionModeSet().stream()
+                    = iteratingArrangement.getCurrentActionObject()
+                    .getExecutionModeSet()
+                    .stream()
                     .min(Comparator.comparing(SchedulingProducingExecutionMode::getExecuteDuration))
                     .orElseThrow();
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
@@ -235,6 +246,18 @@ public class TownshipSchedulingProblemBuilder {
                     return !anyMatch;
                 }
         );
+    }
+
+    private void setupArrangementsCompetitor() {
+        Map<SchedulingFactoryInfo, List<SchedulingProducingArrangement>> groupByFactoryTypeMap
+                = this.schedulingProducingArrangementList.stream()
+                .collect(Collectors.groupingBy(SchedulingProducingArrangement::getRequiredFactoryInfo));
+        groupByFactoryTypeMap.forEach((schedulingFactoryInfo, arrangements) -> arrangements.forEach(currentArrangement -> {
+            currentArrangement.getArrangementCompetitors()
+                    .clear();
+            currentArrangement.getArrangementCompetitors()
+                    .addAll(arrangements);
+        }));
     }
 
     public String toString() {
