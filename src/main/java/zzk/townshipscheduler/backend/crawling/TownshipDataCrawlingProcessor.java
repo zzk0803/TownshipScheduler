@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.crawling;
 
 import jakarta.annotation.PreDestroy;
 import org.javatuples.Pair;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -71,7 +72,7 @@ class TownshipDataCrawlingProcessor {
     }
 
     public CompletableFuture<CrawledResult> process() {
-        Document document = loadDocument(false);
+        Document document = loadDocument(true);
         Elements articleTableElements = document.getElementsByClass("article-table");
 
         for (int i = 0; i < articleTableElements.size(); i++) {
@@ -152,7 +153,8 @@ class TownshipDataCrawlingProcessor {
                             "try to establish connection to fandom wiki ..retry X {}",
                             retryContext.getRetryCount()
                     );
-                    return Jsoup.connect(TOWNSHIP_FANDOM_GOODS).get();
+                    Connection connect = Jsoup.connect(TOWNSHIP_FANDOM_GOODS);
+                    return connect.get();
                 }
         );
     }
@@ -371,7 +373,7 @@ class TownshipDataCrawlingProcessor {
                                 HttpRequest.newBuilder(URI.create(url))
                                         .header(
                                                 "User-Agent",
-                                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0"
                                         ).timeout(Duration.ofSeconds(5))
                                         .GET()
                                         .build(),

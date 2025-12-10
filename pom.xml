@@ -132,6 +132,13 @@
 <!--            <version>${org.mapstruct.version}</version>-->
 <!--        </dependency>-->
 
+        <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.21.2</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.atteo/evo-inflector -->
         <dependency>
             <groupId>org.atteo</groupId>
