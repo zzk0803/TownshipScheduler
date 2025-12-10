@@ -15,7 +15,6 @@ import zzk.townshipscheduler.utility.UuidGenerator;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -23,10 +22,6 @@ import java.util.stream.Collectors;
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
-
-    public static final Comparator<SchedulingProducingArrangement> COMPARATOR
-            = Comparator.comparing(SchedulingProducingArrangement::getPlanningFactoryDateTimeSlot)
-            .thenComparingInt(SchedulingProducingArrangement::getIndexInFactorySlot);
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -99,18 +94,6 @@ public class SchedulingProducingArrangement {
             sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
     )
     private SchedulingProducingArrangement previousSchedulingProducingArrangement;
-
-    @JsonIgnore
-    @NextElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
-    )
-    private SchedulingProducingArrangement nextSchedulingProducingArrangement;
-
-    @JsonIgnore
-    @IndexShadowVariable(
-            sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
-    )
-    private Integer indexInFactorySlot;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -252,12 +235,12 @@ public class SchedulingProducingArrangement {
     @ShadowSources(
             {
                     "planningFactoryDateTimeSlot",
+                    "planningFactoryDateTimeSlot.amendedFirstArrangementProducingDateTime",
                     "previousSchedulingProducingArrangement",
                     "previousSchedulingProducingArrangement.completedDateTime"
             }
     )
     public LocalDateTime producingDateTimeSupplier() {
-
         if (this.planningFactoryDateTimeSlot == null) {
             return null;
         }
@@ -266,7 +249,7 @@ public class SchedulingProducingArrangement {
         if (weatherFactoryProducingTypeIsQueue()) {
             thisProducingDateTime = this.previousSchedulingProducingArrangement != null
                     ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
-                    : this.planningFactoryDateTimeSlot.getStart();
+                    : this.planningFactoryDateTimeSlot.getAmendedFirstArrangementProducingDateTime();
 
         } else {
             thisProducingDateTime = this.planningFactoryDateTimeSlot.getStart();
@@ -314,34 +297,14 @@ public class SchedulingProducingArrangement {
         return getTargetActionObject() instanceof SchedulingOrder;
     }
 
-    public boolean isDeepPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
+    public boolean haveDeepPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
         return getDeepPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
     }
 
-    public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
+    public boolean havePrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
         return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
     }
 
-    public List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
-        return this.prerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    public List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
-        return this.deepPrerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UuidGenerator.timeOrderedV6().toString())
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
 
     public boolean weatherPrerequisiteRequire() {
         return !getPrerequisiteProducingArrangements().isEmpty();

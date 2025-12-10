@@ -60,20 +60,16 @@
         </termination>
 
         <unionMoveSelector>
-
-            <listChangeMoveSelector>
-                <filterClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryListChangeMoveSelectionFilter
-                </filterClass>
-            </listChangeMoveSelector>
-
+            <listChangeMoveSelector/>
+            <listSwapMoveSelector/>
+            <subListChangeMoveSelector/>
+            <subListSwapMoveSelector/>
+            <kOptListMoveSelector/>
         </unionMoveSelector>
 
         <acceptor>
-            <fadingEntityTabuSize>8</fadingEntityTabuSize>
-            <fadingValueTabuSize>15</fadingValueTabuSize>
             <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
-            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
+            <stepCountingHillClimbingType>STEP</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>

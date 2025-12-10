@@ -5,7 +5,7 @@ import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSo
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceDateTimeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 
@@ -53,43 +53,47 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .penalizeLong(
                         HardMediumSoftLongScore.ONE_HARD,
-                        (current, queueSize) -> queueSize - current.getPlanningFactoryDateTimeSlot().getProducingLength()
+                        (current, queueSize) -> queueSize - current.getPlanningFactoryDateTimeSlot()
+                                .getProducingLength()
                 )
                 .asConstraint("forbidBrokenFactoryAbility");
     }
 
     private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::weatherPrerequisiteRequire)
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .join(
-                        SchedulingArrangementHierarchies.class,
+                        SchedulingProducingArrangement.class,
+                        Joiners.filtering(SchedulingProducingArrangement::haveDeepPrerequisiteArrangement)
+                )
+                .join(
+                        SchedulingFactoryInstanceDateTimeSlot.class,
                         Joiners.equal(
-                                Function.identity(),
-                                SchedulingArrangementHierarchies::getWhole
+                                (leftArrangement, rightArrangement) -> leftArrangement.getPlanningFactoryDateTimeSlot(),
+                                Function.identity()
                         )
                 )
                 .join(
-                        SchedulingProducingArrangement.class,
+                        SchedulingFactoryInstanceDateTimeSlot.class,
                         Joiners.equal(
-                                (whole, hierarchies) -> hierarchies.getPartial(),
+                                (leftArrangement, rightArrangement, leftArrangementSlot) -> rightArrangement.getPlanningFactoryDateTimeSlot(),
                                 Function.identity()
                         )
                 )
                 .groupBy(
-                        (whole, link, partial) -> whole,
+                        (leftArrangement, rightArrangement, leftArrangementSlot, rightArrangementSlot) -> leftArrangement,
                         ConstraintCollectors.max(
-                                (link, whole, partial) -> partial,
+                                (leftArrangement, rightArrangement, leftArrangementSlot, rightArrangementSlot) -> rightArrangement,
                                 SchedulingProducingArrangement::getCompletedDateTime
                         )
                 )
-                .filter((whole, partial) -> whole.getArrangeDateTime().isBefore(partial.getCompletedDateTime()))
+                .filter((whole, partialMax) -> whole.getArrangeDateTime().isBefore(partialMax.getCompletedDateTime()))
                 .penalizeLong(
                         HardMediumSoftLongScore.ONE_HARD,
-                        (whole, partial) ->
-                                Duration.between(whole.getArrangeDateTime(), partial.getCompletedDateTime()).toMinutes()
+                        (whole, partialMax) ->
+                                Duration.between(whole.getArrangeDateTime(), partialMax.getCompletedDateTime()).toMinutes()
                 )
-                .asConstraint("forbidBrokenPrerequisiteStock");
+                .asConstraint("forbidBrokenPrerequisiteStock")
+                ;
     }
 
     private Constraint forbidBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
@@ -111,16 +115,18 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .penalizeLong(
                         HardMediumSoftLongScore.ONE_MEDIUM,
-                        ((schedulingOrder, producingArrangement) -> {
-                            LocalDateTime deadline = schedulingOrder.getDeadline();
-                            LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
-                            return completedDateTime != null
-                                    ? Duration.between(deadline, completedDateTime).toMinutes()
-                                    : Duration.between(
-                                            producingArrangement.getSchedulingWorkCalendar().getStartDateTime(),
-                                            producingArrangement.getSchedulingWorkCalendar().getEndDateTime()
-                                    ).toMinutes();
-                        })
+                        (
+                                (schedulingOrder, producingArrangement) -> {
+                                    LocalDateTime deadline = schedulingOrder.getDeadline();
+                                    LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
+                                    return completedDateTime != null
+                                            ? Duration.between(deadline, completedDateTime).toMinutes()
+                                            : Duration.between(
+                                                    producingArrangement.getSchedulingWorkCalendar().getStartDateTime(),
+                                                    producingArrangement.getSchedulingWorkCalendar().getEndDateTime()
+                                            ).toMinutes();
+                                }
+                        )
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");
     }
@@ -130,13 +136,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .filter(schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                             return schedulingProducingArrangement.isOrderDirect()
-                                   && (
-                                           Objects.isNull(completedDateTime)
-                                           || completedDateTime.isAfter(
-                                                   schedulingProducingArrangement.getSchedulingWorkCalendar()
-                                                           .getEndDateTime()
-                                           )
-                                   );
+                                    && (
+                                    Objects.isNull(completedDateTime)
+                                            || completedDateTime.isAfter(
+                                            schedulingProducingArrangement.getSchedulingWorkCalendar()
+                                                    .getEndDateTime()
+                                    )
+                            );
                         }
                 )
                 .penalizeLong(
@@ -167,7 +173,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     LocalTime sleepEnd = schedulingProducingArrangement.getSchedulingPlayer().getSleepEnd();
                     LocalTime arrangeTime = arrangeDateTime.toLocalTime();
                     return (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX))
-                           || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
+                            || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
                 })
                 .penalizeLong(
                         HardMediumSoftLongScore.ofMedium(500L)

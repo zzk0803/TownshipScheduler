@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
@@ -31,8 +30,6 @@ public class TownshipSchedulingProblem {
 
     public static final int SOFT_BATTER = 1;
 
-    public static final String VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS = "valueRangeForProducingArrangements";
-
     private String uuid;
 
     @ProblemFactCollectionProperty
@@ -54,7 +51,6 @@ public class TownshipSchedulingProblem {
     private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList;
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_PRODUCING_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
     @ProblemFactProperty
@@ -104,14 +100,16 @@ public class TownshipSchedulingProblem {
         return new TownshipSchedulingProblemBuilder();
     }
 
-    @ProblemFactCollectionProperty
-    public List<SchedulingArrangementHierarchies> toSchedulingArrangementHierarchies() {
+    public List<SchedulingProducingArrangement> valueRangeForArrangements(
+            SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot
+    ) {
+        SchedulingFactoryInfo schedulingFactoryInfo = schedulingFactoryInstanceDateTimeSlot.getSchedulingFactoryInfo();
         return this.schedulingProducingArrangementList.stream()
-                .flatMap(
-                        schedulingProducingArrangement -> schedulingProducingArrangement.toDeepPrerequisiteHierarchies()
-                                .stream()
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo()
+                        .typeEqual(schedulingFactoryInfo)
                 )
-                .collect(Collectors.toCollection(ArrayList::new));
+                .toList()
+                ;
     }
 
 }

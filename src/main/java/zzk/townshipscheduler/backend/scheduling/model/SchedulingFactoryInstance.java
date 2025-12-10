@@ -41,12 +41,16 @@ public class SchedulingFactoryInstance {
 
     private NavigableSet<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new TreeSet<>();
 
-    @ShadowVariable(supplierName = "supplierNameFactorySlotToFutureFinishedLocalDateTimeMap")
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFutureFinishedLocalDateTimeMap
+    @ShadowVariable(supplierName = "supplierNameFactorySlotToFinishedLocalDateTimeMap")
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFinishedLocalDateTimeMap
             = new TreeMap<>();
 
     @ShadowSources({"schedulingFactoryInstanceDateTimeSlots[].tailArrangementCompletedDateTime"})
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> supplierNameFactorySlotToFutureFinishedLocalDateTimeMap() {
+    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> supplierNameFactorySlotToFinishedLocalDateTimeMap() {
+        if (!weatherFactoryProducingTypeIsQueue()) {
+            return null;
+        }
+
         return this.schedulingFactoryInstanceDateTimeSlots.stream()
                 .collect(
                         TreeMap::new,
