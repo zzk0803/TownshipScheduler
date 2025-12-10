@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TownshipSchedulingProblem {
 
-    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
+//    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 
     public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT = "valueRangeForDateTimeSlot";
 
@@ -33,7 +33,7 @@ public class TownshipSchedulingProblem {
     private List<SchedulingOrder> schedulingOrderList;
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
+//    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @PlanningEntityCollectionProperty
@@ -88,13 +88,17 @@ public class TownshipSchedulingProblem {
         return new TownshipSchedulingProblemBuilder();
     }
 
-    public List<SchedulingProducingArrangement> lookupProducingArrangements(SchedulingFactoryInstance schedulingFactoryInstance) {
+    public List<SchedulingProducingArrangement> lookupProducingArrangements(
+            SchedulingFactoryInstance schedulingFactoryInstance
+    ) {
         return getSchedulingProducingArrangementList().stream()
                 .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance() == schedulingFactoryInstance)
                 .toList();
     }
 
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryReadableIdentifier factoryReadableIdentifier) {
+    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(
+            FactoryReadableIdentifier factoryReadableIdentifier
+    ) {
         return getSchedulingFactoryInstanceList().stream()
                 .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
                         .equals(factoryReadableIdentifier))
@@ -116,6 +120,16 @@ public class TownshipSchedulingProblem {
                                 .stream()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<SchedulingFactoryInstance> valueRangeFactoryInstancesForArrangement(
+            SchedulingProducingArrangement schedulingProducingArrangement
+    ) {
+        SchedulingFactoryInfo requiredFactoryInfo = schedulingProducingArrangement.getRequiredFactoryInfo();
+        return this.schedulingFactoryInstanceList.stream()
+                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getSchedulingFactoryInfo()
+                        .typeEqual(requiredFactoryInfo))
+                .toList();
     }
 
 }

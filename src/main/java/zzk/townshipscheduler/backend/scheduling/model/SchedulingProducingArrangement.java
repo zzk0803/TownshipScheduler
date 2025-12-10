@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
@@ -28,6 +29,8 @@ import java.util.stream.Collectors;
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement {
+
+    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
@@ -82,7 +85,7 @@ public class SchedulingProducingArrangement {
     private SchedulingProducingExecutionMode producingExecutionMode;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_FACTORIES})
+    @PlanningVariable(valueRangeProviderRefs = {VALUE_RANGE_FOR_FACTORIES})
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
@@ -290,6 +293,13 @@ public class SchedulingProducingArrangement {
                         .build()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
+    public List<SchedulingFactoryInstance> valueRangeFactoryInstancesForArrangement(
+            TownshipSchedulingProblem townshipSchedulingProblem
+    ) {
+        return townshipSchedulingProblem.valueRangeFactoryInstancesForArrangement(this);
     }
 
 }
