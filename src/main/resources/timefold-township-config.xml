@@ -4,9 +4,7 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
-    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
-
-    <environmentMode>FULL_ASSERT</environmentMode>
+    <environmentMode>TRACKED_FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
@@ -64,6 +62,12 @@
 
         <unionMoveSelector>
 
+            <listChangeMoveSelector/>
+            <listSwapMoveSelector/>
+            <subListChangeMoveSelector/>
+            <subListSwapMoveSelector/>
+            <kOptListMoveSelector/>
+
             <changeMoveSelector>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
@@ -90,54 +94,6 @@
                     <variableNameInclude>planningDateTimeSlot</variableNameInclude>
                 </variableNameIncludes>
             </swapMoveSelector>
-
-            <cartesianProductMoveSelector>
-
-                <changeMoveSelector>
-                    <entitySelector id="localSearch_cartesian_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                    <valueSelector variableName="planningDateTimeSlot"
-                                   id="localSearch_cartesian_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
-                    </valueSelector>
-                </changeMoveSelector>
-
-                <listChangeMoveSelector>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryListChangeMoveSelectionFilter
-                    </filterClass>
-                </listChangeMoveSelector>
-
-                <ignoreEmptyChildIterators>true</ignoreEmptyChildIterators>
-            </cartesianProductMoveSelector>
-
-            <cartesianProductMoveSelector>
-                <swapMoveSelector>
-                    <entitySelector id="localSearch_cartesian_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                    <secondaryEntitySelector id="localSearch_cartesian_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </secondaryEntitySelector>
-                    <variableNameIncludes>
-                        <variableNameInclude>planningDateTimeSlot</variableNameInclude>
-                    </variableNameIncludes>
-                </swapMoveSelector>
-
-                <listChangeMoveSelector>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryListChangeMoveSelectionFilter
-                    </filterClass>
-                </listChangeMoveSelector>
-
-                <ignoreEmptyChildIterators>true</ignoreEmptyChildIterators>
-            </cartesianProductMoveSelector>
 
         </unionMoveSelector>
 

@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 
@@ -23,8 +24,10 @@ public class TownshipAuthenticationContext {
 
     private final AuthenticationContext authenticationContext;
 
+    private final PlayerEntityRepository playerEntityRepository;
+
     public Optional<PlayerEntity> getPlayerEntity() {
-        return Optional.ofNullable(getUserDetails()).map(AccountEntity::getPlayerEntity);
+        return Optional.ofNullable(getUserDetails()).flatMap(playerEntityRepository::findPlayerEntitiesByAccount);
     }
 
     public AccountEntity getUserDetails() {

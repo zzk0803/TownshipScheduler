@@ -97,12 +97,25 @@ public class OrderFormView extends VerticalLayout {
                 = new ProductsAmountPanel(() -> {
             Optional<PlayerEntity> playerEntity = townshipAuthenticationContext.getPlayerEntity();
             return playerEntity.<Supplier<Collection<FieldFactoryInfoEntity>>>map(
-                    player -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
-                            player.getLevel(),
-                            Sort.by(Sort.Direction.ASC, "level")
-                    )).orElseGet(() -> () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
-                    Sort.by(Sort.Direction.ASC, "level")
-            )).get();
+                            player -> {
+                                return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                                        player.getLevel(),
+                                        Sort.by(
+                                                Sort.Direction.ASC,
+                                                "level"
+                                        )
+                                );
+                            }
+                    )
+                    .orElseGet(() -> {
+                        return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                                Sort.by(
+                                        Sort.Direction.ASC,
+                                        "level"
+                                )
+                        );
+                    })
+                    .get();
         });
 
         style();
@@ -141,17 +154,33 @@ public class OrderFormView extends VerticalLayout {
 
     private FormLayout assembleBillForm() {
         FormLayout formLayout = new FormLayout();
-        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
-        formLayout.addClassNames("bill-form", "field-form");
+        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep(
+                "0",
+                1
+        ));
+        formLayout.addClassNames(
+                "bill-form",
+                "field-form"
+        );
 
         HorizontalLayout deadLineFieldLayout = new HorizontalLayout();
         deadLineFieldLayout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
 
-        Checkbox boolDeadlineCheckbox = new Checkbox("Deadline Given", false);
+        Checkbox boolDeadlineCheckbox = new Checkbox(
+                "Deadline Given",
+                false
+        );
         BillDurationField durationCountdownField = new BillDurationField();
         DateTimePicker deadlinePicker = new DateTimePicker("Deadline");
-        settingDeadlineFieldGroupAvailableStatus(false, durationCountdownField, deadlinePicker);
-        associateResponseToPickerAndDuration(deadlinePicker, durationCountdownField);
+        settingDeadlineFieldGroupAvailableStatus(
+                false,
+                durationCountdownField,
+                deadlinePicker
+        );
+        associateResponseToPickerAndDuration(
+                deadlinePicker,
+                durationCountdownField
+        );
 
         boolDeadlineCheckbox.addValueChangeListener(
                 valueChange -> settingDeadlineFieldGroupAvailableStatus(
@@ -161,7 +190,11 @@ public class OrderFormView extends VerticalLayout {
                 )
         );
 
-        deadLineFieldLayout.add(boolDeadlineCheckbox, durationCountdownField, deadlinePicker);
+        deadLineFieldLayout.add(
+                boolDeadlineCheckbox,
+                durationCountdownField,
+                deadlinePicker
+        );
 
         RadioButtonGroup<OrderType> billTypeGroup = new RadioButtonGroup<>();
         billTypeGroup.setItems(OrderType.values());
@@ -174,10 +207,20 @@ public class OrderFormView extends VerticalLayout {
             }
         });
 
-        settingBinder(billTypeGroup, boolDeadlineCheckbox, deadlinePicker);
+        settingBinder(
+                billTypeGroup,
+                boolDeadlineCheckbox,
+                deadlinePicker
+        );
 
-        formLayout.addFormItem(billTypeGroup, "Bill Type");
-        formLayout.addFormItem(deadLineFieldLayout, "Duration To Deadline");
+        formLayout.addFormItem(
+                billTypeGroup,
+                "Bill Type"
+        );
+        formLayout.addFormItem(
+                deadLineFieldLayout,
+                "Duration To Deadline"
+        );
         return formLayout;
     }
 
@@ -198,7 +241,10 @@ public class OrderFormView extends VerticalLayout {
     ) {
         deadlinePicker.addValueChangeListener(deadlinePickerValueChange -> {
             LocalDateTime deadlinePickerValue = deadlinePickerValueChange.getValue();
-            Duration duration = getDurationLocalDateTimeConverter().convertToPresentation(deadlinePickerValue, null);
+            Duration duration = getDurationLocalDateTimeConverter().convertToPresentation(
+                    deadlinePickerValue,
+                    null
+            );
             durationCountdownField.setValue(duration);
         });
 
@@ -217,16 +263,26 @@ public class OrderFormView extends VerticalLayout {
         return new Converter<>() {
 
             @Override
-            public Result<LocalDateTime> convertToModel(Duration duration, ValueContext valueContext) {
-                return Result.ok(LocalDateTime.now().plus(duration));
+            public Result<LocalDateTime> convertToModel(
+                    Duration duration,
+                    ValueContext valueContext
+            ) {
+                return Result.ok(LocalDateTime.now()
+                        .plus(duration));
             }
 
             @Override
-            public Duration convertToPresentation(LocalDateTime localDateTime, ValueContext valueContext) {
+            public Duration convertToPresentation(
+                    LocalDateTime localDateTime,
+                    ValueContext valueContext
+            ) {
                 if (localDateTime == null) {
                     return Duration.ZERO;
                 }
-                return Duration.between(LocalDateTime.now(), localDateTime);
+                return Duration.between(
+                        LocalDateTime.now(),
+                        localDateTime
+                );
             }
         };
     }
@@ -244,14 +300,20 @@ public class OrderFormView extends VerticalLayout {
                         OrderEntity::setOrderType
                 );
         this.binder.forField(boolDeadlineCheckbox)
-                .bind(OrderEntity::isBearDeadline, OrderEntity::setBearDeadline);
+                .bind(
+                        OrderEntity::isBearDeadline,
+                        OrderEntity::setBearDeadline
+                );
         this.binder.forField(deadlinePicker)
                 .withValidator(new DateTimeRangeValidator(
                         "not pasted datetime",
                         LocalDateTime.now(),
                         LocalDateTime.MAX
                 ))
-                .bind(OrderEntity::getDeadLine, OrderEntity::setDeadLine);
+                .bind(
+                        OrderEntity::getDeadLine,
+                        OrderEntity::setDeadLine
+                );
     }
 
     private void renewBinderAndObject() {
@@ -259,7 +321,10 @@ public class OrderFormView extends VerticalLayout {
     }
 
     private Grid<BillItem> assembleBillItemGrid() {
-        Grid<BillItem> grid = new Grid<>(BillItem.class, false);
+        Grid<BillItem> grid = new Grid<>(
+                BillItem.class,
+                false
+        );
         grid.setWidthFull();
         grid.addThemeVariants(
                 GridVariant.LUMO_NO_ROW_BORDERS,
@@ -322,7 +387,10 @@ public class OrderFormView extends VerticalLayout {
         item.addClassNames(LumoUtility.Display.FLEX);
         Span factory = new Span("Factory:" + productEntity.getCategory());
         factory.addClassNames(LumoUtility.Display.FLEX);
-        description.add(item, factory);
+        description.add(
+                item,
+                factory
+        );
         return description;
     }
 
@@ -335,7 +403,8 @@ public class OrderFormView extends VerticalLayout {
             integerField.setMin(1);
             integerField.addValueChangeListener(fieldChanged -> {
                 item.setAmount(fieldChanged.getValue());
-                billItemGrid.getDataProvider().refreshItem(item);
+                billItemGrid.getDataProvider()
+                        .refreshItem(item);
             });
             return integerField;
         };
@@ -353,12 +422,16 @@ public class OrderFormView extends VerticalLayout {
             dialog.addComponentAsFirst(this.productsAmountPanel);
 
             Button button = new Button("OK");
-            button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+            button.addThemeVariants(
+                    ButtonVariant.LUMO_PRIMARY,
+                    ButtonVariant.LUMO_LARGE
+            );
             button.addClickListener(_ -> {
                 dialog.close();
                 setupDataProviderForItems(billItemGrid);
             });
-            dialog.getFooter().add(button);
+            dialog.getFooter()
+                    .add(button);
             dialog.open();
         });
 
@@ -386,10 +459,17 @@ public class OrderFormView extends VerticalLayout {
         });
 
         Button cancel = new Button("Cancel");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        cancel.addClickListener(_ -> UI.getCurrent().navigate(OrderListView.class));
+        cancel.addThemeVariants(
+                ButtonVariant.LUMO_TERTIARY,
+                ButtonVariant.LUMO_ERROR
+        );
+        cancel.addClickListener(_ -> UI.getCurrent()
+                .navigate(OrderListView.class));
 
-        footerLayout.add(submit, cancel);
+        footerLayout.add(
+                submit,
+                cancel
+        );
         footerLayout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
         footerLayout.setAlignItems(Alignment.BASELINE);
         return footerLayout;
@@ -428,20 +508,28 @@ public class OrderFormView extends VerticalLayout {
         getGridBillItems().stream()
                 .filter(iterating -> iterating.getProductEntity()
                         .getProductId()
-                        .equals(billItem.getProductEntity().getProductId()))
+                        .equals(billItem.getProductEntity()
+                                .getProductId()))
                 .findFirst()
                 .ifPresentOrElse(
                         optionalPresent -> {
                             int amount = optionalPresent.getAmount();
                             optionalPresent.setAmount(amount);
-                        }, () -> getGridBillItems().add(billItem)
+                        },
+                        () -> getGridBillItems().add(billItem)
                 );
     }
 
     public static class OrderFormViewHasSubmitEvent extends ComponentEvent<OrderFormView> {
 
-        public OrderFormViewHasSubmitEvent(OrderFormView source, boolean fromClient) {
-            super(source, fromClient);
+        public OrderFormViewHasSubmitEvent(
+                OrderFormView source,
+                boolean fromClient
+        ) {
+            super(
+                    source,
+                    fromClient
+            );
         }
 
     }

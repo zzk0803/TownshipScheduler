@@ -52,11 +52,10 @@ public class TownshipSchedulingProblem {
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
+    @ValueRangeProvider(id = TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT)
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
     @ProblemFactProperty
@@ -107,34 +106,58 @@ public class TownshipSchedulingProblem {
         return new TownshipSchedulingProblemBuilder();
     }
 
-    public List<SchedulingProducingArrangement> lookupProducingArrangements(SchedulingFactoryInstance schedulingFactoryInstance) {
+    public List<SchedulingProducingArrangement> lookupProducingArrangements(
+            SchedulingFactoryInstance schedulingFactoryInstance
+    ) {
         return getSchedulingProducingArrangementList().stream()
                 .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance() == schedulingFactoryInstance)
                 .toList();
     }
 
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryReadableIdentifier factoryReadableIdentifier) {
+    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(
+            FactoryReadableIdentifier factoryReadableIdentifier
+    ) {
         return getSchedulingFactoryInstanceList().stream()
-                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
+                .filter(schedulingFactoryInstance -> schedulingFactoryInstance
+                        .getFactoryReadableIdentifier()
                         .equals(factoryReadableIdentifier))
                 .findFirst();
     }
 
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryProcessSequence factoryProcessSequence) {
-        return getSchedulingFactoryInstanceList().stream()
-                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
-                        .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
-                .findFirst();
+//    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryProcessSequence factoryProcessSequence) {
+//        return getSchedulingFactoryInstanceList().stream()
+//                .filter(schedulingFactoryInstance -> schedulingFactoryInstance
+//                        .getFactoryReadableIdentifier()
+//                        .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
+//                .findFirst();
+//    }
+
+    public List<SchedulingProducingArrangement> valueRangeForArrangements(
+            SchedulingFactoryInstance schedulingFactoryInstance
+    ) {
+        return getSchedulingProducingArrangementList().stream()
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement
+                        .getRequiredFactoryInfo()
+                        .typeEqual(schedulingFactoryInstance.getSchedulingFactoryInfo()))
+                .toList();
     }
 
-    @ProblemFactCollectionProperty
-    public List<SchedulingArrangementHierarchies> toSchedulingArrangementHierarchies() {
-        return this.schedulingProducingArrangementList.stream()
-                .flatMap(
-                        schedulingProducingArrangement -> schedulingProducingArrangement.toDeepPrerequisiteHierarchies()
-                                .stream()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
+    public List<SchedulingDateTimeSlot> valueRangeForDateTimeSlot(
+            SchedulingProducingArrangement schedulingProducingArrangement
+    ) {
+        SchedulingProducingArrangement previousProducingArrangement = schedulingProducingArrangement.getPreviousProducingArrangement();
+        if (previousProducingArrangement == null) {
+            return this.schedulingDateTimeSlots;
+        }
+        SchedulingDateTimeSlot previousDateTimeSlot = previousProducingArrangement.getPlanningDateTimeSlot();
+        if (previousDateTimeSlot == null) {
+            return this.schedulingDateTimeSlots;
+        }
+
+        return this.schedulingDateTimeSlots.stream()
+                .sorted(SchedulingDateTimeSlot::compareTo)
+                .dropWhile(schedulingDateTimeSlot -> schedulingDateTimeSlot.compareTo(previousDateTimeSlot) < 0)
+                .toList();
     }
 
 }
