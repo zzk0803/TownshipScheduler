@@ -48,7 +48,6 @@ public class SchedulingProducingArrangement {
 
     @EqualsAndHashCode.Include
     @ToString.Include
-    @PlanningId
     private String uuid;
 
     @JsonIdentityReference
@@ -72,6 +71,9 @@ public class SchedulingProducingArrangement {
     @JsonBackReference
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
+
+    @JsonIgnore
+    private SchedulingProducingArrangement successorProducingArrangement;
 
     private Duration staticDeepProducingDuration;
 
@@ -143,8 +145,8 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     public boolean isFactoryMatch() {
         return Objects.nonNull(getPlanningFactoryInstance())
-               && getPlanningFactoryInstance().getSchedulingFactoryInfo()
-                       .typeEqual(getSchedulingProduct().getRequireFactory());
+                && getPlanningFactoryInstance().getSchedulingFactoryInfo()
+                .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
     @JsonProperty("schedulingProduct")
@@ -245,7 +247,8 @@ public class SchedulingProducingArrangement {
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
                 .filter(Objects::nonNull)
                 .max(Duration::compareTo)
-                .orElse(Duration.ZERO);
+                .orElse(Duration.ZERO)
+                ;
         return selfDuration.plus(prerequisiteStaticProducingDuration);
     }
 
@@ -253,8 +256,12 @@ public class SchedulingProducingArrangement {
         return argDateTime.plus(getStaticDeepProducingDuration());
     }
 
-    protected <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(List<T> prerequisiteArrangements) {
+    protected <T extends SchedulingProducingArrangement> void appendPrerequisiteArrangements(
+            List<T> prerequisiteArrangements
+    ) {
         this.prerequisiteProducingArrangements.addAll(prerequisiteArrangements);
+        this.prerequisiteProducingArrangements.forEach(
+                schedulingProducingArrangement -> schedulingProducingArrangement.setSuccessorProducingArrangement(this));
     }
 
     public boolean isOrderDirect() {
@@ -271,28 +278,6 @@ public class SchedulingProducingArrangement {
 
     public boolean weatherPrerequisiteRequire() {
         return !getDeepPrerequisiteProducingArrangements().isEmpty();
-    }
-
-    protected List<SchedulingArrangementHierarchies> toPrerequisiteHierarchies() {
-        return this.prerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UuidGenerator.timeOrderedV6().toString())
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    protected List<SchedulingArrangementHierarchies> toDeepPrerequisiteHierarchies() {
-        return this.deepPrerequisiteProducingArrangements.stream()
-                .map(schedulingProducingArrangement -> SchedulingArrangementHierarchies.builder()
-                        .uuid(UuidGenerator.timeOrderedV6().toString())
-                        .whole(this)
-                        .partial(schedulingProducingArrangement)
-                        .build()
-                )
-                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)

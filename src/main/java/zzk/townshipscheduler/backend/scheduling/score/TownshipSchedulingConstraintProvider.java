@@ -5,7 +5,6 @@ import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSo
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementHierarchies;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 
@@ -61,25 +60,17 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::weatherPrerequisiteRequire)
-                .join(
-                        SchedulingArrangementHierarchies.class,
-                        Joiners.equal(
-                                Function.identity(),
-                                SchedulingArrangementHierarchies::getWhole
-                        )
-                )
                 .join(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(
-                                (whole, hierarchies) -> hierarchies.getPartial(),
-                                Function.identity()
+                                Function.identity(),
+                                SchedulingProducingArrangement::getSuccessorProducingArrangement
                         )
                 )
                 .groupBy(
-                        (whole, link, partial) -> whole,
+                        (whole, partial) -> whole,
                         ConstraintCollectors.max(
-                                (link, whole, partial) -> partial,
+                                (whole, partial) -> partial,
                                 SchedulingProducingArrangement::getCompletedDateTime
                         )
                 )
@@ -111,16 +102,18 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .penalizeLong(
                         HardMediumSoftLongScore.ONE_MEDIUM,
-                        ((schedulingOrder, producingArrangement) -> {
-                            LocalDateTime deadline = schedulingOrder.getDeadline();
-                            LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
-                            return completedDateTime != null
-                                    ? Duration.between(deadline, completedDateTime).toMinutes()
-                                    : Duration.between(
-                                            producingArrangement.getSchedulingWorkCalendar().getStartDateTime(),
-                                            producingArrangement.getSchedulingWorkCalendar().getEndDateTime()
-                                    ).toMinutes();
-                        })
+                        (
+                                (schedulingOrder, producingArrangement) -> {
+                                    LocalDateTime deadline = schedulingOrder.getDeadline();
+                                    LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
+                                    return completedDateTime != null
+                                            ? Duration.between(deadline, completedDateTime).toMinutes()
+                                            : Duration.between(
+                                                    producingArrangement.getSchedulingWorkCalendar().getStartDateTime(),
+                                                    producingArrangement.getSchedulingWorkCalendar().getEndDateTime()
+                                            ).toMinutes();
+                                }
+                        )
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");
     }
@@ -130,13 +123,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .filter(schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                             return schedulingProducingArrangement.isOrderDirect()
-                                   && (
-                                           Objects.isNull(completedDateTime)
-                                           || completedDateTime.isAfter(
-                                                   schedulingProducingArrangement.getSchedulingWorkCalendar()
-                                                           .getEndDateTime()
-                                           )
-                                   );
+                                    && (
+                                    Objects.isNull(completedDateTime)
+                                            || completedDateTime.isAfter(
+                                            schedulingProducingArrangement.getSchedulingWorkCalendar()
+                                                    .getEndDateTime()
+                                    )
+                            );
                         }
                 )
                 .penalizeLong(
@@ -167,7 +160,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                     LocalTime sleepEnd = schedulingProducingArrangement.getSchedulingPlayer().getSleepEnd();
                     LocalTime arrangeTime = arrangeDateTime.toLocalTime();
                     return (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX))
-                           || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
+                            || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
                 })
                 .penalizeLong(
                         HardMediumSoftLongScore.ofMedium(500L)
