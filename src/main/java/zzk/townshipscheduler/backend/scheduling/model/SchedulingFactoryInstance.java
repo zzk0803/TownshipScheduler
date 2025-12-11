@@ -14,7 +14,6 @@ import java.util.TreeSet;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
 public class SchedulingFactoryInstance {
 
     @PlanningId
@@ -41,28 +40,6 @@ public class SchedulingFactoryInstance {
 
     private NavigableSet<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new TreeSet<>();
 
-    @ShadowVariable(supplierName = "supplierNameFactorySlotToFinishedLocalDateTimeMap")
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFinishedLocalDateTimeMap
-            = new TreeMap<>();
-
-    @ShadowSources({"schedulingFactoryInstanceDateTimeSlots[].tailArrangementCompletedDateTime"})
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> supplierNameFactorySlotToFinishedLocalDateTimeMap() {
-        if (!weatherFactoryProducingTypeIsQueue()) {
-            return null;
-        }
-
-        return this.schedulingFactoryInstanceDateTimeSlots.stream()
-                .collect(
-                        TreeMap::new,
-                        (treeMap, factoryInstanceDateTimeSlot) -> {
-                            treeMap.put(
-                                    factoryInstanceDateTimeSlot,
-                                    factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
-                            );
-                        },
-                        TreeMap::putAll
-                );
-    }
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(

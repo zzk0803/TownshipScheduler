@@ -109,31 +109,14 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                                                                  && schedulingFactoryInstanceDateTimeSlot.getDateTimeSlot() == computedDataTimeSlot)
                 .findFirst()
                 .ifPresent(schedulingFactoryInstanceDateTimeSlot -> {
-                    int size = schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
-                            .size();
-                    scoreDirector.beforeListVariableElementAssigned(
+                    scoreDirector.beforeVariableChanged(
                             schedulingFactoryInstanceDateTimeSlot,
-                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
-                            schedulingProducingArrangement
+                            SchedulingProducingArrangement.PLANNING_PREVIOUS_PRODUCING_ARRANGEMENT
                     );
-                    scoreDirector.beforeListVariableChanged(
+                    schedulingProducingArrangement.setPlanningPreviousProducingArrangement(schedulingFactoryInstanceDateTimeSlot);
+                    scoreDirector.afterVariableChanged(
                             schedulingFactoryInstanceDateTimeSlot,
-                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
-                            size,
-                            size+1
-                    );
-                    schedulingFactoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
-                            .add(schedulingProducingArrangement);
-                    scoreDirector.afterListVariableChanged(
-                            schedulingFactoryInstanceDateTimeSlot,
-                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
-                            size,
-                            size+1
-                    );
-                    scoreDirector.afterListVariableElementAssigned(
-                            schedulingFactoryInstanceDateTimeSlot,
-                            SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS,
-                            schedulingProducingArrangement
+                            SchedulingProducingArrangement.PLANNING_PREVIOUS_PRODUCING_ARRANGEMENT
                     );
                     scoreDirector.triggerVariableListeners();
                 });

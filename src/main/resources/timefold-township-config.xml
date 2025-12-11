@@ -7,13 +7,16 @@
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementOrFactorySlot
+    </entityClass>
+    <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
     </entityClass>
     <entityClass>
-        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceDateTimeSlot
     </entityClass>
     <entityClass>
-        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceDateTimeSlot
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingArrangementsGlobalState
     </entityClass>
 
     <scoreDirectorFactory>
@@ -23,30 +26,22 @@
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
-    <!--    <constructionHeuristic>-->
-    <!--        <constructionHeuristicType>WEAKEST_FIT</constructionHeuristicType>-->
-    <!--        <changeMoveSelector>-->
-    <!--            <filterClass>-->
-    <!--                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
-    <!--            </filterClass>-->
-    <!--            <valueSelector variableName="planningFactoryInstance"-->
-    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">-->
-    <!--            </valueSelector>-->
-    <!--        </changeMoveSelector>-->
-    <!--        <changeMoveSelector>-->
-    <!--            <valueSelector variableName="planningDateTimeSlot"-->
-    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">-->
-    <!--            </valueSelector>-->
-    <!--        </changeMoveSelector>-->
-    <!--    </constructionHeuristic>-->
+    <constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+        <changeMoveSelector>
+            <valueSelector variableName="planningPreviousProducingArrangement"
+                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningPreviousProducingArrangement">
+            </valueSelector>
+        </changeMoveSelector>
+    </constructionHeuristic>
     <!--endregion-->
 
     <!--region init-->
-    <customPhase>
-        <customPhaseCommandClass>
-            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
-        </customPhaseCommandClass>
-    </customPhase>
+    <!--    <customPhase>-->
+    <!--        <customPhaseCommandClass>-->
+    <!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
+    <!--        </customPhaseCommandClass>-->
+    <!--    </customPhase>-->
     <!--endregion-->
 
     <!--region local search-->
@@ -60,11 +55,9 @@
         </termination>
 
         <unionMoveSelector>
-            <listChangeMoveSelector/>
-            <listSwapMoveSelector/>
-            <subListChangeMoveSelector/>
-            <subListSwapMoveSelector/>
-            <kOptListMoveSelector/>
+            <tailChainSwapMoveSelector/>
+            <subChainChangeMoveSelector/>
+            <tailChainSwapMoveSelector/>
         </unionMoveSelector>
 
         <acceptor>

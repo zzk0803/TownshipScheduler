@@ -2,10 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -15,19 +12,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Data
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @PlanningEntity
-public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<SchedulingFactoryInstanceDateTimeSlot> {
-
-    public static final String RANGE_FOR_ARRANGEMENTS = "valueRangeForArrangements";
-
-    public static final String PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS = "planningSchedulingProducingArrangements";
+public class SchedulingFactoryInstanceDateTimeSlot extends SchedulingArrangementOrFactorySlot
+        implements Comparable<SchedulingFactoryInstanceDateTimeSlot> {
 
     @PlanningId
     private int id;
@@ -45,14 +38,7 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     private SchedulingFactoryInstanceDateTimeSlot next;
 
-    @PlanningListVariable(valueRangeProviderRefs = RANGE_FOR_ARRANGEMENTS)
-    private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
-
-    @ShadowVariable(supplierName = "tailArrangementCompletedDateTimeSupplier")
-    private LocalDateTime tailArrangementCompletedDateTime;
-
-    @ShadowVariable(supplierName = "amendedFirstArrangementProducingDateTimeSupplier")
-    private LocalDateTime amendedFirstArrangementProducingDateTime;
+    private SchedulingArrangementsGlobalState schedulingArrangementsGlobalState;
 
     public SchedulingFactoryInstanceDateTimeSlot(
             int id,
@@ -69,38 +55,9 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         );
     }
 
-    @ValueRangeProvider(id = RANGE_FOR_ARRANGEMENTS)
-    public List<SchedulingProducingArrangement> valueRangeForArrangements(
-            TownshipSchedulingProblem townshipSchedulingProblem
-    ) {
-        return townshipSchedulingProblem.valueRangeForArrangements(this);
-    }
-
-    @ShadowSources({"planningSchedulingProducingArrangements"})
-    public LocalDateTime tailArrangementCompletedDateTimeSupplier() {
-        if (getPlanningSchedulingProducingArrangements().isEmpty()) {
-            return null;
-        }
-
-        return this.planningSchedulingProducingArrangements.getLast()
-                .getCompletedDateTime();
-    }
-
-    @ShadowSources({"factoryInstance.factorySlotToFinishedLocalDateTimeMap"})
-    public LocalDateTime amendedFirstArrangementProducingDateTimeSupplier() {
-        TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFinishedLocalDateTimeMap
-                = this.getFactoryInstance()
-                .getFactorySlotToFinishedLocalDateTimeMap();
-        if (factorySlotToFinishedLocalDateTimeMap == null) {
-            return this.getStart();
-        }
-
-        Optional<LocalDateTime> dateTimeOptional = factorySlotToFinishedLocalDateTimeMap.values()
-                .stream()
-                .filter(finishDateTime -> finishDateTime != null && finishDateTime.isAfter(this.getStart()))
-                .max(LocalDateTime::compareTo)
-                ;
-        return dateTimeOptional.orElse(this.getStart());
+    @EqualsAndHashCode.Include
+    public LocalDateTime getStart() {
+        return dateTimeSlot.getStart();
     }
 
     @EqualsAndHashCode.Include
@@ -141,55 +98,18 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return factoryInstance.getReapWindowSize();
     }
 
-    public Optional<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceBy(
-            Collection<SchedulingFactoryInstanceDateTimeSlot> those
-    ) {
-        if (those == null || those.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return those.stream()
-                .filter(this::boolInfluenceBy)
-                .min(Comparator.naturalOrder());
-    }
-
-    public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime tailArrangementCompletedDateTime = that.getTailArrangementCompletedDateTime();
-        if (tailArrangementCompletedDateTime == null) {
-            return false;
-        }
-        return tailArrangementCompletedDateTime.isAfter(this.getStart());
-    }
-
-    @EqualsAndHashCode.Include
-    public LocalDateTime getStart() {
-        return dateTimeSlot.getStart();
-    }
-
-    public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(
-            Collection<SchedulingFactoryInstanceDateTimeSlot> those
-    ) {
-        return those.stream()
-                .sorted(Comparator.naturalOrder())
-                .filter(this::boolInfluenceTo)
-                .collect(Collectors.toCollection(TreeSet::new));
-    }
-
-    public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime thisTailArrangementDateTime = this.getTailArrangementCompletedDateTime();
-        LocalDateTime thatStart = that.getStart();
-        if (thisTailArrangementDateTime == null) {
-            return false;
-        }
-        return thisTailArrangementDateTime.isAfter(thatStart);
-    }
-
     @Override
     public int compareTo(@NotNull SchedulingFactoryInstanceDateTimeSlot that) {
         return SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR.compare(
                 this.dateTimeSlot,
                 that.dateTimeSlot
         );
+    }
+
+    public LocalDateTime queryAmendFirstProducingDateTime() {
+        TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> map = schedulingArrangementsGlobalState.getFactorySlotToFinishedLocalDateTimeMap();
+        SchedulingFactoryInstanceDateTimeSlot lowerSlot = map.lowerKey(this);
+        return map.get(lowerSlot);
     }
 
 }
