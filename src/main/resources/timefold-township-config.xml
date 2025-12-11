@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
-    <environmentMode>TRACKED_FULL_ASSERT</environmentMode>
+    <environmentMode>FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
@@ -62,12 +62,6 @@
 
         <unionMoveSelector>
 
-            <listChangeMoveSelector/>
-            <listSwapMoveSelector/>
-            <subListChangeMoveSelector/>
-            <subListSwapMoveSelector/>
-            <kOptListMoveSelector/>
-
             <changeMoveSelector>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
@@ -94,6 +88,14 @@
                     <variableNameInclude>planningDateTimeSlot</variableNameInclude>
                 </variableNameIncludes>
             </swapMoveSelector>
+
+            <unionMoveSelector>
+                <listChangeMoveSelector/>
+                <listSwapMoveSelector/>
+                <subListChangeMoveSelector/>
+                <subListSwapMoveSelector/>
+                <kOptListMoveSelector/>
+            </unionMoveSelector>
 
         </unionMoveSelector>
 

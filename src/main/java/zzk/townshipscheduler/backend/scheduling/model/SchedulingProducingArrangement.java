@@ -9,10 +9,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.utility.UuidGenerator;
 
 import java.time.Duration;
@@ -25,18 +23,8 @@ import java.util.*;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement implements Comparable<SchedulingProducingArrangement> {
-
-    public static final Comparator<SchedulingProducingArrangement> COMPARATOR =
-            Comparator.comparing(
-                            SchedulingProducingArrangement::getArrangeDateTime,
-                            Comparator.nullsFirst(Comparator.naturalOrder())
-                    )
-                    .thenComparing(
-                            SchedulingProducingArrangement::getId,
-                            Comparator.nullsFirst(Comparator.naturalOrder())
-                    );
+@PlanningEntity
+public class SchedulingProducingArrangement {
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
@@ -77,6 +65,8 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @ShadowVariable(supplierName = "supplierNameDeepPrerequisiteProducingArrangementsCompletedDateTime")
     private LocalDateTime deepPrerequisiteProducingArrangementsCompletedDateTime;
 
+    private Duration staticPrerequisiteProducingDuration;
+
     private Duration staticDeepProducingDuration;
 
     @JsonIgnore
@@ -94,6 +84,9 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
 
     @PreviousElementShadowVariable(sourceVariableName = SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS)
     private SchedulingProducingArrangement previousProducingArrangement;
+
+    @IndexShadowVariable(sourceVariableName = SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS)
+    private Integer indexInSequences;
 
     @JsonIgnore
     @PlanningVariable(
@@ -113,14 +106,14 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @CascadingUpdateShadowVariable(targetMethodName = "arrangementCascadingUpdate")
+    @ShadowVariable(supplierName = "supplierNameProducingDateTime")
     private LocalDateTime producingDateTime;
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @CascadingUpdateShadowVariable(targetMethodName = "arrangementCascadingUpdate")
+    @ShadowVariable(supplierName = "supplierNameCompletedDateTime")
     private LocalDateTime completedDateTime;
 
     private SchedulingProducingArrangement(
@@ -149,25 +142,30 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         return schedulingDateTimeSlot != null ? schedulingDateTimeSlot.getStart() : null;
     }
 
-    public void arrangementCascadingUpdate() {
-        setProducingDateTime(supplierNameProducingDateTime());
-        setCompletedDateTime(supplierNameCompletedDateTime());
-    }
-
+    @ShadowSources(
+            {
+                    "planningFactoryInstance",
+                    "arrangeDateTime",
+                    "previousProducingArrangement",
+                    "previousProducingArrangement.completedDateTime"
+            }
+    )
     public LocalDateTime supplierNameProducingDateTime() {
-        if (Objects.isNull(this.planningDateTimeSlot) || Objects.isNull(this.planningFactoryInstance)) {
+        if (Objects.isNull(this.arrangeDateTime) || Objects.isNull(this.planningFactoryInstance)) {
             return null;
         }
 
-        LocalDateTime arrangeDateTime = this.planningDateTimeSlot.getStart();
         if (weatherFactoryProducingTypeIsQueue()) {
             if (this.previousProducingArrangement == null) {
-                return arrangeDateTime;
+                return this.arrangeDateTime;
             } else {
-                return calcProducingDateTime(arrangeDateTime, this.previousProducingArrangement.getCompletedDateTime());
+                return calcProducingDateTime(
+                        this.arrangeDateTime,
+                        this.previousProducingArrangement.getCompletedDateTime()
+                );
             }
         } else {
-            return arrangeDateTime;
+            return this.arrangeDateTime;
         }
     }
 
@@ -202,6 +200,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         return (SchedulingProduct) getCurrentActionObject();
     }
 
+    @ShadowSources({"producingDateTime"})
     public LocalDateTime supplierNameCompletedDateTime() {
         return Objects.nonNull(this.producingDateTime)
                 ? this.producingDateTime.plus(this.getProducingDuration())
@@ -295,6 +294,14 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
         return getProducingExecutionMode().getMaterials();
     }
 
+    private Duration calcStaticPrerequisiteProducingDuration() {
+        return getPrerequisiteProducingArrangements().stream()
+                .map(SchedulingProducingArrangement::calcStaticPrerequisiteProducingDuration)
+                .filter(Objects::nonNull)
+                .max(Duration::compareTo)
+                .orElse(Duration.ZERO)
+                ;
+    }
 
     private Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
@@ -304,6 +311,7 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
                 .max(Duration::compareTo)
                 .orElse(Duration.ZERO)
                 ;
+        setStaticPrerequisiteProducingDuration(prerequisiteStaticProducingDuration);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
     }
 
@@ -319,11 +327,6 @@ public class SchedulingProducingArrangement implements Comparable<SchedulingProd
 
     public boolean isOrderDirect() {
         return getTargetActionObject() instanceof SchedulingOrder;
-    }
-
-    @Override
-    public int compareTo(@NotNull SchedulingProducingArrangement that) {
-        return COMPARATOR.compare(this, that);
     }
 
     public boolean weatherPrerequisiteRequire() {

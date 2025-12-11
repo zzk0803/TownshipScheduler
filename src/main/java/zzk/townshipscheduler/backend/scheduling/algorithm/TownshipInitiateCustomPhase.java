@@ -3,8 +3,11 @@ package zzk.townshipscheduler.backend.scheduling.algorithm;
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import ai.timefold.solver.core.api.solver.phase.PhaseCommand;
 import lombok.extern.slf4j.Slf4j;
-import zzk.townshipscheduler.backend.scheduling.model.*;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementSequencesComparator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -37,11 +40,13 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
 
         List<SchedulingDateTimeSlot> sortedDataTimeSlotValueRange = dateTimeSlotSetValueRange.stream()
                 .sorted()
-                .toList();
+                .toList()
+                ;
         List<SchedulingProducingArrangement> difficultySortedProducingArrangements
                 = producingArrangements.stream()
-                .sorted(new SchedulingProducingArrangementDifficultyComparator())
-                .toList();
+                .sorted(new SchedulingProducingArrangementSequencesComparator())
+                .toList()
+                ;
         ArrayDeque<SchedulingProducingArrangement> initiatingDeque
                 = new ArrayDeque<>(difficultySortedProducingArrangements);
 
@@ -85,8 +90,9 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 = factoryInstanceList.stream()
                 .filter(slotFactoryInstance -> schedulingProducingArrangement.getRequiredFactoryInfo()
                         .typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
-                .findFirst()
-                .get();
+                .findAny()
+                .get()
+                ;
         SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
                 schedulingProducingArrangement,
@@ -109,7 +115,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 schedulingFactoryInstance,
                 SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
                 size,
-                size+1
+                size + 1
         );
         scoreDirector.beforeListVariableElementAssigned(
                 schedulingFactoryInstance,
@@ -126,7 +132,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 schedulingFactoryInstance,
                 SchedulingFactoryInstance.PLANNING_PRODUCING_ARRANGEMENTS,
                 size,
-                size+1
+                size + 1
         );
 
         scoreDirector.triggerVariableListeners();
@@ -141,7 +147,7 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
         Duration calcStaticProducingDuration = producingArrangement.getStaticDeepProducingDuration();
 
         if (!producingArrangement.getDeepPrerequisiteProducingArrangements().isEmpty()) {
-             result =  SchedulingDateTimeSlot.fromRangeJumpCeil(
+            result = SchedulingDateTimeSlot.fromRangeJumpCeil(
                     dateTimeSlotSet,
                     result.getStart().plus(calcStaticProducingDuration)
             ).orElse(dateTimeSlotSet.getLast());

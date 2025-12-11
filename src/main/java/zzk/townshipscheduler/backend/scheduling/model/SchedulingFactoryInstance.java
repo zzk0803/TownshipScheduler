@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementSequencesComparator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +41,16 @@ public class SchedulingFactoryInstance {
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
     @JsonIgnore
-    @PlanningListVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_ARRANGEMENTS)
+    @PlanningListVariable(
+            valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_ARRANGEMENTS,
+            comparatorClass = SchedulingProducingArrangementSequencesComparator.class
+    )
     private List<SchedulingProducingArrangement> planningProducingArrangements = new ArrayList<>();
 
     @ValueRangeProvider(id = TownshipSchedulingProblem.VALUE_RANGE_FOR_ARRANGEMENTS)
-    public List<SchedulingProducingArrangement> valueRangeForArrangements(TownshipSchedulingProblem townshipSchedulingProblem) {
+    public List<SchedulingProducingArrangement> valueRangeForArrangements(
+            TownshipSchedulingProblem townshipSchedulingProblem
+    ) {
         return townshipSchedulingProblem.valueRangeForArrangements(this);
     }
 
@@ -67,10 +73,10 @@ public class SchedulingFactoryInstance {
     @Override
     public String toString() {
         return "SchedulingFactoryInstance{" +
-               "readableIdentifier='" + factoryReadableIdentifier + '\'' +
-               ", producingLength=" + producingLength +
-               ", reapWindowSize=" + reapWindowSize +
-               '}';
+                "readableIdentifier='" + factoryReadableIdentifier + '\'' +
+                ", producingLength=" + producingLength +
+                ", reapWindowSize=" + reapWindowSize +
+                '}';
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
