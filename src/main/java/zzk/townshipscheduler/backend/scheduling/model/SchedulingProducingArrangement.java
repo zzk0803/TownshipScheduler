@@ -1,7 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
@@ -20,7 +19,6 @@ import zzk.townshipscheduler.utility.UuidGenerator;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Data
@@ -31,6 +29,8 @@ import java.util.stream.Collectors;
 public class SchedulingProducingArrangement {
 
     public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
+
+    public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT = "valueRangeForDateTimeSlot";
 
     public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
 
@@ -75,6 +75,8 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     private SchedulingProducingArrangement successorProducingArrangement;
 
+    private Duration staticDeepPrerequisiteProducingDuration;
+
     private Duration staticDeepProducingDuration;
 
     @JsonIgnore
@@ -91,10 +93,7 @@ public class SchedulingProducingArrangement {
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
-    @PlanningVariable(
-            valueRangeProviderRefs = {TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT},
-            comparatorClass = SchedulingDateTimeSlotStrengthComparator.class
-    )
+    @PlanningVariable(valueRangeProviderRefs = {VALUE_RANGE_FOR_DATE_TIME_SLOT})
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
     @JsonIgnore
@@ -249,6 +248,7 @@ public class SchedulingProducingArrangement {
                 .max(Duration::compareTo)
                 .orElse(Duration.ZERO)
                 ;
+        setStaticDeepPrerequisiteProducingDuration(prerequisiteStaticProducingDuration);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
     }
 
@@ -285,6 +285,13 @@ public class SchedulingProducingArrangement {
             TownshipSchedulingProblem townshipSchedulingProblem
     ) {
         return townshipSchedulingProblem.valueRangeFactoryInstancesForArrangement(this);
+    }
+
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
+    public List<SchedulingDateTimeSlot> valueRangeDateTimeSlotsForArrangement(
+            TownshipSchedulingProblem townshipSchedulingProblem
+    ) {
+        return townshipSchedulingProblem.valueRangeDateTimeSlotsForArrangement(this);
     }
 
 }
