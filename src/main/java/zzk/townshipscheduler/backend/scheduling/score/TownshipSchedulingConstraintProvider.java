@@ -21,9 +21,9 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return new Constraint[]{
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteStock(constraintFactory),
-                forbidBrokenDeadlineOrder(constraintFactory),
+                shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotBrokenCalendarEnd(constraintFactory),
-                shouldNotArrangeInPlayerSleepTime(constraintFactory),
+                preferNotArrangeInPlayerSleepTime(constraintFactory),
                 preferMinimizeOrderCompletedDateTime(constraintFactory),
                 preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
                 preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory)
@@ -83,7 +83,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidBrokenPrerequisiteStock");
     }
 
-    private Constraint forbidBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
+    private Constraint shouldNotBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingOrder.class)
                 .filter(SchedulingOrder::boolHasDeadline)
                 .join(
@@ -150,7 +150,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("shouldNotBrokenCalendarEnd");
     }
 
-    private Constraint shouldNotArrangeInPlayerSleepTime(
+    private Constraint preferNotArrangeInPlayerSleepTime(
             @NonNull ConstraintFactory constraintFactory
     ) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
@@ -163,9 +163,9 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                             || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
                 })
                 .penalizeLong(
-                        HardMediumSoftLongScore.ofMedium(500L)
+                        HardMediumSoftLongScore.ofSoft(10000L)
                 )
-                .asConstraint("shouldNotArrangeInPlayerSleepTime");
+                .asConstraint("preferNotArrangeInPlayerSleepTime");
     }
 
     private Constraint preferMinimizeOrderCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
@@ -226,7 +226,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                         ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                 )
                 .penalizeLong(
-                        HardMediumSoftLongScore.ofSoft(1000L), (factoryInstance, slotAmount) -> slotAmount - 1
+                        HardMediumSoftLongScore.ofSoft(5000L), (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }
