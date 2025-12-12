@@ -20,7 +20,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     public Constraint @NonNull [] defineConstraints(@NonNull ConstraintFactory constraintFactory) {
         return new Constraint[]{
                 forbidBrokenFactoryAbility(constraintFactory),
-                forbidBrokenPrerequisiteStock(constraintFactory),
+                forbidBrokenPrerequisiteArrangement(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotBrokenCalendarEnd(constraintFactory),
                 preferNotArrangeInPlayerSleepTime(constraintFactory),
@@ -57,7 +57,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("forbidBrokenFactoryAbility");
     }
 
-    private Constraint forbidBrokenPrerequisiteStock(@NonNull ConstraintFactory constraintFactory) {
+    private Constraint forbidBrokenPrerequisiteArrangement(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEach(SchedulingProducingArrangement.class)
                 .join(

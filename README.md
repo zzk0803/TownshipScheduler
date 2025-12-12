@@ -23,10 +23,11 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 * 订单具有不同的种类，不同的种类的订单具有不同的奖励和限制（比如时间窗口限制）。
 * 订单包含若干物品及其物品数量。
 * 物品具有原材料结构，一些物品既是产品也作为原材料使用。
-* 物品的生产依赖特定的工厂，物品的生产需要时间，物品的生产时间基本在5min以上。
-* 工厂可以生产一系列物品，有的工厂能同时生产多个物品，大多数工厂只能生产一个物品。
-* 工厂都有任务数量限制。
-* 玩家们一般每隔一段时间上线，一次性安排多项任务
+* 物品的生产依赖特定的工厂，物品的生产需要时间。。
+* 工厂可以生产一系列物品.
+* 有的工厂能同时生产多个物品。大多数工厂具有生产队列，一次只能生产一个物品，生产完成后接着生产下一个。
+* 工厂的生产队列任务数量有限制。
+* 玩家们一般每隔一段时间上线（比如每隔5分钟、每隔1小时），(他/她)上线一次需要尽可能安排多的任务，以保证完成游戏目标
 * 其他游戏内的特性，如库存限制，工厂收割窗口及其数量限制，订单的手动完成，加速工具，金币等暂不考虑。
 
 ## 技术亮点与难点
@@ -44,13 +45,13 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 ## Township Scheduler 约束 
 
 1. **forbidBrokenFactoryAbility**：硬性约束，避免【生产活动】超出【工厂】的队列容量限制
-2. **forbidBrokenPrerequisiteStock**：硬性约束，避免【生产活动】违反先后顺序
-3. **forbidBrokenDeadlineOrder**：硬性约束，避免【生产活动】超过特定的违约时间
+2. **forbidBrokenPrerequisiteArrangement**：硬性约束，避免【生产活动】违反先后顺序
+3. **shouldNotBrokenDeadlineOrder**：容忍约束，避免【生产活动】超过特定的违约时间
 4. **shouldNotBrokenCalendarEnd**：容忍约束，避免【生产活动】超过work-calendar的时间
-5. **shouldNotArrangeInPlayerSleepTime**：容忍约束，【生产活动】不能在“玩家”睡觉时间排
-6. **preferMinimizeOrderCompletedDateTime**：容忍约束，最小化订单完成时间
-7. **preferArrangeDateTimeAsSoonAsPassible**：容忍约束，最好安排【生产活动】最早越好
-8. **preferMinimizeProductArrangeDateTimeSlotUsage**：容忍约束，最好在一个[SchedulingDateTimeSlot.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingDateTimeSlot.java)里尽可能多的安排
+5. **preferNotArrangeInPlayerSleepTime**：优化约束，【生产活动】不能在“玩家”睡觉时间排
+6. **preferMinimizeOrderCompletedDateTime**：优化约束，最小化订单完成时间
+7. **preferArrangeDateTimeAsSoonAsPassible**：优化约束，最好安排【生产活动】最早越好
+8. **preferMinimizeProductArrangeDateTimeSlotUsage**：优化约束，最好在一个[SchedulingDateTimeSlot.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingDateTimeSlot.java)里尽可能多的安排
 
 ## 技术栈
 
