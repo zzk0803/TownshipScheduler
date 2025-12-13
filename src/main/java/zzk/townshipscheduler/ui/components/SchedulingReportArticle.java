@@ -2,6 +2,7 @@ package zzk.townshipscheduler.ui.components;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.*;
@@ -13,14 +14,13 @@ import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
-import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
+import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -66,6 +66,41 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         buildWithArrangementsContent(schedulingProducingArrangementList);
     }
 
+    private void buildWithArrangementsContent(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
+        var byDateTimeByFactoryByProductMapToCount
+                = schedulingProducingArrangementList.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                SchedulingProducingArrangement::getArrangeDateTime,
+                                TreeMap::new,
+                                Collectors.groupingBy(
+                                        SchedulingProducingArrangement::getPlanningFactoryInstance,
+                                        Collectors.groupingBy(
+                                                SchedulingProducingArrangement::getSchedulingProduct,
+                                                Collectors.counting()
+                                        )
+                                )
+                        )
+                );
+        ByDateTimeByFactoryByProductMapToCountGrid grid = new ByDateTimeByFactoryByProductMapToCountGrid();
+        grid.setItems(byDateTimeByFactoryByProductMapToCount.entrySet());
+        grid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
+        addErrorSpanIfNotFeasible();
+        getContent().addAndExpand(grid);
+    }
+
+    private void addErrorSpanIfNotFeasible() {
+        if (getTownshipSchedulingProblem().getScore().isFeasible()) {
+            Span span = new Span("Eureka");
+            span.getElement().getThemeList().add("badge success");
+            getContent().add(span);
+        } else {
+            Span span = new Span("Not Feasible");
+            span.getElement().getThemeList().add("badge contrast error");
+            getContent().add(span);
+        }
+    }
+
     private void buildEmptyContent() {
         Div wrapperDiv = new Div();
         wrapperDiv.addClassNames(
@@ -79,39 +114,6 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         getContent().add(wrapperDiv);
     }
 
-    private void buildWithArrangementsContent(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
-        var byDateTimeByFactoryByProductMapToCount
-                = schedulingProducingArrangementList.stream()
-                .map(SchedulingProducingArrangementVO::new)
-                .collect(
-                        Collectors.groupingBy(
-                                SchedulingProducingArrangementVO::getArrangeDateTime,
-                                TreeMap::new,
-                                Collectors.groupingBy(
-                                        SchedulingProducingArrangementVO::getFactoryReadableIdentifier,
-                                        Collectors.groupingBy(
-                                                SchedulingProducingArrangementVO::getProduct,
-                                                Collectors.counting()
-                                        )
-                                )
-                        )
-                );
-        ByDateTimeByFactoryByProductMapToCountGrid grid = new ByDateTimeByFactoryByProductMapToCountGrid();
-        grid.setItems(byDateTimeByFactoryByProductMapToCount.entrySet());
-        grid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
-        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-        addErrorSpanIfNotFeasible();
-        getContent().addAndExpand(grid);
-    }
-
-    private void addErrorSpanIfNotFeasible() {
-        if (!getTownshipSchedulingProblem().getScore().isFeasible()) {
-            Span span = new Span("Not Feasible");
-            span.getElement().getThemeList().add("badge contrast error");
-            getContent().add(span);
-        }
-    }
-
     @Override
     protected void onAttach(AttachEvent attachEvent) {
         update();
@@ -123,55 +125,76 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
 
 
     class ByDateTimeByFactoryByProductMapToCountGrid
-            extends Grid<Map.Entry<LocalDateTime, Map<String, Map<String, Long>>>> {
+            extends Grid<Map.Entry<LocalDateTime, Map<SchedulingFactoryInstance, Map<SchedulingProduct, Long>>>> {
 
     }
 
     class DateTimeFactoryArrangementsCard extends Composite<HorizontalLayout> {
 
-        public DateTimeFactoryArrangementsCard(Map.Entry<LocalDateTime, Map<String, Map<String, Long>>> entry) {
+        public DateTimeFactoryArrangementsCard(
+                Map.Entry<LocalDateTime, Map<SchedulingFactoryInstance, Map<SchedulingProduct, Long>>> entry
+        ) {
             LocalDateTime arrangeDateTime = entry.getKey();
-            Map<String, Map<String, Long>> factoryAndArrangements = entry.getValue();
+            var factoryAndArrangements = entry.getValue();
 
+            buildItemsContent(factoryAndArrangements);
+            buildDateTimeContent(arrangeDateTime);
+        }
+
+        private void buildDateTimeContent(LocalDateTime arrangeDateTime) {
+            Element dateTimeHeader = ElementFactory.createHeading4(
+                    arrangeDateTime.format(DateTimeFormatter.ofPattern("M-dd HH:mm")));
+            getContent().getElement().insertChild(0, dateTimeHeader);
+        }
+
+        private void buildItemsContent(
+                Map<SchedulingFactoryInstance, Map<SchedulingProduct, Long>> factoryAndArrangements
+        ) {
+            HorizontalLayout itemsContent = new HorizontalLayout();
+            itemsContent.addClassNames(LumoUtility.FlexWrap.WRAP);
             factoryAndArrangements.entrySet()
                     .stream()
-                    .map(stringListEntry -> {
-                        String factory = stringListEntry.getKey();
-                        Element factoryHeader = ElementFactory.createHeading4(factory);
+                    .map(
+                            factoryArrangementsMapEntry -> {
+                                Card card = new Card();
+                                String factory = Optional.ofNullable(factoryArrangementsMapEntry.getKey()
+                                                .getFactoryReadableIdentifier())
+                                        .map(
+                                                FactoryReadableIdentifier::getFactoryCategory)
+                                        .orElse("N/A")
+                                        ;
+                                card.setTitle(factory);
 
-                        var productCountMap = stringListEntry.getValue();
-                        Div div = new Div();
-                        div.addClassNames(
-                                LumoUtility.Width.AUTO,
-                                LumoUtility.Gap.SMALL,
-                                LumoUtility.Margin.Horizontal.XSMALL
-                        );
+                                Div itemAmountPairsDiv = new Div();
+                                itemAmountPairsDiv.addClassNames(
+                                        LumoUtility.Display.FLEX,
+                                        LumoUtility.Overflow.AUTO,
+                                        LumoUtility.Gap.SMALL,
+                                        LumoUtility.Margin.Horizontal.XSMALL,
+                                        LumoUtility.Height.AUTO
+                                );
 
-                        productCountMap.entrySet()
-                                .stream()
-                                .map((productAmountEntry) -> {
-                                    Span span = new Span();
-                                    String productName = productAmountEntry.getKey();
-                                    span.add(getProductImage(productName));
-                                    span.add(productName);
-                                    span.add(" x" + productAmountEntry.getValue());
-                                    return span;
-                                })
-                                .forEach(div::add);
+                                factoryArrangementsMapEntry.getValue().entrySet()
+                                        .stream()
+                                        .map((productAmountEntry) -> {
+                                            Span span = new Span();
+                                            String productName = Optional.ofNullable(productAmountEntry.getKey()
+                                                            .getName())
+                                                    .orElse("N/A");
+                                            span.add(getProductImage(productName));
+                                            span.add(productName);
+                                            span.add(" x" + productAmountEntry.getValue());
+                                            return span;
+                                        })
+                                        .forEach(card::add)
+                                ;
 
-                        Article article = new Article();
-                        article.addClassNames(LumoUtility.Width.AUTO, LumoUtility.Height.AUTO);
-                        article.getElement().appendChild(factoryHeader);
-                        article.add(div);
-                        return article;
-                    })
-                    .forEach(article -> {
-                        getContent().add(article);
-                    });
-
-            Element dateTimeHeader = ElementFactory.createHeading4(arrangeDateTime.format(DateTimeFormatter.ofPattern(
-                    "M-dd HH:mm")));
-            getContent().getElement().insertChild(0, dateTimeHeader);
+                                return card;
+                            }
+                    )
+                    .forEach(itemsContent::add)
+            ;
+            getContent().add(itemsContent);
         }
 
         @Override
@@ -179,7 +202,6 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
             HorizontalLayout horizontalLayout = super.initContent();
             horizontalLayout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
             horizontalLayout.setAlignItems(FlexComponent.Alignment.START);
-            horizontalLayout.setWrap(true);
             return horizontalLayout;
         }
 

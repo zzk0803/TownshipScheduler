@@ -33,25 +33,26 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     private final Map<String, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
 
-    private final Consumer<TownshipSchedulingProblem> defaultConsumer
-            = townshipSchedulingProblem -> {
+    private final Consumer<TownshipSchedulingProblem> defaultConsumer = townshipSchedulingProblem -> {
         var uuid = townshipSchedulingProblem.getUuid();
-        idProblemMap.put(
-                uuid,
-                townshipSchedulingProblem
-        );
+        idProblemMap.put(uuid, townshipSchedulingProblem);
     };
 
-    private final BiConsumer<String, Throwable> defaultExceptionHandler
-            = (uuid, throwable) -> {
-        log.error(
-                "problem {} exception {}",
-                uuid,
-                throwable
-        );
+    private final BiConsumer<String, Throwable> defaultExceptionHandler = (uuid, throwable) -> {
+        log.error("problem {} exception {}", uuid, throwable);
     };
 
     private final Map<String, SolverJob<TownshipSchedulingProblem, String>> idSolverJobMap = new ConcurrentHashMap<>();
+
+    @Override
+    public String getProblemSizeStatistics(String problemId) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob = this.idSolverJobMap.get(problemId);
+        if (solverJob == null) {
+            return "";
+        } else {
+            return solverJob.getProblemSizeStatistics().approximateProblemScaleAsFormattedString();
+        }
+    }
 
     @Override
     public @NonNull ScoreAnalysis<BendableScore> analyze(@NonNull TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -70,66 +71,57 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         ProblemTransferProcess process = new ProblemTransferProcess(townshipSchedulingRequest);
         TownshipSchedulingProblem townshipSchedulingProblem = process.buildProblem();
         var uuid = townshipSchedulingProblem.getUuid();
-        idProblemMap.put(
-                uuid,
-                townshipSchedulingProblem
-        );
+        idProblemMap.put(uuid, townshipSchedulingProblem);
         return townshipSchedulingProblem;
     }
 
     @Override
     public void scheduling(String problemId) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob
-                = solverManager.solveBuilder()
+        SolverJob<TownshipSchedulingProblem, String> solverJob = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionEventConsumer(BestSolutionEventConsumerAdapter.of(defaultConsumer))
+                .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
+                    TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();
+                    defaultConsumer.accept(solution);
+                })
                 .withExceptionHandler(defaultExceptionHandler)
-                .run();
-        idSolverJobMap.put(
-                problemId,
-                solverJob
-        );
+                .run()
+                ;
+        idSolverJobMap.put(problemId, solverJob);
     }
 
     @Override
-    public void scheduling(
-            String problemId,
-            Consumer<TownshipSchedulingProblem> problemConsumer
-    ) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob
-                = solverManager.solveBuilder()
+    public void scheduling(String problemId, Consumer<TownshipSchedulingProblem> problemConsumer) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionEventConsumer(
-                        BestSolutionEventConsumerAdapter.of(defaultConsumer.andThen(problemConsumer))
-                )
-                .run();
-        idSolverJobMap.put(
-                problemId,
-                solverJob
-        );
+                .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
+                    TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();
+                    defaultConsumer.andThen(
+                            problemConsumer).accept(solution);
+                })
+                .run()
+                ;
+        idSolverJobMap.put(problemId, solverJob);
     }
 
     @Override
     public void scheduling(
-            String problemId,
-            Consumer<TownshipSchedulingProblem> problemConsumer,
+            String problemId, Consumer<TownshipSchedulingProblem> problemConsumer,
             BiConsumer<String, Throwable> solveExceptionConsumer
     ) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob
-                = solverManager.solveBuilder()
+        SolverJob<TownshipSchedulingProblem, String> solverJob = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionEventConsumer(
-                        BestSolutionEventConsumerAdapter.of(defaultConsumer.andThen(problemConsumer))
-                )
+                .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
+                    TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();
+                    defaultConsumer.andThen(
+                            problemConsumer).accept(solution);
+                })
                 .withExceptionHandler(defaultExceptionHandler.andThen(solveExceptionConsumer))
-                .run();
-        idSolverJobMap.put(
-                problemId,
-                solverJob
-        );
+                .run()
+                ;
+        idSolverJobMap.put(problemId, solverJob);
     }
 
     @Override
@@ -164,53 +156,68 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
             Consumer<TownshipSchedulingProblem> finalProblemConsumer,
             BiConsumer<String, Throwable> solveExceptionConsumer
     ) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob
-                = solverManager.solveBuilder()
+        SolverJob<TownshipSchedulingProblem, String> solverJob = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withBestSolutionEventConsumer(
-                        BestSolutionEventConsumerAdapter.of(defaultConsumer.andThen(problemConsumer))
-                )
+                .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
+                    TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();
+                    defaultConsumer.andThen(
+                            problemConsumer).accept(solution);
+                })
                 .withFinalBestSolutionEventConsumer(finalBestSolutionEvent -> {
-                    defaultConsumer.andThen(finalProblemConsumer)
-                            .accept(finalBestSolutionEvent.solution());
+                    defaultConsumer.andThen(finalProblemConsumer).accept(finalBestSolutionEvent.solution());
                 })
                 .withExceptionHandler(defaultExceptionHandler.andThen(solveExceptionConsumer))
-                .run();
-        idSolverJobMap.put(
-                problemId,
-                solverJob
-        );
+                .run()
+                ;
+        idSolverJobMap.put(problemId, solverJob);
+    }
+
+    public void scheduling(
+            String problemId,
+            Consumer<TownshipSchedulingProblem> solverStartConsumer,
+            Consumer<TownshipSchedulingProblem> problemConsumer,
+            Consumer<TownshipSchedulingProblem> finalProblemConsumer,
+            BiConsumer<String, Throwable> solveExceptionConsumer
+    ) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob = solverManager.solveBuilder()
+                .withProblemId(problemId)
+                .withProblemFinder(this::getSchedule)
+                .withSolverJobStartedEventConsumer(solverJobStartedEvent ->{
+                    TownshipSchedulingProblem solution = solverJobStartedEvent.solution();
+                    solverStartConsumer.accept(solution);
+                } )
+                .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
+                    TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();
+                    defaultConsumer.andThen(problemConsumer).accept(solution);
+                })
+                .withFinalBestSolutionEventConsumer(finalBestSolutionEvent -> {
+                    defaultConsumer.andThen(finalProblemConsumer).accept(finalBestSolutionEvent.solution());
+                })
+                .withExceptionHandler(defaultExceptionHandler.andThen(solveExceptionConsumer))
+                .run()
+                ;
+        idSolverJobMap.put(problemId, solverJob);
     }
 
     public void schedulingWithSolverManager(
-            Function<
-                    SolverManager<TownshipSchedulingProblem, String>,
-                    SolverJob<TownshipSchedulingProblem, String>
-                    > solverManagerConsumer
+            Function<SolverManager<TownshipSchedulingProblem, String>, SolverJob<TownshipSchedulingProblem, String>> solverManagerConsumer
     ) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob
-                = solverManagerConsumer.apply(this.solverManager);
+        SolverJob<TownshipSchedulingProblem, String> solverJob = solverManagerConsumer.apply(this.solverManager);
         String problemId = solverJob.getProblemId();
-        idSolverJobMap.put(
-                problemId,
-                solverJob
-        );
+        idSolverJobMap.put(problemId, solverJob);
     }
 
     public Collection<SchedulingProblemVo> allSchedulingProblem() {
-        return this.idProblemMap.entrySet()
-                .stream()
-                .map(entry -> {
-                    SchedulingProblemVo schedulingProblemVo = new SchedulingProblemVo();
-                    schedulingProblemVo.setUuid(entry.getKey());
-                    schedulingProblemVo.setSolverStatus(solverManager.getSolverStatus(entry.getKey()));
-                    TownshipSchedulingProblem townshipSchedulingProblem = entry.getValue();
-                    List<SchedulingOrder> orderList = townshipSchedulingProblem.getSchedulingOrderList();
-                    schedulingProblemVo.setOrderList(orderList);
-                    return schedulingProblemVo;
-                })
-                .collect(Collectors.toCollection(ArrayList::new));
+        return this.idProblemMap.entrySet().stream().map(entry -> {
+            SchedulingProblemVo schedulingProblemVo = new SchedulingProblemVo();
+            schedulingProblemVo.setUuid(entry.getKey());
+            schedulingProblemVo.setSolverStatus(solverManager.getSolverStatus(entry.getKey()));
+            TownshipSchedulingProblem townshipSchedulingProblem = entry.getValue();
+            List<SchedulingOrder> orderList = townshipSchedulingProblem.getSchedulingOrderList();
+            schedulingProblemVo.setOrderList(orderList);
+            return schedulingProblemVo;
+        }).collect(Collectors.toCollection(ArrayList::new));
     }
 
 }

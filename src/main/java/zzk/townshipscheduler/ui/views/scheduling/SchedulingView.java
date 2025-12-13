@@ -72,6 +72,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private Grid<SchedulingOrderVo> orderBriefGrid;
 
+    private Text briefText;
+
     public SchedulingView(
             SchedulingViewPresenter schedulingViewPresenter,
             TownshipAuthenticationContext townshipAuthenticationContext
@@ -144,9 +146,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private VerticalLayout buildBriefPanel() {
         VerticalLayout panel = new VerticalLayout();
-        panel.add(
-                this.getSchedulingViewPresenter().setupBriefText()
-        );
+        briefText = this.getSchedulingViewPresenter().buildBriefText();
+        panel.add(briefText);
 
         FormLayout schedulingForm = new FormLayout();
         Select<DateTimeSlotSize> slotSizeSelect = new Select<>();

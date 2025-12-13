@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 
 public interface ITownshipSchedulingService {
 
+    String getProblemSizeStatistics(String problemId);
+
     @NonNull
     ScoreAnalysis<BendableScore> analyze(@NonNull TownshipSchedulingProblem townshipSchedulingProblem);
 
