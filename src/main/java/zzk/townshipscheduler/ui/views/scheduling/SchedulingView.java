@@ -72,7 +72,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private Grid<SchedulingOrderVo> orderBriefGrid;
 
-    private Text briefText;
+    private Paragraph briefText;
 
     public SchedulingView(
             SchedulingViewPresenter schedulingViewPresenter,
@@ -146,8 +146,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private VerticalLayout buildBriefPanel() {
         VerticalLayout panel = new VerticalLayout();
-        briefText = this.getSchedulingViewPresenter().buildBriefText();
-        panel.add(briefText);
+        panel.add(briefText = this.getSchedulingViewPresenter().buildBriefText());
 
         FormLayout schedulingForm = new FormLayout();
         Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
@@ -184,17 +183,20 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         }))
                 .setHeader("Order Type # ID")
                 .setAutoWidth(true)
-                .setFlexGrow(0);
+                .setFlexGrow(0)
+        ;
         orderBriefGrid.addColumn(new ComponentRenderer<>(funOrderBriefItemsRenderer()))
                 .setHeader("Items")
                 .setAutoWidth(true)
-                .setFlexGrow(1);
+                .setFlexGrow(1)
+        ;
         orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
             LocalDateTime deadline = schedulingOrderVo.getDeadline();
             DateTimePicker dateTimePicker = new DateTimePicker(deadline);
             dateTimePicker.setReadOnly(true);
             return dateTimePicker;
-        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(1);
+        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(1)
+        ;
         orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
             LocalDateTime deadline = schedulingOrderVo.getCompletedDateTime();
             if (Objects.nonNull(deadline)) {
@@ -204,7 +206,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             } else {
                 return new Text("N/A");
             }
-        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(1);
+        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(1)
+        ;
         panel.addAndExpand(orderBriefGrid);
         this.getSchedulingViewPresenter().setupOrderBriefGrid();
         return panel;
@@ -240,7 +243,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         span.add(" x" + productAmountEntry.getValue());
                         return span;
                     })
-                    .forEach(div::add);
+                    .forEach(div::add)
+            ;
             layout.add(div);
             return layout;
         };
@@ -286,14 +290,16 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                     return horizontalLayout;
                 })
                 .setResizable(true)
-                .setHeader("Product");
+                .setHeader("Product")
+        ;
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getSchedulingOrder)
                 .setRenderer(new TextRenderer<>(schedulingProducingArrangement -> {
                     SchedulingOrder schedulingOrder = schedulingProducingArrangement.getSchedulingOrder();
                     return schedulingOrder.getOrderType() + "#" + schedulingOrder.getId();
                 }))
                 .setResizable(true)
-                .setHeader("Order");
+                .setHeader("Order")
+        ;
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 .setRenderer(new TextRenderer<>(producingArrangement -> {
                     return Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
@@ -305,13 +311,15 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
-                .setHeader("Assign Factory");
+                .setHeader("Assign Factory")
+        ;
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getStaticDeepProducingDuration)
                 .setSortable(true)
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
-                .setHeader("Static Producing Duration");
+                .setHeader("Static Producing Duration")
+        ;
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getArrangeDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getArrangeDateTime,
@@ -321,7 +329,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setFlexGrow(1)
-                .setHeader("Arrange Date Time");
+                .setHeader("Arrange Date Time")
+        ;
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getProducingDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getProducingDateTime,
@@ -329,7 +338,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 ))
                 .setResizable(true)
                 .setAutoWidth(true)
-                .setHeader("Producing Date Time");
+                .setHeader("Producing Date Time")
+        ;
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getCompletedDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
                         SchedulingProducingArrangement::getCompletedDateTime,
@@ -338,7 +348,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
-                .setHeader("Completed Date Time");
+                .setHeader("Completed Date Time")
+        ;
 
         arrangementTreeGrid.setSizeFull();
 
@@ -403,7 +414,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                             footerBtnClicked -> {
                                 Set<OrderEntity> selectedOrder = orderGrid.getSelectedItems();
                                 DateTimeSlotSize dateTimeSlotSize = slotSizeSelect.getValue();
-                                LocalDateTime workCalendarStartPickerPickerValue = workCalendarStartPickerPicker.getValue();
+                                LocalDateTime workCalendarStartPickerPickerValue =
+                                        workCalendarStartPickerPicker.getValue();
                                 LocalDateTime workCalendarEndPickerPickerValue = workCalendarEndPickerPicker.getValue();
                                 LocalTime sleepStartPickerValue = playerSleepStartPicker.getValue();
                                 LocalTime sleepEndPickerValue = playerSleepEndPicker.getValue();
@@ -441,11 +453,13 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         )))
                 .setHeader("UUID")
                 .setAutoWidth(true)
-                .setFlexGrow(0);
+                .setFlexGrow(0)
+        ;
         grid.addColumn(new ComponentRenderer<>(funOrdersGridItemsRenderer()))
                 .setHeader("Items")
                 .setAutoWidth(true)
-                .setFlexGrow(1);
+                .setFlexGrow(1)
+        ;
         grid.addColumn(SchedulingProblemVo::getSolverStatus).setHeader("status").setAutoWidth(true).setFlexGrow(0);
         grid.setItems(schedulingViewPresenter.allSchedulingProblem());
         addAndExpand(grid);
@@ -475,7 +489,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         );
 
                         div.add(new Span(schedulingOrder.getOrderType()
-                                                 .name() + "#" + schedulingOrder.getId()));
+                                .name() + "#" + schedulingOrder.getId()));
                         productAmountBill.entrySet()
                                 .stream()
                                 .map((productAmountEntry) -> {
@@ -487,10 +501,12 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                                     span.add(" x" + productAmountEntry.getValue());
                                     return span;
                                 })
-                                .forEach(div::add);
+                                .forEach(div::add)
+                        ;
                         return div;
                     })
-                    .forEachOrdered(layout::add);
+                    .forEachOrdered(layout::add)
+            ;
             return layout;
         };
     }

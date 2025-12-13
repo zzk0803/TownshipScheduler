@@ -1,7 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -79,15 +78,7 @@ public class SchedulingViewPresenter {
     @Resource(name = "townshipTaskScheduler")
     private TaskScheduler taskScheduler;
 
-    private Map<String, Image> productToImageMap = new LinkedHashMap<>();
-
     public Image getProductImage(String productName) {
-//        if (productToImageMap.containsKey(productName)) {
-//            return productToImageMap.get(productName);
-//        } else {
-//            productToImageMap.put(productName, createProductImage(productName));
-//            return productToImageMap.get(productName);
-//        }
         return createProductImage(productName);
     }
 
@@ -97,8 +88,8 @@ public class SchedulingViewPresenter {
                 productName,
                 productImage
         );
-        image.setWidth("40px");
-        image.setHeight("40px");
+        image.setWidth("50px");
+        image.setHeight("50px");
 
         return image;
     }
@@ -140,9 +131,9 @@ public class SchedulingViewPresenter {
                         getSchedulingView().getTriggerButton().setToState2();
                         String problemSizeStatistics = getSchedulingService().getProblemSizeStatistics(
                                 getTownshipSchedulingProblemId());
-                        String string = getSchedulingView().getBriefText().getText();
-                        string = string + "\n" + problemSizeStatistics;
-                        getSchedulingView().getBriefText().setText(string);
+                        String updatedString = getSchedulingView().getBriefText().getText() + "\r" +
+                                "solver approximate problem scale:" + problemSizeStatistics;
+                        getSchedulingView().getBriefText().setText(updatedString);
                     });
                 },
                 solutionConsumer,
@@ -178,7 +169,7 @@ public class SchedulingViewPresenter {
                         () -> {
                             TownshipSchedulingProblem townshipSchedulingProblem =
                                     this.getTownshipSchedulingProblemAtomicReference()
-                                    .get();
+                                            .get();
                             getSchedulingView().getScoreAnalysisParagraph()
                                     .setText(getSchedulingService().analyze(townshipSchedulingProblem).toString())
                             ;
@@ -355,7 +346,7 @@ public class SchedulingViewPresenter {
         setupArrangementsTreeGrid(treeGrid, findCurrentProblem());
     }
 
-    public Text buildBriefText() {
+    public Paragraph buildBriefText() {
         TownshipSchedulingProblem currentProblem = findCurrentProblem();
         int orderSize = currentProblem.getSchedulingOrderList().size();
         long orderItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
@@ -367,10 +358,15 @@ public class SchedulingViewPresenter {
                 .size();
         int dateTimeValueRangeCount = currentProblem.getSchedulingDateTimeSlots().size();
         int factoryCount = currentProblem.getSchedulingFactoryInstanceList().size();
+
         String formatted = (
-                "your township scheduling problem include %s order,contain %s final product item to make," +
-                        "and include all materials need %s arrangement.factory value range size:%s,date times slot " +
-                        "size:%s"
+                """
+                your township scheduling problem include %s order
+                there's %s final product item to make
+                include all materials need %s arrangement.
+                factory value range size:%s
+                date times slot size:%s
+                """
         ).formatted(
                 orderSize,
                 orderItemProducingArrangementCount,
@@ -378,7 +374,7 @@ public class SchedulingViewPresenter {
                 factoryCount,
                 dateTimeValueRangeCount
         );
-        return new Text(formatted);
+        return new Paragraph(formatted);
     }
 
     public TownshipSchedulingProblem getTownshipSchedulingProblem() {
