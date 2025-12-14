@@ -150,6 +150,26 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         return idProblemMap.containsKey(uuid);
     }
 
+    @Override
+    public void remove(String problemId) {
+        SolverJob<TownshipSchedulingProblem, String> solverJob = this.idSolverJobMap.get(problemId);
+        if (Objects.nonNull(solverJob)) {
+            solverJob.terminateEarly();
+            this.idSolverJobMap.remove(problemId, solverJob);
+        }
+        this.idProblemMap.remove(problemId);
+    }
+
+    @Override
+    public boolean existSolvingJob(String problemId) {
+        return this.idSolverJobMap.containsKey(problemId);
+    }
+
+    @Override
+    public boolean existProblem(String problemId) {
+        return this.idProblemMap.containsKey(problemId);
+    }
+
     public void scheduling(
             String problemId,
             Consumer<TownshipSchedulingProblem> problemConsumer,
@@ -183,10 +203,10 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         SolverJob<TownshipSchedulingProblem, String> solverJob = solverManager.solveBuilder()
                 .withProblemId(problemId)
                 .withProblemFinder(this::getSchedule)
-                .withSolverJobStartedEventConsumer(solverJobStartedEvent ->{
+                .withSolverJobStartedEventConsumer(solverJobStartedEvent -> {
                     TownshipSchedulingProblem solution = solverJobStartedEvent.solution();
                     solverStartConsumer.accept(solution);
-                } )
+                })
                 .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
                     TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();
                     defaultConsumer.andThen(problemConsumer).accept(solution);

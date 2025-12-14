@@ -167,6 +167,11 @@ public class SchedulingViewPresenter {
         this.solutionResultPushScheduledFuture = taskScheduler.scheduleAtFixedRate(
                 () -> this.ui.access(
                         () -> {
+                            if (!getSchedulingService().existSolvingJob(getTownshipSchedulingProblemId())) {
+                                this.solutionResultPushScheduledFuture.cancel(true);
+                                getSchedulingView().getTriggerButton().setToState1();
+                            }
+
                             TownshipSchedulingProblem townshipSchedulingProblem =
                                     this.getTownshipSchedulingProblemAtomicReference()
                                             .get();

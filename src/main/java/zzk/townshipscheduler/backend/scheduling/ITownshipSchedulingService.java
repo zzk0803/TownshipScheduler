@@ -40,4 +40,10 @@ public interface ITownshipSchedulingService {
 
     boolean checkUuidIsValidForSchedule(String uuid);
 
+    void remove(String problemId);
+
+    boolean existSolvingJob(String problemId);
+
+    boolean existProblem(String problemId);
+
 }

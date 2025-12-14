@@ -11,6 +11,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -93,7 +94,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        Optional<String> optionalSchedulingId = beforeEnterEvent.getRouteParameters().get("schedulingId");
+        Optional<String> optionalSchedulingId = beforeEnterEvent.getRouteParameters()
+                .get("schedulingId");
         if (optionalSchedulingId.isPresent()) {
             if (this.schedulingViewPresenter.validProblemId(optionalSchedulingId.get())) {
                 this.schedulingViewPresenter.setTownshipSchedulingProblemId(optionalSchedulingId.get());
@@ -105,7 +107,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         "scheduling not exist",
                         "OK",
                         confirmEvent -> {
-                            UI.getCurrent().navigate(SchedulingView.class);
+                            UI.getCurrent()
+                                    .navigate(SchedulingView.class);
                         }
                 );
                 confirmDialog.open();
@@ -146,31 +149,37 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     private VerticalLayout buildBriefPanel() {
         VerticalLayout panel = new VerticalLayout();
-        panel.add(briefText = this.getSchedulingViewPresenter().buildBriefText());
+        panel.add(briefText = this.getSchedulingViewPresenter()
+                .buildBriefText());
 
         FormLayout schedulingForm = new FormLayout();
         Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
         slotSizeSelect.setLabel("Scheduling Time Slot");
         slotSizeSelect.setNoVerticalOverlap(true);
         slotSizeSelect.setItems(DateTimeSlotSize.values());
-        this.getSchedulingViewPresenter().setupSlotSizeSelectReadValue(slotSizeSelect);
+        this.getSchedulingViewPresenter()
+                .setupSlotSizeSelectReadValue(slotSizeSelect);
         slotSizeSelect.setReadOnly(true);
         schedulingForm.add(slotSizeSelect, 2);
 
         DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
-        this.getSchedulingViewPresenter().setupWorkCalendarStartPickerPickerReadValue(workCalendarStartPickerPicker);
+        this.getSchedulingViewPresenter()
+                .setupWorkCalendarStartPickerPickerReadValue(workCalendarStartPickerPicker);
         workCalendarStartPickerPicker.setReadOnly(true);
         DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
-        this.getSchedulingViewPresenter().setupWorkCalendarEndPickerPickerReadValue(workCalendarEndPickerPicker);
+        this.getSchedulingViewPresenter()
+                .setupWorkCalendarEndPickerPickerReadValue(workCalendarEndPickerPicker);
         workCalendarEndPickerPicker.setReadOnly(true);
         schedulingForm.add(workCalendarStartPickerPicker, 1);
         schedulingForm.add(workCalendarEndPickerPicker, 1);
 
         TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
-        this.getSchedulingViewPresenter().setupPlayerSleepStartPickerReadValue(playerSleepStartPicker);
+        this.getSchedulingViewPresenter()
+                .setupPlayerSleepStartPickerReadValue(playerSleepStartPicker);
         playerSleepStartPicker.setReadOnly(true);
         TimePicker playerSleepEndPicker = new TimePicker("Player Sleep End");
-        this.getSchedulingViewPresenter().setupPlayerSleepEndPickerReadValue(playerSleepEndPicker);
+        this.getSchedulingViewPresenter()
+                .setupPlayerSleepEndPickerReadValue(playerSleepEndPicker);
         playerSleepEndPicker.setReadOnly(true);
         schedulingForm.add(playerSleepStartPicker, 1);
         schedulingForm.add(playerSleepEndPicker, 1);
@@ -179,7 +188,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         orderBriefGrid = new Grid<>(SchedulingOrderVo.class, false);
         orderBriefGrid.addColumn(new ComponentRenderer<>(
                         schedulingOrderVo -> {
-                            return new Span(schedulingOrderVo.getOrderType().name() + "#" + schedulingOrderVo.getSerial());
+                            return new Span(schedulingOrderVo.getOrderType()
+                                    .name() + "#" + schedulingOrderVo.getSerial());
                         }))
                 .setHeader("Order Type # ID")
                 .setAutoWidth(true)
@@ -191,25 +201,32 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setFlexGrow(1)
         ;
         orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
-            LocalDateTime deadline = schedulingOrderVo.getDeadline();
-            DateTimePicker dateTimePicker = new DateTimePicker(deadline);
-            dateTimePicker.setReadOnly(true);
-            return dateTimePicker;
-        }).setHeader("Deadline").setAutoWidth(true).setFlexGrow(1)
+                    LocalDateTime deadline = schedulingOrderVo.getDeadline();
+                    DateTimePicker dateTimePicker = new DateTimePicker(deadline);
+                    dateTimePicker.setReadOnly(true);
+                    return dateTimePicker;
+                })
+                .setHeader("Deadline")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
         ;
         orderBriefGrid.addComponentColumn(schedulingOrderVo -> {
-            LocalDateTime deadline = schedulingOrderVo.getCompletedDateTime();
-            if (Objects.nonNull(deadline)) {
-                DateTimePicker dateTimePicker = new DateTimePicker(deadline);
-                dateTimePicker.setReadOnly(true);
-                return dateTimePicker;
-            } else {
-                return new Text("N/A");
-            }
-        }).setHeader("Completed Date Time").setAutoWidth(true).setFlexGrow(1)
+                    LocalDateTime deadline = schedulingOrderVo.getCompletedDateTime();
+                    if (Objects.nonNull(deadline)) {
+                        DateTimePicker dateTimePicker = new DateTimePicker(deadline);
+                        dateTimePicker.setReadOnly(true);
+                        return dateTimePicker;
+                    } else {
+                        return new Text("N/A");
+                    }
+                })
+                .setHeader("Completed Date Time")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
         ;
         panel.addAndExpand(orderBriefGrid);
-        this.getSchedulingViewPresenter().setupOrderBriefGrid();
+        this.getSchedulingViewPresenter()
+                .setupOrderBriefGrid();
         return panel;
     }
 
@@ -284,8 +301,10 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                     HorizontalLayout horizontalLayout = new HorizontalLayout();
                     horizontalLayout.setSpacing(false);
                     horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
-                    String name = producingArrangement.getSchedulingProduct().getName();
-                    horizontalLayout.add(this.getSchedulingViewPresenter().getProductImage(name));
+                    String name = producingArrangement.getSchedulingProduct()
+                            .getName();
+                    horizontalLayout.add(this.getSchedulingViewPresenter()
+                            .getProductImage(name));
                     horizontalLayout.add(name);
                     return horizontalLayout;
                 })
@@ -377,7 +396,10 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             OrderGrid orderGrid = new OrderGrid(schedulingViewPresenter.fetchPlayerOrders(), false);
             orderGrid.setPageSize(4);
             orderGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-            orderGrid.asMultiSelect().select(orderGrid.getGenericDataView().getItems().toList());
+            orderGrid.asMultiSelect()
+                    .select(orderGrid.getGenericDataView()
+                            .getItems()
+                            .toList());
             dialogWrapper.add(orderGrid);
 
             FormLayout schedulingForm = new FormLayout();
@@ -394,7 +416,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             workCalendarStartPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30)));
             DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
             workCalendarEndPickerPicker.setMin(formDateTime);
-            workCalendarEndPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30)).plusDays(2));
+            workCalendarEndPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30))
+                    .plusDays(2));
             workCalendarEndPickerPicker.setMax(formDateTime.plusDays(9));
             schedulingForm.add(workCalendarStartPickerPicker, 1);
             schedulingForm.add(workCalendarEndPickerPicker, 1);
@@ -430,10 +453,11 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                                 );
 
                                 dialog.close();
-                                UI.getCurrent().navigate(
-                                        SchedulingView.class,
-                                        new RouteParam("schedulingId", uuid)
-                                );
+                                UI.getCurrent()
+                                        .navigate(
+                                                SchedulingView.class,
+                                                new RouteParam("schedulingId", uuid)
+                                        );
                             }
                     )
             );
@@ -444,7 +468,11 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
         AtomicInteger idRoller = new AtomicInteger(1);
         Grid<SchedulingProblemVo> grid = new Grid<>(SchedulingProblemVo.class, false);
-        grid.addColumn(vo -> idRoller.getAndIncrement()).setHeader("#").setAutoWidth(true).setFlexGrow(0);
+        grid.addColumn(vo -> idRoller.getAndIncrement())
+                .setHeader("#")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
+        ;
         grid.addColumn(new ComponentRenderer<>(
                         schedulingProblemVo -> new RouterLink(
                                 schedulingProblemVo.getUuid(),
@@ -460,8 +488,26 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setAutoWidth(true)
                 .setFlexGrow(1)
         ;
-        grid.addColumn(SchedulingProblemVo::getSolverStatus).setHeader("status").setAutoWidth(true).setFlexGrow(0);
+        grid.addColumn(SchedulingProblemVo::getSolverStatus)
+                .setHeader("status")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
+        ;
         grid.setItems(schedulingViewPresenter.allSchedulingProblem());
+        GridContextMenu<SchedulingProblemVo> problemGridContextMenu = grid.addContextMenu();
+        problemGridContextMenu.addItem(
+                new Button("Remove", VaadinIcon.TRASH.create()),
+                itemContentClicked -> {
+                    itemContentClicked.getItem()
+                            .ifPresent(schedulingProblemVo -> {
+                                String problemId = schedulingProblemVo.getUuid();
+                                getSchedulingViewPresenter().getSchedulingService()
+                                        .remove(problemId)
+                                ;
+                                grid.setItems(schedulingViewPresenter.allSchedulingProblem());
+                            });
+                }
+        );
         addAndExpand(grid);
 
     }
