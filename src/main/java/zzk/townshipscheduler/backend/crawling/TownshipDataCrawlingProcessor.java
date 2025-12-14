@@ -1,7 +1,7 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import io.arxila.javatuples.Pair;
 import jakarta.annotation.PreDestroy;
-import org.javatuples.Pair;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -107,13 +107,17 @@ class TownshipDataCrawlingProcessor {
                     Element mwHeadlineElement = element.previousElementSibling();
                     return Objects.isNull(mwHeadlineElement)
                             ? ""
-                            : mwHeadlineElement.select("span.mw-headline").first().text();
-                });
+                            : mwHeadlineElement.select("span.mw-headline")
+                                    .first()
+                                    .text();
+                })
+                ;
         return tableZone.orElse("");
     }
 
     private boolean checkAbandonZone(String tableZoneString) {
-        return Arrays.stream(ABANDON_ZONE).anyMatch(tableZoneString::equalsIgnoreCase);
+        return Arrays.stream(ABANDON_ZONE)
+                .anyMatch(tableZoneString::equalsIgnoreCase);
     }
 
     private Document loadDocument(boolean mandatory) {
@@ -122,7 +126,8 @@ class TownshipDataCrawlingProcessor {
             logger.info("mandatory mode,force fetch");
             try {
                 document = fetchDocument();
-            } catch (Throwable e) {
+            }
+            catch (Throwable e) {
                 throw new RuntimeException(e);
             }
             persistDocument(document);
@@ -137,7 +142,8 @@ class TownshipDataCrawlingProcessor {
                 logger.warn("not found in db");
                 try {
                     document = fetchDocument();
-                } catch (Throwable e) {
+                }
+                catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
                 persistDocument(document);
@@ -205,7 +211,8 @@ class TownshipDataCrawlingProcessor {
                         .imgList(imgList)
                         .type(currentColumnsSize == 1 ? CrawledDataCell.Type.HEAD : CrawledDataCell.Type.CELL)
                         .span(new CrawledDataCell.CellSpan(rowSpan, colSpan))
-                        .build();
+                        .build()
+                        ;
 
                 registerSpanFixIfNeed(currentCoord, currentCell, rowSpan, colSpan);
 
@@ -225,23 +232,27 @@ class TownshipDataCrawlingProcessor {
 
     private List<CrawledDataCell.Anchor> doParseUnitIntoAnchor(Element currentThOrTd) {
         Elements anchorElements = currentThOrTd.select("a");
-        return anchorElements.stream().map(element -> {
-            CrawledDataCell.Anchor l = new CrawledDataCell.Anchor();
-            l.setHref(element.attr("href"));
-            l.setTitle(element.attr("title"));
-            l.setText(element.text());
-            return l;
-        }).toList();
+        return anchorElements.stream()
+                .map(element -> {
+                    CrawledDataCell.Anchor l = new CrawledDataCell.Anchor();
+                    l.setHref(element.attr("href"));
+                    l.setTitle(element.attr("title"));
+                    l.setText(element.text());
+                    return l;
+                })
+                .toList();
     }
 
     private List<CrawledDataCell.Img> doParseUnitIntoImg(Element currentThOrTd) {
         Elements imageElements = currentThOrTd.select("img");
-        return imageElements.stream().map(element -> {
-            CrawledDataCell.Img cellImg = new CrawledDataCell.Img();
-            cellImg.setAlt(element.attr("alt"));
-            cellImg.setSrc(element.attr("data-src"));
-            return cellImg;
-        }).toList();
+        return imageElements.stream()
+                .map(element -> {
+                    CrawledDataCell.Img cellImg = new CrawledDataCell.Img();
+                    cellImg.setAlt(element.attr("alt"));
+                    cellImg.setSrc(element.attr("data-src"));
+                    return cellImg;
+                })
+                .toList();
     }
 
     private int doParseUnitIntoRowSpanInt(Element currentThOrTd) {
@@ -325,34 +336,44 @@ class TownshipDataCrawlingProcessor {
                     wikiCrawledEntity = wikiCrawledEntityRepository.save(wikiCrawledEntity);
                     return new Pair<>(img, wikiCrawledEntity);
                 })
-                .toList();
+                .toList()
+                ;
 
         List<CompletableFuture<WikiCrawledEntity>> downloadFutures
                 = pairList.stream().
                 map(
                         pair -> CompletableFuture.supplyAsync(
                                         () -> {
-                                            pair.getValue1().setImageBytes(
-                                                    this.downloadImage(pair.getValue0().getSrc())
-                                            );
-                                            return wikiCrawledEntityRepository.save(pair.getValue1());
+                                            pair.value1()
+                                                    .setImageBytes(
+                                                            this.downloadImage(pair.value0()
+                                                                    .getSrc())
+                                                    );
+                                            return wikiCrawledEntityRepository.save(pair.value1());
                                         }, townshipExecutorService
                                 )
                                 .orTimeout(30, TimeUnit.SECONDS)
                                 .thenApplyAsync(
                                         crawledEntity -> {
-                                            logger.info("{} image download completed", pair.getValue0().getSrc());
+                                            logger.info("{} image download completed",
+                                                    pair.value0()
+                                                            .getSrc()
+                                            );
                                             return crawledEntity;
                                         }, townshipExecutorService
                                 )
                                 .exceptionallyAsync(
-                                        throwable -> {
-                                            logger.warn("Failed to download image: {}", pair.getValue0().getSrc());
+                                        _ -> {
+                                            logger.warn("Failed to download image: {}",
+                                                    pair.value0()
+                                                            .getSrc()
+                                            );
                                             return null;
                                         }, townshipExecutorService
                                 )
                 )
-                .toList();
+                .toList()
+                ;
 
 
         return CompletableFuture.allOf(downloadFutures.toArray(CompletableFuture[]::new))
@@ -373,14 +394,17 @@ class TownshipDataCrawlingProcessor {
                                 HttpRequest.newBuilder(URI.create(url))
                                         .header(
                                                 "User-Agent",
-                                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0"
-                                        ).timeout(Duration.ofSeconds(5))
+                                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537" +
+                                                        ".36 Edg/143.0.0.0"
+                                        )
+                                        .timeout(Duration.ofSeconds(5))
                                         .GET()
                                         .build(),
                                 HttpResponse.BodyHandlers.ofByteArray()
                         );
                         return httpResponse.body();
-                    } catch (IOException | InterruptedException e) {
+                    }
+                    catch (IOException | InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                 });

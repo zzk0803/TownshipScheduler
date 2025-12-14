@@ -1,11 +1,11 @@
 package zzk.townshipscheduler.backend.service;
 
+import io.arxila.javatuples.Pair;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.atteo.evo.inflector.English;
-import org.javatuples.Pair;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
@@ -248,9 +248,9 @@ public class ProductService {
                         str,
                         JARO_WINKLER_SIMILARITY.apply(example, str)
                 ))
-                .filter(pair -> pair.getValue0() != null && pair.getValue1() != null)
-                .max(Comparator.comparingDouble(Pair::getValue1))
-                .map(Pair::getValue0)
+                .filter(pair -> pair.value0() != null && pair.value1() != null)
+                .max(Comparator.comparingDouble(Pair::value1))
+                .map(Pair::value0)
                 .get();
     }
 

@@ -496,7 +496,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         grid.setItems(schedulingViewPresenter.allSchedulingProblem());
         GridContextMenu<SchedulingProblemVo> problemGridContextMenu = grid.addContextMenu();
         problemGridContextMenu.addItem(
-                new Button("Remove", VaadinIcon.TRASH.create()),
+                "Remove",
                 itemContentClicked -> {
                     itemContentClicked.getItem()
                             .ifPresent(schedulingProblemVo -> {
