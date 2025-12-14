@@ -5,6 +5,7 @@ import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.SortedMap;
@@ -52,11 +53,10 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
         TownshipSchedulingProblem scoreDirectorWorkingSolution = scoreDirector.getWorkingSolution();
         SchedulingFactoryInstance planningFactoryInstance
                 = schedulingProducingArrangement.getPlanningFactoryInstance();
-        LocalDateTime planningArrangeDateTime
-                = schedulingProducingArrangement.getArrangeDateTime();
+        SchedulingDateTimeSlot planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
         FactoryProcessSequence oldFactoryProcessSequence
                 = schedulingProducingArrangement.getShadowFactoryProcessSequence();
-        if (Objects.isNull(planningFactoryInstance) || Objects.isNull(planningArrangeDateTime)) {
+        if (Objects.isNull(planningFactoryInstance) || Objects.isNull(planningDateTimeSlot)) {
             doShadowVariableUpdate(
                     scoreDirector,
                     schedulingProducingArrangement,
@@ -67,31 +67,51 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
             return;
         }
 
-        FactoryProcessSequence newFactoryProcessSequence
-                = new FactoryProcessSequence(schedulingProducingArrangement);
-        if (!Objects.equals(oldFactoryProcessSequence, newFactoryProcessSequence)) {
-            if (Objects.nonNull(oldFactoryProcessSequence)) {
-                scoreDirectorWorkingSolution.lookupFactoryInstance(oldFactoryProcessSequence)
-                        .ifPresent(schedulingFactoryInstance -> {
-                            schedulingFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
+        if (planningFactoryInstance.weatherFactoryProducingTypeIsQueue()) {
+            FactoryProcessSequence newFactoryProcessSequence
+                    = new FactoryProcessSequence(schedulingProducingArrangement);
+            if (!Objects.equals(oldFactoryProcessSequence, newFactoryProcessSequence)) {
+                if (Objects.nonNull(oldFactoryProcessSequence)) {
+                    scoreDirectorWorkingSolution.lookupFactoryInstance(oldFactoryProcessSequence)
+                            .ifPresent(schedulingFactoryInstance -> {
+                                schedulingFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
+                            });
+                }
+                planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
+                doShadowVariableUpdate(
+                        scoreDirector,
+                        schedulingProducingArrangement,
+                        newFactoryProcessSequence,
+                        SchedulingProducingArrangement::setShadowFactoryProcessSequence,
+                        SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
+                );
+
+                SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processToPairMap
+                        = planningFactoryInstance.prepareProducingAndCompletedMap();
+
+                scoreDirectorWorkingSolution.lookupProducingArrangements(planningFactoryInstance)
+                        .forEach(producingArrangement -> {
+                            doUpdateDateTime(scoreDirector, producingArrangement, processToPairMap);
                         });
             }
-            planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
+        } else {
             doShadowVariableUpdate(
                     scoreDirector,
                     schedulingProducingArrangement,
-                    newFactoryProcessSequence,
+                    new FactoryProcessSequence(schedulingProducingArrangement),
                     SchedulingProducingArrangement::setShadowFactoryProcessSequence,
                     SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
             );
 
-            SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processToPairMap
-                    = planningFactoryInstance.prepareProducingAndCompletedMap();
-
-            scoreDirectorWorkingSolution.lookupProducingArrangements(planningFactoryInstance)
-                    .forEach(producingArrangement -> {
-                        doUpdateDateTime(scoreDirector, producingArrangement, processToPairMap);
-                    });
+            LocalDateTime planningArrangeDateTime
+                    = schedulingProducingArrangement.getArrangeDateTime();
+            Duration producingDuration = schedulingProducingArrangement.getProducingDuration();
+            doUpdateDateTime(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    planningArrangeDateTime,
+                    planningArrangeDateTime != null ? planningArrangeDateTime.plus(producingDuration) : null
+            );
         }
 
     }
@@ -106,6 +126,36 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
         scoreDirector.beforeVariableChanged(entity, shadowVariableName);
         setterFunction.accept(entity, value);
         scoreDirector.afterVariableChanged(entity, shadowVariableName);
+    }
+
+    private void doUpdateDateTime(
+            ScoreDirector<TownshipSchedulingProblem> scoreDirector,
+            SchedulingProducingArrangement schedulingProducingArrangement,
+            LocalDateTime newProducingDateTime,
+            LocalDateTime newCompletedDateTime
+    ) {
+        LocalDateTime oldProducingDateTime = schedulingProducingArrangement.getProducingDateTime();
+        LocalDateTime oldCompletedDateTime = schedulingProducingArrangement.getCompletedDateTime();
+
+        if (!Objects.equals(oldProducingDateTime, newProducingDateTime)) {
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    newProducingDateTime,
+                    SchedulingProducingArrangement::setProducingDateTime,
+                    SchedulingProducingArrangement.SHADOW_PRODUCING_DATE_TIME
+            );
+        }
+
+        if (!Objects.equals(oldCompletedDateTime, newCompletedDateTime)) {
+            doShadowVariableUpdate(
+                    scoreDirector,
+                    schedulingProducingArrangement,
+                    newCompletedDateTime,
+                    SchedulingProducingArrangement::setCompletedDateTime,
+                    SchedulingProducingArrangement.SHADOW_COMPLETED_DATE_TIME
+            );
+        }
     }
 
     private void doUpdateDateTime(

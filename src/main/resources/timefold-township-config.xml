@@ -138,10 +138,10 @@
         </unionMoveSelector>
 
         <acceptor>
-            <entityTabuSize>3</entityTabuSize>
+            <entityTabuSize>7</entityTabuSize>
             <valueTabuSize>3</valueTabuSize>
-            <stepCountingHillClimbingSize>257</stepCountingHillClimbingSize>
-            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
+            <stepCountingHillClimbingSize>357</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingType>SELECTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>
