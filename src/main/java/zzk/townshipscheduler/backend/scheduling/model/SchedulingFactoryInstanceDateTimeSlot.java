@@ -13,6 +13,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,8 +49,8 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     @PlanningListVariable(valueRangeProviderRefs = RANGE_FOR_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
 
-    @ShadowVariable(supplierName = "tailArrangementCompletedDateTimeSupplier")
-    private LocalDateTime tailArrangementCompletedDateTime;
+    @ShadowVariable(supplierName = "approximatedCompletedDateTimeSupplier")
+    private LocalDateTime approximatedCompletedDateTime;
 
     @ShadowVariable(supplierName = "amendedFirstArrangementProducingDateTimeSupplier")
     private LocalDateTime amendedFirstArrangementProducingDateTime;
@@ -76,31 +77,49 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return townshipSchedulingProblem.valueRangeForArrangements(this);
     }
 
-    @ShadowSources({"planningSchedulingProducingArrangements"})
-    public LocalDateTime tailArrangementCompletedDateTimeSupplier() {
-        if (getPlanningSchedulingProducingArrangements().isEmpty()) {
+    @ShadowSources(
+            value = {
+                    "planningSchedulingProducingArrangements",
+                    "previous.approximatedCompletedDateTime",
+            }
+    )
+    public LocalDateTime approximatedCompletedDateTimeSupplier() {
+        if (!weatherFactoryProducingTypeIsQueue()) {
             return null;
         }
 
-        return this.planningSchedulingProducingArrangements.getLast()
-                .getCompletedDateTime();
-    }
-
-    @ShadowSources({"factoryInstance.factorySlotToFinishedLocalDateTimeMap"})
-    public LocalDateTime amendedFirstArrangementProducingDateTimeSupplier() {
-        TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFinishedLocalDateTimeMap
-                = this.getFactoryInstance()
-                .getFactorySlotToFinishedLocalDateTimeMap();
-        if (factorySlotToFinishedLocalDateTimeMap == null) {
-            return this.getStart();
+        if (previous == null) {
+            return null;
         }
 
-        Optional<LocalDateTime> dateTimeOptional = factorySlotToFinishedLocalDateTimeMap.values()
-                .stream()
-                .filter(finishDateTime -> finishDateTime != null && finishDateTime.isAfter(this.getStart()))
-                .max(LocalDateTime::compareTo)
+        Duration thisSlotCompletedDuration = this.planningSchedulingProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getProducingDuration)
+                .reduce(Duration::plus)
+                .orElse(Duration.ZERO)
                 ;
-        return dateTimeOptional.orElse(this.getStart());
+
+        return Optional.ofNullable(previous.getApproximatedCompletedDateTime())
+                .orElse(getStart())
+                .plus(thisSlotCompletedDuration)
+                ;
+    }
+
+    @EqualsAndHashCode.Include
+    public LocalDateTime getStart() {
+        return dateTimeSlot.getStart();
+    }
+
+    @ShadowSources(
+            value = {
+                    "previous.approximatedCompletedDateTime"
+            }
+    )
+    public LocalDateTime amendedFirstArrangementProducingDateTimeSupplier() {
+        if (!weatherFactoryProducingTypeIsQueue()) {
+            return null;
+        }
+        
+        return previous != null ? previous.getApproximatedCompletedDateTime() : getStart();
     }
 
     @EqualsAndHashCode.Include
@@ -154,16 +173,11 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     }
 
     public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime tailArrangementCompletedDateTime = that.getTailArrangementCompletedDateTime();
+        LocalDateTime tailArrangementCompletedDateTime = that.getApproximatedCompletedDateTime();
         if (tailArrangementCompletedDateTime == null) {
             return false;
         }
         return tailArrangementCompletedDateTime.isAfter(this.getStart());
-    }
-
-    @EqualsAndHashCode.Include
-    public LocalDateTime getStart() {
-        return dateTimeSlot.getStart();
     }
 
     public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(
@@ -176,7 +190,7 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     }
 
     public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime thisTailArrangementDateTime = this.getTailArrangementCompletedDateTime();
+        LocalDateTime thisTailArrangementDateTime = this.getApproximatedCompletedDateTime();
         LocalDateTime thatStart = that.getStart();
         if (thisTailArrangementDateTime == null) {
             return false;

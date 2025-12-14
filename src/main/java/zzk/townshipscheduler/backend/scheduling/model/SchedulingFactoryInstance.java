@@ -1,20 +1,15 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.ShadowSources;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.NavigableSet;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
+//@PlanningEntity
 public class SchedulingFactoryInstance {
 
     @PlanningId
@@ -41,28 +36,28 @@ public class SchedulingFactoryInstance {
 
     private NavigableSet<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new TreeSet<>();
 
-    @ShadowVariable(supplierName = "supplierNameFactorySlotToFinishedLocalDateTimeMap")
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFinishedLocalDateTimeMap
-            = new TreeMap<>();
+//    @ShadowVariable(supplierName = "supplierNameFactorySlotToFinishedLocalDateTimeMap")
+//    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> factorySlotToFinishedLocalDateTimeMap
+//            = new TreeMap<>();
 
-    @ShadowSources({"schedulingFactoryInstanceDateTimeSlots[].tailArrangementCompletedDateTime"})
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> supplierNameFactorySlotToFinishedLocalDateTimeMap() {
-        if (!weatherFactoryProducingTypeIsQueue()) {
-            return null;
-        }
-
-        return this.schedulingFactoryInstanceDateTimeSlots.stream()
-                .collect(
-                        TreeMap::new,
-                        (treeMap, factoryInstanceDateTimeSlot) -> {
-                            treeMap.put(
-                                    factoryInstanceDateTimeSlot,
-                                    factoryInstanceDateTimeSlot.getTailArrangementCompletedDateTime()
-                            );
-                        },
-                        TreeMap::putAll
-                );
-    }
+//    @ShadowSources({"schedulingFactoryInstanceDateTimeSlots[].tailArrangementCompletedDateTime"})
+//    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, LocalDateTime> supplierNameFactorySlotToFinishedLocalDateTimeMap() {
+//        if (!weatherFactoryProducingTypeIsQueue()) {
+//            return null;
+//        }
+//
+//        return this.schedulingFactoryInstanceDateTimeSlots.stream()
+//                .collect(
+//                        TreeMap::new,
+//                        (treeMap, factoryInstanceDateTimeSlot) -> {
+//                            treeMap.put(
+//                                    factoryInstanceDateTimeSlot,
+//                                    factoryInstanceDateTimeSlot.getApproximatedCompletedDateTime()
+//                            );
+//                        },
+//                        TreeMap::putAll
+//                );
+//    }
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(
@@ -85,10 +80,10 @@ public class SchedulingFactoryInstance {
     @Override
     public String toString() {
         return "SchedulingFactoryInstance{" +
-               "readableIdentifier='" + factoryReadableIdentifier + '\'' +
-               ", producingLength=" + producingQueue +
-               ", reapWindowSize=" + reapWindowSize +
-               '}';
+                "readableIdentifier='" + factoryReadableIdentifier + '\'' +
+                ", producingLength=" + producingQueue +
+                ", reapWindowSize=" + reapWindowSize +
+                '}';
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
