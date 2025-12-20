@@ -6,13 +6,18 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import zzk.townshipscheduler.backend.OrderType;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public final class SchedulingOrder implements IGameArrangeObject {
+public final class SchedulingOrder implements IGameArrangeObject, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 8878075265837510157L;
 
     @PlanningId
     @EqualsAndHashCode.Include

@@ -1,6 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-public enum DateTimeSlotSize {
+import java.io.Serializable;
+
+public enum DateTimeSlotSize implements Serializable {
     TEN_MINUTES(10),
     HALF_HOUR(30),
     HOUR(60),

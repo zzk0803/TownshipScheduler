@@ -6,6 +6,8 @@ import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,7 +16,10 @@ import java.util.Optional;
 @Data
 @PlanningSolution
 @NoArgsConstructor
-public class TownshipSchedulingProblem {
+public class TownshipSchedulingProblem implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -399118697021610459L;
 
     //    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 

@@ -15,6 +15,8 @@ import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducin
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -25,7 +27,7 @@ import java.util.*;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement {
+public class SchedulingProducingArrangement implements Serializable {
 
     public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 
@@ -40,6 +42,9 @@ public class SchedulingProducingArrangement {
     public static final String SHADOW_PRODUCING_DATE_TIME = "producingDateTime";
 
     public static final String SHADOW_COMPLETED_DATE_TIME = "completedDateTime";
+
+    @Serial
+    private static final long serialVersionUID = 2922213328551018699L;
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -136,7 +141,8 @@ public class SchedulingProducingArrangement {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
+                .toString());
         return producingArrangement;
     }
 

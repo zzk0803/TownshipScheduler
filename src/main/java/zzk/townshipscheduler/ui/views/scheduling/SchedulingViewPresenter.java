@@ -260,8 +260,8 @@ public class SchedulingViewPresenter {
         schedulingService.abort(townshipSchedulingProblemId);
     }
 
-    public boolean validProblemId(String parameter) {
-        return schedulingService.checkUuidIsValidForSchedule(parameter);
+    public boolean checkWeatherReadyToSolve(String parameter) {
+        return schedulingService.checkWeatherReadyToSolve(parameter);
     }
 
     public List<OrderEntity> fetchPlayerOrders() {
@@ -297,7 +297,7 @@ public class SchedulingViewPresenter {
     }
 
     public Collection<SchedulingProblemVo> allSchedulingProblem() {
-        return ((TownshipSchedulingServiceImpl) this.schedulingService).allSchedulingProblem();
+        return ((TownshipSchedulingServiceImpl) this.schedulingService).allReadySchedulingProblem();
     }
 
     public void setButtonState(TriggerButton triggerButton) {

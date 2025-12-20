@@ -3,11 +3,16 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.stream.IntStream;
 
 @EqualsAndHashCode
-public final class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier> {
+public final class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier>, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -3940474169751457218L;
 
     private final String factoryCategory;
 

@@ -3,17 +3,22 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Value
-public class FactoryProcessSequence implements Comparable<FactoryProcessSequence> {
+public class FactoryProcessSequence implements Comparable<FactoryProcessSequence>, Serializable {
 
     public static final Comparator<FactoryProcessSequence> COMPARATOR
             = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
             .thenComparingInt(FactoryProcessSequence::getArrangementId);
+
+    @Serial
+    private static final long serialVersionUID = -264984659974196003L;
 
     @EqualsAndHashCode.Include
     LocalDateTime arrangeDateTime;
@@ -31,7 +36,8 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.arrangementId = schedulingProducingArrangement.getId();
         this.schedulingFactoryInstanceReadableIdentifier
-                = schedulingProducingArrangement.getPlanningFactoryInstance().getFactoryReadableIdentifier();
+                = schedulingProducingArrangement.getPlanningFactoryInstance()
+                .getFactoryReadableIdentifier();
     }
 
     @Override

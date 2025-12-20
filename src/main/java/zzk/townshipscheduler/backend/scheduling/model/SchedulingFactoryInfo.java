@@ -11,12 +11,17 @@ import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SchedulingFactoryInfo {
+public class SchedulingFactoryInfo implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -3411137456098907358L;
 
     @JsonUnwrapped
     @EqualsAndHashCode.Include
@@ -62,7 +67,8 @@ public class SchedulingFactoryInfo {
     }
 
     public boolean typeEqual(SchedulingFactoryInfo that) {
-        return this.equals(that) || this.getCategoryName().equals(that.getCategoryName());
+        return this.equals(that) || this.getCategoryName()
+                .equals(that.getCategoryName());
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -76,13 +82,16 @@ public class SchedulingFactoryInfo {
 
         return this.maxSupportedProductDurationMinutes = getPortfolio().stream()
                 .mapToInt(
-                        product -> product.getExecutionModeSet().stream()
+                        product -> product.getExecutionModeSet()
+                                .stream()
                                 .map(schedulingProducingExecutionMode -> Math.toIntExact(
-                                        schedulingProducingExecutionMode.getExecuteDuration().toMinutes()))
+                                        schedulingProducingExecutionMode.getExecuteDuration()
+                                                .toMinutes()))
                                 .min(Comparator.naturalOrder())
                                 .orElseThrow(() -> new NoSuchElementException("product %s,execution mode %s".formatted(
                                                 product.getName(),
-                                                product.getExecutionModeSet().toString()
+                                                product.getExecutionModeSet()
+                                                        .toString()
                                         ))
                                 )
                 )
@@ -93,26 +102,29 @@ public class SchedulingFactoryInfo {
     @Override
     public String toString() {
         return "SchedulingFactoryInfo{" +
-               "id=" + id +
-               ", categoryName='" + categoryName + '\'' +
-               ", level=" + level +
-               ", portfolio=" + portfolio.stream()
-                       .map(SchedulingProduct::getName)
-                       .collect(Collectors.joining(",", "[", "]")) +
-               ", producingStructureType=" + producingStructureType +
-               ", factoryInstances=" + factoryInstances.stream()
-                       .map(SchedulingFactoryInstance::getFactoryReadableIdentifier)
-                       .collect(
-                               Collectors.joining(",", "[", "]")) +
-               '}';
+                "id=" + id +
+                ", categoryName='" + categoryName + '\'' +
+                ", level=" + level +
+                ", portfolio=" + portfolio.stream()
+                .map(SchedulingProduct::getName)
+                .collect(Collectors.joining(",", "[", "]")) +
+                ", producingStructureType=" + producingStructureType +
+                ", factoryInstances=" + factoryInstances.stream()
+                .map(SchedulingFactoryInstance::getFactoryReadableIdentifier)
+                .collect(
+                        Collectors.joining(",", "[", "]")) +
+                '}';
     }
 
     @Value
-    public static class Id implements Comparable<Id> {
+    public static class Id implements Comparable<Id>, Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 2278621691459222451L;
 
         @JsonProperty("id")
         @Getter
-        private long value;
+        long value;
 
         public static Id of(FieldFactoryEntity fieldFactoryEntity) {
             return of(fieldFactoryEntity.getFieldFactoryInfoEntity());
@@ -122,11 +134,11 @@ public class SchedulingFactoryInfo {
             return of(fieldFactoryInfoEntity.getId());
         }
 
-        public static Id of(long value) {
+        public static Id of(Long value) {
             return new Id(value);
         }
 
-        public static Id of(Long value) {
+        public static Id of(long value) {
             return new Id(value);
         }
 

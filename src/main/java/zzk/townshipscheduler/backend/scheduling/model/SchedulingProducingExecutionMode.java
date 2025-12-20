@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -12,7 +14,10 @@ import java.util.stream.IntStream;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 //@PlanningEntity
 @ToString(onlyExplicitlyIncluded = true)
-public class SchedulingProducingExecutionMode {
+public class SchedulingProducingExecutionMode implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 3492377670290631633L;
 
     @EqualsAndHashCode.Include
     @ToString.Include

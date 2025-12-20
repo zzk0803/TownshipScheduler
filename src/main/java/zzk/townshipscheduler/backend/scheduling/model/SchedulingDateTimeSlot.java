@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -15,10 +17,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
-public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot> {
+public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot>, Serializable {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
             = Comparator.comparing(SchedulingDateTimeSlot::getStart);
+
+    @Serial
+    private static final long serialVersionUID = 2326492222976719319L;
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -45,7 +50,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
             LocalDateTime latterDateTime
     ) {
         return (formerDateTime.isEqual(dateTime) || formerDateTime.isBefore(dateTime))
-               && latterDateTime.isAfter(dateTime);
+                && latterDateTime.isAfter(dateTime);
     }
 
     public static Optional<SchedulingDateTimeSlot> fromRangeJumpCeil(
@@ -56,12 +61,14 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
             throw new IllegalArgumentException();
         }
 
-        if (localDateTime.isAfter(range.getLast().getStart())) {
+        if (localDateTime.isAfter(range.getLast()
+                .getStart())) {
             return Optional.empty();
         }
 
         return range.stream()
-                .filter(iteratingSlot -> iteratingSlot.getStart().isAfter(localDateTime))
+                .filter(iteratingSlot -> iteratingSlot.getStart()
+                        .isAfter(localDateTime))
                 .limit(1)
                 .findFirst();
     }

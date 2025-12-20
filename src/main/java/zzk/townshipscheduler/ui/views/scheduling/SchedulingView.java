@@ -97,7 +97,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         Optional<String> optionalSchedulingId = beforeEnterEvent.getRouteParameters()
                 .get("schedulingId");
         if (optionalSchedulingId.isPresent()) {
-            if (this.schedulingViewPresenter.validProblemId(optionalSchedulingId.get())) {
+            if (this.schedulingViewPresenter.checkWeatherReadyToSolve(optionalSchedulingId.get())) {
                 this.schedulingViewPresenter.setTownshipSchedulingProblemId(optionalSchedulingId.get());
                 removeAll();
                 schedulingDetailUi();

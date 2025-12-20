@@ -19,68 +19,21 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@NamedEntityGraph(
+        name = "problem.g.full",
+        includeAllAttributes = true,
+        attributeNodes = {
+                @NamedAttributeNode(value = "problemSerialized")
+        }
+)
 public class TownshipProblemEntity {
 
     @Id
     @EqualsAndHashCode.Include
     private String uuid;
 
-    @OneToMany(
-            targetEntity = TownshipArrangementEntity.class,
-            mappedBy = "townshipProblemEntity",
-            orphanRemoval = true,
-            cascade = {CascadeType.PERSIST, CascadeType.REMOVE}
-    )
-    @Builder.Default
-    @ToString.Exclude
-    private Set<TownshipArrangementEntity> townshipArrangementEntitySet = new HashSet<>();
-
-    private LocalDateTime workCalendarStart;
-
-    private LocalDateTime workCalendarEnd;
-
-    @Builder.Default
-    private int dateTimeSlotSizeInMinute = 60;
-
-    @ManyToOne(targetEntity = PlayerEntity.class, fetch = FetchType.LAZY)
-    @ToString.Exclude
-    private PlayerEntity player;
-
-    @Builder.Default
-    @ToString.Exclude
-    @OneToMany(targetEntity = OrderEntity.class)
-    @JoinTable(name = "jointable_problem_order")
-    private Set<OrderEntity> orderEntitySet = new HashSet<>();
-
-    private LocalTime sleepStartPickerValue;
-
-    private LocalTime sleepEndPickerValue;
-
-    private String scoreReadable;
-
-    public Set<TownshipArrangementEntity> getTownshipArrangementEntitySet() {
-        return Collections.synchronizedSet(townshipArrangementEntitySet);
-    }
-
-    public void setTownshipArrangementEntitySet(Set<TownshipArrangementEntity> townshipArrangementEntitySet) {
-        if (!this.townshipArrangementEntitySet.isEmpty()) {
-            this.townshipArrangementEntitySet.forEach(this::detachArrangementEntity);
-        }
-        this.townshipArrangementEntitySet = townshipArrangementEntitySet;
-        this.townshipArrangementEntitySet.forEach(this::attachArrangementEntity);
-    }
-
-    public void attachArrangementEntity(TownshipArrangementEntity townshipArrangementEntity) {
-        Objects.requireNonNull(townshipArrangementEntity);
-        this.townshipArrangementEntitySet.add(townshipArrangementEntity);
-        townshipArrangementEntity.setTownshipProblemEntity(this);
-    }
-
-    public void detachArrangementEntity(TownshipArrangementEntity townshipArrangementEntity) {
-        Objects.requireNonNull(townshipArrangementEntity);
-        this.townshipArrangementEntitySet.remove(townshipArrangementEntity);
-        townshipArrangementEntity.setTownshipProblemEntity(null);
-    }
+    @Lob
+    private byte[] problemSerialized;
 
     @Override
     public final int hashCode() {

@@ -11,13 +11,18 @@ import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import org.jspecify.annotations.NonNull;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
-public class SchedulingFactoryInstance {
+public class SchedulingFactoryInstance implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -4151844387461751037L;
 
     @PlanningId
     @EqualsAndHashCode.Include
