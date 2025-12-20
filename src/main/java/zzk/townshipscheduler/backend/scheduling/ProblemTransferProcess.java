@@ -140,6 +140,7 @@ class ProblemTransferProcess {
             productManufactureInfos.forEach(productManufactureInfo -> {
                 SchedulingProducingExecutionMode executionMode = new SchedulingProducingExecutionMode();
                 executionMode.setId(idRoller.getAndIncrement());
+                executionMode.setProductManufactureInfoId(productManufactureInfo.getId());
                 executionMode.setProduct(schedulingProduct);
                 Duration producingDuration = productManufactureInfo.getProducingDuration();
                 executionMode.setExecuteDuration(producingDuration != null ? producingDuration : Duration.ZERO);
@@ -231,6 +232,7 @@ class ProblemTransferProcess {
                                         = buildOrGetSchedulingFactoryInfo(fieldFactoryEntity.getFieldFactoryInfoEntity());
                                 int factoryInstanceId = factoryInstanceIdRoller.getAndIncrement();
                                 fieldInstance.setId(factoryInstanceId);
+                                fieldInstance.setFieldFactoryId(fieldFactoryEntity.getId());
                                 fieldInstance.setSchedulingFactoryInfo(schedulingFactoryInfo);
                                 fieldInstance.setProducingLength(size);
                                 fieldInstance.setReapWindowSize(size);
@@ -253,6 +255,7 @@ class ProblemTransferProcess {
                                         SchedulingFactoryInstance factoryInstance
                                                 = new SchedulingFactoryInstance();
                                         factoryInstance.setId(factoryInstanceIdRoller.getAndIncrement());
+                                        factoryInstance.setFieldFactoryId(fieldFactoryEntity.getId());
                                         factoryInstance.setSeqNum(i + 1);
                                         factoryInstance.setSchedulingFactoryInfo(
                                                 schedulingFactoryInfo

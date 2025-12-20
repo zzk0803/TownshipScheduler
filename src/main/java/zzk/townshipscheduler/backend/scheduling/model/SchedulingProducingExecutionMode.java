@@ -18,6 +18,8 @@ public class SchedulingProducingExecutionMode {
     @ToString.Include
     private Integer id;
 
+    private Long productManufactureInfoId;
+
     private SchedulingProduct product;
 
     @ToString.Include

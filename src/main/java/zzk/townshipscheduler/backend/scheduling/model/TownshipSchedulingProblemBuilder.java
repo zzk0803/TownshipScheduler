@@ -3,7 +3,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.extern.log4j.Log4j2;
-import zzk.townshipscheduler.utility.UuidGenerator;
+import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.util.*;

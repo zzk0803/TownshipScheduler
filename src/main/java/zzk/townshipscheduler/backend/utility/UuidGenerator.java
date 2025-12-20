@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.utility;
+package zzk.townshipscheduler.backend.utility;
 
 import com.fasterxml.uuid.Generators;
 

@@ -26,6 +26,7 @@ import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
 import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
+import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareComponent;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingServiceImpl;
@@ -60,7 +61,7 @@ public class SchedulingViewPresenter {
 
     private final TownshipSchedulingPrepareComponent townshipSchedulingPrepareComponent;
 
-    private final TownshipSchedulingServiceImpl schedulingService;
+    private final ITownshipSchedulingService schedulingService;
 
     private TownshipAuthenticationContext townshipAuthenticationContext;
 
@@ -296,7 +297,7 @@ public class SchedulingViewPresenter {
     }
 
     public Collection<SchedulingProblemVo> allSchedulingProblem() {
-        return this.schedulingService.allSchedulingProblem();
+        return ((TownshipSchedulingServiceImpl) this.schedulingService).allSchedulingProblem();
     }
 
     public void setButtonState(TriggerButton triggerButton) {

@@ -496,6 +496,23 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         grid.setItems(schedulingViewPresenter.allSchedulingProblem());
         GridContextMenu<SchedulingProblemVo> problemGridContextMenu = grid.addContextMenu();
         problemGridContextMenu.addItem(
+                "Save",
+                itemContentClicked -> {
+                    itemContentClicked.getItem()
+                            .ifPresent(schedulingProblemVo -> {
+                                String problemId = schedulingProblemVo.getUuid();
+                                getSchedulingViewPresenter().getSchedulingService()
+                                        .getSchedule(problemId)
+                                ;
+                                getSchedulingViewPresenter().getSchedulingService()
+                                        .persist(problemId)
+                                ;
+                                grid.setItems(schedulingViewPresenter.allSchedulingProblem());
+                            });
+                }
+        );
+        problemGridContextMenu.addSeparator();
+        problemGridContextMenu.addItem(
                 "Remove",
                 itemContentClicked -> {
                     itemContentClicked.getItem()

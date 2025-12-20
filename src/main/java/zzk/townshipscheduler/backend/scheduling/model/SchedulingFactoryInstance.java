@@ -23,6 +23,8 @@ public class SchedulingFactoryInstance {
     @EqualsAndHashCode.Include
     private Integer id;
 
+    private Long fieldFactoryId;
+
     @JsonIgnore
     @EqualsAndHashCode.Include
     private SchedulingFactoryInfo schedulingFactoryInfo;
@@ -137,7 +139,8 @@ public class SchedulingFactoryInstance {
             FactoryComputedDateTimePair existingPair = shadowProcessSequenceToComputePairMap.get(current);
             LocalDateTime arrangeDateTime = current.getArrangeDateTime();
 
-            LocalDateTime newProducing = (currentCompleted == null || arrangeDateTime.isAfter(currentCompleted))
+            LocalDateTime newProducing
+                    = (currentCompleted == null || arrangeDateTime.isAfter(currentCompleted))
                     ? arrangeDateTime
                     : currentCompleted;
             LocalDateTime newCompleted = newProducing.plus(current.getProducingDuration());

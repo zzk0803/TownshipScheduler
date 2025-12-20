@@ -11,10 +11,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
-import zzk.townshipscheduler.utility.UuidGenerator;
+import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

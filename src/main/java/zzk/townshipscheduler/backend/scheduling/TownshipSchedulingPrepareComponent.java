@@ -78,15 +78,12 @@ public class TownshipSchedulingPrepareComponent {
 
         final Optional<PlayerEntity> optionalPlayerForScheduling
                 = playerEntityRepository.queryForPrepareScheduling(playerEntity.getId());
-//                = playerEntityRepository.findPlayerById(playerEntity.getId());
 
         final Set<FieldFactoryInfoEntity> factoryInfos
                 = fieldFactoryInfoEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
-//                = fieldFactoryInfoEntityRepository.findBy(FieldFactoryInfoEntity.class, Sort.by("id"));
 
         final Set<ProductEntity> products
                 = productEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
-//                = productEntityRepository.findBy(ProductEntity.class, Sort.by("id"));
 
         return optionalPlayerForScheduling
                 .map(playerEntityProjection -> TownshipSchedulingRequest.builder()

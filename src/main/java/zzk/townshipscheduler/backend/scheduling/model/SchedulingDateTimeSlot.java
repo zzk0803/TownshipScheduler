@@ -66,6 +66,21 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
                 .findFirst();
     }
 
+    public static SchedulingDateTimeSlot getOneFromValueRange(Collection<SchedulingDateTimeSlot> valueRange, LocalDateTime localDateTime) {
+        Objects.requireNonNull(localDateTime);
+        Objects.requireNonNull(valueRange);
+
+        for (SchedulingDateTimeSlot schedulingDateTimeSlot : valueRange) {
+            LocalDateTime slotStart = schedulingDateTimeSlot.getStart();
+            LocalDateTime slotEnd = schedulingDateTimeSlot.getEnd();
+            if ((localDateTime.isEqual(slotStart) || localDateTime.isAfter(slotStart)) && localDateTime.isBefore(slotEnd)) {
+                return schedulingDateTimeSlot;
+            }
+        }
+
+        return null;
+    }
+
     public static List<SchedulingDateTimeSlot> toValueRange(
             final LocalDateTime startInclusive,
             final LocalDateTime endExclusive,

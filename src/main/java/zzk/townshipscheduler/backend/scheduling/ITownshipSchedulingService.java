@@ -6,7 +6,6 @@ import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
-import java.lang.String;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -45,5 +44,24 @@ public interface ITownshipSchedulingService {
     boolean existSolvingJob(String problemId);
 
     boolean existProblem(String problemId);
+
+    boolean persist(TownshipSchedulingProblem townshipSchedulingProblem);
+
+    void scheduling(
+            String problemId,
+            Consumer<TownshipSchedulingProblem> problemConsumer,
+            Consumer<TownshipSchedulingProblem> finalProblemConsumer,
+            BiConsumer<String, Throwable> solveExceptionConsumer
+    );
+
+    void scheduling(
+            String problemId,
+            Consumer<TownshipSchedulingProblem> solverStartConsumer,
+            Consumer<TownshipSchedulingProblem> problemConsumer,
+            Consumer<TownshipSchedulingProblem> finalProblemConsumer,
+            BiConsumer<String, Throwable> solveExceptionConsumer
+    );
+
+    void persist(String problemId);
 
 }
