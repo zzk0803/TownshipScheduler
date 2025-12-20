@@ -1,7 +1,6 @@
 package zzk.townshipscheduler.ui.pojo;
 
 import lombok.Value;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -20,7 +19,7 @@ public class SchedulingProducingArrangementUnitGroupVo {
         return nestedOrderProductList.add(nestedOrderProduct);
     }
 
-    public boolean addAll(@NotNull Collection<? extends NestedOrderProduct> c) {
+    public boolean addAll( Collection<? extends NestedOrderProduct> c) {
         return nestedOrderProductList.addAll(c);
     }
 

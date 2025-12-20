@@ -25,7 +25,6 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.function.SerializablePredicate;
-import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
@@ -107,7 +106,6 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
         return grid;
     }
 
-    @NotNull
     private SerializablePredicate<FieldFactoryInfoEntity> createTextFieldGridFilter(String criteria) {
         return fieldFactoryInfoEntity -> {
             String factoryName = fieldFactoryInfoEntity.getCategory();

@@ -30,7 +30,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.scheduling.model.*;
@@ -237,7 +236,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         return panel;
     }
 
-    @NotNull
     private SerializableFunction<SchedulingOrderVo, Main> funOrderBriefItemsRenderer() {
         return schedulingOrderVo -> {
             Main layout = new Main();
@@ -556,7 +554,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
 
     }
 
-    @NotNull
     private SerializableFunction<SchedulingProblemVo, Main> funOrdersGridItemsRenderer() {
         return schedulingProblemVo -> {
             Main layout = new Main();
