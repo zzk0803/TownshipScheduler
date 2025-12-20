@@ -11,11 +11,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.dao.TownshipProblemEntityRepository;
 import zzk.townshipscheduler.backend.persistence.TownshipProblemEntity;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
-import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +35,8 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     private final Map<String, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
 
+    private final Map<String, SolverJob<TownshipSchedulingProblem, String>> idSolverJobMap = new ConcurrentHashMap<>();
+
     private final Consumer<TownshipSchedulingProblem> defaultConsumer
             = townshipSchedulingProblem -> {
         var uuid = townshipSchedulingProblem.getUuid();
@@ -47,7 +48,8 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         log.error("problem {} exception {}", uuid, throwable);
     };
 
-    private final Map<String, SolverJob<TownshipSchedulingProblem, String>> idSolverJobMap = new ConcurrentHashMap<>();
+    private final TransactionTemplate transactionTemplate;
+
 
     @Override
     public boolean existSolvingJob(String problemId) {
@@ -114,10 +116,15 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     @Override
     public TownshipSchedulingProblem getSchedule(String problemId) {
-        SolverStatus solverStatus = solverManager.getSolverStatus(problemId);
+        SolverStatus solverStatus = getProblemSolverStatus(problemId);
         TownshipSchedulingProblem townshipSchedulingProblem = idProblemMap.get(problemId);
         townshipSchedulingProblem.setSolverStatus(solverStatus);
         return townshipSchedulingProblem;
+    }
+
+    @Override
+    public SolverStatus getProblemSolverStatus(String problemId) {
+        return solverManager.getSolverStatus(problemId);
     }
 
     @Override
@@ -155,16 +162,21 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     }
 
     @Override
-    public void remove(String problemId) {
+    public void unlink(String problemId) {
         SolverJob<TownshipSchedulingProblem, String> solverJob = this.idSolverJobMap.get(problemId);
         if (Objects.nonNull(solverJob)) {
             solverJob.terminateEarly();
             this.idSolverJobMap.remove(problemId, solverJob);
         }
+        this.idProblemMap.remove(problemId);
+    }
+
+    @Override
+    public void remove(String problemId) {
+        unlink(problemId);
         if (townshipProblemEntityRepository.existsById(problemId)) {
             townshipProblemEntityRepository.deleteById(problemId);
         }
-        this.idProblemMap.remove(problemId);
     }
 
     @Override
@@ -172,7 +184,9 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         ProblemPersistingPrecess problemPersistingPrecess
                 = new ProblemPersistingPrecess(townshipSchedulingProblem);
         TownshipProblemEntity townshipProblemEntity = problemPersistingPrecess.process();
-        townshipProblemEntityRepository.save(townshipProblemEntity);
+        transactionTemplate.executeWithoutResult(_ -> {
+            townshipProblemEntityRepository.save(townshipProblemEntity);
+        });
     }
 
     @Override
@@ -200,19 +214,23 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     }
 
-    public Collection<SchedulingProblemVo> allReadySchedulingProblem() {
-        return this.idProblemMap.entrySet()
+    @Override
+    public Collection<TownshipSchedulingProblem> loadPersistedSchedulingProblem() {
+        return this.townshipProblemEntityRepository.queryAll(TownshipProblemEntity.class)
                 .stream()
-                .map(entry -> {
-                    SchedulingProblemVo schedulingProblemVo = new SchedulingProblemVo();
-                    schedulingProblemVo.setUuid(entry.getKey());
-                    schedulingProblemVo.setSolverStatus(solverManager.getSolverStatus(entry.getKey()));
-                    TownshipSchedulingProblem townshipSchedulingProblem = entry.getValue();
-                    List<SchedulingOrder> orderList = townshipSchedulingProblem.getSchedulingOrderList();
-                    schedulingProblemVo.setOrderList(orderList);
-                    return schedulingProblemVo;
-                })
-                .collect(Collectors.toCollection(ArrayList::new));
+                .map(townshipProblemEntity -> {
+                            return new ProblemExternalizedProcess(townshipProblemEntity.getProblemSerialized());
+                        }
+                )
+                .map(ProblemExternalizedProcess::process)
+                .peek(townshipSchedulingProblem -> this.idProblemMap.put(townshipSchedulingProblem.getUuid(), townshipSchedulingProblem))
+                .collect(Collectors.toCollection(HashSet::new))
+                ;
+    }
+
+    @Override
+    public Collection<TownshipSchedulingProblem> getLinkedSchedulingProblem() {
+        return this.idProblemMap.values();
     }
 
 }

@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import zzk.townshipscheduler.backend.persistence.TownshipProblemEntity;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.io.*;

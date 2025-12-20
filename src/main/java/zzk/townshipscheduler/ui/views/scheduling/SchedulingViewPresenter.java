@@ -29,7 +29,6 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareComponent;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
-import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingServiceImpl;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.TriggerButton;
@@ -44,6 +43,7 @@ import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @SpringComponent
 @RouteScope
@@ -129,12 +129,17 @@ public class SchedulingViewPresenter {
                 getTownshipSchedulingProblemId(),
                 _ -> {
                     this.ui.access(() -> {
-                        getSchedulingView().getTriggerButton().setToState2();
+                        getSchedulingView().getTriggerButton()
+                                .setToState2()
+                        ;
                         String problemSizeStatistics = getSchedulingService().getProblemSizeStatistics(
                                 getTownshipSchedulingProblemId());
-                        String updatedString = getSchedulingView().getBriefText().getText() + "\r" +
+                        String updatedString = getSchedulingView().getBriefText()
+                                .getText() + "\r" +
                                 "solver approximate problem scale:" + problemSizeStatistics;
-                        getSchedulingView().getBriefText().setText(updatedString);
+                        getSchedulingView().getBriefText()
+                                .setText(updatedString)
+                        ;
                     });
                 },
                 solutionConsumer,
@@ -144,7 +149,9 @@ public class SchedulingViewPresenter {
                         })
                         .andThen(_ -> this.ui.access(
                                         () -> {
-                                            getSchedulingView().getTriggerButton().setToState1();
+                                            getSchedulingView().getTriggerButton()
+                                                    .setToState1()
+                                            ;
                                             Notification notification = new Notification();
                                             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                                             notification.setText("Township Solver Finished");
@@ -157,7 +164,9 @@ public class SchedulingViewPresenter {
                 (uuid, throwable) -> {
                     throwable.printStackTrace();
                     this.ui.access(() -> {
-                        getSchedulingView().getTriggerButton().setToState1();
+                        getSchedulingView().getTriggerButton()
+                                .setToState1()
+                        ;
                         Dialog dialog = new Dialog("ERROR", new Paragraph(throwable.toString()));
                         dialog.open();
                     });
@@ -170,14 +179,17 @@ public class SchedulingViewPresenter {
                         () -> {
                             if (!getSchedulingService().existSolvingJob(getTownshipSchedulingProblemId())) {
                                 this.solutionResultPushScheduledFuture.cancel(true);
-                                getSchedulingView().getTriggerButton().setToState1();
+                                getSchedulingView().getTriggerButton()
+                                        .setToState1()
+                                ;
                             }
 
                             TownshipSchedulingProblem townshipSchedulingProblem =
                                     this.getTownshipSchedulingProblemAtomicReference()
                                             .get();
                             getSchedulingView().getScoreAnalysisParagraph()
-                                    .setText(getSchedulingService().analyze(townshipSchedulingProblem).toString())
+                                    .setText(getSchedulingService().analyze(townshipSchedulingProblem)
+                                            .toString())
                             ;
                             this.setupArrangementsTreeGrid(
                                     getSchedulingView().getArrangementTreeGrid(),
@@ -187,10 +199,13 @@ public class SchedulingViewPresenter {
                                     .update(townshipSchedulingProblem)
                             ;
                             this.setupOrderBriefGrid();
-                            getSchedulingView().getArrangementTimelinePanel().updateRemoteArrangements();
+                            getSchedulingView().getArrangementTimelinePanel()
+                                    .updateRemoteArrangements()
+                            ;
                         }
                 ),
-                Instant.now().plusSeconds(1),
+                Instant.now()
+                        .plusSeconds(1),
                 Duration.ofSeconds(UPDATE_FREQUENCY)
         );
 
@@ -221,7 +236,10 @@ public class SchedulingViewPresenter {
 
     public void setupOrderBriefGrid() {
         List<SchedulingOrderVo> schedulingOrderVo = toSchedulingOrderVo();
-        this.getSchedulingView().getOrderBriefGrid().setItems(schedulingOrderVo);
+        this.getSchedulingView()
+                .getOrderBriefGrid()
+                .setItems(schedulingOrderVo)
+        ;
     }
 
     public List<SchedulingOrderVo> toSchedulingOrderVo() {
@@ -264,6 +282,10 @@ public class SchedulingViewPresenter {
         return schedulingService.checkWeatherReadyToSolve(parameter);
     }
 
+    public boolean checkWeatherProblemIsPersisted(String problemId) {
+        return schedulingService.existProblem(problemId);
+    }
+
     public List<OrderEntity> fetchPlayerOrders() {
         return this.getTownshipAuthenticationContext()
                 .getPlayerEntity()
@@ -279,7 +301,8 @@ public class SchedulingViewPresenter {
             LocalTime sleepStartPickerValue,
             LocalTime sleepEndPickerValue
     ) {
-        PlayerEntity playerEntity = townshipAuthenticationContext.getPlayerEntity().orElseThrow();
+        PlayerEntity playerEntity = townshipAuthenticationContext.getPlayerEntity()
+                .orElseThrow();
 
         TownshipSchedulingRequest townshipSchedulingRequest
                 = townshipSchedulingPrepareComponent.buildTownshipSchedulingRequest(
@@ -296,8 +319,26 @@ public class SchedulingViewPresenter {
         return problem.getUuid();
     }
 
-    public Collection<SchedulingProblemVo> allSchedulingProblem() {
-        return ((TownshipSchedulingServiceImpl) this.schedulingService).allReadySchedulingProblem();
+    public Collection<SchedulingProblemVo> viewFromLinkedSchedulingProblem() {
+        Collection<TownshipSchedulingProblem> schedulingProblems = this.schedulingService.getLinkedSchedulingProblem();
+        return toSchedulingProblemVO(schedulingProblems);
+    }
+
+    public Collection<SchedulingProblemVo> toSchedulingProblemVO(Collection<TownshipSchedulingProblem> townshipSchedulingProblemCollection) {
+        return townshipSchedulingProblemCollection.stream()
+                .map(problem -> {
+                    SchedulingProblemVo schedulingProblemVo = new SchedulingProblemVo();
+                    String uuid = problem.getUuid();
+                    schedulingProblemVo.setUuid(uuid);
+                    schedulingProblemVo.setSolverStatus(
+                            this.getSchedulingService()
+                                    .getProblemSolverStatus(uuid)
+                    );
+                    List<SchedulingOrder> orderList = problem.getSchedulingOrderList();
+                    schedulingProblemVo.setOrderList(orderList);
+                    return schedulingProblemVo;
+                })
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     public void setButtonState(TriggerButton triggerButton) {
@@ -344,7 +385,8 @@ public class SchedulingViewPresenter {
 
     public void setupScoreAnalysisParagraph() {
         getSchedulingView().getScoreAnalysisParagraph()
-                .setText(getSchedulingService().analyze(townshipSchedulingProblemAtomicReference.get()).toString())
+                .setText(getSchedulingService().analyze(townshipSchedulingProblemAtomicReference.get())
+                        .toString())
         ;
     }
 
@@ -354,7 +396,8 @@ public class SchedulingViewPresenter {
 
     public Paragraph buildBriefText() {
         TownshipSchedulingProblem currentProblem = findCurrentProblem();
-        int orderSize = currentProblem.getSchedulingOrderList().size();
+        int orderSize = currentProblem.getSchedulingOrderList()
+                .size();
         long orderItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
                 .stream()
                 .filter(SchedulingProducingArrangement::isOrderDirect)
@@ -362,8 +405,10 @@ public class SchedulingViewPresenter {
                 ;
         int totalItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
                 .size();
-        int dateTimeValueRangeCount = currentProblem.getSchedulingDateTimeSlots().size();
-        int factoryCount = currentProblem.getSchedulingFactoryInstanceList().size();
+        int dateTimeValueRangeCount = currentProblem.getSchedulingDateTimeSlots()
+                .size();
+        int factoryCount = currentProblem.getSchedulingFactoryInstanceList()
+                .size();
 
         String formatted = (
                 """
@@ -385,6 +430,11 @@ public class SchedulingViewPresenter {
 
     public TownshipSchedulingProblem getTownshipSchedulingProblem() {
         return this.townshipSchedulingProblemAtomicReference.get();
+    }
+
+    public void loadProblem(String problemId) {
+        this.schedulingService.load(problemId)
+                .orElseThrow(IllegalArgumentException::new);
     }
 
 }

@@ -14,6 +14,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -97,8 +98,14 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         Optional<String> optionalSchedulingId = beforeEnterEvent.getRouteParameters()
                 .get("schedulingId");
         if (optionalSchedulingId.isPresent()) {
-            if (this.schedulingViewPresenter.checkWeatherReadyToSolve(optionalSchedulingId.get())) {
-                this.schedulingViewPresenter.setTownshipSchedulingProblemId(optionalSchedulingId.get());
+            String problemId = optionalSchedulingId.get();
+            if (this.schedulingViewPresenter.checkWeatherReadyToSolve(problemId)) {
+                this.schedulingViewPresenter.setTownshipSchedulingProblemId(problemId);
+                removeAll();
+                schedulingDetailUi();
+            } else if (this.schedulingViewPresenter.checkWeatherProblemIsPersisted(problemId)) {
+                this.schedulingViewPresenter.loadProblem(problemId);
+                this.schedulingViewPresenter.setTownshipSchedulingProblemId(problemId);
                 removeAll();
                 schedulingDetailUi();
             } else {
@@ -481,7 +488,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         )))
                 .setHeader("UUID")
                 .setAutoWidth(true)
-                .setFlexGrow(0)
+                .setFlexGrow(1)
         ;
         grid.addColumn(new ComponentRenderer<>(funOrdersGridItemsRenderer()))
                 .setHeader("Items")
@@ -491,38 +498,58 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         grid.addColumn(SchedulingProblemVo::getSolverStatus)
                 .setHeader("status")
                 .setAutoWidth(true)
-                .setFlexGrow(0)
+                .setFlexGrow(1)
         ;
-        grid.setItems(schedulingViewPresenter.allSchedulingProblem());
+        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+
         GridContextMenu<SchedulingProblemVo> problemGridContextMenu = grid.addContextMenu();
         problemGridContextMenu.addItem(
-                "Save",
-                itemContentClicked -> {
-                    itemContentClicked.getItem()
-                            .ifPresent(schedulingProblemVo -> {
-                                String problemId = schedulingProblemVo.getUuid();
-                                getSchedulingViewPresenter().getSchedulingService()
-                                        .getSchedule(problemId)
-                                ;
-                                getSchedulingViewPresenter().getSchedulingService()
-                                        .persist(problemId)
-                                ;
-                                grid.setItems(schedulingViewPresenter.allSchedulingProblem());
-                            });
+                "Unlink",
+                clicked -> {
+                    clicked.getItem()
+                            .ifPresentOrElse(
+                                    schedulingProblemVo -> {
+                                        String problemId = schedulingProblemVo.getUuid();
+                                        getSchedulingViewPresenter().getSchedulingService()
+                                                .unlink(problemId)
+                                        ;
+                                        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+                                        Notification.show("Done");
+                                    }, () -> {
+                                        Notification.show("No Item");
+                                    }
+                            );
                 }
         );
-        problemGridContextMenu.addSeparator();
         problemGridContextMenu.addItem(
                 "Remove",
                 itemContentClicked -> {
                     itemContentClicked.getItem()
-                            .ifPresent(schedulingProblemVo -> {
-                                String problemId = schedulingProblemVo.getUuid();
-                                getSchedulingViewPresenter().getSchedulingService()
-                                        .remove(problemId)
-                                ;
-                                grid.setItems(schedulingViewPresenter.allSchedulingProblem());
-                            });
+                            .ifPresentOrElse(
+                                    schedulingProblemVo -> {
+                                        String problemId = schedulingProblemVo.getUuid();
+                                        getSchedulingViewPresenter().getSchedulingService()
+                                                .remove(problemId)
+                                        ;
+                                        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+                                        Notification.show("Done");
+                                    }, () -> {
+                                        Notification.show("No Item");
+                                    }
+                            );
+
+                }
+        );
+        problemGridContextMenu.addSeparator();
+        problemGridContextMenu.addItem(
+                "Load Settled Problems",
+                clicked -> {
+                    idRoller.set(1);
+                    getSchedulingViewPresenter().getSchedulingService()
+                            .loadPersistedSchedulingProblem()
+                    ;
+                    grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+                    Notification.show("Done");
                 }
         );
         addAndExpand(grid);
