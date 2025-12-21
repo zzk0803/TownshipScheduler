@@ -197,10 +197,10 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
         }
     }
 
-    @Override
-    public boolean requiresUniqueEntityEvents() {
-        return true;
-    }
+//    @Override
+//    public boolean requiresUniqueEntityEvents() {
+//        return true;
+//    }
 
     @Override
     public void beforeVariableChanged(
