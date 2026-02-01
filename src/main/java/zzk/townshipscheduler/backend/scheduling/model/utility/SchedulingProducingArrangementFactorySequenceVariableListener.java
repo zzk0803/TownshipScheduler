@@ -7,8 +7,8 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
-import java.util.SortedMap;
 import java.util.function.BiConsumer;
 
 public class SchedulingProducingArrangementFactorySequenceVariableListener
@@ -77,7 +77,8 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                                 schedulingFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
                             });
                 }
-                planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
+                Map<FactoryProcessSequence, FactoryComputedDateTimePair> affectedArrangementUpdatedDateTime
+                        = planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
                 doShadowVariableUpdate(
                         scoreDirector,
                         schedulingProducingArrangement,
@@ -86,12 +87,9 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                         SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
                 );
 
-                SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> processToPairMap
-                        = planningFactoryInstance.prepareProducingAndCompletedMap();
-
-                scoreDirectorWorkingSolution.lookupProducingArrangements(planningFactoryInstance)
+                scoreDirectorWorkingSolution.lookupProducingArrangements(affectedArrangementUpdatedDateTime.keySet())
                         .forEach(producingArrangement -> {
-                            doUpdateDateTime(scoreDirector, producingArrangement, processToPairMap);
+                            doUpdateDateTime(scoreDirector, producingArrangement, affectedArrangementUpdatedDateTime);
                         });
             }
         } else {
@@ -161,7 +159,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
     private void doUpdateDateTime(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement schedulingProducingArrangement,
-            SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> preparedProducingAndCompletedMap
+            Map<FactoryProcessSequence, FactoryComputedDateTimePair> preparedProducingAndCompletedMap
     ) {
         FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
         LocalDateTime oldProducingDateTime = schedulingProducingArrangement.getProducingDateTime();

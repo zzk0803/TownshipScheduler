@@ -72,7 +72,8 @@ public class SchedulingFactoryInstance implements Serializable {
         return count;
     }
 
-    public void addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
+        Map<FactoryProcessSequence, FactoryComputedDateTimePair> result = new LinkedHashMap<>();
 
         if (!weatherFactoryProducingTypeIsQueue()) {
             this.shadowProcessSequenceToComputePairMap.put(
@@ -83,20 +84,23 @@ public class SchedulingFactoryInstance implements Serializable {
                                     .plus(factoryProcessSequence.getProducingDuration())
                     )
             );
-            return;
+            result.put(
+                    factoryProcessSequence,
+                    new FactoryComputedDateTimePair(
+                            factoryProcessSequence.getArrangeDateTime(),
+                            factoryProcessSequence.getArrangeDateTime()
+                                    .plus(factoryProcessSequence.getProducingDuration())
+                    )
+            );
+            return result;
         }
 
         FactoryComputedDateTimePair computedDateTimePair = computeDateTimePair(factoryProcessSequence);
 
         this.shadowProcessSequenceToComputePairMap.put(factoryProcessSequence, computedDateTimePair);
+        result.put(factoryProcessSequence, computedDateTimePair);
 
-//        NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailOfProcessSequencePairMap =
-//                this.shadowProcessSequenceToComputePairMap.tailMap(
-//                        factoryProcessSequence,
-//                        false
-//                );
-//        cascade(tailOfProcessSequencePairMap);
-        cascadeUpdatesAfter(factoryProcessSequence);
+        return cascadeUpdatesAfter(factoryProcessSequence, result);
     }
 
     private @NonNull FactoryComputedDateTimePair computeDateTimePair(FactoryProcessSequence factoryProcessSequence) {
@@ -125,11 +129,14 @@ public class SchedulingFactoryInstance implements Serializable {
         return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted)) ? arrangeDateTime : previousCompleted;
     }
 
-    private void cascadeUpdatesAfter(FactoryProcessSequence fromSequence) {
+    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
+            FactoryProcessSequence fromSequence,
+            Map<FactoryProcessSequence, FactoryComputedDateTimePair> result
+    ) {
         NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailMap =
                 shadowProcessSequenceToComputePairMap.tailMap(fromSequence, false);
 
-        if (tailMap.isEmpty()) return;
+        if (tailMap.isEmpty()) return result;
 
         Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> startPrevEntry =
                 shadowProcessSequenceToComputePairMap.lowerEntry(tailMap.firstKey());
@@ -161,35 +168,13 @@ public class SchedulingFactoryInstance implements Serializable {
                     current,
                     new FactoryComputedDateTimePair(newProducing, newCompleted)
             );
+            result.put(
+                    current,
+                    new FactoryComputedDateTimePair(newProducing, newCompleted)
+            );
             currentCompleted = newCompleted;
         }
-    }
-
-    private void cascade(NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailOfProcessSequencePairMap) {
-        if (tailOfProcessSequencePairMap.isEmpty()) {
-            return;
-        }
-
-        List<FactoryProcessSequence> taiKeyList = new ArrayList<>(tailOfProcessSequencePairMap.keySet());
-
-        Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prefixEntry = this.shadowProcessSequenceToComputePairMap.lowerEntry(taiKeyList.get(0));
-
-        LocalDateTime prefixMaxCompletedDateTime = (prefixEntry == null)
-                ? null
-                : prefixEntry.getValue()
-                        .completedDateTime();
-
-        for (FactoryProcessSequence factoryProcessSequence : taiKeyList) {
-            LocalDateTime producingDateTime = calcProducingDateTime(factoryProcessSequence, prefixMaxCompletedDateTime);
-            LocalDateTime completedDateTime = calcCompletedDateTime(factoryProcessSequence, producingDateTime);
-            this.shadowProcessSequenceToComputePairMap.put(factoryProcessSequence, new FactoryComputedDateTimePair(producingDateTime, completedDateTime));
-            prefixMaxCompletedDateTime = completedDateTime;
-        }
-    }
-
-    private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, LocalDateTime previousCompletedDateTime) {
-        LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-        return (previousCompletedDateTime == null || arrangeDateTime.isAfter(previousCompletedDateTime)) ? arrangeDateTime : previousCompletedDateTime;
+        return result;
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -197,31 +182,24 @@ public class SchedulingFactoryInstance implements Serializable {
                 .weatherFactoryProducingTypeIsQueue();
     }
 
-    public void removeFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
+    private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, LocalDateTime previousCompletedDateTime) {
+        LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
+        return (previousCompletedDateTime == null || arrangeDateTime.isAfter(previousCompletedDateTime)) ? arrangeDateTime : previousCompletedDateTime;
+    }
+
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(FactoryProcessSequence factoryProcessSequence) {
+        Map<FactoryProcessSequence, FactoryComputedDateTimePair> oldResult = new LinkedHashMap<>();
 
         if (!shadowProcessSequenceToComputePairMap.containsKey(factoryProcessSequence)) {
-            return;
+            return oldResult;
         }
         shadowProcessSequenceToComputePairMap.remove(factoryProcessSequence);
 
         if (weatherFactoryProducingTypeIsQueue()) {
-            cascadeUpdatesAfter(factoryProcessSequence);
+            return cascadeUpdatesAfter(factoryProcessSequence, oldResult);
         }
 
-//        if (this.shadowProcessSequenceToComputePairMap.remove(factoryProcessSequence) == null) {
-//            return;
-//        }
-//
-//        if (!weatherFactoryProducingTypeIsQueue()) {
-//            return;
-//        }
-//
-//        NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tail
-//                = this.shadowProcessSequenceToComputePairMap.tailMap(
-//                factoryProcessSequence,
-//                false
-//        );
-//        cascade(tail);
+        return oldResult;
     }
 
     private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, FactoryComputedDateTimePair previousComputedPair) {
@@ -233,6 +211,10 @@ public class SchedulingFactoryInstance implements Serializable {
 
     public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
         return Collections.unmodifiableNavigableMap(this.shadowProcessSequenceToComputePairMap);
+    }
+
+    public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
+        return this.shadowProcessSequenceToComputePairMap.get(factoryProcessSequence);
     }
 
     @Override

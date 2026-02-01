@@ -10,6 +10,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -97,6 +98,14 @@ public class TownshipSchedulingProblem implements Serializable {
     ) {
         return getSchedulingProducingArrangementList().stream()
                 .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance() == schedulingFactoryInstance)
+                .toList();
+    }
+
+    public List<SchedulingProducingArrangement> lookupProducingArrangements(
+            Collection<FactoryProcessSequence> factoryProcessSequences
+    ) {
+        return getSchedulingProducingArrangementList().stream()
+                .filter(schedulingProducingArrangement -> factoryProcessSequences.contains(schedulingProducingArrangement.getShadowFactoryProcessSequence()))
                 .toList();
     }
 
