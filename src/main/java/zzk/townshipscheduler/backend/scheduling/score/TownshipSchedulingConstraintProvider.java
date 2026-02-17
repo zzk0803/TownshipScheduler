@@ -232,7 +232,9 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .groupBy(
                         SchedulingProducingArrangement::getPlanningFactoryInstance,
-                        ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)
+                        ConstraintCollectors.countDistinct(
+                                SchedulingProducingArrangement::getSchedulingDateTimeSlot
+                        )
                 )
                 .penalizeLong(
                         HardMediumSoftLongScore.ofSoft(5000L), (factoryInstance, slotAmount) -> slotAmount - 1

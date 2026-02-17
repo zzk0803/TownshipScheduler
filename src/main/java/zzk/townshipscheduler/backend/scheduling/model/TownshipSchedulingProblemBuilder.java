@@ -2,14 +2,15 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 public class TownshipSchedulingProblemBuilder {
 
     private String uuid;
@@ -23,6 +24,8 @@ public class TownshipSchedulingProblemBuilder {
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+
+    private List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlotList;
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
@@ -40,7 +43,8 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     public TownshipSchedulingProblemBuilder uuid() {
-        this.uuid = UuidGenerator.timeOrderedV6().toString();
+        this.uuid = UuidGenerator.timeOrderedV6()
+                .toString();
         return this;
     }
 
@@ -74,7 +78,7 @@ public class TownshipSchedulingProblemBuilder {
         return this;
     }
 
-    public TownshipSchedulingProblemBuilder score(     HardMediumSoftLongScore score) {
+    public TownshipSchedulingProblemBuilder score(HardMediumSoftLongScore score) {
         this.score = score;
         return this;
     }
@@ -93,6 +97,7 @@ public class TownshipSchedulingProblemBuilder {
         this.setupDateTimeSlot();
         this.setupGameActions();
         this.trimUnrelatedObject();
+        this.setupFactoryDateTimeSlot();
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
@@ -117,11 +122,12 @@ public class TownshipSchedulingProblemBuilder {
                 this.schedulingOrderList,
                 this.schedulingFactoryInstanceList,
                 this.schedulingDateTimeSlots,
+                this.schedulingFactoryInstanceDateTimeSlotList,
                 this.schedulingProducingArrangementList,
                 this.schedulingWorkCalendar,
-                this.slotSize,
                 this.schedulingPlayer,
                 this.score,
+                this.slotSize,
                 this.solverStatus
         );
     }
@@ -151,7 +157,10 @@ public class TownshipSchedulingProblemBuilder {
                 .stream()
                 .map(SchedulingOrder::calcFactoryActions)
                 .flatMap(Collection::stream)
-                .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
+                .map(productAction -> expandAndSetupIntoMaterials(
+                        idRoller,
+                        productAction
+                ))
                 .flatMap(Collection::stream)
                 .peek(SchedulingProducingArrangement::advancedSetupOrThrow)
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -170,11 +179,17 @@ public class TownshipSchedulingProblemBuilder {
         while (!dealingChain.isEmpty()) {
             SchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
-            iteratingArrangement.elementarySetup(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
+            iteratingArrangement.activate(
+                    idRoller,
+                    this.schedulingWorkCalendar,
+                    this.schedulingPlayer
+            );
             resultArrangementList.add(iteratingArrangement);
 
             SchedulingProducingExecutionMode producingExecutionMode
-                    = iteratingArrangement.getCurrentActionObject().getExecutionModeSet().stream()
+                    = iteratingArrangement.getCurrentActionObject()
+                    .getExecutionModeSet()
+                    .stream()
                     .min(Comparator.comparing(SchedulingProducingExecutionMode::getExecuteDuration))
                     .orElseThrow();
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
@@ -200,6 +215,36 @@ public class TownshipSchedulingProblemBuilder {
     private TownshipSchedulingProblemBuilder schedulingProducingArrangementList(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
         return this;
+    }
+
+    private void setupFactoryDateTimeSlot() {
+        AtomicInteger idRoller = new AtomicInteger(1);
+        List<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new ArrayList<>();
+        for (SchedulingFactoryInstance schedulingFactoryInstance : this.schedulingFactoryInstanceList) {
+            NavigableSet<SchedulingFactoryInstanceDateTimeSlot> factoryInstanceDateTimeSlots = new TreeSet<>();
+            SchedulingFactoryInstanceDateTimeSlot previous = null;
+            for (SchedulingDateTimeSlot schedulingDateTimeSlot : this.schedulingDateTimeSlots) {
+                SchedulingFactoryInstanceDateTimeSlot schedulingFactoryInstanceDateTimeSlot
+                        = new SchedulingFactoryInstanceDateTimeSlot(
+                        idRoller.getAndIncrement(),
+                        schedulingFactoryInstance,
+                        schedulingDateTimeSlot
+                );
+                if (previous != null) {
+                    previous.setNext(schedulingFactoryInstanceDateTimeSlot);
+                    schedulingFactoryInstanceDateTimeSlot.setPrevious(previous);
+                }
+                previous = schedulingFactoryInstanceDateTimeSlot;
+                schedulingFactoryInstanceDateTimeSlot.setFormerFactorySlotList(new ArrayList<>(schedulingFactoryInstanceDateTimeSlots));
+                schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
+                factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
+            }
+            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots()
+                    .clear();
+            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots()
+                    .addAll(factoryInstanceDateTimeSlots);
+        }
+        this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
     }
 
     private void trimUnrelatedObject() {

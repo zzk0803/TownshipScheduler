@@ -3,7 +3,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
-    <environmentMode>PHASE_ASSERT</environmentMode>
+    <environmentMode>FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
@@ -13,7 +13,7 @@
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
     <entityClass>
-        zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceDateTimeSlot
     </entityClass>
 
     <scoreDirectorFactory>
@@ -47,101 +47,29 @@
             zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase
         </customPhaseCommandClass>
     </customPhase>
-    <!--    endregion-->
+    <!--endregion-->
 
     <!--region local search-->
     <localSearch>
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>45</slidingWindowSeconds>
+                <slidingWindowSeconds>30</slidingWindowSeconds>
                 <minimumImprovementRatio>0.01</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 
         <unionMoveSelector>
-
-            <changeMoveSelector>
-                <!--                <filterClass>-->
-                <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
-                <!--                </filterClass>-->
-                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                    </entityClass>
-                </entitySelector>
-                <valueSelector variableName="planningFactoryInstance"
-                               id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
-                </valueSelector>
-            </changeMoveSelector>
-
-            <changeMoveSelector>
-                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                    </entityClass>
-                </entitySelector>
-                <valueSelector variableName="planningDateTimeSlot"
-                               id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
-                </valueSelector>
-            </changeMoveSelector>
-
-            <swapMoveSelector>
-                <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                    </entityClass>
-                </entitySelector>
-                <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
-                    <entityClass>
-                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                    </entityClass>
-                </secondaryEntitySelector>
-                <variableNameIncludes>
-                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
-                </variableNameIncludes>
-            </swapMoveSelector>
-
-            <pillarChangeMoveSelector>
-                <pillarSelector>
-                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                </pillarSelector>
-                <valueSelector variableName="planningDateTimeSlot"
-                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">
-                </valueSelector>
-            </pillarChangeMoveSelector>
-
-            <pillarSwapMoveSelector>
-                <pillarSelector>
-                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                </pillarSelector>
-                <secondaryPillarSelector>
-                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                </secondaryPillarSelector>
-                <variableNameIncludes>
-                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
-                </variableNameIncludes>
-            </pillarSwapMoveSelector>
-
+            <listChangeMoveSelector/>
+            <listSwapMoveSelector/>
+            <subListChangeMoveSelector/>
+            <subListSwapMoveSelector/>
+            <kOptListMoveSelector/>
         </unionMoveSelector>
 
         <acceptor>
-            <entityTabuSize>5</entityTabuSize>
-            <valueTabuSize>2</valueTabuSize>
-            <stepCountingHillClimbingSize>519</stepCountingHillClimbingSize>
-            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
+            <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingType>STEP</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>
