@@ -41,7 +41,7 @@ public class TownshipSchedulingProblem {
     @ProblemFactCollectionProperty
     private List<SchedulingOrder> schedulingOrderList;
 
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @ProblemFactCollectionProperty

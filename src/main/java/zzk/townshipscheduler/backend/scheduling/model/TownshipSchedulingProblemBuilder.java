@@ -239,10 +239,6 @@ public class TownshipSchedulingProblemBuilder {
                 schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
                 factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
             }
-            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots()
-                    .clear();
-            schedulingFactoryInstance.getSchedulingFactoryInstanceDateTimeSlots()
-                    .addAll(factoryInstanceDateTimeSlots);
         }
         this.schedulingFactoryInstanceDateTimeSlotList = schedulingFactoryInstanceDateTimeSlots;
     }

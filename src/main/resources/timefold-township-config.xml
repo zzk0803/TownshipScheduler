@@ -10,9 +10,6 @@
         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
     </entityClass>
     <entityClass>
-        zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
-    </entityClass>
-    <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstanceDateTimeSlot
     </entityClass>
 
@@ -64,7 +61,6 @@
             <listSwapMoveSelector/>
             <subListChangeMoveSelector/>
             <subListSwapMoveSelector/>
-            <kOptListMoveSelector/>
         </unionMoveSelector>
 
         <acceptor>

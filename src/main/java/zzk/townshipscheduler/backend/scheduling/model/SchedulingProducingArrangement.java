@@ -238,7 +238,7 @@ public class SchedulingProducingArrangement {
 
 
     @ShadowSources(
-            {
+            value = {
                     "planningFactoryDateTimeSlot",
                     "planningFactoryDateTimeSlot.amendedFirstArrangementProducingDateTime",
                     "previousSchedulingProducingArrangement",

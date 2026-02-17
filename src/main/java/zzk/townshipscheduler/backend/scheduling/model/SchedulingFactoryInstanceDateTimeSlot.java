@@ -71,20 +71,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         );
     }
 
-    public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime thisTailArrangementDateTime = this.getLastCompletedDateTime();
-        LocalDateTime thatStart = that.getStart();
-        if (thisTailArrangementDateTime == null) {
-            return false;
-        }
-        return thisTailArrangementDateTime.isAfter(thatStart);
-    }
-
-    @EqualsAndHashCode.Include
-    public LocalDateTime getStart() {
-        return dateTimeSlot.getStart();
-    }
-
     @ValueRangeProvider(id = RANGE_FOR_ARRANGEMENTS)
     public List<SchedulingProducingArrangement> valueRangeForArrangements(
             TownshipSchedulingProblem townshipSchedulingProblem
@@ -94,31 +80,45 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     @ShadowSources("planningSchedulingProducingArrangements")
     public LocalDateTime lastCompletedDateTimeSupplier() {
+        if (getPlanningSchedulingProducingArrangements().isEmpty()) {
+            return null;
+        }
+
         return getPlanningSchedulingProducingArrangements().getLast()
                 .getCompletedDateTime();
     }
 
-    @ShadowSources(
-            value = "formerFactorySlotList[].lastCompletedDateTime"
-    )
+    @ShadowSources("formerFactorySlotList[].lastCompletedDateTime")
     public LocalDateTime amendedFirstArrangementProducingDateTimeSupplier() {
-        return getFormerFactorySlotList().stream()
-                .map(SchedulingFactoryInstanceDateTimeSlot::getLastCompletedDateTime)
-                .filter(Objects::nonNull)
-                .filter(localDateTime -> localDateTime.isAfter(this.getStart()))
-                .sorted(Comparator.naturalOrder())
-                .limit(1L)
-                .findFirst()
-                .orElse(this.getStart());
+        if (getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue()) {
+            return getFormerFactorySlotList().stream()
+                    .sorted(Comparator.reverseOrder())
+                    .filter(factoryInstanceDateTimeSlot -> {
+                        LocalDateTime slotCompletedDateTime = factoryInstanceDateTimeSlot.getLastCompletedDateTime();
+                        return slotCompletedDateTime != null && slotCompletedDateTime.isAfter(this.getStart());
+                    })
+                    .limit(1)
+                    .map(SchedulingFactoryInstanceDateTimeSlot::getLastCompletedDateTime)
+                    .findFirst()
+                    .orElse(this.getStart())
+                    ;
+        } else {
+            return getStart();
+        }
     }
 
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return factoryInstance.weatherFactoryProducingTypeIsQueue();
+    @EqualsAndHashCode.Include
+    public LocalDateTime getStart() {
+        return dateTimeSlot.getStart();
     }
 
     @EqualsAndHashCode.Include
     public SchedulingFactoryInfo getSchedulingFactoryInfo() {
         return factoryInstance.getSchedulingFactoryInfo();
+    }
+
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return factoryInstance.weatherFactoryProducingTypeIsQueue();
     }
 
     @EqualsAndHashCode.Include
@@ -177,6 +177,15 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
                 .sorted(Comparator.naturalOrder())
                 .filter(this::boolInfluenceTo)
                 .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
+        LocalDateTime thisTailArrangementDateTime = this.getLastCompletedDateTime();
+        LocalDateTime thatStart = that.getStart();
+        if (thisTailArrangementDateTime == null) {
+            return false;
+        }
+        return thisTailArrangementDateTime.isAfter(thatStart);
     }
 
     @Override

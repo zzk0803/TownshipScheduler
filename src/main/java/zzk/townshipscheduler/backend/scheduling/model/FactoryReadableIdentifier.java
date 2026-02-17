@@ -9,7 +9,7 @@ import java.util.Comparator;
 import java.util.stream.IntStream;
 
 @EqualsAndHashCode
-public final class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier>, Serializable {
+public  class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier>, Serializable {
 
     @Serial
     private static final long serialVersionUID = -3940474169751457218L;

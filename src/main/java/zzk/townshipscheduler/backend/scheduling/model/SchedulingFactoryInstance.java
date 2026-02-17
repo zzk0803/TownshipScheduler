@@ -11,12 +11,13 @@ import java.util.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
 public class SchedulingFactoryInstance {
 
     @PlanningId
     @EqualsAndHashCode.Include
     private Integer id;
+
+    private Long fieldFactoryId;
 
     @JsonIgnore
     @EqualsAndHashCode.Include
@@ -35,32 +36,6 @@ public class SchedulingFactoryInstance {
     @Setter(AccessLevel.PRIVATE)
     @ToString.Include
     private FactoryReadableIdentifier factoryReadableIdentifier;
-
-    private NavigableSet<SchedulingFactoryInstanceDateTimeSlot> schedulingFactoryInstanceDateTimeSlots = new TreeSet<>();
-
-    @ShadowVariable(supplierName = "supplierNameFactorySlotToInfluencedByMap")
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, SchedulingFactoryInstanceDateTimeSlot> factorySlotToInfluencedByMap
-            = new TreeMap<>();
-
-    @ShadowSources(value = {"schedulingFactoryInstanceDateTimeSlots[].influencedFactorySlotSet"})
-    private TreeMap<SchedulingFactoryInstanceDateTimeSlot, SchedulingFactoryInstanceDateTimeSlot> factorySlotToInfluencedByMap() {
-        if (!weatherFactoryProducingTypeIsQueue()) {
-            return null;
-        }
-
-        TreeMap<SchedulingFactoryInstanceDateTimeSlot, SchedulingFactoryInstanceDateTimeSlot>
-                factorySlotToInfluencedByMap = new TreeMap<>();
-        for (SchedulingFactoryInstanceDateTimeSlot factoryInstanceDateTimeSlot : schedulingFactoryInstanceDateTimeSlots) {
-            Set<SchedulingFactoryInstanceDateTimeSlot> influencedFactorySlotSet = factoryInstanceDateTimeSlot.getInfluencedFactorySlotSet();
-            if (Objects.nonNull(influencedFactorySlotSet) && !influencedFactorySlotSet.isEmpty()) {
-                for (SchedulingFactoryInstanceDateTimeSlot influencedFactorySlot : influencedFactorySlotSet) {
-                    factorySlotToInfluencedByMap.put(influencedFactorySlot, factoryInstanceDateTimeSlot);
-                }
-            }
-        }
-
-        return factorySlotToInfluencedByMap;
-    }
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(

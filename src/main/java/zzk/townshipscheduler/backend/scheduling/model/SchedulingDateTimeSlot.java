@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot>, Serializable {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
@@ -40,9 +39,6 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     @JsonIdentityReference
     private SchedulingDateTimeSlot next;
-
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT)
-    private List<SchedulingProducingArrangement> schedulingProducingArrangementList = new ArrayList<>();
 
     private static boolean isDateTimeBetween(
             LocalDateTime dateTime,
