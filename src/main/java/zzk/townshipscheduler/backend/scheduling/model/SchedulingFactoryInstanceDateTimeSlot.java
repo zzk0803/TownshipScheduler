@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
@@ -13,6 +14,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,6 +47,7 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     private SchedulingFactoryInstanceDateTimeSlot next;
 
+    @DeepPlanningClone
     private List<SchedulingFactoryInstanceDateTimeSlot> formerFactorySlotList = new ArrayList<>();
 
     @PlanningListVariable(valueRangeProviderRefs = RANGE_FOR_ARRANGEMENTS)
@@ -78,14 +81,23 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return townshipSchedulingProblem.valueRangeForArrangements(this);
     }
 
-    @ShadowSources("planningSchedulingProducingArrangements")
+    @ShadowSources(value = {"planningSchedulingProducingArrangements", "amendedFirstArrangementProducingDateTime"})
     public LocalDateTime lastCompletedDateTimeSupplier() {
         if (getPlanningSchedulingProducingArrangements().isEmpty()) {
             return null;
         }
 
-        return getPlanningSchedulingProducingArrangements().getLast()
-                .getCompletedDateTime();
+        Duration duration = getPlanningSchedulingProducingArrangements().stream()
+                .map(SchedulingProducingArrangement::getProducingDuration)
+                .reduce(Duration::plus)
+                .orElse(Duration.ZERO)
+                ;
+        return getAmendedFirstArrangementProducingDateTime() != null ? getAmendedFirstArrangementProducingDateTime().plus(duration) : getStart().plus(duration);
+    }
+
+    @EqualsAndHashCode.Include
+    public LocalDateTime getStart() {
+        return dateTimeSlot.getStart();
     }
 
     @ShadowSources("formerFactorySlotList[].lastCompletedDateTime")
@@ -105,11 +117,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         } else {
             return getStart();
         }
-    }
-
-    @EqualsAndHashCode.Include
-    public LocalDateTime getStart() {
-        return dateTimeSlot.getStart();
     }
 
     @EqualsAndHashCode.Include
