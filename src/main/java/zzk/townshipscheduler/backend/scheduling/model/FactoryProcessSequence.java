@@ -20,11 +20,13 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
     @Serial
     private static final long serialVersionUID = -264984659974196003L;
 
+    @EqualsAndHashCode.Include
     LocalDateTime arrangeDateTime;
 
     @EqualsAndHashCode.Include
     Integer arrangementId;
 
+    @EqualsAndHashCode.Include
     FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
 
     Duration producingDuration;
