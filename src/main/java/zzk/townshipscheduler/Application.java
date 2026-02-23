@@ -23,6 +23,7 @@ import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,6 +98,11 @@ public class Application {
     @Bean("cacheManager")
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager();
+    }
+
+    @Bean("httpClient")
+    public HttpClient object() {
+        return HttpClient.newHttpClient();
     }
 
 }

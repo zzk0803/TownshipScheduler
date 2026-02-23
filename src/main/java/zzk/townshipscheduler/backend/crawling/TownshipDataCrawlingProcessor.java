@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Gatherers;
 
 @Component
 class TownshipDataCrawlingProcessor {
@@ -55,7 +56,8 @@ class TownshipDataCrawlingProcessor {
             WikiCrawledEntityRepository wikiCrawledEntityRepository,
             ExecutorService townshipExecutorService,
             RetryTemplate retryTemplate,
-            TransactionTemplate transactionTemplate
+            TransactionTemplate transactionTemplate,
+            HttpClient httpClient
     ) {
         this.crawledDataMemory = crawledDataMemory;
         this.wikiCrawledEntityRepository = wikiCrawledEntityRepository;
@@ -63,7 +65,7 @@ class TownshipDataCrawlingProcessor {
         this.retryTemplate = retryTemplate;
         this.transactionTemplate = transactionTemplate;
         this.imageToDownload = new LinkedHashSet<>();
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = httpClient;
     }
 
     @PreDestroy
@@ -340,37 +342,44 @@ class TownshipDataCrawlingProcessor {
                 ;
 
         List<CompletableFuture<WikiCrawledEntity>> downloadFutures
-                = pairList.stream().
-                map(
-                        pair -> CompletableFuture.supplyAsync(
-                                        () -> {
-                                            pair.value1()
-                                                    .setImageBytes(
-                                                            this.downloadImage(pair.value0()
-                                                                    .getSrc())
+                = pairList.stream()
+                .gather(
+                        Gatherers.mapConcurrent(
+                                Runtime.getRuntime()
+                                        .availableProcessors(),
+                                pair -> CompletableFuture.supplyAsync(
+                                                () -> {
+                                                    pair.value1()
+                                                            .setImageBytes(
+                                                                    this.downloadImage(
+                                                                            pair.value0().getSrc()
+                                                                    )
+                                                            );
+                                                    return wikiCrawledEntityRepository.save(pair.value1());
+                                                }, townshipExecutorService
+                                        )
+                                        .orTimeout(30, TimeUnit.SECONDS)
+                                        .thenApplyAsync(
+                                                crawledEntity -> {
+                                                    logger.info(
+                                                            "{} image download completed",
+                                                            pair.value0()
+                                                                    .getSrc()
                                                     );
-                                            return wikiCrawledEntityRepository.save(pair.value1());
-                                        }, townshipExecutorService
-                                )
-                                .orTimeout(30, TimeUnit.SECONDS)
-                                .thenApplyAsync(
-                                        crawledEntity -> {
-                                            logger.info("{} image download completed",
-                                                    pair.value0()
-                                                            .getSrc()
-                                            );
-                                            return crawledEntity;
-                                        }, townshipExecutorService
-                                )
-                                .exceptionallyAsync(
-                                        _ -> {
-                                            logger.warn("Failed to download image: {}",
-                                                    pair.value0()
-                                                            .getSrc()
-                                            );
-                                            return null;
-                                        }, townshipExecutorService
-                                )
+                                                    return crawledEntity;
+                                                }, townshipExecutorService
+                                        )
+                                        .exceptionallyAsync(
+                                                _ -> {
+                                                    logger.warn(
+                                                            "Failed to download image: {}",
+                                                            pair.value0()
+                                                                    .getSrc()
+                                                    );
+                                                    return null;
+                                                }, townshipExecutorService
+                                        )
+                        )
                 )
                 .toList()
                 ;
