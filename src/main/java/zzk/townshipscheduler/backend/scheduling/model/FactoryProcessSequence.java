@@ -34,7 +34,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.arrangementId = schedulingProducingArrangement.getId();
         this.schedulingFactoryInstanceReadableIdentifier
-                = schedulingProducingArrangement.getPlanningFactoryInstance()
+                = schedulingProducingArrangement.getSchedulingFactoryInstance()
                 .getFactoryReadableIdentifier();
     }
 

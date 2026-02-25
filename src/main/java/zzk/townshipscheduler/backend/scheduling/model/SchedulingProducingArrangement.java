@@ -2,7 +2,10 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.*;
+import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.PreviousElementShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -74,6 +77,10 @@ public class SchedulingProducingArrangement {
     private SchedulingProducingExecutionMode producingExecutionMode;
 
     @JsonIgnore
+    @ShadowVariable(supplierName = "prerequisiteProducingArrangementsCompletedDateTimeSupplier")
+    private LocalDateTime prerequisiteProducingArrangementsCompletedDateTime;
+
+    @JsonIgnore
     @InverseRelationShadowVariable(
             sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
     )
@@ -130,8 +137,30 @@ public class SchedulingProducingArrangement {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6().toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
+                .toString());
         return producingArrangement;
+    }
+
+    @ShadowSources(value = {"prerequisiteProducingArrangements[].completedDateTime"})
+    private LocalDateTime prerequisiteProducingArrangementsCompletedDateTimeSupplier() {
+        if (prerequisiteProducingArrangements == null || prerequisiteProducingArrangements.isEmpty()) {
+            return getSchedulingWorkCalendar().getStartDateTime();
+        }
+
+        var prerequisiteCompletedDateTimeList = this.getPrerequisiteProducingArrangements()
+                .stream()
+                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .toList()
+                ;
+        if (prerequisiteCompletedDateTimeList.stream()
+                .anyMatch(Objects::isNull)) {
+            return null;
+        }
+
+        return prerequisiteCompletedDateTimeList.stream()
+                .max(Comparator.naturalOrder())
+                .orElseThrow();
     }
 
     @ShadowSources({"planningFactoryDateTimeSlot"})
@@ -150,8 +179,8 @@ public class SchedulingProducingArrangement {
     @JsonIgnore
     public boolean isFactoryMatch() {
         return Objects.nonNull(getSchedulingFactoryInstance())
-               && getSchedulingFactoryInstance().getSchedulingFactoryInfo()
-                       .typeEqual(getSchedulingProduct().getRequireFactory());
+                && getSchedulingFactoryInstance().getSchedulingFactoryInfo()
+                .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
     @JsonProperty("schedulingProduct")
@@ -219,24 +248,6 @@ public class SchedulingProducingArrangement {
         return getProducingExecutionMode().getMaterials();
     }
 
-    @JsonProperty("producingDuration")
-    public Duration getProducingDuration() {
-        return getProducingExecutionMode().getExecuteDuration();
-    }
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return getFactoryProducingType() == ProducingStructureType.QUEUE;
-    }
-
-    public ProducingStructureType getFactoryProducingType() {
-        return getRequiredFactoryInfo().getProducingStructureType();
-    }
-
-    @JsonIgnore
-    public SchedulingFactoryInfo getRequiredFactoryInfo() {
-        return getSchedulingProduct().getRequireFactory();
-    }
-
-
     @ShadowSources(
             value = {
                     "planningFactoryDateTimeSlot",
@@ -262,6 +273,19 @@ public class SchedulingProducingArrangement {
         return thisProducingDateTime;
     }
 
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return getFactoryProducingType() == ProducingStructureType.QUEUE;
+    }
+
+    public ProducingStructureType getFactoryProducingType() {
+        return getRequiredFactoryInfo().getProducingStructureType();
+    }
+
+    @JsonIgnore
+    public SchedulingFactoryInfo getRequiredFactoryInfo() {
+        return getSchedulingProduct().getRequireFactory();
+    }
+
     @ShadowSources({"producingDateTime"})
     public LocalDateTime completedDateTimeSupplier() {
         if (this.producingDateTime == null) {
@@ -269,6 +293,11 @@ public class SchedulingProducingArrangement {
         }
 
         return this.producingDateTime.plus(this.getProducingDuration());
+    }
+
+    @JsonProperty("producingDuration")
+    public Duration getProducingDuration() {
+        return getProducingExecutionMode().getExecuteDuration();
     }
 
     @ShadowSources({"planningFactoryDateTimeSlot"})
@@ -321,11 +350,5 @@ public class SchedulingProducingArrangement {
         return !getPrerequisiteProducingArrangements().isEmpty();
     }
 
-    public SchedulingFactoryInstance getPlanningFactoryInstance() {
-        if (Objects.isNull(getPlanningFactoryDateTimeSlot())) {
-            return null;
-        }
-        return getPlanningFactoryDateTimeSlot().getFactoryInstance();
-    }
 
 }

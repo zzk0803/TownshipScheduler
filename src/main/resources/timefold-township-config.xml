@@ -61,11 +61,12 @@
             <listSwapMoveSelector/>
             <subListChangeMoveSelector/>
             <subListSwapMoveSelector/>
+            <kOptListMoveSelector/>
         </unionMoveSelector>
 
         <acceptor>
             <stepCountingHillClimbingSize>369</stepCountingHillClimbingSize>
-            <stepCountingHillClimbingType>STEP</stepCountingHillClimbingType>
+            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>

@@ -74,7 +74,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                                 SchedulingProducingArrangement::getArrangeDateTime,
                                 TreeMap::new,
                                 Collectors.groupingBy(
-                                        SchedulingProducingArrangement::getPlanningFactoryInstance,
+                                        SchedulingProducingArrangement::getSchedulingFactoryInstance,
                                         Collectors.groupingBy(
                                                 SchedulingProducingArrangement::getSchedulingProduct,
                                                 Collectors.counting()

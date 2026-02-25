@@ -14,10 +14,10 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Slf4j
 @Data
@@ -53,9 +53,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
     @PlanningListVariable(valueRangeProviderRefs = RANGE_FOR_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
 
-    @ShadowVariable(supplierName = "lastCompletedDateTimeSupplier")
-    private LocalDateTime lastCompletedDateTime;
-
     @ShadowVariable(supplierName = "amendedFirstArrangementProducingDateTimeSupplier")
     private LocalDateTime amendedFirstArrangementProducingDateTime;
 
@@ -81,42 +78,30 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return townshipSchedulingProblem.valueRangeForArrangements(this);
     }
 
-    @ShadowSources(value = {"planningSchedulingProducingArrangements", "amendedFirstArrangementProducingDateTime"})
-    public LocalDateTime lastCompletedDateTimeSupplier() {
-        if (getPlanningSchedulingProducingArrangements().isEmpty()) {
-            return null;
+    @ShadowSources(value = {"formerFactorySlotList[].planningSchedulingProducingArrangements"})
+    public LocalDateTime amendedFirstArrangementProducingDateTimeSupplier() {
+        if (getFactoryInstance().weatherFactoryProducingTypeIsQueue()) {
+            LocalDateTime result = getFormerFactorySlotList().stream()
+                    .flatMap(factoryInstanceDateTimeSlot -> factoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
+                            .stream()
+                    )
+                    .map(SchedulingProducingArrangement::getCompletedDateTime)
+                    .filter(localDateTime -> localDateTime.isAfter(this.getStart()))
+                    .max(Comparator.naturalOrder())
+                    .orElse(this.getStart())
+                    ;
+            if (!result.equals(getStart())) {
+                log.info("{} amend first arrangement producing datetime::{}", this.factoryDateTimeReadableIdentifier, result);
+            }
+            return result;
+        } else {
+            return getStart();
         }
-
-        Duration duration = getPlanningSchedulingProducingArrangements().stream()
-                .map(SchedulingProducingArrangement::getProducingDuration)
-                .reduce(Duration::plus)
-                .orElse(Duration.ZERO)
-                ;
-        return getAmendedFirstArrangementProducingDateTime() != null ? getAmendedFirstArrangementProducingDateTime().plus(duration) : getStart().plus(duration);
     }
 
     @EqualsAndHashCode.Include
     public LocalDateTime getStart() {
         return dateTimeSlot.getStart();
-    }
-
-    @ShadowSources("formerFactorySlotList[].lastCompletedDateTime")
-    public LocalDateTime amendedFirstArrangementProducingDateTimeSupplier() {
-        if (getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue()) {
-            return getFormerFactorySlotList().stream()
-                    .sorted(Comparator.reverseOrder())
-                    .filter(factoryInstanceDateTimeSlot -> {
-                        LocalDateTime slotCompletedDateTime = factoryInstanceDateTimeSlot.getLastCompletedDateTime();
-                        return slotCompletedDateTime != null && slotCompletedDateTime.isAfter(this.getStart());
-                    })
-                    .limit(1)
-                    .map(SchedulingFactoryInstanceDateTimeSlot::getLastCompletedDateTime)
-                    .findFirst()
-                    .orElse(this.getStart())
-                    ;
-        } else {
-            return getStart();
-        }
     }
 
     @EqualsAndHashCode.Include
@@ -157,43 +142,43 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return factoryInstance.getReapWindowSize();
     }
 
-    public Optional<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceBy(
-            Collection<SchedulingFactoryInstanceDateTimeSlot> those
-    ) {
-        if (those == null || those.isEmpty()) {
-            return Optional.empty();
-        }
+//    public Optional<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceBy(
+//            Collection<SchedulingFactoryInstanceDateTimeSlot> those
+//    ) {
+//        if (those == null || those.isEmpty()) {
+//            return Optional.empty();
+//        }
+//
+//        return those.stream()
+//                .filter(this::boolInfluenceBy)
+//                .min(Comparator.naturalOrder());
+//    }
 
-        return those.stream()
-                .filter(this::boolInfluenceBy)
-                .min(Comparator.naturalOrder());
-    }
+//    public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
+//        LocalDateTime tailArrangementCompletedDateTime = that.getFormerFactorySlotsCompletedDateTime();
+//        if (tailArrangementCompletedDateTime == null) {
+//            return false;
+//        }
+//        return tailArrangementCompletedDateTime.isAfter(this.getStart());
+//    }
 
-    public boolean boolInfluenceBy(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime tailArrangementCompletedDateTime = that.getLastCompletedDateTime();
-        if (tailArrangementCompletedDateTime == null) {
-            return false;
-        }
-        return tailArrangementCompletedDateTime.isAfter(this.getStart());
-    }
+//    public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(
+//            Collection<SchedulingFactoryInstanceDateTimeSlot> those
+//    ) {
+//        return those.stream()
+//                .sorted(Comparator.naturalOrder())
+//                .filter(this::boolInfluenceTo)
+//                .collect(Collectors.toCollection(TreeSet::new));
+//    }
 
-    public Collection<SchedulingFactoryInstanceDateTimeSlot> boolInfluenceTo(
-            Collection<SchedulingFactoryInstanceDateTimeSlot> those
-    ) {
-        return those.stream()
-                .sorted(Comparator.naturalOrder())
-                .filter(this::boolInfluenceTo)
-                .collect(Collectors.toCollection(TreeSet::new));
-    }
-
-    public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
-        LocalDateTime thisTailArrangementDateTime = this.getLastCompletedDateTime();
-        LocalDateTime thatStart = that.getStart();
-        if (thisTailArrangementDateTime == null) {
-            return false;
-        }
-        return thisTailArrangementDateTime.isAfter(thatStart);
-    }
+//    public boolean boolInfluenceTo(SchedulingFactoryInstanceDateTimeSlot that) {
+//        LocalDateTime thisTailArrangementDateTime = this.getFormerFactorySlotsCompletedDateTime();
+//        LocalDateTime thatStart = that.getStart();
+//        if (thisTailArrangementDateTime == null) {
+//            return false;
+//        }
+//        return thisTailArrangementDateTime.isAfter(thatStart);
+//    }
 
     @Override
     public int compareTo(@NotNull SchedulingFactoryInstanceDateTimeSlot that) {
