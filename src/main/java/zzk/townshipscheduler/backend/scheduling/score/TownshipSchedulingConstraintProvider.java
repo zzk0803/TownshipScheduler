@@ -182,15 +182,17 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 
     private Constraint preferMinimizeCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(SchedulingProducingArrangement::isOrderDirect)
+                .map(arrangement -> {
+                    var calendarStartDateTime = arrangement.getSchedulingWorkCalendar()
+                            .getStartDateTime();
+                    var completedDateTime = arrangement.getCompletedDateTime();
+                    Duration between = Duration.between(calendarStartDateTime, completedDateTime);
+                    return calcFactor(arrangement) * between.toMinutes();
+                })
                 .penalizeLong(
                         HardMediumSoftLongScore.ONE_SOFT,
-                        (arrangement) -> {
-                            var calendarStartDateTime = arrangement.getSchedulingWorkCalendar()
-                                    .getStartDateTime();
-                            var completedDateTime = arrangement.getCompletedDateTime();
-                            Duration between = Duration.between(calendarStartDateTime, completedDateTime);
-                            return calcFactor(arrangement) * between.toMinutes();
-                        }
+                        (value) -> value
                 )
                 .asConstraint("preferMinimizeCompletedDateTime");
     }

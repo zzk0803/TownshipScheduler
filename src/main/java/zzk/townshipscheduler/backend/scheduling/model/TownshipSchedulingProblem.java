@@ -101,13 +101,13 @@ public class TownshipSchedulingProblem implements Serializable {
                 .toList();
     }
 
-    public List<SchedulingProducingArrangement> lookupProducingArrangements(
-            Collection<FactoryProcessSequence> factoryProcessSequences
-    ) {
-        return getSchedulingProducingArrangementList().stream()
-                .filter(schedulingProducingArrangement -> factoryProcessSequences.contains(schedulingProducingArrangement.getShadowFactoryProcessSequence()))
-                .toList();
-    }
+//    public List<SchedulingProducingArrangement> lookupProducingArrangements(
+//            Collection<FactoryProcessSequence> factoryProcessSequences
+//    ) {
+//        return getSchedulingProducingArrangementList().stream()
+//                .filter(schedulingProducingArrangement -> factoryProcessSequences.contains(schedulingProducingArrangement.getShadowFactoryProcessSequence()))
+//                .toList();
+//    }
 
     public Optional<SchedulingFactoryInstance> lookupFactoryInstance(
             FactoryReadableIdentifier factoryReadableIdentifier

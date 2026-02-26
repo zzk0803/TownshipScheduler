@@ -97,21 +97,19 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 schedulingProducingArrangement,
                 SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
         );
-        schedulingProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
-        scoreDirector.afterVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
-        );
-        scoreDirector.triggerVariableListeners();
-
         scoreDirector.beforeVariableChanged(
                 schedulingProducingArrangement,
                 SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
         );
+        schedulingProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
         schedulingProducingArrangement.setPlanningFactoryInstance(schedulingFactoryInstance);
         scoreDirector.afterVariableChanged(
                 schedulingProducingArrangement,
                 SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
+        );
+        scoreDirector.afterVariableChanged(
+                schedulingProducingArrangement,
+                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
         );
         scoreDirector.triggerVariableListeners();
     }
