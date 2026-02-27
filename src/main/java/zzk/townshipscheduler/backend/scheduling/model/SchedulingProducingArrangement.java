@@ -127,6 +127,11 @@ public class SchedulingProducingArrangement implements Serializable {
     @JsonIdentityReference
     private SchedulingProduct schedulingOrderProduct;
 
+    private SchedulingFactoryInfo requiredFactoryInfo;
+
+    @JsonIgnore
+    private List<SchedulingProducingArrangement> arrangementCompetitors = new ArrayList<>();
+
     private Integer schedulingOrderProductArrangementId;
 
     @JsonIdentityReference
@@ -170,9 +175,6 @@ public class SchedulingProducingArrangement implements Serializable {
     @ShadowVariable(supplierName = "supplierForShadowFactoryProcessSequence")
     private FactoryProcessSequence shadowFactoryProcessSequence;
 
-    @JsonIgnore
-    private List<SchedulingProducingArrangement> arrangementCompetitors = new ArrayList<>();
-
     @JsonProperty("arrangeDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -210,8 +212,10 @@ public class SchedulingProducingArrangement implements Serializable {
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
-                .toString());
+        producingArrangement.setUuid(
+                UuidGenerator.timeOrderedV6()
+                        .toString()
+        );
         return producingArrangement;
     }
 
@@ -240,6 +244,7 @@ public class SchedulingProducingArrangement implements Serializable {
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
+        setRequiredFactoryInfo(getSchedulingProduct().getRequireFactory());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
         setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
@@ -272,9 +277,8 @@ public class SchedulingProducingArrangement implements Serializable {
         return getRequiredFactoryInfo().getProducingStructureType();
     }
 
-    @JsonIgnore
-    public SchedulingFactoryInfo getRequiredFactoryInfo() {
-        return getSchedulingProduct().getRequireFactory();
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return getFactoryProducingType() == ProducingStructureType.SLOT;
     }
 
     @ShadowSources(
@@ -284,31 +288,40 @@ public class SchedulingProducingArrangement implements Serializable {
             }
     )
     private FactoryProcessSequence supplierForShadowFactoryProcessSequence() {
+        if (Objects.isNull(getPlanningFactoryInstance()) || Objects.isNull(getPlanningDateTimeSlot())) {
+            return null;
+        }
+
         return new FactoryProcessSequence(this);
     }
 
     @ShadowSources(
             value = {
                     "planningFactoryInstance",
-                    "shadowFactoryProcessSequence",
                     "arrangementCompetitors[].shadowFactoryProcessSequence",
             }
     )
     private LocalDateTime supplierForProducingDateTime() {
+        if (this.getShadowFactoryProcessSequence() == null) {
+            return null;
+        }
+
         if (getRequiredFactoryInfo().weatherFactoryProducingTypeIsQueue()) {
             TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> resultMap = new TreeMap<>();
-            this.arrangementCompetitors.forEach(
-                    schedulingProducingArrangement -> this.getPlanningFactoryInstance()
-                            .addFactoryProcessSequence(
+            for (SchedulingProducingArrangement schedulingProducingArrangement : this.arrangementCompetitors) {
+                if (schedulingProducingArrangement.getPlanningFactoryInstance() == this.getPlanningFactoryInstance()) {
+                    this.getPlanningFactoryInstance().addFactoryProcessSequence(
                                     schedulingProducingArrangement.getShadowFactoryProcessSequence(),
                                     resultMap
-                            )
-            );
+                            );
+                }
+            }
             return Optional.ofNullable(resultMap.get(this.getShadowFactoryProcessSequence()))
                     .map(FactoryComputedDateTimePair::producingDateTime)
                     .orElse(null);
         } else {
-            return isPlanningAssigned() ? this.getArrangeDateTime() : null;
+            return this.getShadowFactoryProcessSequence()
+                    .getArrangeDateTime();
         }
     }
 

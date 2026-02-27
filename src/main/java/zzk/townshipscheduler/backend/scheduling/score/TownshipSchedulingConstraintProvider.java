@@ -181,8 +181,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint preferMinimizeCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isOrderDirect)
+        return constraintFactory.forEachIncludingUnassigned(SchedulingProducingArrangement.class)
+                .filter(SchedulingProducingArrangement::isPlanningAssigned)
                 .map(arrangement -> {
                     var calendarStartDateTime = arrangement.getSchedulingWorkCalendar()
                             .getStartDateTime();
