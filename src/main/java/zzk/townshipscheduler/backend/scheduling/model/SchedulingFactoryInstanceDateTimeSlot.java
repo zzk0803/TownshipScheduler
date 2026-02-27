@@ -2,11 +2,8 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
-import ai.timefold.solver.core.api.domain.variable.ShadowSources;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -14,9 +11,10 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -25,11 +23,14 @@ import java.util.List;
 @ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @PlanningEntity
-public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<SchedulingFactoryInstanceDateTimeSlot> {
+public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<SchedulingFactoryInstanceDateTimeSlot>, Serializable {
 
     public static final String RANGE_FOR_ARRANGEMENTS = "valueRangeForArrangements";
 
     public static final String PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS = "planningSchedulingProducingArrangements";
+
+    @Serial
+    private static final long serialVersionUID = 2601457653583993050L;
 
     @PlanningId
     private int id;
@@ -47,14 +48,8 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
 
     private SchedulingFactoryInstanceDateTimeSlot next;
 
-    @DeepPlanningClone
-    private List<SchedulingFactoryInstanceDateTimeSlot> formerFactorySlotList = new ArrayList<>();
-
-    @PlanningListVariable(valueRangeProviderRefs = RANGE_FOR_ARRANGEMENTS)
+    @PlanningListVariable(allowsUnassignedValues = true, valueRangeProviderRefs = RANGE_FOR_ARRANGEMENTS)
     private List<SchedulingProducingArrangement> planningSchedulingProducingArrangements = new ArrayList<>();
-
-    @ShadowVariable(supplierName = "amendedFirstArrangementProducingDateTimeSupplier")
-    private LocalDateTime amendedFirstArrangementProducingDateTime;
 
     public SchedulingFactoryInstanceDateTimeSlot(
             int id,
@@ -78,26 +73,6 @@ public class SchedulingFactoryInstanceDateTimeSlot implements Comparable<Schedul
         return townshipSchedulingProblem.valueRangeForArrangements(this);
     }
 
-    @ShadowSources(value = {"formerFactorySlotList[].planningSchedulingProducingArrangements"})
-    public LocalDateTime amendedFirstArrangementProducingDateTimeSupplier() {
-        if (getFactoryInstance().weatherFactoryProducingTypeIsQueue()) {
-            LocalDateTime result = getFormerFactorySlotList().stream()
-                    .flatMap(factoryInstanceDateTimeSlot -> factoryInstanceDateTimeSlot.getPlanningSchedulingProducingArrangements()
-                            .stream()
-                    )
-                    .map(SchedulingProducingArrangement::getCompletedDateTime)
-                    .filter(localDateTime -> localDateTime.isAfter(this.getStart()))
-                    .max(Comparator.naturalOrder())
-                    .orElse(this.getStart())
-                    ;
-            if (!result.equals(getStart())) {
-                log.info("{} amend first arrangement producing datetime::{}", this.factoryDateTimeReadableIdentifier, result);
-            }
-            return result;
-        } else {
-            return getStart();
-        }
-    }
 
     @EqualsAndHashCode.Include
     public LocalDateTime getStart() {

@@ -235,7 +235,6 @@ public class TownshipSchedulingProblemBuilder {
                     schedulingFactoryInstanceDateTimeSlot.setPrevious(previous);
                 }
                 previous = schedulingFactoryInstanceDateTimeSlot;
-                schedulingFactoryInstanceDateTimeSlot.setFormerFactorySlotList(new ArrayList<>(schedulingFactoryInstanceDateTimeSlots));
                 schedulingFactoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
                 factoryInstanceDateTimeSlots.add(schedulingFactoryInstanceDateTimeSlot);
             }

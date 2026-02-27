@@ -7,6 +7,8 @@ import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,7 +16,10 @@ import java.util.stream.Collectors;
 @Data
 @PlanningSolution
 @NoArgsConstructor
-public class TownshipSchedulingProblem {
+public class TownshipSchedulingProblem implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -194479171501325608L;
 
     public static final int BENDABLE_SCORE_HARD_SIZE = 3;
 

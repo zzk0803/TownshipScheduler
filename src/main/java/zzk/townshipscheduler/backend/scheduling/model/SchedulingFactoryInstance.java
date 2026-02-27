@@ -7,11 +7,16 @@ import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SchedulingFactoryInstance {
+public class SchedulingFactoryInstance implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 580121283489255372L;
 
     @PlanningId
     @EqualsAndHashCode.Include

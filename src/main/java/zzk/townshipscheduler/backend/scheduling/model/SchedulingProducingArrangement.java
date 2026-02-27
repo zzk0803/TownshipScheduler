@@ -2,10 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.PreviousElementShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.ShadowSources;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.*;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,16 +12,22 @@ import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement {
+public class SchedulingProducingArrangement implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -5639537319806308851L;
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -87,6 +90,16 @@ public class SchedulingProducingArrangement {
     private SchedulingFactoryInstanceDateTimeSlot planningFactoryDateTimeSlot;
 
     @JsonIgnore
+    @PreviousElementShadowVariable(
+            sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
+    )
+    private SchedulingProducingArrangement previousSchedulingProducingArrangement;
+
+    @JsonIgnore
+    @IndexShadowVariable(sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS)
+    private Integer indexInSlot;
+
+    @JsonIgnore
     @ShadowVariable(supplierName = "schedulingDateTimeSlotSupplier")
     private SchedulingDateTimeSlot schedulingDateTimeSlot;
 
@@ -100,12 +113,6 @@ public class SchedulingProducingArrangement {
     @ToString.Include
     @ShadowVariable(supplierName = "arrangeDateTimeSupplier")
     private LocalDateTime arrangeDateTime;
-
-    @JsonIgnore
-    @PreviousElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstanceDateTimeSlot.PLANNING_SCHEDULING_PRODUCING_ARRANGEMENTS
-    )
-    private SchedulingProducingArrangement previousSchedulingProducingArrangement;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -251,12 +258,11 @@ public class SchedulingProducingArrangement {
     @ShadowSources(
             value = {
                     "planningFactoryDateTimeSlot",
-                    "planningFactoryDateTimeSlot.amendedFirstArrangementProducingDateTime",
                     "previousSchedulingProducingArrangement",
                     "previousSchedulingProducingArrangement.completedDateTime"
             }
     )
-    public LocalDateTime producingDateTimeSupplier() {
+    public LocalDateTime producingDateTimeSupplier(TownshipSchedulingProblem townshipSchedulingProblem) {
         if (this.planningFactoryDateTimeSlot == null) {
             return null;
         }
@@ -265,12 +271,30 @@ public class SchedulingProducingArrangement {
         if (weatherFactoryProducingTypeIsQueue()) {
             thisProducingDateTime = this.previousSchedulingProducingArrangement != null
                     ? this.previousSchedulingProducingArrangement.getCompletedDateTime()
-                    : this.planningFactoryDateTimeSlot.getAmendedFirstArrangementProducingDateTime();
+                    : decideProducingDateTime(townshipSchedulingProblem);
 
         } else {
             thisProducingDateTime = this.planningFactoryDateTimeSlot.getStart();
         }
         return thisProducingDateTime;
+    }
+
+    private LocalDateTime decideProducingDateTime(TownshipSchedulingProblem townshipSchedulingProblem) {
+        SchedulingFactoryInstanceDateTimeSlot thisPlanningSlot = getPlanningFactoryDateTimeSlot();
+        if (thisPlanningSlot.getPrevious() == null) {
+            return thisPlanningSlot.getStart();
+        } else {
+            SchedulingProducingArrangement previousProducingArrangement = townshipSchedulingProblem.getSchedulingProducingArrangementList()
+                    .stream()
+                    .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryDateTimeSlot() == thisPlanningSlot)
+                    .collect(Collectors.toCollection(() -> new TreeSet<>(
+                            Comparator.comparing(SchedulingProducingArrangement::getPlanningFactoryDateTimeSlot)
+                                    .thenComparingInt(SchedulingProducingArrangement::getIndexInSlot))
+                    ))
+                    .lower(this)
+                    ;
+            return previousProducingArrangement == null ? thisPlanningSlot.getStart() : previousProducingArrangement.getCompletedDateTime();
+        }
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
