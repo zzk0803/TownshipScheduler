@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowSources;
@@ -130,7 +131,13 @@ public class SchedulingProducingArrangement implements Serializable {
     private SchedulingFactoryInfo requiredFactoryInfo;
 
     @JsonIgnore
+    @DeepPlanningClone
     private List<SchedulingProducingArrangement> arrangementCompetitors = new ArrayList<>();
+
+    @JsonIgnore
+    @ShadowVariable(supplierName = "supplierForShadowArrangementCompetitorsComputedMap")
+    private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowArrangementCompetitorsComputedMap
+            = new TreeMap<>();
 
     private Integer schedulingOrderProductArrangementId;
 
@@ -172,8 +179,8 @@ public class SchedulingProducingArrangement implements Serializable {
     @PlanningVariable(valueRangeProviderRefs = {VALUE_RANGE_FOR_DATE_TIME_SLOT})
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @ShadowVariable(supplierName = "supplierForShadowFactoryProcessSequence")
-    private FactoryProcessSequence shadowFactoryProcessSequence;
+    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
+    private FactoryProcessSequence factoryProcessSequence;
 
     @JsonProperty("arrangeDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -217,6 +224,15 @@ public class SchedulingProducingArrangement implements Serializable {
                         .toString()
         );
         return producingArrangement;
+    }
+
+    @ShadowSources(value = {"planningFactoryInstance", "planningDateTimeSlot"})
+    public FactoryProcessSequence supplierForFactoryProcessSequence() {
+        return this.isPlanningAssigned() ? new FactoryProcessSequence(this) : null;
+    }
+
+    public boolean isPlanningAssigned() {
+        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
 
     @ShadowSources({"planningDateTimeSlot"})
@@ -283,59 +299,66 @@ public class SchedulingProducingArrangement implements Serializable {
 
     @ShadowSources(
             value = {
-                    "planningFactoryInstance",
-                    "planningDateTimeSlot"
+                    "arrangementCompetitors[].factoryProcessSequence"
             }
     )
-    private FactoryProcessSequence supplierForShadowFactoryProcessSequence() {
-        if (Objects.isNull(getPlanningFactoryInstance()) || Objects.isNull(getPlanningDateTimeSlot())) {
-            return null;
+    public TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> supplierForShadowArrangementCompetitorsComputedMap() {
+        TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainer = new TreeMap<>();
+        for (SchedulingProducingArrangement schedulingProducingArrangement : this.arrangementCompetitors) {
+            if (Objects.isNull(schedulingProducingArrangement.getFactoryProcessSequence())) {
+                continue;
+            }
+
+            if (schedulingProducingArrangement.getPlanningFactoryInstance() == this.getPlanningFactoryInstance()) {
+                this.getPlanningFactoryInstance()
+                        .addFactoryProcessSequence(
+                                schedulingProducingArrangement.getFactoryProcessSequence(),
+                                statefulContainer
+                        );
+            }
         }
 
-        return new FactoryProcessSequence(this);
+        return statefulContainer;
     }
 
     @ShadowSources(
             value = {
-                    "planningFactoryInstance",
-                    "arrangementCompetitors[].shadowFactoryProcessSequence",
+                    "shadowArrangementCompetitorsComputedMap"
             }
     )
-    private LocalDateTime supplierForProducingDateTime() {
-        if (this.getShadowFactoryProcessSequence() == null) {
+    public LocalDateTime supplierForProducingDateTime() {
+        if (Objects.isNull(this.factoryProcessSequence)) {
             return null;
         }
+        var computedDateTimePair =
+                this.shadowArrangementCompetitorsComputedMap.getOrDefault(
+                        this.factoryProcessSequence,
+                null
+        );
+        if (computedDateTimePair == null) {
+            return null;
+        }
+        return computedDateTimePair.producingDateTime();
+    }
 
-        if (getRequiredFactoryInfo().weatherFactoryProducingTypeIsQueue()) {
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> resultMap = new TreeMap<>();
-            for (SchedulingProducingArrangement schedulingProducingArrangement : this.arrangementCompetitors) {
-                if (schedulingProducingArrangement.getPlanningFactoryInstance() == this.getPlanningFactoryInstance()) {
-                    this.getPlanningFactoryInstance().addFactoryProcessSequence(
-                                    schedulingProducingArrangement.getShadowFactoryProcessSequence(),
-                                    resultMap
-                            );
-                }
+    @ShadowSources(
+            value = {
+                    "shadowArrangementCompetitorsComputedMap"
             }
-            return Optional.ofNullable(resultMap.get(this.getShadowFactoryProcessSequence()))
-                    .map(FactoryComputedDateTimePair::producingDateTime)
-                    .orElse(null);
-        } else {
-            return this.getShadowFactoryProcessSequence()
-                    .getArrangeDateTime();
-        }
-    }
-
-    public boolean isPlanningAssigned() {
-        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
-    }
-
-    @ShadowSources({"producingDateTime"})
-    private LocalDateTime supplierForCompletedDateTime() {
-        if (this.getProducingDateTime() == null) {
+    )
+    public LocalDateTime supplierForCompletedDateTime() {
+        if (Objects.isNull(this.factoryProcessSequence)) {
             return null;
         }
-        return this.getProducingDateTime()
-                .plus(getProducingDuration());
+        var computedDateTimePair =
+                this.shadowArrangementCompetitorsComputedMap.getOrDefault(
+                        this.factoryProcessSequence,
+                        null
+                );
+        if (computedDateTimePair == null) {
+            return null;
+        }
+        return computedDateTimePair.completedDateTime();
     }
 
     @JsonProperty("producingDuration")

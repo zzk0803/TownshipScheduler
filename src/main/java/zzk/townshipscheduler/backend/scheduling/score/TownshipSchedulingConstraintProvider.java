@@ -140,22 +140,20 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                             );
                         }
                 )
-                .map(schedulingProducingArrangement -> {
+                .penalizeLong(
+                        HardMediumSoftLongScore.ofMedium(100L),
+                        schedulingProducingArrangement -> {
                             LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                             LocalDateTime workCalendarStart = schedulingProducingArrangement.getSchedulingWorkCalendar()
                                     .getStartDateTime();
                             LocalDateTime workCalendarEnd = schedulingProducingArrangement.getSchedulingWorkCalendar()
                                     .getEndDateTime();
                             if (completedDateTime != null) {
-                                return Duration.between(workCalendarEnd, completedDateTime);
+                                return Duration.between(workCalendarEnd, completedDateTime).toMinutes();
                             } else {
-                                return Duration.between(workCalendarStart, workCalendarEnd);
+                                return Duration.between(workCalendarStart, workCalendarEnd).toMinutes();
                             }
                         }
-                )
-                .penalizeLong(
-                        HardMediumSoftLongScore.ofMedium(100L),
-                        Duration::toMinutes
                 )
                 .asConstraint("shouldNotBrokenCalendarEnd");
     }
@@ -181,18 +179,16 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint preferMinimizeCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachIncludingUnassigned(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::isPlanningAssigned)
-                .map(arrangement -> {
-                    var calendarStartDateTime = arrangement.getSchedulingWorkCalendar()
-                            .getStartDateTime();
-                    var completedDateTime = arrangement.getCompletedDateTime();
-                    Duration between = Duration.between(calendarStartDateTime, completedDateTime);
-                    return calcFactor(arrangement) * between.toMinutes();
-                })
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .penalizeLong(
                         HardMediumSoftLongScore.ONE_SOFT,
-                        (value) -> value
+                        arrangement -> {
+                            var calendarStartDateTime = arrangement.getSchedulingWorkCalendar()
+                                    .getStartDateTime();
+                            var completedDateTime = arrangement.getCompletedDateTime();
+                            Duration between = Duration.between(calendarStartDateTime, completedDateTime);
+                            return calcFactor(arrangement) * between.toMinutes();
+                        }
                 )
                 .asConstraint("preferMinimizeCompletedDateTime");
     }

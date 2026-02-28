@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.Objects;
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Value
@@ -35,9 +36,10 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
         this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.arrangementId = schedulingProducingArrangement.getId();
+
+        SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
         this.schedulingFactoryInstanceReadableIdentifier
-                = schedulingProducingArrangement.getPlanningFactoryInstance()
-                .getFactoryReadableIdentifier();
+                = Objects.nonNull(planningFactoryInstance) ? planningFactoryInstance.getFactoryReadableIdentifier() : null;
     }
 
     @Override

@@ -94,6 +94,7 @@ public class TownshipSchedulingProblemBuilder {
         this.setupDateTimeSlot();
         this.setupGameActions();
         this.trimUnrelatedObject();
+        this.setupArrangementsCompetitor();
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
@@ -104,8 +105,7 @@ public class TownshipSchedulingProblemBuilder {
         int dateTimeValueRangeCount = this.schedulingDateTimeSlots.size();
         int factoryCount = this.schedulingFactoryInstanceList.size();
         log.info(
-                "your township scheduling problem include {} order,contain {} final product item to make,and include all materials  need {} arrangement" +
-                        ".factory value range size:{},date times slot size:{}",
+                "your township scheduling problem include {} order,contain {} final product item to make,and include all materials need count in  {} arrangements.factory value range size:{},date times slot size:{}",
                 orderSize,
                 orderItemProducingArrangementCount,
                 totalItemProducingArrangementCount,
@@ -254,11 +254,9 @@ public class TownshipSchedulingProblemBuilder {
         groupByFactoryTypeMap.forEach(
                 (schedulingFactoryInfo, arrangements) -> arrangements.forEach(
                         currentArrangement -> {
-                            currentArrangement.getArrangementCompetitors()
-                                    .clear();
-                            currentArrangement.getArrangementCompetitors()
-                                    .addAll(arrangements);
-                        })
+                            currentArrangement.setArrangementCompetitors(new ArrayList<>(arrangements));
+                        }
+                )
         );
     }
 

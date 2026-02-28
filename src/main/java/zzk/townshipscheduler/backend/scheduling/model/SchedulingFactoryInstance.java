@@ -104,17 +104,20 @@ public class SchedulingFactoryInstance implements Serializable {
             return result;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair = computeDateTimePair(factoryProcessSequence);
+        FactoryComputedDateTimePair computedDateTimePair = computeDateTimePair(factoryProcessSequence, statefulContainerAsMap);
 
         statefulContainerAsMap.put(factoryProcessSequence, computedDateTimePair);
         result.put(factoryProcessSequence, computedDateTimePair);
 
-        return cascadeUpdatesAfter(factoryProcessSequence, result);
+        return cascadeUpdatesAfter(factoryProcessSequence, result, statefulContainerAsMap);
     }
 
-    private @NonNull FactoryComputedDateTimePair computeDateTimePair(FactoryProcessSequence factoryProcessSequence) {
+    private @NonNull FactoryComputedDateTimePair computeDateTimePair(
+            FactoryProcessSequence factoryProcessSequence,
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+    ) {
         Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prevEntry
-                = this.shadowProcessSequenceToComputePairMap.lowerEntry(factoryProcessSequence);
+                = statefulContainerAsMap.lowerEntry(factoryProcessSequence);
 
         LocalDateTime producingDateTime = calcProducingDateTime(factoryProcessSequence, prevEntry);
         LocalDateTime completedDateTime = calcCompletedDateTime(factoryProcessSequence, producingDateTime);
@@ -136,17 +139,6 @@ public class SchedulingFactoryInstance implements Serializable {
 
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
         return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted)) ? arrangeDateTime : previousCompleted;
-    }
-
-    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
-            FactoryProcessSequence fromSequence,
-            Map<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainerAsMap
-    ) {
-        return cascadeUpdatesAfter(
-                fromSequence,
-                resultContainerAsMap,
-                this.shadowProcessSequenceToComputePairMap
-        );
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -184,8 +176,10 @@ public class SchedulingFactoryInstance implements Serializable {
             LocalDateTime newCompleted = newProducing.plus(current.getProducingDuration());
 
             if (existingPair != null
-                    && existingPair.producingDateTime().equals(newProducing)
-                    && existingPair.completedDateTime().equals(newCompleted)
+                    && existingPair.producingDateTime()
+                    .equals(newProducing)
+                    && existingPair.completedDateTime()
+                    .equals(newCompleted)
             ) {
                 break;
             }
@@ -201,6 +195,26 @@ public class SchedulingFactoryInstance implements Serializable {
             currentCompleted = newCompleted;
         }
         return resultContainer;
+    }
+
+    private @NonNull FactoryComputedDateTimePair computeDateTimePair(FactoryProcessSequence factoryProcessSequence) {
+        Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prevEntry
+                = this.shadowProcessSequenceToComputePairMap.lowerEntry(factoryProcessSequence);
+
+        LocalDateTime producingDateTime = calcProducingDateTime(factoryProcessSequence, prevEntry);
+        LocalDateTime completedDateTime = calcCompletedDateTime(factoryProcessSequence, producingDateTime);
+        return new FactoryComputedDateTimePair(producingDateTime, completedDateTime);
+    }
+
+    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
+            FactoryProcessSequence fromSequence,
+            Map<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainerAsMap
+    ) {
+        return cascadeUpdatesAfter(
+                fromSequence,
+                resultContainerAsMap,
+                this.shadowProcessSequenceToComputePairMap
+        );
     }
 
     private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, LocalDateTime previousCompletedDateTime) {
@@ -230,7 +244,7 @@ public class SchedulingFactoryInstance implements Serializable {
         resultContainer.put(factoryProcessSequence, null);
 
         if (weatherFactoryProducingTypeIsQueue()) {
-            return cascadeUpdatesAfter(factoryProcessSequence, resultContainer);
+            return cascadeUpdatesAfter(factoryProcessSequence, resultContainer, statefulContainerAsMap);
         }
 
         return resultContainer;
