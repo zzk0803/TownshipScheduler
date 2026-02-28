@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.TownshipProblemEntity;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
@@ -7,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
+@Slf4j
 class ProblemPersistingPrecess {
 
     private final TownshipSchedulingProblem townshipSchedulingProblem;
@@ -39,7 +41,7 @@ class ProblemPersistingPrecess {
             serializedData = bos.toByteArray();
         }
         catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("can't persist problem {}",this.townshipSchedulingProblem.getUuid());
         }
         return serializedData;
     }

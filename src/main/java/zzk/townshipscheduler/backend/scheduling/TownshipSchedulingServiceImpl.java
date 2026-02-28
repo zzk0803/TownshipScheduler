@@ -218,10 +218,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     public Collection<TownshipSchedulingProblem> loadPersistedSchedulingProblem() {
         return this.townshipProblemEntityRepository.queryAll(TownshipProblemEntity.class)
                 .stream()
-                .map(townshipProblemEntity -> {
-                            return new ProblemExternalizedProcess(townshipProblemEntity.getProblemSerialized());
-                        }
-                )
+                .map(ProblemExternalizedProcess::new)
                 .map(ProblemExternalizedProcess::process)
                 .peek(townshipSchedulingProblem -> this.idProblemMap.put(townshipSchedulingProblem.getUuid(), townshipSchedulingProblem))
                 .collect(Collectors.toCollection(HashSet::new))
