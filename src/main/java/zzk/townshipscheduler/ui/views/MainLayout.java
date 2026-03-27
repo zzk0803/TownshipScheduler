@@ -145,9 +145,7 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
         return footer;
     }
 
-    @Override
     protected void afterNavigation() {
-        super.afterNavigation();
         viewTitle.setText(getCurrentPageTitle());
     }
 
@@ -160,5 +158,6 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.authenticationContext = applicationContext.getBean(AuthenticationContext.class);
     }
+
 
 }

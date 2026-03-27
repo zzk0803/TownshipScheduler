@@ -1,7 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+
+import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import lombok.Data;
@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot>, Serializable {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR
@@ -25,7 +24,6 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     @Serial
     private static final long serialVersionUID = 2326492222976719319L;
 
-    @PlanningId
     @EqualsAndHashCode.Include
     private Integer id;
 
@@ -40,9 +38,6 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     @JsonIdentityReference
     private SchedulingDateTimeSlot next;
-
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT)
-    private List<SchedulingProducingArrangement> schedulingProducingArrangementList = new ArrayList<>();
 
     private static boolean isDateTimeBetween(
             LocalDateTime dateTime,
@@ -88,7 +83,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         return null;
     }
 
-    public static List<SchedulingDateTimeSlot> toValueRange(
+    public static TreeSet<SchedulingDateTimeSlot> toValueRange(
             final LocalDateTime startInclusive,
             final LocalDateTime endExclusive,
             final int durationInMinute
@@ -96,7 +91,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         int minutesNumber = Math.toIntExact(startInclusive.until(endExclusive, ChronoUnit.MINUTES));
         int slot = minutesNumber / durationInMinute;
         slot = slot + (minutesNumber % durationInMinute > 0 ? 1 : 0);
-        List<SchedulingDateTimeSlot> result = new ArrayList<>(slot);
+        TreeSet<SchedulingDateTimeSlot> result = new TreeSet<>();
         LocalDateTime slotStart = startInclusive;
         LocalDateTime slotEnd = startInclusive.plusMinutes(durationInMinute);
         AtomicInteger idRoller = new AtomicInteger(0);
@@ -120,6 +115,10 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
             slotEnd = slotEnd.plusMinutes(durationInMinute);
         }
         return result;
+    }
+
+    public SchedulingDateTimeSlot calcDelayDateTimeSlot(TreeSet<SchedulingDateTimeSlot> valueRange, int delay) {
+        return valueRange.stream().skip(delay).findFirst().get();
     }
 
     @Override

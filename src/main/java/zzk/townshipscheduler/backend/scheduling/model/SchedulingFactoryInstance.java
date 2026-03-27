@@ -1,9 +1,10 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
+import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -19,7 +20,14 @@ import java.util.*;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
-public class SchedulingFactoryInstance implements Serializable {
+public class SchedulingFactoryInstance
+        implements Serializable {
+
+    public static final String PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+            = "planningFactoryInstanceProducingArrangements";
+
+    public static final String VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT
+            = "valueRangeForSchedulingProducingArrangement";
 
     @Serial
     private static final long serialVersionUID = -4151844387461751037L;
@@ -44,11 +52,18 @@ public class SchedulingFactoryInstance implements Serializable {
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
     @JsonIgnore
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE)
+    @PlanningListVariable(valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT)
     private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
 
     @DeepPlanningClone
     private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMap = new TreeMap<>();
+
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT)
+    public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(TownshipSchedulingProblem townshipSchedulingProblem) {
+        return townshipSchedulingProblem.getSchedulingProducingArrangementList().stream()
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo().equals(schedulingFactoryInfo))
+                .toList();
+    }
 
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));

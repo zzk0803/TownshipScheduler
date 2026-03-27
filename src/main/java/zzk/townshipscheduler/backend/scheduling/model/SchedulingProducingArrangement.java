@@ -1,18 +1,15 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
-import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.*;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.apache.commons.lang3.ObjectUtils;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.io.Serial;
@@ -27,21 +24,25 @@ import java.util.*;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement implements Serializable {
-
-    public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
-
-    public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT = "valueRangeForDateTimeSlot";
-
-    public static final String PLANNING_DATA_TIME_SLOT = "planningDateTimeSlot";
+public class SchedulingProducingArrangement
+        implements Serializable {
 
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
 
-    public static final String SHADOW_FACTORY_PROCESS_SEQUENCE = "shadowFactoryProcessSequence";
+    public static final String PLANNING_DELAY_SLOT = "planningDelaySlot";
+
+    public static final String SHADOW_DATE_TIME_SLOT = "shadowDateTimeSlot";
 
     public static final String SHADOW_PRODUCING_DATE_TIME = "producingDateTime";
 
     public static final String SHADOW_COMPLETED_DATE_TIME = "completedDateTime";
+
+    public static final String SHADOW_DEEP_PREREQUISITE_PRODUCING_ARRANGEMENTS_FINISHED_DATE_TIME
+            = "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime";
+
+    public static final String PREVIOUS_PRODUCING_ARRANGEMENT = "previousProducingArrangement";
+
+    public static final String SHADOW_ARRANGE_DATE_TIME = "arrangeDateTime";
 
     @Serial
     private static final long serialVersionUID = 2922213328551018699L;
@@ -76,6 +77,12 @@ public class SchedulingProducingArrangement implements Serializable {
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @ShadowVariable(supplierName = "supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime")
+    private LocalDateTime shadowDeepPrerequisiteProducingArrangementsFinishedDateTime;
+
+    @JsonIgnore
+    private TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+
     @JsonIgnore
     private SchedulingProducingArrangement successorProducingArrangement;
 
@@ -93,36 +100,46 @@ public class SchedulingProducingArrangement implements Serializable {
     private SchedulingProducingExecutionMode producingExecutionMode;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = {VALUE_RANGE_FOR_FACTORIES})
+    @InverseRelationShadowVariable(
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+    )
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = {VALUE_RANGE_FOR_DATE_TIME_SLOT})
-    private SchedulingDateTimeSlot planningDateTimeSlot;
+    @PlanningVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
+    private Integer planningDelaySlot;
 
     @JsonIgnore
-    @ShadowVariable(
-            sourceVariableName = PLANNING_FACTORY_INSTANCE,
-            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
+    @ShadowVariable(supplierName = "supplierForShadowDateTimeSlot")
+    private SchedulingDateTimeSlot shadowDateTimeSlot;
+
+    @PreviousElementShadowVariable(
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
     )
-    @ShadowVariable(
-            sourceVariableName = PLANNING_DATA_TIME_SLOT,
-            variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
-    )
-    private FactoryProcessSequence shadowFactoryProcessSequence;
+    private SchedulingProducingArrangement previousProducingArrangement;
+
+    @ShadowVariablesInconsistent
+    private Boolean shadowVariablesInconsistent;
+
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    @ShadowVariable(supplierName = "supplierForArrangeDateTime")
+    private LocalDateTime arrangeDateTime;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    @ShadowVariable(supplierName = "supplierForProducingDateTime")
     private LocalDateTime producingDateTime;
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
-    @PiggybackShadowVariable(shadowVariableName = SHADOW_FACTORY_PROCESS_SEQUENCE)
+    @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
 
     private SchedulingProducingArrangement(
@@ -142,8 +159,77 @@ public class SchedulingProducingArrangement implements Serializable {
                 currentActionObject
         );
         producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
-                .toString());
+                                             .toString());
         return producingArrangement;
+    }
+
+    @ShadowSources({"deepPrerequisiteProducingArrangements[].completedDateTime", "arrangeDateTime"})
+    public LocalDateTime supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime() {
+        LocalDateTime finishedDateTime = getSchedulingWorkCalendar().getStartDateTime();
+        if (this.deepPrerequisiteProducingArrangements != null) {
+            for (SchedulingProducingArrangement prerequisiteProducingArrangement : deepPrerequisiteProducingArrangements) {
+                if (prerequisiteProducingArrangement.completedDateTime == null) {
+                    return null;
+                }
+                finishedDateTime = ObjectUtils.max(arrangeDateTime, prerequisiteProducingArrangement.completedDateTime);
+            }
+        }
+        return finishedDateTime;
+    }
+
+    @ShadowSources({"planningDelaySlot", "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime"})
+    public SchedulingDateTimeSlot supplierForShadowDateTimeSlot() {
+        return this.schedulingDateTimeSlots.stream()
+                .sorted(SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR)
+                .dropWhile(
+                        schedulingDateTimeSlot -> schedulingDateTimeSlot.getStart()
+                                .isBefore(this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime)
+                )
+                .skip(this.planningDelaySlot)
+                .findFirst().orElse(null);
+    }
+
+    @ShadowSources({"shadowDateTimeSlot"})
+    public LocalDateTime supplierForArrangeDateTime() {
+        return this.shadowDateTimeSlot != null ? this.shadowDateTimeSlot.getStart() : null;
+    }
+
+    @ShadowSources({
+            "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime",
+            "arrangeDateTime",
+            "previousProducingArrangement.completedDateTime",
+            "planningFactoryInstance"
+    })
+    public LocalDateTime supplierForProducingDateTime() {
+        LocalDateTime producingDateTime;
+        if (planningFactoryInstance != null) {
+            producingDateTime = getSchedulingWorkCalendar().getStartDateTime();
+        } else {
+            return null;
+        }
+
+        if (shadowDeepPrerequisiteProducingArrangementsFinishedDateTime != null) {
+            producingDateTime = ObjectUtils.max(
+                    arrangeDateTime,
+                    shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
+                    previousProducingArrangement.completedDateTime
+            );
+        }
+        return producingDateTime;
+    }
+
+    @ShadowSources({"producingDateTime"})
+    public LocalDateTime supplierForCompletedDateTime() {
+        if (producingDateTime == null) {
+            return null;
+        }
+
+        return producingDateTime.plus(this.getProducingDuration());
+    }
+
+    @JsonProperty("producingDuration")
+    public Duration getProducingDuration() {
+        return getProducingExecutionMode().getExecuteDuration();
     }
 
     @JsonIgnore
@@ -159,7 +245,7 @@ public class SchedulingProducingArrangement implements Serializable {
     }
 
     public boolean isPlanningAssigned() {
-        return getPlanningDateTimeSlot() != null && getPlanningFactoryInstance() != null;
+        return getShadowDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
 
     public void advancedSetupOrThrow() {
@@ -175,11 +261,14 @@ public class SchedulingProducingArrangement implements Serializable {
     public void elementarySetup(
             ArrangementIdRoller idRoller,
             SchedulingWorkCalendar workTimeLimit,
-            SchedulingPlayer schedulingPlayer
+            SchedulingPlayer schedulingPlayer,
+            TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots
     ) {
+        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         idRoller.setup(this);
         this.schedulingWorkCalendar = workTimeLimit;
         this.schedulingPlayer = schedulingPlayer;
+        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
     }
 
     @JsonIgnore
@@ -190,11 +279,6 @@ public class SchedulingProducingArrangement implements Serializable {
     @JsonIgnore
     public ProductAmountBill getMaterials() {
         return getProducingExecutionMode().getMaterials();
-    }
-
-    @JsonProperty("producingDuration")
-    public Duration getProducingDuration() {
-        return getProducingExecutionMode().getExecuteDuration();
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
@@ -208,15 +292,6 @@ public class SchedulingProducingArrangement implements Serializable {
     @JsonIgnore
     public SchedulingFactoryInfo getRequiredFactoryInfo() {
         return getSchedulingProduct().getRequireFactory();
-    }
-
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getArrangeDateTime() {
-        SchedulingDateTimeSlot dateTimeSlot = getPlanningDateTimeSlot();
-        return dateTimeSlot != null ? dateTimeSlot.getStart() : null;
     }
 
     private Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
@@ -251,8 +326,7 @@ public class SchedulingProducingArrangement implements Serializable {
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
                 .filter(Objects::nonNull)
                 .max(Duration::compareTo)
-                .orElse(Duration.ZERO)
-                ;
+                .orElse(Duration.ZERO);
         setStaticDeepPrerequisiteProducingDuration(prerequisiteStaticProducingDuration);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
     }
@@ -283,20 +357,6 @@ public class SchedulingProducingArrangement implements Serializable {
 
     public boolean weatherPrerequisiteRequire() {
         return !getDeepPrerequisiteProducingArrangements().isEmpty();
-    }
-
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_FACTORIES)
-    public List<SchedulingFactoryInstance> valueRangeFactoryInstancesForArrangement(
-            TownshipSchedulingProblem townshipSchedulingProblem
-    ) {
-        return townshipSchedulingProblem.valueRangeFactoryInstancesForArrangement(this);
-    }
-
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
-    public List<SchedulingDateTimeSlot> valueRangeDateTimeSlotsForArrangement(
-            TownshipSchedulingProblem townshipSchedulingProblem
-    ) {
-        return townshipSchedulingProblem.valueRangeDateTimeSlotsForArrangement(this);
     }
 
 }

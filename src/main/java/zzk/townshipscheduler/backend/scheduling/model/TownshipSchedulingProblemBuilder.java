@@ -1,6 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
@@ -22,7 +22,7 @@ public class TownshipSchedulingProblemBuilder {
 
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
-    private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+    private TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
@@ -30,7 +30,7 @@ public class TownshipSchedulingProblemBuilder {
 
     private SchedulingPlayer schedulingPlayer;
 
-    private HardMediumSoftLongScore score;
+    private HardMediumSoftScore score;
 
     private DateTimeSlotSize slotSize;
 
@@ -74,7 +74,7 @@ public class TownshipSchedulingProblemBuilder {
         return this;
     }
 
-    public TownshipSchedulingProblemBuilder score(     HardMediumSoftLongScore score) {
+    public TownshipSchedulingProblemBuilder score(     HardMediumSoftScore score) {
         this.score = score;
         return this;
     }
@@ -129,7 +129,7 @@ public class TownshipSchedulingProblemBuilder {
     private void setupDateTimeSlot() {
         LocalDateTime startDateTime = this.schedulingWorkCalendar.getStartDateTime();
         LocalDateTime endDateTime = this.schedulingWorkCalendar.getEndDateTime();
-        List<SchedulingDateTimeSlot> schedulingDateTimeSlots
+        TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots
                 = SchedulingDateTimeSlot.toValueRange(
                 startDateTime,
                 endDateTime,
@@ -138,7 +138,7 @@ public class TownshipSchedulingProblemBuilder {
         schedulingDateTimeSlots(schedulingDateTimeSlots);
     }
 
-    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
+    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         return this;
     }
@@ -170,7 +170,7 @@ public class TownshipSchedulingProblemBuilder {
         while (!dealingChain.isEmpty()) {
             SchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
-            iteratingArrangement.elementarySetup(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
+            iteratingArrangement.elementarySetup(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer,this.schedulingDateTimeSlots);
             resultArrangementList.add(iteratingArrangement);
 
             SchedulingProducingExecutionMode producingExecutionMode

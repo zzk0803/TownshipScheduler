@@ -1,8 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import ai.timefold.solver.core.api.score.BendableScore;
 import ai.timefold.solver.core.api.score.ScoreExplanation;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
@@ -25,7 +25,7 @@ public interface ITownshipSchedulingService {
             Consumer<TownshipSchedulingProblem> solverJobStartedEventConsumer,
             Consumer<TownshipSchedulingProblem> bestSolutionEventConsumer,
             Consumer<TownshipSchedulingProblem> finalBestSolutionEventConsumer,
-            BiConsumer<String, Throwable> exceptionHandler
+            BiConsumer<Object, Throwable> exceptionHandler
     );
 
     void abort(String problemId);

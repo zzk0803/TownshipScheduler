@@ -16,34 +16,34 @@ import java.util.Objects;
 @ToString
 @Entity
 @DynamicUpdate
-@NamedEntityGraph(
-        name = "warehouse.product-amount-map",
-        attributeNodes = {
-                @NamedAttributeNode(
-                        value = "productAmountMap",
-                        keySubgraph = "warehouse.product-amount-map.key"
-                )
-        },
-        subgraphs = {
-                @NamedSubgraph(
-                        name = "warehouse.product-amount-map.key",
-                        attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "crawledAsImage",
-                                        subgraph = "warehouse.product-amount-map.key.image"
-                                )
-                        }
-                ),
-                @NamedSubgraph(
-                        name = "warehouse.product-amount-map.key.image",
-                        attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "imageBytes"
-                                )
-                        }
-                )
-        }
-)
+//@NamedEntityGraph(
+//        name = "warehouse.product-amount-map",
+//        attributeNodes = {
+//                @NamedAttributeNode(
+//                        value = "productAmountMap",
+//                        keySubgraph = "warehouse.product-amount-map.key"
+//                )
+//        },
+//        subgraphs = {
+//                @NamedSubgraph(
+//                        name = "warehouse.product-amount-map.key",
+//                        attributeNodes = {
+//                                @NamedAttributeNode(
+//                                        value = "crawledAsImage",
+//                                        subgraph = "warehouse.product-amount-map.key.image"
+//                                )
+//                        }
+//                ),
+//                @NamedSubgraph(
+//                        name = "warehouse.product-amount-map.key.image",
+//                        attributeNodes = {
+//                                @NamedAttributeNode(
+//                                        value = "imageBytes"
+//                                )
+//                        }
+//                )
+//        }
+//)
 public class WarehouseEntity {
 
     @Id
@@ -56,13 +56,14 @@ public class WarehouseEntity {
     private PlayerEntity playerEntity;
 
     @ElementCollection
-    @Column(name = "amount")
+    @CollectionTable
     @MapKeyJoinColumn(
             name = "product_id",
             referencedColumnName = "id",
             foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     @MapKeyClass(ProductEntity.class)
+    @Column(name = "amount")
     private Map<ProductEntity, Integer> productAmountMap =new HashMap<>();
 
 //    @OneToMany(

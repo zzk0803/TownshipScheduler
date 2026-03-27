@@ -1,8 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import ai.timefold.solver.core.api.score.BendableScore;
 import ai.timefold.solver.core.api.score.ScoreExplanation;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverJob;
 import ai.timefold.solver.core.api.solver.SolverManager;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
 
-    private final SolverManager<TownshipSchedulingProblem, String> solverManager;
+    private final SolverManager<TownshipSchedulingProblem> solverManager;
 
     private final SolutionManager<TownshipSchedulingProblem, BendableScore> solutionManager;
 
@@ -35,7 +35,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     private final Map<String, TownshipSchedulingProblem> idProblemMap = new ConcurrentHashMap<>();
 
-    private final Map<String, SolverJob<TownshipSchedulingProblem, String>> idSolverJobMap = new ConcurrentHashMap<>();
+    private final Map<String, SolverJob<TownshipSchedulingProblem>> idSolverJobMap = new ConcurrentHashMap<>();
 
     private final Consumer<TownshipSchedulingProblem> defaultConsumer
             = townshipSchedulingProblem -> {
@@ -43,7 +43,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         idProblemMap.put(uuid, townshipSchedulingProblem);
     };
 
-    private final BiConsumer<String, Throwable> defaultExceptionHandler
+    private final BiConsumer<Object, Throwable> defaultExceptionHandler
             = (uuid, throwable) -> {
         log.error("problem {} exception {}", uuid, throwable);
     };
@@ -76,11 +76,11 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
             Consumer<TownshipSchedulingProblem> solverJobStartedEventConsumer,
             Consumer<TownshipSchedulingProblem> bestSolutionEventConsumer,
             Consumer<TownshipSchedulingProblem> finalBestSolutionEventConsumer,
-            BiConsumer<String, Throwable> exceptionHandler
+            BiConsumer<Object, Throwable> exceptionHandler
     ) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob = solverManager.solveBuilder()
+        SolverJob<TownshipSchedulingProblem> solverJob = solverManager.solveBuilder()
                 .withProblemId(problemId)
-                .withProblemFinder(this::getSchedule)
+                .withProblemFinder(o ->this.getSchedule(problemId))
                 .withSolverJobStartedEventConsumer(
                         solverJobStartedEvent -> {
                             TownshipSchedulingProblem solution = solverJobStartedEvent.solution();
@@ -129,7 +129,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     @Override
     public String getProblemSizeStatistics(String problemId) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob = this.idSolverJobMap.get(problemId);
+        SolverJob<TownshipSchedulingProblem> solverJob = this.idSolverJobMap.get(problemId);
         if (solverJob == null) {
             return "";
         } else {
@@ -163,7 +163,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     @Override
     public void unlink(String problemId) {
-        SolverJob<TownshipSchedulingProblem, String> solverJob = this.idSolverJobMap.get(problemId);
+        SolverJob<TownshipSchedulingProblem> solverJob = this.idSolverJobMap.get(problemId);
         if (Objects.nonNull(solverJob)) {
             solverJob.terminateEarly();
             this.idSolverJobMap.remove(problemId, solverJob);

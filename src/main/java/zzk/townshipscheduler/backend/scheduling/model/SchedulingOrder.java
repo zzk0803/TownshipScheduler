@@ -1,6 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.common.PlanningId;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -19,7 +19,6 @@ public final class SchedulingOrder implements IGameArrangeObject, Serializable {
     @Serial
     private static final long serialVersionUID = 8878075265837510157L;
 
-    @PlanningId
     @EqualsAndHashCode.Include
     private Long id;
 

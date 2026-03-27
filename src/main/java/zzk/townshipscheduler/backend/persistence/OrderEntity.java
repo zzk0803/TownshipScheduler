@@ -19,34 +19,34 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@NamedEntityGraph(
-        name = "order.project-amount-map",
-        attributeNodes = {
-                @NamedAttributeNode(
-                        value = "productAmountMap",
-                        keySubgraph = "order.project-amount-map.key"
-                )
-        },
-        subgraphs = {
-                @NamedSubgraph(
-                        name = "order.project-amount-map.key",
-                        attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "crawledAsImage",
-                                        subgraph = "order.project-amount-map.key.image"
-                                )
-                        }
-                ),
-                @NamedSubgraph(
-                        name = "order.project-amount-map.key.image",
-                        attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "imageBytes"
-                                )
-                        }
-                )
-        }
-)
+//@NamedEntityGraph(
+//        name = "order.project-amount-map",
+//        attributeNodes = {
+//                @NamedAttributeNode(
+//                        value = "productAmountMap",
+//                        keySubgraph = "order.project-amount-map.key"
+//                )
+//        },
+//        subgraphs = {
+//                @NamedSubgraph(
+//                        name = "order.project-amount-map.key",
+//                        attributeNodes = {
+//                                @NamedAttributeNode(
+//                                        value = "crawledAsImage",
+//                                        subgraph = "order.project-amount-map.key.image"
+//                                )
+//                        }
+//                ),
+//                @NamedSubgraph(
+//                        name = "order.project-amount-map.key.image",
+//                        attributeNodes = {
+//                                @NamedAttributeNode(
+//                                        value = "imageBytes"
+//                                )
+//                        }
+//                )
+//        }
+//)
 public class OrderEntity {
 
     public static final OrderType DEFAULT_ORDER_TYPE = OrderType.HELICOPTER;
@@ -72,13 +72,14 @@ public class OrderEntity {
     private PlayerEntity playerEntity;
 
     @ElementCollection
-    @Column(name = "amount")
+    @CollectionTable
     @MapKeyJoinColumn(
             name = "product_id",
             referencedColumnName = "id",
             foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     @MapKeyClass(ProductEntity.class)
+    @Column(name = "amount")
     private Map<ProductEntity, Integer> productAmountMap = new HashMap<>();
 
     private boolean boolFinished;
