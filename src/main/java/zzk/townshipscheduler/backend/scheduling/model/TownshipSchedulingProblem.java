@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 
 @Data
@@ -40,7 +41,7 @@ public class TownshipSchedulingProblem implements Serializable {
 
     @ProblemFactCollectionProperty
     @ValueRangeProvider
-    private TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+    private Set<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
