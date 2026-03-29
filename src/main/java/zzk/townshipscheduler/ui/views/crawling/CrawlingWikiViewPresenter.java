@@ -2,6 +2,7 @@ package zzk.townshipscheduler.ui.views.crawling;
 
 import com.vaadin.flow.component.grid.Grid;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -37,6 +38,23 @@ public class CrawlingWikiViewPresenter {
                         logger.error(throwable.getMessage());
                     }
                     logger.info("setup presenter");
+                    townshipFandomCrawlingProcessFacade.clean();
+                }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService());
+    }
+
+    /**
+     * Process uploaded HTML document.
+     *
+     * @param uploadedDocument The HTML document from user upload
+     * @return CompletableFuture with processing result
+     */
+    CompletableFuture<Void> asyncProcessFromUploadedHtml(Document uploadedDocument) {
+        return townshipFandomCrawlingProcessFacade.processFromUploadedHtml(uploadedDocument)
+                .whenCompleteAsync((unused, throwable) -> {
+                    if (throwable != null) {
+                        logger.error("处理上传文件时出错：{}", throwable.getMessage());
+                    }
+                    logger.info("上传处理完成");
                     townshipFandomCrawlingProcessFacade.clean();
                 }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService());
     }
