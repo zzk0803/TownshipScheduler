@@ -1,21 +1,24 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import javax.mail.*;
+import javax.mail.internet.MimeMessage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.net.URLDecoder;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Properties;
 
 /**
- * Service for processing uploaded MHTML files containing saved web pages with all resources.
+ * Service for processing uploaded MHTML files using JavaMail API.
  * MHTML (MIME HTML) is a single file format that bundles HTML, CSS, images, and other resources.
+ * 
+ * This implementation uses the mature JavaMail library for reliable MIME parsing.
  */
 @Service
 public class MhtmlUploadService {
@@ -30,204 +33,98 @@ public class MhtmlUploadService {
     public static final String EXPECTED_FILENAME = "Goods _ Township Wiki _ Fandom.mhtml";
 
     /**
-     * Process uploaded MHTML file and extract HTML document.
+     * Process uploaded MHTML file and extract HTML document using JavaMail API.
      *
      * @param mhtmlInputStream The MHTML file input stream
      * @return Parsed Jsoup Document
      * @throws IOException if processing fails
      */
     public Document processUploadedMhtml(InputStream mhtmlInputStream) throws IOException {
-        logger.info("Processing uploaded MHTML file");
+        logger.info("Processing uploaded MHTML file using JavaMail API");
 
-        // Read the entire MHTML content
-        String mhtmlContent = new String(mhtmlInputStream.readAllBytes(), StandardCharsets.UTF_8);
-        
-        // Validate MHTML format
-        if (!isValidMhtml(mhtmlContent)) {
-            throw new IOException("无效的 MHTML 文件格式");
+        try {
+            // Read all bytes first (for small files < 50MB)
+            byte[] mhtmlBytes = mhtmlInputStream.readAllBytes();
+            
+            if (mhtmlBytes.length > MAX_FILE_SIZE) {
+                throw new IOException("MHTML 文件过大，超过 50MB 限制");
+            }
+
+            // Create JavaMail Session (no server configuration needed)
+            Properties props = new Properties();
+            Session session = Session.getDefaultInstance(props, null);
+            
+            // Parse MHTML as MimeMessage
+            MimeMessage message = new MimeMessage(session, new ByteArrayInputStream(mhtmlBytes));
+            
+            // Get content
+            Object content = message.getContent();
+            
+            if (content instanceof String) {
+                // Simple HTML without multipart
+                logger.debug("MHTML contains simple string content");
+                return Jsoup.parse((String) content);
+                
+            } else if (content instanceof Multipart) {
+                // Multipart MIME - extract HTML part
+                logger.debug("MHTML contains multipart content");
+                Multipart multipart = (Multipart) content;
+                String htmlContent = extractHtmlFromMultipart(multipart);
+                return Jsoup.parse(htmlContent);
+                
+            } else {
+                throw new IOException("不支持的 MHTML 内容类型：" + 
+                    (content != null ? content.getClass().getName() : "null"));
+            }
+            
+        } catch (MessagingException e) {
+            logger.error("解析 MHTML 失败", e);
+            throw new IOException("MHTML 解析失败：" + e.getMessage(), e);
         }
-
-        // Extract HTML part from MHTML
-        String htmlContent = extractHtmlFromMhtml(mhtmlContent);
-        
-        // Parse and return
-        return Jsoup.parse(htmlContent);
     }
 
     /**
-     * Validate if the content is a valid MHTML file.
+     * Extract HTML content from Multipart MIME structure.
      */
-    private boolean isValidMhtml(String content) {
-        // MHTML files typically start with MIME headers
-        return content.contains("MIME-Version:") || 
-               content.contains("Content-Type:") ||
-               content.contains("multipart/related");
-    }
+    private String extractHtmlFromMultipart(Multipart multipart) throws MessagingException, IOException {
+        int count = multipart.getCount();
+        logger.debug("Multipart contains {} parts", count);
 
-    /**
-     * Extract the main HTML content from MHTML.
-     * 
-     * MHTML format:
-     * ------=_NextPart_000_0000_01234567.89ABCDEF
-     * Content-Type: text/html
-     * Content-Location: file:///C:/path/to/file.html
-     * 
-     * [HTML content here]
-     * 
-     * ------=_NextPart_000_0000_01234567.89ABCDEF
-     * Content-Type: image/png
-     * Content-Transfer-Encoding: base64
-     * 
-     * [Base64 encoded image]
-     */
-    private String extractHtmlFromMhtml(String mhtmlContent) throws IOException {
-        logger.debug("Extracting HTML from MHTML content (length: {} chars)", mhtmlContent.length());
-        
-        // Log first 500 chars for debugging
-        if (mhtmlContent.length() > 500) {
-            logger.debug("MHTML header preview:\n{}", mhtmlContent.substring(0, 500));
-        } else {
-            logger.debug("MHTML content preview:\n{}", mhtmlContent);
-        }
-
-        // Pattern to match MIME boundaries - supports multiple formats
-        // Format 1: ----=_NextPart_000_0000_01234567.89ABCDEF (Windows/IE)
-        // Format 2: ----MultipartBoundary--xxxxxx (Chrome/Edge Blink)
-        // Format 3: --boundary-string (Generic)
-        Pattern boundaryPattern = Pattern.compile(
-            "^(-{3,})[^\r\n]+$",
-            Pattern.MULTILINE | Pattern.CASE_INSENSITIVE
-        );
-        
-        Matcher boundaryMatcher = boundaryPattern.matcher(mhtmlContent);
-        if (!boundaryMatcher.find()) {
-            // Try alternative patterns
-            logger.warn("Standard boundary not found, trying alternative patterns...");
+        for (int i = 0; i < count; i++) {
+            BodyPart part = multipart.getBodyPart(i);
+            String contentType = part.getContentType().toLowerCase();
             
-            // Try to find any line starting with multiple dashes
-            boundaryPattern = Pattern.compile(
-                "^-{3,}.*$",
-                Pattern.MULTILINE
-            );
-            boundaryMatcher = boundaryPattern.matcher(mhtmlContent);
+            logger.debug("Part {}: Content-Type={}", i, contentType);
             
-            if (!boundaryMatcher.find()) {
-                // Last resort: check if it's a simple HTML file
-                if (mhtmlContent.contains("<!DOCTYPE") || mhtmlContent.contains("<html")) {
-                    logger.info("Detected plain HTML content, using directly");
-                    return mhtmlContent;
+            // Look for HTML content
+            if (contentType.startsWith("text/html")) {
+                logger.info("Found HTML part at index {}", i);
+                
+                // Get content
+                Object partContent = part.getContent();
+                if (partContent instanceof String) {
+                    return (String) partContent;
+                } else if (partContent instanceof InputStream) {
+                    return new String(((InputStream) partContent).readAllBytes(), StandardCharsets.UTF_8);
                 }
-                
-                throw new IOException(
-                    "未找到 MHTML 边界标识符。文件格式可能不正确。\n" +
-                    "请确保使用浏览器保存为\"MHTML 单个文件\"格式，而不是其他格式。"
-                );
-            }
-        }
-        
-        // Reset and find again with the matched pattern
-        boundaryMatcher.reset();
-        String boundary = boundaryMatcher.group().trim();
-        logger.debug("Found MHTML boundary: '{}'", boundary);
-
-        // Split by boundary
-        String[] parts = mhtmlContent.split(Pattern.quote(boundary));
-        
-        logger.debug("Found {} parts in MHTML", parts.length);
-
-        // Find the HTML part
-        for (String part : parts) {
-            if (part.contains("Content-Type: text/html") || 
-                part.contains("Content-Type: application/x-html")) {
-                
-                logger.debug("Found HTML part");
-                
-                // Extract content after headers
-                String htmlContent = extractPartContent(part);
-                
-                // Decode if necessary
-                if (part.contains("Content-Transfer-Encoding: quoted-printable")) {
-                    htmlContent = decodeQuotedPrintable(htmlContent);
-                }
-                
-                return htmlContent;
             }
         }
 
-        // If no HTML part found, try to find the first text part
-        for (String part : parts) {
-            if (part.trim().startsWith("Content-Type: text/plain") ||
-                part.trim().startsWith("Content-Type: text/html")) {
-                
-                logger.debug("Using fallback: found text part");
-                return extractPartContent(part);
+        // Fallback: try to get first text part
+        for (int i = 0; i < count; i++) {
+            BodyPart part = multipart.getBodyPart(i);
+            String contentType = part.getContentType().toLowerCase();
+            
+            if (contentType.startsWith("text/plain") || contentType.startsWith("text/")) {
+                logger.warn("Using fallback: found text part at index {}", i);
+                Object partContent = part.getContent();
+                if (partContent instanceof String) {
+                    return (String) partContent;
+                }
             }
         }
 
         throw new IOException("MHTML 中未找到 HTML 内容部分");
-    }
-
-    /**
-     * Extract content from a MIME part (after headers).
-     */
-    private String extractPartContent(String mimePart) {
-        // Find the end of headers (empty line)
-        int headerEnd = mimePart.indexOf("\r\n\r\n");
-        if (headerEnd == -1) {
-            headerEnd = mimePart.indexOf("\n\n");
-        }
-        
-        if (headerEnd == -1) {
-            return ""; // No content
-        }
-        
-        // Extract content after headers
-        String content = mimePart.substring(headerEnd + 2).trim();
-        
-        // Remove trailing boundary or dashes
-        if (content.startsWith("--")) {
-            int boundaryStart = content.indexOf("\r\n--");
-            if (boundaryStart > 0) {
-                content = content.substring(0, boundaryStart);
-            }
-        }
-        
-        return content;
-    }
-
-    /**
-     * Decode Quoted-Printable encoding.
-     */
-    private String decodeQuotedPrintable(String input) {
-        try {
-            // Replace =XX hex sequences with actual characters
-            StringBuilder result = new StringBuilder();
-            for (int i = 0; i < input.length(); i++) {
-                char c = input.charAt(i);
-                if (c == '=' && i + 2 < input.length()) {
-                    String hex = input.substring(i + 1, i + 3);
-                    try {
-                        int charCode = Integer.parseInt(hex, 16);
-                        result.append((char) charCode);
-                        i += 2; // Skip the two hex digits
-                    } catch (NumberFormatException e) {
-                        result.append(c);
-                    }
-                } else if (c == '=' && (i + 1 == input.length() || 
-                          input.charAt(i + 1) == '\r' || input.charAt(i + 1) == '\n')) {
-                    // Soft line break - skip it
-                    i++;
-                    if (i < input.length() && input.charAt(i) == '\r') i++;
-                    if (i < input.length() && input.charAt(i) == '\n') i++;
-                } else {
-                    result.append(c);
-                }
-            }
-            return result.toString();
-        } catch (Exception e) {
-            logger.warn("解码 Quoted-Printable 失败，返回原始内容", e);
-            return input;
-        }
     }
 
     /**
@@ -247,7 +144,7 @@ public class MhtmlUploadService {
         // Check for common MHTML signatures
         boolean isValidMhtml = header.contains("MIME-Version:") ||
                                header.contains("Content-Type: multipart/related") ||
-                               header.contains("------=_NextPart_");
+                               header.contains("boundary=");
         
         if (!isValidMhtml) {
             throw new IOException(
