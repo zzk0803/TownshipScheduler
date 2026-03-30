@@ -90,10 +90,13 @@ public class MhtmlUploadService {
             logger.debug("MHTML content preview:\n{}", mhtmlContent);
         }
 
-        // Pattern to match MIME boundaries - more flexible pattern
+        // Pattern to match MIME boundaries - supports multiple formats
+        // Format 1: ----=_NextPart_000_0000_01234567.89ABCDEF (Windows/IE)
+        // Format 2: ----MultipartBoundary--xxxxxx (Chrome/Edge Blink)
+        // Format 3: --boundary-string (Generic)
         Pattern boundaryPattern = Pattern.compile(
-            "(-+)=_NextPart_[0-9A-F_]+",
-            Pattern.CASE_INSENSITIVE
+            "^(-{3,})[^\r\n]+$",
+            Pattern.MULTILINE | Pattern.CASE_INSENSITIVE
         );
         
         Matcher boundaryMatcher = boundaryPattern.matcher(mhtmlContent);
@@ -101,10 +104,10 @@ public class MhtmlUploadService {
             // Try alternative patterns
             logger.warn("Standard boundary not found, trying alternative patterns...");
             
-            // Try to find any boundary-like pattern
+            // Try to find any line starting with multiple dashes
             boundaryPattern = Pattern.compile(
-                "-{3,}=_[^\r\n]+",
-                Pattern.CASE_INSENSITIVE
+                "^-{3,}.*$",
+                Pattern.MULTILINE
             );
             boundaryMatcher = boundaryPattern.matcher(mhtmlContent);
             
@@ -122,8 +125,10 @@ public class MhtmlUploadService {
             }
         }
         
-        String boundary = boundaryMatcher.group();
-        logger.debug("Found MHTML boundary: {}", boundary);
+        // Reset and find again with the matched pattern
+        boundaryMatcher.reset();
+        String boundary = boundaryMatcher.group().trim();
+        logger.debug("Found MHTML boundary: '{}'", boundary);
 
         // Split by boundary
         String[] parts = mhtmlContent.split(Pattern.quote(boundary));
