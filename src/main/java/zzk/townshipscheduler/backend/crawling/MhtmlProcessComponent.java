@@ -24,9 +24,9 @@ import java.util.Properties;
  * This implementation uses the mature JavaMail library for reliable MIME parsing.
  */
 @Service
-public class MhtmlUploadService {
+public class MhtmlProcessComponent {
 
-    private static final Logger logger = LoggerFactory.getLogger(MhtmlUploadService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MhtmlProcessComponent.class);
 
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
     

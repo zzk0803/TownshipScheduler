@@ -25,10 +25,7 @@ import com.vaadin.flow.server.streams.UploadHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import zzk.townshipscheduler.backend.crawling.MhtmlUploadService;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
-
-import java.io.ByteArrayInputStream;
 
 @Slf4j
 @Route(value = "crawling")
@@ -49,19 +46,15 @@ public class CrawlingWikiView extends VerticalLayout {
 
     private final CrawlingWikiViewPresenter presenter;
 
-    private final MhtmlUploadService mhtmlUploadService;
-
     private final VerticalLayout uploadPanel;
 
     private final RadioButtonGroup<CrawlingMode> modeSelector;
 
     public CrawlingWikiView(
-            CrawlingWikiViewPresenter crawlingWikiViewPresenter,
-            MhtmlUploadService mhtmlUploadService
+            CrawlingWikiViewPresenter crawlingWikiViewPresenter
     ) {
         this.presenter = crawlingWikiViewPresenter;
         this.presenter.setProductsView(this);
-        this.mhtmlUploadService = mhtmlUploadService;
         setupView();
 
         // Create mode selector
@@ -168,8 +161,36 @@ public class CrawlingWikiView extends VerticalLayout {
                     String mimeType = metadata.contentType();
                     long contentLength = metadata.contentLength();
 
+                    getCurrentUi().access(() -> {
+                        Notification.show("文件上传成功！正在处理...", 3000, Notification.Position.TOP_CENTER);
+                    });
+
                     // Do something with the file data...
-                     handleUploadSuccess(data, fileName);
+                    this.presenter.handleUploadSuccess(data, fileName)
+                            .whenComplete(
+                                    (unused, throwable) -> {
+                                        getCurrentUi().access(
+                                                () -> {
+                                                    if (throwable == null) {
+                                                        add(prepareCoordCellGrid());
+                                                        Notification.show("上传并处理成功！", 5000, Notification.Position.BOTTOM_CENTER);
+                                                    } else {
+                                                        Notification.show("处理失败：" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
+                                                    }
+                                                });
+                                    }
+                            )
+                            .exceptionally(throwable -> {
+                                currentUi.access(() -> {
+                                    Notification notification = new Notification("Error occur when get data from fandom wiki");
+                                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                    notification.setPosition(Notification.Position.MIDDLE);
+                                    notification.open();
+                                    actionButton.setDisableOnClick(false);
+                                });
+                                return null;
+                            })
+                    ;
                 });
 
         Upload upload = new Upload(inMemoryHandler);
@@ -188,40 +209,6 @@ public class CrawlingWikiView extends VerticalLayout {
 
         panel.add(instructionsTitle, instructionsLayout, downloadExampleBtn, upload, statusMessage);
         return panel;
-    }
-
-    private void handleUploadSuccess(byte[] data, String fileName) {
-        try (var inputStream = new ByteArrayInputStream(data)) {
-
-            // Validate MHTML header
-            mhtmlUploadService.validateMhtmlHeader(inputStream);
-
-            // Reset stream position
-            inputStream.reset();
-
-            // Process the uploaded file
-            var document = mhtmlUploadService.processUploadedMhtml(inputStream);
-
-            Notification.show("文件上传成功！正在处理...", 3000, Notification.Position.TOP_CENTER);
-
-            // Process the document
-            presenter.asyncProcessFromUploadedHtml(document)
-                    .whenComplete((unused, throwable) -> {
-                        getCurrentUi().access(() -> {
-                            if (throwable == null) {
-                                add(prepareCoordCellGrid());
-                                Notification.show("上传并处理成功！", 5000, Notification.Position.BOTTOM_CENTER);
-                            } else {
-                                Notification.show("处理失败：" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
-                            }
-                        });
-                    });
-
-        }
-        catch (Exception e) {
-            log.error("处理上传文件时出错", e);
-            Notification.show("文件处理错误：" + e.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
-        }
     }
 
 
