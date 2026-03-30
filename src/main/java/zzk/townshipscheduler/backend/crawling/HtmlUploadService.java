@@ -38,7 +38,7 @@ public class HtmlUploadService {
     public Document processUploadedZip(InputStream zipInputStream) throws IOException {
         logger.info("Processing uploaded ZIP file");
 
-        Path tempDir = Files.createTempDirectory(".township-scheduler");
+        Path tempDir = Files.createTempDirectory("township-scheduler-temp");
         try {
             // Unzip to temporary directory
             unzipToTempDirectory(zipInputStream, tempDir);
