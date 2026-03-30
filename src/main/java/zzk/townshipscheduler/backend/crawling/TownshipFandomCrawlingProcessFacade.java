@@ -61,6 +61,33 @@ public class TownshipFandomCrawlingProcessFacade {
                 );
     }
 
+    /**
+     * Process from uploaded HTML document.
+     *
+     * @param uploadedDocument The HTML document from user upload
+     * @return CompletableFuture with processing result
+     */
+    public CompletableFuture<Void> processFromUploadedHtml(org.jsoup.nodes.Document uploadedDocument) {
+        return crawlingProcessor.processFromUploadedHtml(uploadedDocument)
+                .thenApplyAsync(crawledResult -> {
+                    setCrawledResult(crawledResult);
+                    persistProcessor.process(crawledResult);
+                    return crawledResult;
+                }, townshipExecutorService)
+                .thenApplyAsync(result -> parsingProcessor.process(result), townshipExecutorService)
+                .thenApply(parsedResult -> {
+                    setParsedResult(parsedResult);
+                    return this.transferProcessor.process(parsedResult);
+                })
+                .thenAccept(transferResult -> {
+                    setTransferResult(transferResult);
+                    this.persistProcessor.process(transferResult);
+                })
+                .thenAccept(_ -> {
+                    this.hardcodeHotfixProcessor.process();
+                });
+    }
+
     public void clean() {
         crawledResult = null;
         parsedResult = null;

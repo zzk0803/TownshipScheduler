@@ -23,3 +23,4 @@ webpack.generated.js
 /src/main/frontend/index.html
 /pnpm-lock.yaml
 /db/township_database.mv.db
+/.lingma/

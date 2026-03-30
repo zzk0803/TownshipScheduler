@@ -77,6 +77,28 @@ class TownshipDataCrawlingProcessor {
         Document document = loadDocument(true);
         Elements articleTableElements = document.getElementsByClass("article-table");
 
+        return doProcessTables(articleTableElements);
+    }
+
+    /**
+     * Process uploaded HTML document instead of crawling.
+     *
+     * @param uploadedDocument The HTML document from user upload
+     * @return CrawledResult with parsed data
+     */
+    public CompletableFuture<CrawledResult> processFromUploadedHtml(Document uploadedDocument) {
+        logger.info("Processing from uploaded HTML document");
+        Elements articleTableElements = uploadedDocument.getElementsByClass("article-table");
+        return doProcessTables(articleTableElements);
+    }
+
+    /**
+     * Common logic for processing table elements.
+     *
+     * @param articleTableElements The table elements to process
+     * @return CompletableFuture with CrawledResult
+     */
+    private CompletableFuture<CrawledResult> doProcessTables(Elements articleTableElements) {
         for (int i = 0; i < articleTableElements.size(); i++) {
             int tableNum = 1 + i;
 
@@ -89,7 +111,7 @@ class TownshipDataCrawlingProcessor {
             doTableParse(currentTable, tableNum, tableZoneString);
         }
 
-        logger.info(" do mending and fire image downloading");
+        logger.info("do mending and fire image downloading");
         CompletableFuture.supplyAsync(
                 this::fireImageDownloadAsync,
                 townshipExecutorService
