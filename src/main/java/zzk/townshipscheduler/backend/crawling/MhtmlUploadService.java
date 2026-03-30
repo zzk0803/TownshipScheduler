@@ -81,17 +81,45 @@ public class MhtmlUploadService {
      * [Base64 encoded image]
      */
     private String extractHtmlFromMhtml(String mhtmlContent) throws IOException {
-        logger.debug("Extracting HTML from MHTML content");
+        logger.debug("Extracting HTML from MHTML content (length: {} chars)", mhtmlContent.length());
+        
+        // Log first 500 chars for debugging
+        if (mhtmlContent.length() > 500) {
+            logger.debug("MHTML header preview:\n{}", mhtmlContent.substring(0, 500));
+        } else {
+            logger.debug("MHTML content preview:\n{}", mhtmlContent);
+        }
 
-        // Pattern to match MIME boundaries
+        // Pattern to match MIME boundaries - more flexible pattern
         Pattern boundaryPattern = Pattern.compile(
-            "------=_NextPart_[0-9A-F_]+",
+            "(-+)=_NextPart_[0-9A-F_]+",
             Pattern.CASE_INSENSITIVE
         );
         
         Matcher boundaryMatcher = boundaryPattern.matcher(mhtmlContent);
         if (!boundaryMatcher.find()) {
-            throw new IOException("未找到 MHTML 边界标识符");
+            // Try alternative patterns
+            logger.warn("Standard boundary not found, trying alternative patterns...");
+            
+            // Try to find any boundary-like pattern
+            boundaryPattern = Pattern.compile(
+                "-{3,}=_[^\r\n]+",
+                Pattern.CASE_INSENSITIVE
+            );
+            boundaryMatcher = boundaryPattern.matcher(mhtmlContent);
+            
+            if (!boundaryMatcher.find()) {
+                // Last resort: check if it's a simple HTML file
+                if (mhtmlContent.contains("<!DOCTYPE") || mhtmlContent.contains("<html")) {
+                    logger.info("Detected plain HTML content, using directly");
+                    return mhtmlContent;
+                }
+                
+                throw new IOException(
+                    "未找到 MHTML 边界标识符。文件格式可能不正确。\n" +
+                    "请确保使用浏览器保存为\"MHTML 单个文件\"格式，而不是其他格式。"
+                );
+            }
         }
         
         String boundary = boundaryMatcher.group();
