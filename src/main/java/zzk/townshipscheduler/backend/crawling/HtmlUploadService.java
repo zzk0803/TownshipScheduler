@@ -25,7 +25,7 @@ public class HtmlUploadService {
     private static final Logger logger = LoggerFactory.getLogger(HtmlUploadService.class);
 
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-    private static final String[] POSSIBLE_HTML_NAMES = {"Goods.html", "goods.html"};
+    private static final String[] POSSIBLE_HTML_NAMES = {"Goods.html", "goods.html","Goods.htm", "goods.htm","Goods _ Township Wiki _ Fandom.htm"};
 
     /**
      * Process uploaded ZIP file and extract HTML document.
@@ -118,7 +118,7 @@ public class HtmlUploadService {
 
         // Fallback: find any .html file in root directory
         try (var stream = Files.list(extractedDir)) {
-            return stream.filter(path -> path.toString().toLowerCase().endsWith(".html"))
+            return stream.filter(path -> path.toString().toLowerCase().endsWith(".htm"))
                     .filter(path -> !path.toString().contains("_files") && 
                                    !path.toString().contains(".files"))
                     .findFirst();
@@ -229,27 +229,26 @@ public class HtmlUploadService {
     }
 
     public void validateZipHeader(byte[] data) throws IOException {
-        byte[] header = new byte[4];
-
         if (data.length < 4) {
             throw new IOException("文件太小，不是有效的 ZIP 文件");
         }
 
         // ZIP files start with PK\003\004 (0x504B0304)
-        boolean isValidZip = (header[0] == (byte) 0x50 &&
-                header[1] == (byte) 0x4b &&
-                header[2] == (byte) 0x03 &&
-                header[3] == (byte) 0x04) ||
+        // Read first 4 bytes directly from the data array
+        boolean isValidZip = (data[0] == (byte) 0x50 &&
+                data[1] == (byte) 0x4b &&
+                data[2] == (byte) 0x03 &&
+                data[3] == (byte) 0x04) ||
                 // Also allow empty ZIP or other signatures
-                (header[0] == (byte) 0x50 &&
-                        header[1] == (byte) 0x4b &&
-                        header[2] == (byte) 0x05 &&
-                        header[3] == (byte) 0x06);
+                (data[0] == (byte) 0x50 &&
+                        data[1] == (byte) 0x4b &&
+                        data[2] == (byte) 0x05 &&
+                        data[3] == (byte) 0x06);
 
         if (!isValidZip) {
             throw new IOException(
                     "不是有效的 ZIP 文件格式。文件头：" +
-                            String.format("%02X %02X %02X %02X", header[0], header[1], header[2], header[3])
+                            String.format("%02X %02X %02X %02X", data[0], data[1], data[2], data[3])
             );
         }
 
