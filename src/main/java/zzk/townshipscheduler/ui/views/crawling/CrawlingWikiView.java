@@ -22,7 +22,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.streams.InMemoryUploadHandler;
 import com.vaadin.flow.server.streams.UploadHandler;
 import lombok.extern.slf4j.Slf4j;
-import zzk.townshipscheduler.backend.crawling.HtmlUploadService;
+import zzk.townshipscheduler.backend.crawling.MhtmlUploadService;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
 
 import java.io.ByteArrayInputStream;
@@ -44,7 +44,7 @@ public class CrawlingWikiView extends VerticalLayout {
 
     private final CrawlingWikiViewPresenter presenter;
 
-    private final HtmlUploadService htmlUploadService;
+    private final MhtmlUploadService mhtmlUploadService;
 
     private final VerticalLayout uploadPanel;
 
@@ -52,11 +52,11 @@ public class CrawlingWikiView extends VerticalLayout {
 
     public CrawlingWikiView(
             CrawlingWikiViewPresenter crawlingWikiViewPresenter,
-            HtmlUploadService htmlUploadService
+            MhtmlUploadService mhtmlUploadService
     ) {
         this.presenter = crawlingWikiViewPresenter;
         this.presenter.setProductsView(this);
-        this.htmlUploadService = htmlUploadService;
+        this.mhtmlUploadService = mhtmlUploadService;
         setupView();
 
         // Create mode selector
@@ -129,20 +129,20 @@ public class CrawlingWikiView extends VerticalLayout {
                         createLink("https://township.fandom.com/wiki/Goods", "Township Wiki Goods 页面")
                 ),
                 new Paragraph("2. 按 Ctrl+S (或 Cmd+S) 另存为"),
-                new Paragraph("3. 保存类型选择 \"网页，全部 (*.htm;*.html)\""),
-                new Paragraph("4. 将生成的 .html 文件和同名文件夹一起压缩为 ZIP 文件"),
-                new Paragraph("5. 上传此 ZIP 文件到此处")
+                new Paragraph("3. 保存类型选择 \"MHTML 单个文件 (*.mhtml;*.mht)\""),
+                new Paragraph("4. 文件名会自动设置为 \"Goods _ Township Wiki _ Fandom.mhtml\""),
+                new Paragraph("5. 上传此 MHTML 文件到此处")
         );
 
         // Download example button
-        Button downloadExampleBtn = new Button("下载示例说明 ZIP", VaadinIcon.DOWNLOAD.create());
+        Button downloadExampleBtn = new Button("下载使用说明", VaadinIcon.DOWNLOAD.create());
         downloadExampleBtn.addClickListener(e -> {
-            var zipBaos = createInstructionsZip();
+            var instructionsText = createInstructionsText();
             downloadExampleBtn.getElement().setAttribute(
                     "href",
-                    "data:application/zip;base64," + java.util.Base64.getEncoder().encodeToString(zipBaos.toByteArray())
+                    "data:text/plain;charset=utf-8," + java.net.URLEncoder.encode(instructionsText, java.nio.charset.StandardCharsets.UTF_8)
             );
-            downloadExampleBtn.getElement().setAttribute("download", "upload_instructions.zip");
+            downloadExampleBtn.getElement().setAttribute("download", "mhtml_upload_instructions.txt");
         });
 
         InMemoryUploadHandler inMemoryHandler = UploadHandler
@@ -157,7 +157,7 @@ public class CrawlingWikiView extends VerticalLayout {
                 });
 
         Upload upload = new Upload(inMemoryHandler);
-        upload.setAcceptedFileTypes("application/zip", ".zip");
+        upload.setAcceptedFileTypes("message/rfc822", ".mhtml", ".mht");
         upload.setMaxFileSize(50 * 1024 * 1024); // 50MB
         upload.addFileRejectedListener(event -> {
             Notification.show("上传失败：" + event.getFileName(), 5000, Notification.Position.BOTTOM_CENTER);
@@ -167,7 +167,7 @@ public class CrawlingWikiView extends VerticalLayout {
         });
 
         // Status message
-        Span statusMessage = new Span("支持的文件格式：ZIP（包含 HTML 和资源文件夹）");
+        Span statusMessage = new Span("支持的文件格式：MHTML（单个文件，包含所有资源）");
         statusMessage.getStyle().set("font-size", "0.875rem").set("color", "var(--lumo-secondary-text-color)");
 
         panel.add(instructionsTitle, instructionsLayout, downloadExampleBtn, upload, statusMessage);
@@ -177,11 +177,14 @@ public class CrawlingWikiView extends VerticalLayout {
     private void handleUploadSuccess(byte[] data, String fileName) {
         try (var inputStream = new ByteArrayInputStream(data)) {
 
-            // Validate ZIP header
-            htmlUploadService.validateZipHeader(data);
+            // Validate MHTML header
+            mhtmlUploadService.validateMhtmlHeader(inputStream);
+
+            // Reset stream position
+            inputStream.reset();
 
             // Process the uploaded file
-            var document = htmlUploadService.processUploadedZip(inputStream);
+            var document = mhtmlUploadService.processUploadedMhtml(inputStream);
 
             Notification.show("文件上传成功！正在处理...", 3000, Notification.Position.TOP_CENTER);
 
@@ -212,49 +215,39 @@ public class CrawlingWikiView extends VerticalLayout {
         anchor.getElement().setAttribute("rel", "noopener noreferrer");
         return anchor;
     }
-
-    private java.io.ByteArrayOutputStream createInstructionsZip() {
-        // Create a simple ZIP with instructions
-        var baos = new java.io.ByteArrayOutputStream();
-        try (var zos = new java.util.zip.ZipOutputStream(baos)) {
-            var entry = new java.util.zip.ZipEntry("README.txt");
-            zos.putNextEntry(entry);
-            
-            String instructions = """
-                    Township Wiki 网页保存指南
-                    ==========================
-                    
-                    1. 打开浏览器访问：https://township.fandom.com/wiki/Goods
-                    
-                    2. 保存网页：
-                       - Windows/Linux: 按 Ctrl+S
-                       - macOS: 按 Cmd+S
-                    
-                    3. 选择保存类型：
-                       选择“网页，全部 (*.htm;*.html)”
-                       这将保存 HTML 文件和所有相关资源（图片、CSS 等）
-                    
-                    4. 打包为 ZIP：
-                       - 您会得到一个 HTML 文件和一个同名的文件夹
-                       - 将它们一起选中，右键 → 发送到 → 压缩文件夹
-                       - 或使用 7-Zip、WinRAR 等工具压缩
-                    
-                    5. 上传：
-                       将 ZIP 文件上传到本页面即可
-                    
-                    注意事项:
-                    - 确保保存的是完整的网页（包含 resources 文件夹）
-                    - ZIP 文件大小不要超过 50MB
-                    - 如果遇到问题，请检查文件格式是否正确
-                    """;
-            
-            zos.write(instructions.getBytes(StandardCharsets.UTF_8));
-            zos.closeEntry();
-        } catch (Exception e) {
-            log.error("创建说明 ZIP 失败", e);
-        }
-        
-        return baos;
+    
+    private String createInstructionsText() {
+        return """
+                MHTML 文件上传说明
+                
+                步骤：
+                1. 打开 Township Wiki Goods 页面：
+                   https://township.fandom.com/wiki/Goods
+                
+                2. 按 Ctrl+S (或 Cmd+S) 另存为
+                
+                3. 保存类型选择：
+                   - Windows: "MHTML 单个文件 (*.mhtml;*.mht)"
+                   - Mac: 可能显示为"Web Archive"或"MIME HTML"
+                
+                4. 文件名：
+                   - 会自动设置为 "Goods _ Township Wiki _ Fandom.mhtml"
+                   - 这是单个文件，包含所有资源（图片、CSS 等）
+                
+                5. 上传：
+                   将 MHTML 文件直接上传到本页面即可
+                
+                注意事项:
+                - MHTML 是单个文件，不需要压缩
+                - 文件大小不要超过 50MB
+                - 如果浏览器没有 MHTML 选项，请尝试使用 Edge 或 IE
+                - 此格式会保存完整的网页内容和所有图片
+                
+                优势:
+                - 比 ZIP 更可靠（无解压兼容性问题）
+                - 包含所有资源（图片、样式）
+                - 单个文件，易于管理
+                """;
     }
 
 
