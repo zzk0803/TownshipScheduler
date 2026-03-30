@@ -5,16 +5,32 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.server.streams.InMemoryUploadHandler;
+import com.vaadin.flow.server.streams.UploadHandler;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import zzk.townshipscheduler.backend.crawling.MhtmlUploadService;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
 
+import java.io.ByteArrayInputStream;
+
+@Slf4j
 @Route(value = "crawling")
 @Menu(title = "Wiki Crawling", order = 2.00d)
 @AnonymousAllowed
@@ -24,6 +40,10 @@ public class CrawlingWikiView extends VerticalLayout {
         AUTO_CRAWL,
         MANUAL_UPLOAD
     }
+
+    @Getter
+    @Setter
+    private UI currentUi;
 
     private final Button actionButton;
 
@@ -55,7 +75,7 @@ public class CrawlingWikiView extends VerticalLayout {
         actionButton.addClickListener(click -> {
             presenter.asyncProcess()
                     .whenComplete((unused, throwable) -> {
-                                getCurrentUI().access(()-> add(prepareCoordCellGrid()));
+                        getCurrentUi().access(() -> add(prepareCoordCellGrid()));
                             }
                     )
                     .exceptionally(throwable -> {
@@ -187,7 +207,7 @@ public class CrawlingWikiView extends VerticalLayout {
             // Process the document
             presenter.asyncProcessFromUploadedHtml(document)
                     .whenComplete((unused, throwable) -> {
-                        getCurrentUI().access(() -> {
+                        getCurrentUi().access(() -> {
                             if (throwable == null) {
                                 add(prepareCoordCellGrid());
                                 Notification.show("上传并处理成功！", 5000, Notification.Position.BOTTOM_CENTER);
