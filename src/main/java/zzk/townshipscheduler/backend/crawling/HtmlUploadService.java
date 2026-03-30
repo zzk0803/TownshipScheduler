@@ -37,7 +37,7 @@ public class HtmlUploadService {
     public Document processUploadedZip(InputStream zipInputStream) throws IOException {
         logger.info("Processing uploaded ZIP file");
 
-        Path tempDir = Files.createTempDirectory("upload_");
+        Path tempDir = Files.createTempDirectory(".township-scheduler");
         try {
             // Unzip to temporary directory
             unzipToTempDirectory(zipInputStream, tempDir);
@@ -227,4 +227,33 @@ public class HtmlUploadService {
 
         logger.debug("ZIP header validation passed");
     }
+
+    public void validateZipHeader(byte[] data) throws IOException {
+        byte[] header = new byte[4];
+
+        if (data.length < 4) {
+            throw new IOException("文件太小，不是有效的 ZIP 文件");
+        }
+
+        // ZIP files start with PK\003\004 (0x504B0304)
+        boolean isValidZip = (header[0] == (byte) 0x50 &&
+                header[1] == (byte) 0x4b &&
+                header[2] == (byte) 0x03 &&
+                header[3] == (byte) 0x04) ||
+                // Also allow empty ZIP or other signatures
+                (header[0] == (byte) 0x50 &&
+                        header[1] == (byte) 0x4b &&
+                        header[2] == (byte) 0x05 &&
+                        header[3] == (byte) 0x06);
+
+        if (!isValidZip) {
+            throw new IOException(
+                    "不是有效的 ZIP 文件格式。文件头：" +
+                            String.format("%02X %02X %02X %02X", header[0], header[1], header[2], header[3])
+            );
+        }
+
+        logger.debug("ZIP header validation passed");
+    }
+
 }

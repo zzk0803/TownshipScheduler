@@ -6,7 +6,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -16,14 +15,12 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import lombok.Getter;
-import lombok.Setter;
+import com.vaadin.flow.server.streams.InMemoryUploadHandler;
+import com.vaadin.flow.server.streams.UploadHandler;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.crawling.HtmlUploadService;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
@@ -126,7 +123,11 @@ public class CrawlingWikiView extends VerticalLayout {
         VerticalLayout instructionsLayout = new VerticalLayout();
         instructionsLayout.setPadding(false);
         instructionsLayout.add(
-                new Paragraph("1. 在浏览器中打开 " + createLink("https://township.fandom.com/wiki/Goods", "Township Wiki Goods 页面") + "\n"),
+                new HorizontalLayout(
+                        Alignment.BASELINE,
+                        new Paragraph("1. 在浏览器中打开 Township Wiki Goods 页面:"),
+                        createLink("https://township.fandom.com/wiki/Goods", "Township Wiki Goods 页面")
+                ),
                 new Paragraph("2. 按 Ctrl+S (或 Cmd+S) 另存为"),
                 new Paragraph("3. 保存类型选择 \"网页，全部 (*.htm;*.html)\""),
                 new Paragraph("4. 将生成的 .html 文件和同名文件夹一起压缩为 ZIP 文件"),
@@ -144,14 +145,22 @@ public class CrawlingWikiView extends VerticalLayout {
             downloadExampleBtn.getElement().setAttribute("download", "upload_instructions.zip");
         });
 
-        // Upload component
-        MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
-        Upload upload = new Upload(buffer);
+        InMemoryUploadHandler inMemoryHandler = UploadHandler
+                .inMemory((metadata, data) -> {
+                    // Get other information about the file.
+                    String fileName = metadata.fileName();
+                    String mimeType = metadata.contentType();
+                    long contentLength = metadata.contentLength();
+
+                    // Do something with the file data...
+                     handleUploadSuccess(data, fileName);
+                });
+
+        Upload upload = new Upload(inMemoryHandler);
         upload.setAcceptedFileTypes("application/zip", ".zip");
         upload.setMaxFileSize(50 * 1024 * 1024); // 50MB
-        upload.addSucceededListener(event -> handleUploadSuccess(buffer, event.getFileName()));
-        upload.addFailedListener(event -> {
-            Notification.show("上传失败：" + event.getReason(), 5000, Notification.Position.BOTTOM_CENTER);
+        upload.addFileRejectedListener(event -> {
+            Notification.show("上传失败：" + event.getFileName(), 5000, Notification.Position.BOTTOM_CENTER);
         });
         upload.addFileRejectedListener(event -> {
             Notification.show("文件被拒绝：" + event.getErrorMessage(), 5000, Notification.Position.BOTTOM_CENTER);
@@ -165,21 +174,17 @@ public class CrawlingWikiView extends VerticalLayout {
         return panel;
     }
 
-    private void handleUploadSuccess(MultiFileMemoryBuffer buffer, String fileName) {
-        try {
-            var inputStream = buffer.getInputStream(fileName);
-            
+    private void handleUploadSuccess(byte[] data, String fileName) {
+        try (var inputStream = new ByteArrayInputStream(data)) {
+
             // Validate ZIP header
-            htmlUploadService.validateZipHeader(inputStream);
-            
-            // Reset stream position (need to get it again)
-            inputStream = buffer.getInputStream(fileName);
-            
+            htmlUploadService.validateZipHeader(data);
+
             // Process the uploaded file
             var document = htmlUploadService.processUploadedZip(inputStream);
-            
+
             Notification.show("文件上传成功！正在处理...", 3000, Notification.Position.TOP_CENTER);
-            
+
             // Process the document
             presenter.asyncProcessFromUploadedHtml(document)
                     .whenComplete((unused, throwable) -> {
@@ -192,12 +197,14 @@ public class CrawlingWikiView extends VerticalLayout {
                             }
                         });
                     });
-                    
-        } catch (Exception e) {
+
+        }
+        catch (Exception e) {
             log.error("处理上传文件时出错", e);
             Notification.show("文件处理错误：" + e.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
         }
     }
+
 
     private Anchor createLink(String href, String text) {
         Anchor anchor = new Anchor(href, text);
