@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -69,35 +70,81 @@ public class HtmlUploadService {
      */
     private void unzipToTempDirectory(InputStream zipInputStream, Path tempDir) throws IOException {
         long totalSize = 0;
+        int entryCount = 0;
 
         try (ZipInputStream zis = new ZipInputStream(zipInputStream)) {
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {
+                // Validate entry name to prevent path traversal attacks
+                String entryName = entry.getName();
+                if (!isValidZipEntryName(entryName)) {
+                    logger.warn("Skipping invalid entry name: {}", entryName);
+                    zis.closeEntry();
+                    continue;
+                }
+
                 // Check total size to prevent DoS
-                totalSize += entry.getSize();
+                totalSize += entry.getCompressedSize();
                 if (totalSize > MAX_FILE_SIZE) {
                     throw new IOException("ZIP 文件过大，超过 50MB 限制");
                 }
 
-                Path entryPath = tempDir.resolve(entry.getName());
+                Path entryPath = tempDir.resolve(entryName).normalize();
+
+                // Security check: ensure the resolved path is within tempDir
+                if (!entryPath.startsWith(tempDir)) {
+                    logger.warn("Skipping entry with path traversal attempt: {}", entryName);
+                    zis.closeEntry();
+                    continue;
+                }
 
                 if (entry.isDirectory()) {
                     Files.createDirectories(entryPath);
+                    logger.debug("Created directory: {}", entryName);
                 } else {
                     // Create parent directories if needed
-                    Files.createDirectories(entryPath.getParent());
+                    Path parent = entryPath.getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
 
                     // Extract file
-                    Files.copy(zis, entryPath);
-                    logger.debug("Extracted: {}", entry.getName());
+                    Files.copy(zis, entryPath, StandardCopyOption.REPLACE_EXISTING);
+                    logger.debug("Extracted: {} ({} bytes)", entryName, entry.getSize());
+                    entryCount++;
                 }
 
                 zis.closeEntry();
             }
         }
 
-        logger.info("Successfully extracted {} entries", totalSize);
+        logger.info("Successfully extracted {} entries (total size: {} bytes)", entryCount, totalSize);
+    }
+
+    /**
+     * Validate ZIP entry name to prevent path traversal attacks and invalid names.
+     *
+     * @param name the entry name
+     * @return true if the name is valid
+     */
+    private boolean isValidZipEntryName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return false;
+        }
+
+        // Check for path traversal attempts
+        if (name.contains("..") || name.startsWith("/") || name.startsWith("\\")) {
+            return false;
+        }
+
+        // Check for invalid characters that might cause issues
+        // Some ZIP files from browsers may contain problematic characters
+        if (name.contains("\0")) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
