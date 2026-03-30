@@ -10,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.retry.RetryException;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -393,32 +394,36 @@ class TownshipDataCrawlingProcessor {
                 );
     }
 
-    @SneakyThrows
     byte[] downloadImage(String url) {
         logger.info("start download image {}", url);
-        return this.retryTemplate.execute(
-                () -> {
-                    try {
-                        HttpResponse<byte[]> httpResponse = httpClient.send(
-                                HttpRequest.newBuilder(URI.create(url))
-                                        .header(
-                                                "User-Agent",
-                                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537" +
-                                                        ".36 Edg/143.0.0.0"
-                                        )
-                                        .timeout(Duration.ofSeconds(5))
-                                        .GET()
-                                        .build(),
-                                HttpResponse.BodyHandlers.ofByteArray()
-                        );
-                        return httpResponse.body();
-                    }
-                    catch (IOException | InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+        try {
+            return this.retryTemplate.execute(
+                    () -> {
+                        try {
+                            HttpResponse<byte[]> httpResponse = httpClient.send(
+                                    HttpRequest.newBuilder(URI.create(url))
+                                            .header(
+                                                    "User-Agent",
+                                                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537" +
+                                                            ".36 Edg/143.0.0.0"
+                                            )
+                                            .timeout(Duration.ofSeconds(5))
+                                            .GET()
+                                            .build(),
+                                    HttpResponse.BodyHandlers.ofByteArray()
+                            );
+                            return httpResponse.body();
+                        }
+                        catch (IOException | InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
 
-                }
-        );
+                    }
+            );
+        }
+        catch (RetryException e) {
+            return null;
+        }
     }
 
 
