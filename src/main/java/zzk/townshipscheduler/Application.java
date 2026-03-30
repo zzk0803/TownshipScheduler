@@ -8,14 +8,15 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.retry.support.RetryTemplate;
-import org.springframework.retry.support.RetryTemplateBuilder;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.backoff.BackOff;
+import org.springframework.util.backoff.FixedBackOff;
 import zzk.townshipscheduler.backend.dao.AppUserEntityRepository;
 import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
 import zzk.townshipscheduler.backend.dao.WarehouseEntityRepository;
@@ -30,7 +31,6 @@ import java.util.concurrent.Executors;
 
 @SpringBootApplication
 @EnableAsync
-@EnableRetry
 @EnableScheduling
 @EnableCaching
 public class Application {
@@ -79,12 +79,11 @@ public class Application {
 
     @Bean
     public RetryTemplate retryTemplate() {
-        RetryTemplateBuilder retryTemplateBuilder = new RetryTemplateBuilder();
-
-        return retryTemplateBuilder.fixedBackoff(Duration.ofSeconds(3))
-                .maxAttempts(3)
-                .retryOn(Exception.class)
-                .build();
+        return new RetryTemplate(
+                RetryPolicy.builder()
+                        .backOff(new FixedBackOff())
+                        .build()
+        );
     }
 
     @Bean("townshipTaskScheduler")

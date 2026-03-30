@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.crawling;
 
 import io.arxila.javatuples.Pair;
 import jakarta.annotation.PreDestroy;
+import lombok.SneakyThrows;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -9,8 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.retry.RetryCallback;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
@@ -156,10 +156,9 @@ class TownshipDataCrawlingProcessor {
 
     private Document fetchDocument() throws Throwable {
         return retryTemplate.execute(
-                (RetryCallback<Document, Throwable>) retryContext -> {
+                () -> {
                     logger.info(
-                            "try to establish connection to fandom wiki ..retry X {}",
-                            retryContext.getRetryCount()
+                            "try to establish connection to fandom wiki .."
                     );
                     Connection connect = Jsoup.connect(TOWNSHIP_FANDOM_GOODS);
                     return connect.get();
@@ -394,10 +393,11 @@ class TownshipDataCrawlingProcessor {
                 );
     }
 
+    @SneakyThrows
     byte[] downloadImage(String url) {
         logger.info("start download image {}", url);
         return this.retryTemplate.execute(
-                retryContext -> {
+                () -> {
                     try {
                         HttpResponse<byte[]> httpResponse = httpClient.send(
                                 HttpRequest.newBuilder(URI.create(url))
@@ -416,7 +416,9 @@ class TownshipDataCrawlingProcessor {
                     catch (IOException | InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                });
+
+                }
+        );
     }
 
 

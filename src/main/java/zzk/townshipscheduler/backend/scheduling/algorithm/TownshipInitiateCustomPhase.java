@@ -11,10 +11,7 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 
 import java.time.LocalDateTime;
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Objects;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -30,7 +27,7 @@ public class TownshipInitiateCustomPhase
 
         TownshipSchedulingProblem workingSolution
                 = phaseCommandContext.getWorkingSolution();
-        TreeSet<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
+        Set<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
                 = workingSolution.getSchedulingDateTimeSlots();
         List<SchedulingProducingArrangement> producingArrangements
                 = workingSolution.getSchedulingProducingArrangementList();
