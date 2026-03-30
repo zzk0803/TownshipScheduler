@@ -6,6 +6,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Menu;
@@ -42,9 +44,20 @@ public class CrawlingWikiView extends VerticalLayout {
         actionButton.addClickListener(click -> {
             presenter.asyncProcess()
                     .whenComplete((unused, throwable) -> {
-                                currentUi.access(()-> add(prepareCoordCellGrid()));
+                                currentUi.access(() -> add(prepareCoordCellGrid()));
                             }
-                    );
+                    )
+                    .exceptionally(throwable -> {
+                        currentUi.access(() -> {
+                            Notification notification = new Notification("Error occur when get data from fandom wiki");
+                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            notification.setPosition(Notification.Position.MIDDLE);
+                            notification.open();
+                            actionButton.setDisableOnClick(false);
+                        });
+                        return null;
+                    })
+            ;
         });
 
         add(actionButton);
