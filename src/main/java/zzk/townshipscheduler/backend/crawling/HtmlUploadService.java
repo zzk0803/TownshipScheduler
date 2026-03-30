@@ -75,11 +75,17 @@ public class HtmlUploadService {
         try (ZipInputStream zis = new ZipInputStream(zipInputStream)) {
             ZipEntry entry;
 
+            logger.info("Starting ZIP extraction to: {}", tempDir);
+
             while ((entry = zis.getNextEntry()) != null) {
+                // Log all entries for debugging
+                logger.debug("Found ZIP entry: '{}' (size: {}, dir: {})", 
+                    entry.getName(), entry.getSize(), entry.isDirectory());
+
                 // Validate entry name to prevent path traversal attacks
                 String entryName = entry.getName();
                 if (!isValidZipEntryName(entryName)) {
-                    logger.warn("Skipping invalid entry name: {}", entryName);
+                    logger.warn("Skipping invalid entry name: '{}'", entryName);
                     zis.closeEntry();
                     continue;
                 }
@@ -117,9 +123,16 @@ public class HtmlUploadService {
 
                 zis.closeEntry();
             }
-        }
 
-        logger.info("Successfully extracted {} entries (total size: {} bytes)", entryCount, totalSize);
+            logger.info("Successfully extracted {} entries (total size: {} bytes)", entryCount, totalSize);
+
+            // List all files in temp directory for debugging
+            try (var files = Files.list(tempDir)) {
+                var fileList = files.toList();
+                logger.info("Files in temp directory ({}):", fileList.size());
+                fileList.forEach(f -> logger.info("  - {}", f.getFileName()));
+            }
+        }
     }
 
     /**
@@ -155,24 +168,81 @@ public class HtmlUploadService {
      * @return Optional path to the main HTML file
      */
     private Optional<Path> findMainHtmlFile(Path extractedDir) {
-        // Try common HTML filenames
+        logger.info("Searching for HTML file in: {}", extractedDir);
+        
+        // List all files for debugging
+        try (var files = Files.list(extractedDir)) {
+            var fileList = files.toList();
+            logger.info("Found {} files/directories in extracted dir", fileList.size());
+            fileList.forEach(f -> {
+                try {
+                    logger.info("  - {} (dir: {}, size: {} bytes)", 
+                        f.getFileName(), Files.isDirectory(f), 
+                        Files.isRegularFile(f) ? Files.size(f) : 0);
+                } catch (IOException e) {
+                    logger.debug("Failed to get size for: {}", f.getFileName());
+                }
+            });
+        } catch (IOException e) {
+            logger.warn("Failed to list directory contents", e);
+        }
+        
+        // Try common HTML filenames (exact match)
+        logger.debug("Trying exact filename matches...");
         for (String possibleName : POSSIBLE_HTML_NAMES) {
             Path htmlPath = extractedDir.resolve(possibleName);
+            logger.debug("Checking: {} -> exists: {}", possibleName, Files.exists(htmlPath));
             if (Files.exists(htmlPath) && Files.isRegularFile(htmlPath)) {
+                logger.info("Found exact match: {}", possibleName);
                 return Optional.of(htmlPath);
             }
         }
-
-        // Fallback: find any .html file in root directory
+        
+        // Fallback 1: Case-insensitive search
+        logger.debug("Trying case-insensitive search...");
         try (var stream = Files.list(extractedDir)) {
-            return stream.filter(path -> path.toString().toLowerCase().endsWith(".htm"))
-                    .filter(path -> !path.toString().contains("_files") && 
-                                   !path.toString().contains(".files"))
-                    .findFirst();
+            Optional<Path> found = stream
+                .filter(path -> Files.isRegularFile(path))
+                .filter(path -> {
+                    String name = path.getFileName().toString().toLowerCase();
+                    return name.endsWith(".htm") || name.endsWith(".html");
+                })
+                .filter(path -> !path.toString().contains("_files") && 
+                               !path.toString().contains(".files"))
+                .findFirst();
+            
+            if (found.isPresent()) {
+                logger.info("Found HTML file (case-insensitive): {}", found.get().getFileName());
+                return found;
+            }
         } catch (IOException e) {
-            logger.warn("Error scanning directory for HTML files", e);
-            return Optional.empty();
+            logger.warn("Error during case-insensitive search", e);
         }
+        
+        // Fallback 2: Fuzzy match - look for files containing "Goods" or "Township"
+        logger.debug("Trying fuzzy match...");
+        try (var stream = Files.list(extractedDir)) {
+            Optional<Path> found = stream
+                .filter(path -> Files.isRegularFile(path))
+                .filter(path -> {
+                    String name = path.getFileName().toString().toLowerCase();
+                    return (name.contains("goods") || name.contains("township")) &&
+                           (name.endsWith(".htm") || name.endsWith(".html"));
+                })
+                .filter(path -> !path.toString().contains("_files") && 
+                               !path.toString().contains(".files"))
+                .findFirst();
+            
+            if (found.isPresent()) {
+                logger.info("Found HTML file (fuzzy match): {}", found.get().getFileName());
+                return found;
+            }
+        } catch (IOException e) {
+            logger.warn("Error during fuzzy search", e);
+        }
+        
+        logger.error("No HTML file found in: {}", extractedDir);
+        return Optional.empty();
     }
 
     /**
