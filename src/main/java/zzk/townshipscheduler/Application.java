@@ -15,7 +15,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
 import zzk.townshipscheduler.backend.dao.AppUserEntityRepository;
 import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
@@ -25,7 +24,6 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 
 import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -103,5 +101,10 @@ public class Application {
     public HttpClient object() {
         return HttpClient.newHttpClient();
     }
+
+//    @Bean("solverConfig")
+//    public SolverConfig solverConfig() {
+//        return SolverConfig.createFromXmlResource("solverConfig.xml");
+//    }
 
 }
