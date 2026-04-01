@@ -60,9 +60,7 @@ public class SchedulingFactoryInstance
 
     @ValueRangeProvider(id = VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT)
     public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(TownshipSchedulingProblem townshipSchedulingProblem) {
-        return townshipSchedulingProblem.getSchedulingProducingArrangementList().stream()
-                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo().equals(schedulingFactoryInfo))
-                .toList();
+        return townshipSchedulingProblem.valueRangeForSchedulingProducingArrangement(this);
     }
 
     public void setupFactoryReadableIdentifier() {

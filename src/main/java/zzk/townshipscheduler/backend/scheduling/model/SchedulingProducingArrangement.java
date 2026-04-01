@@ -77,6 +77,7 @@ public class SchedulingProducingArrangement
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @JsonIgnore
     @ShadowVariable(supplierName = "supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime")
     private LocalDateTime shadowDeepPrerequisiteProducingArrangementsFinishedDateTime;
 

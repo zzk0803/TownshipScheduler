@@ -11,7 +11,7 @@ import {
     SchedulingProduct,
     SchedulingWorkCalendar
 } from "./type";
-import {vaadinStyles, visStyles} from "./external-styles";
+import {visStyles} from "./external-styles";
 import {TabsSelectedChangedEvent} from "@vaadin/react-components";
 
 @customElement('scheduling-vis-timeline-panel')
@@ -19,7 +19,6 @@ export class SchedulingVisTimelinePanel
     extends LitElement {
 
     static styles = [
-        vaadinStyles,
         visStyles,
         css`
 

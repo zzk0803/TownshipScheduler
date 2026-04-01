@@ -1,6 +1,7 @@
 import {css, html, LitElement, PropertyValues} from 'lit';
 import {customElement, property, query} from 'lit/decorators.js';
-import {vaadinStyles, visStyles, visTownshipStyles} from "./external-styles";
+import {visStyles, visTownshipStyles} from './external-styles';
+// import {vaadinStyles, visStyles, visTownshipStyles} from './external-styles';
 import {DataGroup, DataItem, Timeline, TimelineOptions} from "vis-timeline";
 
 @customElement('lit-vis-timeline')
@@ -9,7 +10,6 @@ export class LitVisTimeline
 
     static styles = [
         visStyles,
-        vaadinStyles,
         visTownshipStyles,
         css`
             :host {

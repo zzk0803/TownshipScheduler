@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
 @Tag("scheduling-vis-timeline-panel")
 @NpmPackage(value = "vis-timeline", version = "8.5.0")
 @NpmPackage(value = "@js-joda/core", version = "5.6.5")
-@JsModule("./src/components/scheduling-vis-timeline-panel.ts")
-@JsModule("./src/components/by-factory-timeline-components.ts")
-@JsModule("./src/components/by-order-timeline-components.ts")
-@JsModule("./src/components/by-unit-timeline-components.ts")
-@JsModule("./src/components/lit-vis-timeline.ts")
+@JsModule("./components/scheduling-vis-timeline-panel.ts")
+@JsModule("./components/by-factory-timeline-components.ts")
+@JsModule("./components/by-order-timeline-components.ts")
+@JsModule("./components/by-unit-timeline-components.ts")
+@JsModule("./components/lit-vis-timeline.ts")
 public class LitSchedulingVisTimelinePanel extends Component {
 
     private final SchedulingViewPresenter schedulingViewPresenter;

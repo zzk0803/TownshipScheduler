@@ -1,7 +1,8 @@
 import {css, html, LitElement, PropertyValueMap, PropertyValues} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import '@vaadin/vertical-layout';
-import {vaadinStyles, visStyles, visTownshipStyles} from './external-styles';
+import {visStyles, visTownshipStyles} from './external-styles';
+// import {vaadinStyles, visStyles, visTownshipStyles} from './external-styles';
 import {DataGroup, DataItem} from 'vis-timeline';
 import {
     SchedulingFactoryInstance,
@@ -15,7 +16,6 @@ import {
 export class ByUnitTimelineComponents
     extends LitElement {
     static styles = [
-        vaadinStyles,
         visStyles,
         visTownshipStyles,
         css`

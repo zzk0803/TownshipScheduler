@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
-import ai.timefold.solver.core.api.score.HardSoftScore;
 import ai.timefold.solver.core.api.score.stream.*;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
@@ -35,7 +34,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     public Constraint penalizeInconsistent( ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::getShadowVariablesInconsistent)
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("penalizeInconsistent");
     }
 

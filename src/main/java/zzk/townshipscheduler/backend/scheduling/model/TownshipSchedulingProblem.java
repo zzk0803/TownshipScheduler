@@ -40,7 +40,6 @@ public class TownshipSchedulingProblem implements Serializable {
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @ProblemFactCollectionProperty
-    @ValueRangeProvider
     private Set<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
@@ -96,4 +95,9 @@ public class TownshipSchedulingProblem implements Serializable {
         return ValueRangeFactory.createIntValueRange(0, this.schedulingDateTimeSlots.size());
     }
 
+    public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(SchedulingFactoryInstance schedulingFactoryInstance) {
+        return getSchedulingProducingArrangementList().stream()
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo().equals(schedulingFactoryInstance.getSchedulingFactoryInfo()))
+                .toList();
+    }
 }
