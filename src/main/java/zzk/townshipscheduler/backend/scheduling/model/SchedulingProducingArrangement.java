@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 
+@Slf4j
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -45,7 +47,7 @@ public class SchedulingProducingArrangement
     public static final String SHADOW_ARRANGE_DATE_TIME = "arrangeDateTime";
 
     @Serial
-    private static final long serialVersionUID = 2922213328551018699L;
+    private static final long serialVersionUID = 6629361363383573381L;
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -78,11 +80,8 @@ public class SchedulingProducingArrangement
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
     @JsonIgnore
-    @ShadowVariable(supplierName = "supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime")
-    private LocalDateTime shadowDeepPrerequisiteProducingArrangementsFinishedDateTime;
-
-    @JsonIgnore
-    private TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
+    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
 
     @JsonIgnore
     private SchedulingProducingArrangement successorProducingArrangement;
@@ -119,15 +118,13 @@ public class SchedulingProducingArrangement
     )
     private SchedulingProducingArrangement previousProducingArrangement;
 
+    @NextElementShadowVariable(
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+    )
+    private SchedulingProducingArrangement nextProducingArrangement;
+
     @ShadowVariablesInconsistent
     private Boolean shadowVariablesInconsistent;
-
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    @ShadowVariable(supplierName = "supplierForArrangeDateTime")
-    private LocalDateTime arrangeDateTime;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -159,63 +156,83 @@ public class SchedulingProducingArrangement
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
-                                             .toString());
+        producingArrangement.setUuid(
+                UuidGenerator.timeOrderedV6().toString()
+        );
         return producingArrangement;
     }
 
-    @ShadowSources({"deepPrerequisiteProducingArrangements[].completedDateTime", "arrangeDateTime"})
-    public LocalDateTime supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime() {
+    @ShadowSources({"deepPrerequisiteProducingArrangements[].completedDateTime"})
+    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime() {
         LocalDateTime finishedDateTime = getSchedulingWorkCalendar().getStartDateTime();
-        if (this.deepPrerequisiteProducingArrangements != null) {
-            for (SchedulingProducingArrangement prerequisiteProducingArrangement : deepPrerequisiteProducingArrangements) {
+        if (this.prerequisiteProducingArrangements != null) {
+            for (SchedulingProducingArrangement prerequisiteProducingArrangement : prerequisiteProducingArrangements) {
                 if (prerequisiteProducingArrangement.completedDateTime == null) {
+                    log.info("arrangement {} some prerequisite hang,so prerequisiteFinishedDateTime unknow", getId());
                     return null;
                 }
-                finishedDateTime = ObjectUtils.max(arrangeDateTime, prerequisiteProducingArrangement.completedDateTime);
+                finishedDateTime = ObjectUtils.max(finishedDateTime, prerequisiteProducingArrangement.completedDateTime);
             }
         }
+        log.info("arrangement {} prerequisiteFinishedDateTime is {}", getId(), finishedDateTime);
         return finishedDateTime;
     }
 
-    @ShadowSources({"planningDelaySlot", "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime"})
-    public SchedulingDateTimeSlot supplierForShadowDateTimeSlot() {
-        return this.schedulingDateTimeSlots.stream()
-                .sorted(SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR)
-                .dropWhile(
-                        schedulingDateTimeSlot -> schedulingDateTimeSlot.getStart()
-                                .isBefore(this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime)
-                )
-                .skip(this.planningDelaySlot)
-                .findFirst().orElse(null);
-    }
+//    @ShadowSources({ "shadowPrerequisiteProducingArrangementsFinishedDateTime"})
+    @ShadowSources({"planningDelaySlot", "shadowPrerequisiteProducingArrangementsFinishedDateTime"})
+    public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
+        if (this.planningDelaySlot == null || this.shadowPrerequisiteProducingArrangementsFinishedDateTime == null) {
+            return null;
+        }
+        if (this.shadowPrerequisiteProducingArrangementsFinishedDateTime == null) {
+            return null;
+        }
 
-    @ShadowSources({"shadowDateTimeSlot"})
-    public LocalDateTime supplierForArrangeDateTime() {
-        return this.shadowDateTimeSlot != null ? this.shadowDateTimeSlot.getStart() : null;
+        SchedulingDateTimeSlot schedulingDateTimeSlot = townshipSchedulingProblem.supplierDateTimeWithFloorAndDelay(
+                this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
+                this.planningDelaySlot
+        );
+        log.info("arrangement {} arrange date time slot is {}", getId(), schedulingDateTimeSlot);
+        return schedulingDateTimeSlot;
     }
 
     @ShadowSources({
-            "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime",
-            "arrangeDateTime",
+            "shadowPrerequisiteProducingArrangementsFinishedDateTime",
+            "shadowDateTimeSlot",
             "previousProducingArrangement.completedDateTime",
             "planningFactoryInstance"
     })
     public LocalDateTime supplierForProducingDateTime() {
-        LocalDateTime producingDateTime;
-        if (planningFactoryInstance != null) {
-            producingDateTime = getSchedulingWorkCalendar().getStartDateTime();
-        } else {
+        LocalDateTime producingDateTime = null;
+        if (shadowDateTimeSlot == null || planningFactoryInstance == null) {
             return null;
         }
 
-        if (shadowDeepPrerequisiteProducingArrangementsFinishedDateTime != null) {
-            producingDateTime = ObjectUtils.max(
-                    arrangeDateTime,
-                    shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
-                    previousProducingArrangement.completedDateTime
-            );
+        final LocalDateTime arrangeDateTime = shadowDateTimeSlot.getStart();
+        switch (getFactoryProducingType()) {
+            case QUEUE -> {
+                if (previousProducingArrangement != null) {
+                    producingDateTime = ObjectUtils.max(
+                            arrangeDateTime,
+                            shadowPrerequisiteProducingArrangementsFinishedDateTime,
+                            previousProducingArrangement.completedDateTime
+                    );
+                } else {
+                    producingDateTime = ObjectUtils.max(
+                            arrangeDateTime,
+                            shadowPrerequisiteProducingArrangementsFinishedDateTime
+                    );
+                }
+            }
+
+            case SLOT -> {
+                producingDateTime = ObjectUtils.max(
+                        arrangeDateTime,
+                        shadowPrerequisiteProducingArrangementsFinishedDateTime
+                );
+            }
         }
+
         return producingDateTime;
     }
 
@@ -262,14 +279,11 @@ public class SchedulingProducingArrangement
     public void elementarySetup(
             ArrangementIdRoller idRoller,
             SchedulingWorkCalendar workTimeLimit,
-            SchedulingPlayer schedulingPlayer,
-            TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots
+            SchedulingPlayer schedulingPlayer
     ) {
-        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         idRoller.setup(this);
         this.schedulingWorkCalendar = workTimeLimit;
         this.schedulingPlayer = schedulingPlayer;
-        this.schedulingDateTimeSlots = schedulingDateTimeSlots;
     }
 
     @JsonIgnore
@@ -358,6 +372,20 @@ public class SchedulingProducingArrangement
 
     public boolean weatherPrerequisiteRequire() {
         return !getDeepPrerequisiteProducingArrangements().isEmpty();
+    }
+
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getArrangeDateTime() {
+        return this.shadowDateTimeSlot != null
+                ? this.shadowDateTimeSlot.getStart()
+                : null;
+    }
+
+    public void setArrangeDateTime(LocalDateTime localDateTime) {
+        throw new UnsupportedOperationException();
     }
 
 }

@@ -11,7 +11,9 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -23,7 +25,7 @@ public class TownshipSchedulingProblem implements Serializable {
     public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY = "valueRangeForDateTimeSlotDelay";
 
     @Serial
-    private static final long serialVersionUID = -399118697021610459L;
+    private static final long serialVersionUID = 3805461933411932083L;
 
     private String uuid;
 
@@ -92,7 +94,7 @@ public class TownshipSchedulingProblem implements Serializable {
 
     @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
     public ValueRange<Integer> valueRangeForDateTimeSlotDelay() {
-        return ValueRangeFactory.createIntValueRange(0, this.schedulingDateTimeSlots.size());
+        return ValueRangeFactory.createIntValueRange(0, 5);
     }
 
     public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(SchedulingFactoryInstance schedulingFactoryInstance) {
@@ -100,4 +102,19 @@ public class TownshipSchedulingProblem implements Serializable {
                 .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo().equals(schedulingFactoryInstance.getSchedulingFactoryInfo()))
                 .toList();
     }
+
+    public SchedulingDateTimeSlot supplierDateTimeWithFloorAndDelay(LocalDateTime floorLocalDateTime, Integer delaySlot) {
+        int delay = delaySlot == null
+                ? 0
+                : delaySlot;
+        Objects.requireNonNull(floorLocalDateTime);
+        return this.schedulingDateTimeSlots.stream()
+                .filter(schedulingDateTimeSlot -> schedulingDateTimeSlot.getStart()
+                        .isAfter(floorLocalDateTime))
+                .sorted(SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR)
+                .skip(delay)
+                .findFirst()
+                .orElseThrow();
+    }
+
 }

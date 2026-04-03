@@ -20,6 +20,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     public Constraint @NonNull [] defineConstraints(@NonNull ConstraintFactory constraintFactory) {
         return new Constraint[]{
                 penalizeInconsistent(constraintFactory),
+//                forbidBadDateTimeSlotAssignInFactorySequences(constraintFactory),
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteArrangement(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
@@ -37,6 +38,21 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("penalizeInconsistent");
     }
+
+//    private Constraint forbidBadDateTimeSlotAssignInFactorySequences(@NonNull ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+//                .join(
+//                        SchedulingProducingArrangement.class,
+//                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
+//                        Joiners.equal(
+//                                Function.identity(),
+//                                SchedulingProducingArrangement::getNextProducingArrangement
+//                        ),
+//                        Joiners.lessThanOrEqual(SchedulingProducingArrangement::getShadowDateTimeSlot)
+//                )
+//                .penalize(HardMediumSoftScore.ONE_HARD)
+//                .asConstraint("forbidBadDateTimeSlotAssignInFactorySequences");
+//    }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)

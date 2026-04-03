@@ -170,7 +170,7 @@ public class TownshipSchedulingProblemBuilder {
         while (!dealingChain.isEmpty()) {
             SchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
-            iteratingArrangement.elementarySetup(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer,this.schedulingDateTimeSlots);
+            iteratingArrangement.elementarySetup(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
             resultArrangementList.add(iteratingArrangement);
 
             SchedulingProducingExecutionMode producingExecutionMode

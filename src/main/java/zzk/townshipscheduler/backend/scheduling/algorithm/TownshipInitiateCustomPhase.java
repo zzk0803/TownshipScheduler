@@ -118,7 +118,7 @@ public class TownshipInitiateCustomPhase
                             schedulingProducingArrangement,
                             ElementPosition.of(
                                     schedulingFactoryInstance,
-                                    schedulingFactoryInstance.getPlanningFactoryInstanceProducingArrangements().size() + 1
+                                    schedulingFactoryInstance.getPlanningFactoryInstanceProducingArrangements().size()
                             )
                     );
                 }
