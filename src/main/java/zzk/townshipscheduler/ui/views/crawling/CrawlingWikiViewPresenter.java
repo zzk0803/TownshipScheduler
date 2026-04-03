@@ -100,7 +100,6 @@ public class CrawlingWikiViewPresenter {
         }
         catch (Exception e) {
             log.error("处理上传文件时出错", e);
-            Notification.show("文件处理错误：" + e.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
             return CompletableFuture.failedFuture(e);
         }
     }

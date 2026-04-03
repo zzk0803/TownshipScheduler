@@ -73,7 +73,7 @@ class TownshipDataCrawlingProcessor {
         this.httpClient.close();
     }
 
-    public CompletableFuture<CrawledResult> process() {
+    public CompletableFuture<CrawledResult> processFromOfficialWiki() {
         Document document = loadDocument(true);
         Elements articleTableElements = document.getElementsByClass("article-table");
 
@@ -88,6 +88,7 @@ class TownshipDataCrawlingProcessor {
      */
     public CompletableFuture<CrawledResult> processFromUploadedHtml(Document uploadedDocument) {
         logger.info("Processing from uploaded HTML document");
+        persistDocument(uploadedDocument);
         Elements articleTableElements = uploadedDocument.getElementsByClass("article-table");
         return doProcessTables(articleTableElements);
     }

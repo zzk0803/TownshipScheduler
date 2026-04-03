@@ -1,20 +1,23 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import jakarta.mail.BodyPart;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.mail.BodyPart;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.Session;
-import javax.mail.internet.MimeMessage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -23,10 +26,10 @@ import java.util.Properties;
  * 
  * This implementation uses the mature JavaMail library for reliable MIME parsing.
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class MhtmlProcessComponent {
-
-    private static final Logger logger = LoggerFactory.getLogger(MhtmlProcessComponent.class);
 
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
     
@@ -43,7 +46,7 @@ public class MhtmlProcessComponent {
      * @throws IOException if processing fails
      */
     public Document processUploadedMhtml(InputStream mhtmlInputStream) throws IOException {
-        logger.info("Processing uploaded MHTML file using JavaMail API");
+        log.info("Processing uploaded MHTML file using JavaMail API");
 
         try {
             // Read all bytes first (for small files < 50MB)
@@ -65,12 +68,12 @@ public class MhtmlProcessComponent {
             
             if (content instanceof String) {
                 // Simple HTML without multipart
-                logger.debug("MHTML contains simple string content");
+                log.debug("MHTML contains simple string content");
                 return Jsoup.parse((String) content);
                 
             } else if (content instanceof Multipart) {
                 // Multipart MIME - extract HTML part
-                logger.debug("MHTML contains multipart content");
+                log.debug("MHTML contains multipart content");
                 Multipart multipart = (Multipart) content;
                 String htmlContent = extractHtmlFromMultipart(multipart);
                 return Jsoup.parse(htmlContent);
@@ -81,7 +84,7 @@ public class MhtmlProcessComponent {
             }
             
         } catch (MessagingException e) {
-            logger.error("解析 MHTML 失败", e);
+            log.error("解析 MHTML 失败", e);
             throw new IOException("MHTML 解析失败：" + e.getMessage(), e);
         }
     }
@@ -91,17 +94,17 @@ public class MhtmlProcessComponent {
      */
     private String extractHtmlFromMultipart(Multipart multipart) throws MessagingException, IOException {
         int count = multipart.getCount();
-        logger.debug("Multipart contains {} parts", count);
+        log.debug("Multipart contains {} parts", count);
 
         for (int i = 0; i < count; i++) {
             BodyPart part = multipart.getBodyPart(i);
             String contentType = part.getContentType().toLowerCase();
             
-            logger.debug("Part {}: Content-Type={}", i, contentType);
+            log.debug("Part {}: Content-Type={}", i, contentType);
             
             // Look for HTML content
             if (contentType.startsWith("text/html")) {
-                logger.info("Found HTML part at index {}", i);
+                 log.info("Found HTML part at index {}", i);
                 
                 // Get content
                 Object partContent = part.getContent();
@@ -119,7 +122,7 @@ public class MhtmlProcessComponent {
             String contentType = part.getContentType().toLowerCase();
             
             if (contentType.startsWith("text/plain") || contentType.startsWith("text/")) {
-                logger.warn("Using fallback: found text part at index {}", i);
+                log.warn("Using fallback: found text part at index {}", i);
                 Object partContent = part.getContent();
                 if (partContent instanceof String) {
                     return (String) partContent;
@@ -155,6 +158,6 @@ public class MhtmlProcessComponent {
             );
         }
         
-        logger.debug("MHTML header validation passed");
+        log.debug("MHTML header validation passed");
     }
 }

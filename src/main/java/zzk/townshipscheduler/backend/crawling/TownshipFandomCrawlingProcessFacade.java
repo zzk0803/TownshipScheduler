@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
@@ -35,7 +36,7 @@ public class TownshipFandomCrawlingProcessFacade {
     private TransferResult transferResult;
 
     public CompletableFuture<Void> process() {
-        return crawlingProcessor.process()
+        return crawlingProcessor.processFromOfficialWiki()
                 .thenApplyAsync(
                         crawledResult -> {
                             setCrawledResult(crawledResult);
@@ -67,14 +68,14 @@ public class TownshipFandomCrawlingProcessFacade {
      * @param uploadedDocument The HTML document from user upload
      * @return CompletableFuture with processing result
      */
-    public CompletableFuture<Void> processFromUploadedHtml(org.jsoup.nodes.Document uploadedDocument) {
+    public CompletableFuture<Void> processFromUploadedHtml(Document uploadedDocument) {
         return crawlingProcessor.processFromUploadedHtml(uploadedDocument)
                 .thenApplyAsync(crawledResult -> {
                     setCrawledResult(crawledResult);
                     persistProcessor.process(crawledResult);
                     return crawledResult;
                 }, townshipExecutorService)
-                .thenApplyAsync(result -> parsingProcessor.process(result), townshipExecutorService)
+                .thenApplyAsync(parsingProcessor::process, townshipExecutorService)
                 .thenApply(parsedResult -> {
                     setParsedResult(parsedResult);
                     return this.transferProcessor.process(parsedResult);
