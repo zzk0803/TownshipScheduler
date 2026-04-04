@@ -123,6 +123,11 @@ public class SchedulingProducingArrangement
     )
     private SchedulingProducingArrangement nextProducingArrangement;
 
+    @IndexShadowVariable(
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+    )
+    private Integer indexInFactory;
+
     @ShadowVariablesInconsistent
     private Boolean shadowVariablesInconsistent;
 
@@ -168,32 +173,44 @@ public class SchedulingProducingArrangement
         if (this.prerequisiteProducingArrangements != null) {
             for (SchedulingProducingArrangement prerequisiteProducingArrangement : prerequisiteProducingArrangements) {
                 if (prerequisiteProducingArrangement.completedDateTime == null) {
-                    log.info("arrangement {} some prerequisite hang,so prerequisiteFinishedDateTime unknow", getId());
+//                    log.info("arrangement {} some prerequisite hang,so prerequisiteFinishedDateTime unknow", getId());
                     return null;
                 }
                 finishedDateTime = ObjectUtils.max(finishedDateTime, prerequisiteProducingArrangement.completedDateTime);
             }
         }
-        log.info("arrangement {} prerequisiteFinishedDateTime is {}", getId(), finishedDateTime);
+//        log.info("arrangement {} prerequisiteFinishedDateTime is {}", getId(), finishedDateTime);
         return finishedDateTime;
     }
 
-//    @ShadowSources({ "shadowPrerequisiteProducingArrangementsFinishedDateTime"})
-    @ShadowSources({"planningDelaySlot", "shadowPrerequisiteProducingArrangementsFinishedDateTime"})
+    @ShadowSources(
+            value = {
+                    "planningDelaySlot", "shadowPrerequisiteProducingArrangementsFinishedDateTime", "previousProducingArrangement.planningDelaySlot",
+            }
+    )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
         if (this.planningDelaySlot == null || this.shadowPrerequisiteProducingArrangementsFinishedDateTime == null) {
             return null;
         }
-        if (this.shadowPrerequisiteProducingArrangementsFinishedDateTime == null) {
-            return null;
-        }
 
-        SchedulingDateTimeSlot schedulingDateTimeSlot = townshipSchedulingProblem.supplierDateTimeWithFloorAndDelay(
+        if (previousProducingArrangement == null) {
+            return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
                 this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
                 this.planningDelaySlot
-        );
-        log.info("arrangement {} arrange date time slot is {}", getId(), schedulingDateTimeSlot);
-        return schedulingDateTimeSlot;
+            );
+        } else {
+            if (this.weatherFactoryProducingTypeIsQueue()) {
+                return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
+                        ObjectUtils.max(this.shadowPrerequisiteProducingArrangementsFinishedDateTime, previousProducingArrangement.shadowDateTimeSlot.getStart()),
+                        this.planningDelaySlot
+                );
+            } else {
+                return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
+                        this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
+                        this.planningDelaySlot
+                );
+            }
+        }
     }
 
     @ShadowSources({

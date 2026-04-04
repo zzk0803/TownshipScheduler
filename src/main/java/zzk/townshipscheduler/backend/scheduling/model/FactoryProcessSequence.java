@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.Objects;
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Value
@@ -15,16 +16,17 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
 
     public static final Comparator<FactoryProcessSequence> COMPARATOR
             = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
-            .thenComparingInt(FactoryProcessSequence::getArrangementId);
+            .thenComparingInt(FactoryProcessSequence::getSequenceId);
 
     @Serial
     private static final long serialVersionUID = -264984659974196003L;
 
-    @EqualsAndHashCode.Include
     LocalDateTime arrangeDateTime;
 
+    Integer sequenceId;
+
     @EqualsAndHashCode.Include
-    Integer arrangementId;
+    Integer arrangeId;
 
     @EqualsAndHashCode.Include
     FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
@@ -34,7 +36,8 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
     public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
         this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
-        this.arrangementId = schedulingProducingArrangement.getId();
+        this.arrangeId = schedulingProducingArrangement.getId();
+        this.sequenceId = schedulingProducingArrangement.getIndexInFactory();
         this.schedulingFactoryInstanceReadableIdentifier
                 = schedulingProducingArrangement.getPlanningFactoryInstance()
                 .getFactoryReadableIdentifier();

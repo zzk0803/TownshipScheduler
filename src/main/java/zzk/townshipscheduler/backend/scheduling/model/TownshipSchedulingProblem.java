@@ -8,15 +8,17 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TreeSet;
 
+@Slf4j
 @Data
 @NoArgsConstructor
 @PlanningSolution
@@ -42,7 +44,7 @@ public class TownshipSchedulingProblem implements Serializable {
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
     @ProblemFactCollectionProperty
-    private Set<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+    private TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
@@ -94,7 +96,7 @@ public class TownshipSchedulingProblem implements Serializable {
 
     @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
     public ValueRange<Integer> valueRangeForDateTimeSlotDelay() {
-        return ValueRangeFactory.createIntValueRange(0, 5);
+        return ValueRangeFactory.createIntValueRange(0, 10);
     }
 
     public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(SchedulingFactoryInstance schedulingFactoryInstance) {
@@ -103,18 +105,26 @@ public class TownshipSchedulingProblem implements Serializable {
                 .toList();
     }
 
-    public SchedulingDateTimeSlot supplierDateTimeWithFloorAndDelay(LocalDateTime floorLocalDateTime, Integer delaySlot) {
+    public SchedulingDateTimeSlot getDateTimeSlotWithMinDateTimeAndDelayAmount(LocalDateTime floorLocalDateTime, Integer delaySlot) {
         int delay = delaySlot == null
                 ? 0
                 : delaySlot;
         Objects.requireNonNull(floorLocalDateTime);
-        return this.schedulingDateTimeSlots.stream()
-                .filter(schedulingDateTimeSlot -> schedulingDateTimeSlot.getStart()
-                        .isAfter(floorLocalDateTime))
-                .sorted(SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR)
+
+        NavigableSet<SchedulingDateTimeSlot> filtered = this.schedulingDateTimeSlots.tailSet(
+                SchedulingDateTimeSlot.getOneFromValueRange(
+                        this.schedulingDateTimeSlots,
+                        floorLocalDateTime
+                ),
+                false
+        );
+        return filtered.stream()
                 .skip(delay)
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(() -> {
+                    log.error("floorLocalDateTime={},delaySlot={},could'nt find right value from datatimeslots {}", floorLocalDateTime, delaySlot, filtered);
+                    return new IllegalStateException();
+                });
     }
 
 }

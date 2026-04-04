@@ -416,16 +416,16 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             slotSizeSelect.setValue(DateTimeSlotSize.HOUR);
             schedulingForm.add(slotSizeSelect, 2);
 
-            DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
-            workCalendarStartPickerPicker.setMin(formDateTime);
-            workCalendarStartPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30)));
-            DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
-            workCalendarEndPickerPicker.setMin(formDateTime);
-            workCalendarEndPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30))
-                    .plusDays(2));
-            workCalendarEndPickerPicker.setMax(formDateTime.plusDays(9));
-            schedulingForm.add(workCalendarStartPickerPicker, 1);
-            schedulingForm.add(workCalendarEndPickerPicker, 1);
+//            DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
+//            workCalendarStartPickerPicker.setMin(formDateTime);
+//            workCalendarStartPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30)));
+//            DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
+//            workCalendarEndPickerPicker.setMin(formDateTime);
+//            workCalendarEndPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30))
+//                    .plusDays(2));
+//            workCalendarEndPickerPicker.setMax(formDateTime.plusDays(9));
+//            schedulingForm.add(workCalendarStartPickerPicker, 1);
+//            schedulingForm.add(workCalendarEndPickerPicker, 1);
 
             TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
             playerSleepStartPicker.setValue(SchedulingPlayer.DEFAULT_SLEEP_START);
@@ -442,17 +442,17 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                             footerBtnClicked -> {
                                 Set<OrderEntity> selectedOrder = orderGrid.getSelectedItems();
                                 DateTimeSlotSize dateTimeSlotSize = slotSizeSelect.getValue();
-                                LocalDateTime workCalendarStartPickerPickerValue =
-                                        workCalendarStartPickerPicker.getValue();
-                                LocalDateTime workCalendarEndPickerPickerValue = workCalendarEndPickerPicker.getValue();
+//                                LocalDateTime workCalendarStartPickerPickerValue =
+//                                        workCalendarStartPickerPicker.getValue();
+//                                LocalDateTime workCalendarEndPickerPickerValue = workCalendarEndPickerPicker.getValue();
                                 LocalTime sleepStartPickerValue = playerSleepStartPicker.getValue();
                                 LocalTime sleepEndPickerValue = playerSleepEndPicker.getValue();
 
                                 String uuid = schedulingViewPresenter.backendPrepareTownshipScheduling(
                                         selectedOrder,
                                         dateTimeSlotSize,
-                                        workCalendarStartPickerPickerValue,
-                                        workCalendarEndPickerPickerValue,
+                                        LocalDateTime.now(),
+                                        LocalDateTime.now().plusDays(7),
                                         sleepStartPickerValue,
                                         sleepEndPickerValue
                                 );

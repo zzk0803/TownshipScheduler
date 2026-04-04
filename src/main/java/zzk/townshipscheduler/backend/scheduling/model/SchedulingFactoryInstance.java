@@ -71,18 +71,18 @@ public class SchedulingFactoryInstance
         return schedulingFactoryInfo.getCategoryName();
     }
 
-    public long calcRemainProducingQueueSize(LocalDateTime argDateTime) {
-        long count = 0L;
-        for (SchedulingProducingArrangement planningFactoryInstanceProducingArrangement : this.planningFactoryInstanceProducingArrangements) {
-            LocalDateTime arrangementArrangeDateTime = planningFactoryInstanceProducingArrangement.getArrangeDateTime();
-            LocalDateTime arrangementCompletedDateTime = planningFactoryInstanceProducingArrangement.getCompletedDateTime();
-            boolean b1 = !arrangementArrangeDateTime.isAfter(argDateTime);
-            boolean b2 = arrangementCompletedDateTime.isAfter(argDateTime);
-            if (b1 & b2) {
-                count++;
-            }
-        }
-        return count;
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> changeFactoryProcessSequence(
+            FactoryProcessSequence factoryProcessSequence,
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+    ) {
+        statefulContainerAsMap.keySet()
+                .stream()
+                .filter(iteratingKey -> iteratingKey.equals(factoryProcessSequence) && iteratingKey.compareTo(factoryProcessSequence) != 0)
+                .forEach(foundProcessSequence -> {
+                    this.removeFactoryProcessSequence(foundProcessSequence, statefulContainerAsMap);
+                })
+        ;
+        return this.addFactoryProcessSequence(factoryProcessSequence, statefulContainerAsMap);
     }
 
     public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(

@@ -1,8 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 
-import ai.timefold.solver.core.api.domain.common.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -75,7 +73,10 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         for (SchedulingDateTimeSlot schedulingDateTimeSlot : valueRange) {
             LocalDateTime slotStart = schedulingDateTimeSlot.getStart();
             LocalDateTime slotEnd = schedulingDateTimeSlot.getEnd();
-            if ((localDateTime.isEqual(slotStart) || localDateTime.isAfter(slotStart)) && localDateTime.isBefore(slotEnd)) {
+            if (
+                    (localDateTime.isEqual(slotStart) || localDateTime.isAfter(slotStart))
+                            && localDateTime.isBefore(slotEnd)
+            ) {
                 return schedulingDateTimeSlot;
             }
         }
