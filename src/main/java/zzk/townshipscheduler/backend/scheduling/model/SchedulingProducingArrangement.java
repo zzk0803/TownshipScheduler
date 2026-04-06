@@ -80,8 +80,8 @@ public class SchedulingProducingArrangement
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
     @JsonIgnore
-    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
-    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
+    @ShadowVariable(supplierName = "supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime")
+    private LocalDateTime shadowDeepPrerequisiteProducingArrangementsFinishedDateTime;
 
     @JsonIgnore
     private SchedulingProducingArrangement successorProducingArrangement;
@@ -168,53 +168,52 @@ public class SchedulingProducingArrangement
     }
 
     @ShadowSources({"deepPrerequisiteProducingArrangements[].completedDateTime"})
-    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime() {
+    public LocalDateTime supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime() {
         LocalDateTime finishedDateTime = getSchedulingWorkCalendar().getStartDateTime();
-        if (this.prerequisiteProducingArrangements != null) {
-            for (SchedulingProducingArrangement prerequisiteProducingArrangement : prerequisiteProducingArrangements) {
+        if (this.deepPrerequisiteProducingArrangements != null) {
+            for (SchedulingProducingArrangement prerequisiteProducingArrangement : this.deepPrerequisiteProducingArrangements) {
                 if (prerequisiteProducingArrangement.completedDateTime == null) {
-//                    log.info("arrangement {} some prerequisite hang,so prerequisiteFinishedDateTime unknow", getId());
                     return null;
                 }
                 finishedDateTime = ObjectUtils.max(finishedDateTime, prerequisiteProducingArrangement.completedDateTime);
             }
         }
-//        log.info("arrangement {} prerequisiteFinishedDateTime is {}", getId(), finishedDateTime);
         return finishedDateTime;
     }
 
     @ShadowSources(
             value = {
-                    "planningDelaySlot", "shadowPrerequisiteProducingArrangementsFinishedDateTime", "previousProducingArrangement.planningDelaySlot",
+                    "planningDelaySlot", "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime", "previousProducingArrangement.planningDelaySlot",
             }
     )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
-        if (this.planningDelaySlot == null || this.shadowPrerequisiteProducingArrangementsFinishedDateTime == null) {
+        if (this.planningDelaySlot == null || this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime == null) {
             return null;
         }
 
-        if (previousProducingArrangement == null) {
-            return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
-                this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
-                this.planningDelaySlot
-            );
-        } else {
-            if (this.weatherFactoryProducingTypeIsQueue()) {
+        if (this.weatherFactoryProducingTypeIsQueue()) {
+            if (previousProducingArrangement == null) {
                 return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
-                        ObjectUtils.max(this.shadowPrerequisiteProducingArrangementsFinishedDateTime, previousProducingArrangement.shadowDateTimeSlot.getStart()),
+                        this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
                         this.planningDelaySlot
                 );
             } else {
                 return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
-                        this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
+                        ObjectUtils.max(this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime, previousProducingArrangement.shadowDateTimeSlot.getStart()),
                         this.planningDelaySlot
                 );
             }
         }
+
+        return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
+                this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
+                this.planningDelaySlot
+        );
+
     }
 
     @ShadowSources({
-            "shadowPrerequisiteProducingArrangementsFinishedDateTime",
+            "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime",
             "shadowDateTimeSlot",
             "previousProducingArrangement.completedDateTime",
             "planningFactoryInstance"
@@ -231,13 +230,13 @@ public class SchedulingProducingArrangement
                 if (previousProducingArrangement != null) {
                     producingDateTime = ObjectUtils.max(
                             arrangeDateTime,
-                            shadowPrerequisiteProducingArrangementsFinishedDateTime,
+                            shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
                             previousProducingArrangement.completedDateTime
                     );
                 } else {
                     producingDateTime = ObjectUtils.max(
                             arrangeDateTime,
-                            shadowPrerequisiteProducingArrangementsFinishedDateTime
+                            shadowDeepPrerequisiteProducingArrangementsFinishedDateTime
                     );
                 }
             }
@@ -245,7 +244,7 @@ public class SchedulingProducingArrangement
             case SLOT -> {
                 producingDateTime = ObjectUtils.max(
                         arrangeDateTime,
-                        shadowPrerequisiteProducingArrangementsFinishedDateTime
+                        shadowDeepPrerequisiteProducingArrangementsFinishedDateTime
                 );
             }
         }

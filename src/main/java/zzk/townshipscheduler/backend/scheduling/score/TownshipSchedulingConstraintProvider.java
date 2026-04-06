@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class TownshipSchedulingConstraintProvider implements ConstraintProvider {
 
@@ -23,6 +24,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 //                forbidBadDateTimeSlotAssignInFactorySequences(constraintFactory),
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteArrangement(constraintFactory),
+                shouldMaximizeArrangementAssign(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotBrokenCalendarEnd(constraintFactory),
                 preferNotArrangeInPlayerSleepTime(constraintFactory),
@@ -30,6 +32,13 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
                 preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory)
         };
+    }
+
+    private Constraint shouldMaximizeArrangementAssign(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEachIncludingUnassigned(SchedulingProducingArrangement.class)
+                .filter(Predicate.not(SchedulingProducingArrangement::isPlanningAssigned))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("shouldMaximizeArrangementAssign");
     }
 
     public Constraint penalizeInconsistent( ConstraintFactory constraintFactory) {

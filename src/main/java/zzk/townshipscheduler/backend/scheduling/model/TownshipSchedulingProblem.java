@@ -116,7 +116,7 @@ public class TownshipSchedulingProblem implements Serializable {
                         this.schedulingDateTimeSlots,
                         floorLocalDateTime
                 ),
-                false
+                true
         );
         return filtered.stream()
                 .skip(delay)

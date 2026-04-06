@@ -69,13 +69,11 @@
                 </valueSelector>
             </changeMoveSelector>
 
-            <unionMoveSelector>
-                <listChangeMoveSelector/>
-                <listSwapMoveSelector/>
-                <subListChangeMoveSelector/>
-                <subListSwapMoveSelector/>
-                <kOptListMoveSelector/>
-            </unionMoveSelector>
+            <listChangeMoveSelector/>
+            <listSwapMoveSelector/>
+            <subListChangeMoveSelector/>
+            <subListSwapMoveSelector/>
+            <!--<kOptListMoveSelector/>-->
 
         </unionMoveSelector>
 
