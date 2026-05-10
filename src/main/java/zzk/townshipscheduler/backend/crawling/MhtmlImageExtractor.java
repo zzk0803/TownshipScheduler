@@ -53,11 +53,13 @@ class MhtmlImageExtractor {
 
         // 保存图片数据
         long size;
+        byte[] byteArray;
         try (
                 InputStream is = bodyPart.getInputStream();
                 ByteArrayOutputStream fos = new ByteArrayOutputStream(bodyPartSize)
         ) {
             size = is.transferTo(fos);
+            byteArray = fos.toByteArray();
         }
 
         // 返回图片信息
@@ -66,6 +68,7 @@ class MhtmlImageExtractor {
         info.setContentType(mimeType);
         info.setContentId(contentId);
         info.setContentLocation(contentLocation);
+        info.setData(byteArray);
         info.setSize(size);
 
         System.out.printf(
