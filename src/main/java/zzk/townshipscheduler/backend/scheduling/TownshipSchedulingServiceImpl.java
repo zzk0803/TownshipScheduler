@@ -146,11 +146,11 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 //    }
 
 //    @Override
-//    public @NonNull ScoreAnalysis<HardMediumSoftScore> explain(
-//            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
-//    ) {
-//        return solutionManager.analyze(townshipSchedulingProblem);
-//    }
+    public @NonNull ScoreAnalysis<HardMediumSoftScore> explain(
+            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+    ) {
+        return solutionManager.analyze(townshipSchedulingProblem);
+    }
 
     @Override
     public boolean checkWeatherReadyToSolve(String uuid) {
