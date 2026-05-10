@@ -1,7 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling;
 
 import ai.timefold.solver.core.api.score.BendableScore;
-import ai.timefold.solver.core.api.score.ScoreExplanation;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import org.jspecify.annotations.NonNull;
@@ -36,13 +36,13 @@ public interface ITownshipSchedulingService {
 
     String getProblemSizeStatistics(String problemId);
 
-    @NonNull ScoreAnalysis<BendableScore> analyze(
-            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
-    );
-
-    @NonNull ScoreExplanation<TownshipSchedulingProblem, BendableScore> explain(
-            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
-    );
+//    @NonNull ScoreAnalysis<HardMediumSoftScore> analyze(
+//            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+//    );
+//
+//    @NonNull ScoreAnalysis<HardMediumSoftScore> explain(
+//            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+//    );
 
     boolean checkWeatherReadyToSolve(String uuid);
 

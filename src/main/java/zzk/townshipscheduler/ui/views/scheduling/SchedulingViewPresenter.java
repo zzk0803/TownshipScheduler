@@ -187,9 +187,9 @@ public class SchedulingViewPresenter {
                             TownshipSchedulingProblem townshipSchedulingProblem =
                                     this.getTownshipSchedulingProblemAtomicReference()
                                             .get();
-                            getSchedulingView().getScoreAnalysisParagraph()
-                                    .setText(getSchedulingService().analyze(townshipSchedulingProblem)
-                                            .toString())
+//                            getSchedulingView().getScoreAnalysisParagraph()
+//                                    .setText(getSchedulingService().analyze(townshipSchedulingProblem)
+//                                            .toString())
                             ;
                             this.setupArrangementsTreeGrid(
                                     getSchedulingView().getArrangementTreeGrid(),
@@ -385,8 +385,9 @@ public class SchedulingViewPresenter {
 
     public void setupScoreAnalysisParagraph() {
         getSchedulingView().getScoreAnalysisParagraph()
-                .setText(getSchedulingService().analyze(townshipSchedulingProblemAtomicReference.get())
-                        .toString())
+                .setText(
+                       "N/A"
+                )
         ;
     }
 

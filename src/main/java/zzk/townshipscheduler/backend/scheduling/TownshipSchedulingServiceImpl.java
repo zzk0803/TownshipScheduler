@@ -1,7 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling;
 
 import ai.timefold.solver.core.api.score.BendableScore;
-import ai.timefold.solver.core.api.score.ScoreExplanation;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverJob;
@@ -29,7 +29,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     private final SolverManager<TownshipSchedulingProblem> solverManager;
 
-    private final SolutionManager<TownshipSchedulingProblem, BendableScore> solutionManager;
+    private final SolutionManager<TownshipSchedulingProblem, HardMediumSoftScore> solutionManager;
 
     private final TownshipProblemEntityRepository townshipProblemEntityRepository;
 
@@ -138,19 +138,19 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         }
     }
 
-    @Override
-    public @NonNull ScoreAnalysis<BendableScore> analyze(
-            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
-    ) {
-        return solutionManager.analyze(townshipSchedulingProblem);
-    }
+//    @Override
+//    public @NonNull ScoreAnalysis<HardMediumSoftScore> analyze(
+//            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+//    ) {
+//        return solutionManager.analyze(townshipSchedulingProblem);
+//    }
 
-    @Override
-    public @NonNull ScoreExplanation<TownshipSchedulingProblem, BendableScore> explain(
-            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
-    ) {
-        return solutionManager.explain(townshipSchedulingProblem);
-    }
+//    @Override
+//    public @NonNull ScoreAnalysis<HardMediumSoftScore> explain(
+//            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+//    ) {
+//        return solutionManager.analyze(townshipSchedulingProblem);
+//    }
 
     @Override
     public boolean checkWeatherReadyToSolve(String uuid) {
