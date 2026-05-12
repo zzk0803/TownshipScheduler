@@ -3,7 +3,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
-    <environmentMode>FULL_ASSERT</environmentMode>
+    <environmentMode>PHASE_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
@@ -59,6 +59,7 @@
         <unionMoveSelector>
 
             <changeMoveSelector>
+                <fixedProbabilityWeight>5.0</fixedProbabilityWeight>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDelaySlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement

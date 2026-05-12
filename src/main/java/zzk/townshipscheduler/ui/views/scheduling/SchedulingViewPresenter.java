@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
@@ -187,9 +188,8 @@ public class SchedulingViewPresenter {
                             TownshipSchedulingProblem townshipSchedulingProblem =
                                     this.getTownshipSchedulingProblemAtomicReference()
                                             .get();
-//                            getSchedulingView().getScoreAnalysisParagraph()
-//                                    .setText(getSchedulingService().analyze(townshipSchedulingProblem)
-//                                            .toString())
+                            getSchedulingView().getScoreAnalysisParagraph()
+                                    .setText(townshipSchedulingProblem.getScore().toString())
                             ;
                             this.setupArrangementsTreeGrid(
                                     getSchedulingView().getArrangementTreeGrid(),
