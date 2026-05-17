@@ -1,10 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling;
 
-import ai.timefold.solver.core.api.score.BendableScore;
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
-import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.util.Collection;
@@ -36,11 +32,11 @@ public interface ITownshipSchedulingService {
 
     String getProblemSizeStatistics(String problemId);
 
-//    @NonNull ScoreAnalysis<HardMediumSoftScore> analyze(
+//    @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> analyze(
 //            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
 //    );
 //
-//    @NonNull ScoreAnalysis<HardMediumSoftScore> explain(
+//    @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> explain(
 //            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
 //    );
 

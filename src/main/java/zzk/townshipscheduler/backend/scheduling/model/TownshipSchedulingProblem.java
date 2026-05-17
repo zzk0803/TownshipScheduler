@@ -4,7 +4,7 @@ import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRange;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -56,7 +56,7 @@ public class TownshipSchedulingProblem implements Serializable {
     private SchedulingPlayer schedulingPlayer;
 
     @PlanningScore
-    private HardMediumSoftScore score;
+    private HardMediumSoftBigDecimalScore score;
 
     private DateTimeSlotSize dateTimeSlotSize;
 
@@ -73,7 +73,7 @@ public class TownshipSchedulingProblem implements Serializable {
             SchedulingWorkCalendar schedulingWorkCalendar,
             DateTimeSlotSize dateTimeSlotSize,
             SchedulingPlayer schedulingPlayer,
-            HardMediumSoftScore score,
+            HardMediumSoftBigDecimalScore score,
             SolverStatus solverStatus
     ) {
         this.uuid = uuid;

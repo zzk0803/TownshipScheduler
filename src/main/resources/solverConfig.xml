@@ -86,6 +86,11 @@
 
         <unionMoveSelector>
 
+            <listChangeMoveSelector/>
+            <listSwapMoveSelector/>
+            <subListChangeMoveSelector/>
+            <subListSwapMoveSelector/>
+
             <changeMoveSelector>
                 <fixedProbabilityWeight>3</fixedProbabilityWeight>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDelaySlot">
@@ -97,11 +102,6 @@
                                id="localSearch_changeMoveSelector_vs_Arrangement_planningDelaySlot">
                 </valueSelector>
             </changeMoveSelector>
-
-            <listChangeMoveSelector/>
-            <listSwapMoveSelector/>
-            <subListChangeMoveSelector/>
-            <subListSwapMoveSelector/>
 
         </unionMoveSelector>
 

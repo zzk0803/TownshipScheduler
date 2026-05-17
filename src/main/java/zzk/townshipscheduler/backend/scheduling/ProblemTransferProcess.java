@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 import zzk.townshipscheduler.backend.OrderType;

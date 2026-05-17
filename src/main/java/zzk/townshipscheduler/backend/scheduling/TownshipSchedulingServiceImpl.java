@@ -1,7 +1,7 @@
 package zzk.townshipscheduler.backend.scheduling;
 
 import ai.timefold.solver.core.api.score.BendableScore;
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverJob;
@@ -29,7 +29,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
     private final SolverManager<TownshipSchedulingProblem> solverManager;
 
-    private final SolutionManager<TownshipSchedulingProblem, HardMediumSoftScore> solutionManager;
+    private final SolutionManager<TownshipSchedulingProblem, HardMediumSoftBigDecimalScore> solutionManager;
 
     private final TownshipProblemEntityRepository townshipProblemEntityRepository;
 
@@ -139,14 +139,14 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     }
 
 //    @Override
-//    public @NonNull ScoreAnalysis<HardMediumSoftScore> analyze(
+//    public @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> analyze(
 //            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
 //    ) {
 //        return solutionManager.analyze(townshipSchedulingProblem);
 //    }
 
 //    @Override
-    public @NonNull ScoreAnalysis<HardMediumSoftScore> explain(
+    public @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> explain(
             @NonNull TownshipSchedulingProblem townshipSchedulingProblem
     ) {
         return solutionManager.analyze(townshipSchedulingProblem);
