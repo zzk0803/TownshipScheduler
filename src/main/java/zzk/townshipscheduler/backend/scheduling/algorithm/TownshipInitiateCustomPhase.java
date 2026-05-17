@@ -106,7 +106,7 @@ public class TownshipInitiateCustomPhase
                 = (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer>) arrangementIntegerVariableMetaModel;
 
         VariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement> arrangementVariableMetaModel
-                = factoryInstancePlanningEntityMetaModel.variable(SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS);
+                = factoryInstancePlanningEntityMetaModel.variable(SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE);
         PlanningListVariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement> planningArrangementVariableMetaModel
                 = (PlanningListVariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement>) arrangementVariableMetaModel;
 
@@ -118,7 +118,7 @@ public class TownshipInitiateCustomPhase
                             schedulingProducingArrangement,
                             ElementPosition.of(
                                     schedulingFactoryInstance,
-                                    schedulingFactoryInstance.getPlanningFactoryInstanceProducingArrangements().size()
+                                    schedulingFactoryInstance.getPlanningArrangementsSequence().size()
                             )
                     );
                 }

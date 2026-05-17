@@ -5,6 +5,7 @@ import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.extern.log4j.Log4j2;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,6 +26,8 @@ public class TownshipSchedulingProblemBuilder {
     private TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
+
+    private LocalDateTime schedulingWorkCalendarStart;
 
     private SchedulingWorkCalendar schedulingWorkCalendar;
 
@@ -64,8 +67,13 @@ public class TownshipSchedulingProblemBuilder {
         return this;
     }
 
-    public TownshipSchedulingProblemBuilder schedulingWorkCalendar(SchedulingWorkCalendar schedulingWorkCalendar) {
-        this.schedulingWorkCalendar = schedulingWorkCalendar;
+//    private TownshipSchedulingProblemBuilder schedulingWorkCalendar(SchedulingWorkCalendar schedulingWorkCalendar) {
+//        this.schedulingWorkCalendar = schedulingWorkCalendar;
+//        return this;
+//    }
+
+    public TownshipSchedulingProblemBuilder schedulingWorkCalendarStart(LocalDateTime schedulingWorkCalendarStart) {
+        this.schedulingWorkCalendarStart = schedulingWorkCalendarStart;
         return this;
     }
 
@@ -74,7 +82,7 @@ public class TownshipSchedulingProblemBuilder {
         return this;
     }
 
-    public TownshipSchedulingProblemBuilder score(     HardMediumSoftScore score) {
+    public TownshipSchedulingProblemBuilder score(HardMediumSoftScore score) {
         this.score = score;
         return this;
     }
@@ -90,9 +98,10 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     public TownshipSchedulingProblem build() {
-        this.setupDateTimeSlot();
         this.setupGameActions();
         this.trimUnrelatedObject();
+        this.setupWorkCalendar();
+        this.setupDateTimeSlot();
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
@@ -102,7 +111,8 @@ public class TownshipSchedulingProblemBuilder {
         int dateTimeValueRangeCount = this.schedulingDateTimeSlots.size();
         int factoryCount = this.schedulingFactoryInstanceList.size();
         log.info(
-                "your township scheduling problem include {} order,contain {} final product item to make,and include all materials  need {} arrangement.factory value range size:{},date times slot size:{}",
+                "your township scheduling problem include {} order,contain {} final product item to make,and include all materials  need {} arrangement.factory value range " +
+                        "size:{},date times slot size:{}",
                 orderSize,
                 orderItemProducingArrangementCount,
                 totalItemProducingArrangementCount,
@@ -124,6 +134,28 @@ public class TownshipSchedulingProblemBuilder {
                 this.score,
                 this.solverStatus
         );
+    }
+
+    private void setupWorkCalendar() {
+        Map<SchedulingFactoryInfo, Optional<Duration>> factoryTypeAndSumProductionOptionalMap = this.schedulingProducingArrangementList.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                SchedulingProducingArrangement::getRequiredFactoryInfo,
+                                Collectors.collectingAndThen(
+                                        Collectors.toList(),
+                                        schedulingProducingArrangements -> schedulingProducingArrangements.stream()
+                                                .map(SchedulingProducingArrangement::getProducingDuration)
+                                                .reduce(Duration::plus)
+                                )
+                        )
+                );
+        Duration duration = factoryTypeAndSumProductionOptionalMap.values()
+                .stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .max(Duration::compareTo)
+                .orElse(Duration.ofDays(5));
+        this.schedulingWorkCalendar = new SchedulingWorkCalendar(schedulingWorkCalendarStart, schedulingWorkCalendarStart.plus(duration));
     }
 
     private void setupDateTimeSlot() {
@@ -170,7 +202,11 @@ public class TownshipSchedulingProblemBuilder {
         while (!dealingChain.isEmpty()) {
             SchedulingProducingArrangement iteratingArrangement
                     = dealingChain.removeFirst();
-            iteratingArrangement.elementarySetup(idRoller, this.schedulingWorkCalendar, this.schedulingPlayer);
+            iteratingArrangement.elementarySetup(
+                    idRoller,
+//                    this.schedulingWorkCalendar,
+                    this.schedulingPlayer
+            );
             resultArrangementList.add(iteratingArrangement);
 
             SchedulingProducingExecutionMode producingExecutionMode
@@ -239,7 +275,8 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     public String toString() {
-        return "TownshipSchedulingProblem.TownshipSchedulingProblemBuilder(uuid=" + this.uuid + ", schedulingProductList=" + this.schedulingProductList + ", schedulingFactoryInfoList=" + this.schedulingFactoryInfoList + ", schedulingOrderList=" + this.schedulingOrderList + ", schedulingFactoryInstanceList=" + this.schedulingFactoryInstanceList + ", schedulingDateTimeSlots=" + this.schedulingDateTimeSlots + ", schedulingProducingArrangementList=" + this.schedulingProducingArrangementList + ", schedulingWorkCalendar=" + this.schedulingWorkCalendar + ", schedulingPlayer=" + this.schedulingPlayer + ", score=" + this.score + ", slotSize=" + this.slotSize + ", solverStatus=" + this.solverStatus + ")";
+        return "TownshipSchedulingProblem.TownshipSchedulingProblemBuilder(uuid=" + this.uuid + ", schedulingProductList=" + this.schedulingProductList + ", " +
+                "schedulingFactoryInfoList=" + this.schedulingFactoryInfoList + ", schedulingOrderList=" + this.schedulingOrderList + ", schedulingFactoryInstanceList=" + this.schedulingFactoryInstanceList + ", schedulingDateTimeSlots=" + this.schedulingDateTimeSlots + ", schedulingProducingArrangementList=" + this.schedulingProducingArrangementList + ", schedulingWorkCalendar=" + this.schedulingWorkCalendar + ", schedulingPlayer=" + this.schedulingPlayer + ", score=" + this.score + ", slotSize=" + this.slotSize + ", solverStatus=" + this.solverStatus + ")";
     }
 
 }

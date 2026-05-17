@@ -53,7 +53,6 @@ public class SchedulingProducingArrangement
     @ToString.Include
     private Integer id;
 
-    @EqualsAndHashCode.Include
     @ToString.Include
     private String uuid;
 
@@ -79,6 +78,9 @@ public class SchedulingProducingArrangement
     @JsonIgnore
     private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @EqualsAndHashCode.Include
+    private int deepPrerequisiteProducingArrangementsSize;
+
     @JsonIgnore
     @ShadowVariable(supplierName = "supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime")
     private LocalDateTime shadowDeepPrerequisiteProducingArrangementsFinishedDateTime;
@@ -88,20 +90,18 @@ public class SchedulingProducingArrangement
 
     private Duration staticDeepPrerequisiteProducingDuration;
 
+    @EqualsAndHashCode.Include
     private Duration staticDeepProducingDuration;
 
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
 
     @JsonIgnore
-    private SchedulingWorkCalendar schedulingWorkCalendar;
-
-    @JsonIgnore
     private SchedulingProducingExecutionMode producingExecutionMode;
 
     @JsonIgnore
     @InverseRelationShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
     )
     private SchedulingFactoryInstance planningFactoryInstance;
 
@@ -114,17 +114,17 @@ public class SchedulingProducingArrangement
     private SchedulingDateTimeSlot shadowDateTimeSlot;
 
     @PreviousElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
     )
     private SchedulingProducingArrangement previousProducingArrangement;
 
     @NextElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
     )
     private SchedulingProducingArrangement nextProducingArrangement;
 
     @IndexShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
+            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
     )
     private Integer indexInFactory;
 
@@ -162,14 +162,16 @@ public class SchedulingProducingArrangement
                 currentActionObject
         );
         producingArrangement.setUuid(
-                UuidGenerator.timeOrderedV6().toString()
+                UuidGenerator.timeOrderedV6()
+                        .toString()
         );
         return producingArrangement;
     }
 
     @ShadowSources({"deepPrerequisiteProducingArrangements[].completedDateTime"})
-    public LocalDateTime supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime() {
-        LocalDateTime finishedDateTime = getSchedulingWorkCalendar().getStartDateTime();
+    public LocalDateTime supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime(TownshipSchedulingProblem townshipSchedulingProblem) {
+        LocalDateTime finishedDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar()
+                .getStartDateTime();
         if (this.deepPrerequisiteProducingArrangements != null) {
             for (SchedulingProducingArrangement prerequisiteProducingArrangement : this.deepPrerequisiteProducingArrangements) {
                 if (prerequisiteProducingArrangement.completedDateTime == null) {
@@ -183,7 +185,9 @@ public class SchedulingProducingArrangement
 
     @ShadowSources(
             value = {
-                    "planningDelaySlot", "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime", "previousProducingArrangement.planningDelaySlot",
+                    "planningDelaySlot",
+                    "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime",
+                    "previousProducingArrangement.planningDelaySlot",
             }
     )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -197,9 +201,13 @@ public class SchedulingProducingArrangement
                         this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
                         this.planningDelaySlot
                 );
-            } else {
+            }
+            else {
                 return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
-                        ObjectUtils.max(this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime, previousProducingArrangement.shadowDateTimeSlot.getStart()),
+                        ObjectUtils.max(
+                                this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
+                                previousProducingArrangement.shadowDateTimeSlot.getStart()
+                        ),
                         this.planningDelaySlot
                 );
             }
@@ -212,12 +220,32 @@ public class SchedulingProducingArrangement
 
     }
 
-    @ShadowSources({
-            "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime",
-            "shadowDateTimeSlot",
-            "previousProducingArrangement.completedDateTime",
-            "planningFactoryInstance"
-    })
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return getFactoryProducingType() == ProducingStructureType.QUEUE;
+    }
+
+    public ProducingStructureType getFactoryProducingType() {
+        return getRequiredFactoryInfo().getProducingStructureType();
+    }
+
+    @JsonIgnore
+    public SchedulingFactoryInfo getRequiredFactoryInfo() {
+        return getSchedulingProduct().getRequireFactory();
+    }
+
+    @JsonProperty("schedulingProduct")
+    public SchedulingProduct getSchedulingProduct() {
+        return (SchedulingProduct) getCurrentActionObject();
+    }
+
+    @ShadowSources(
+            {
+                    "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime",
+                    "shadowDateTimeSlot",
+                    "previousProducingArrangement.completedDateTime",
+                    "planningFactoryInstance"
+            }
+    )
     public LocalDateTime supplierForProducingDateTime() {
         LocalDateTime producingDateTime = null;
         if (shadowDateTimeSlot == null || planningFactoryInstance == null) {
@@ -233,7 +261,8 @@ public class SchedulingProducingArrangement
                             shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
                             previousProducingArrangement.completedDateTime
                     );
-                } else {
+                }
+                else {
                     producingDateTime = ObjectUtils.max(
                             arrangeDateTime,
                             shadowDeepPrerequisiteProducingArrangementsFinishedDateTime
@@ -273,11 +302,6 @@ public class SchedulingProducingArrangement
                 .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
-    @JsonProperty("schedulingProduct")
-    public SchedulingProduct getSchedulingProduct() {
-        return (SchedulingProduct) getCurrentActionObject();
-    }
-
     public boolean isPlanningAssigned() {
         return getShadowDateTimeSlot() != null && getPlanningFactoryInstance() != null;
     }
@@ -287,18 +311,20 @@ public class SchedulingProducingArrangement
         Objects.requireNonNull(getId());
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
-        Objects.requireNonNull(getSchedulingWorkCalendar());
-        setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+//        Objects.requireNonNull(getSchedulingWorkCalendar());
+        Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements = calcDeepPrerequisiteProducingArrangements();
+        setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements);
+        setDeepPrerequisiteProducingArrangementsSize(calcDeepPrerequisiteProducingArrangements.size());
         setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
     public void elementarySetup(
             ArrangementIdRoller idRoller,
-            SchedulingWorkCalendar workTimeLimit,
+//            SchedulingWorkCalendar workTimeLimit,
             SchedulingPlayer schedulingPlayer
     ) {
         idRoller.setup(this);
-        this.schedulingWorkCalendar = workTimeLimit;
+//        this.schedulingWorkCalendar = workTimeLimit;
         this.schedulingPlayer = schedulingPlayer;
     }
 
@@ -310,19 +336,6 @@ public class SchedulingProducingArrangement
     @JsonIgnore
     public ProductAmountBill getMaterials() {
         return getProducingExecutionMode().getMaterials();
-    }
-
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return getFactoryProducingType() == ProducingStructureType.QUEUE;
-    }
-
-    public ProducingStructureType getFactoryProducingType() {
-        return getRequiredFactoryInfo().getProducingStructureType();
-    }
-
-    @JsonIgnore
-    public SchedulingFactoryInfo getRequiredFactoryInfo() {
-        return getSchedulingProduct().getRequireFactory();
     }
 
     private Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
@@ -378,12 +391,14 @@ public class SchedulingProducingArrangement
         return getTargetActionObject() instanceof SchedulingOrder;
     }
 
-    public boolean isDeepPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return getDeepPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    public boolean boolCallerDeepPrerequisiteToArg(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return schedulingProducingArrangement.getDeepPrerequisiteProducingArrangements()
+                .contains(this);
     }
 
-    public boolean isPrerequisiteArrangement(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return getPrerequisiteProducingArrangements().contains(schedulingProducingArrangement);
+    public boolean boolCallerDirectPrerequisiteToArg(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return schedulingProducingArrangement.getPrerequisiteProducingArrangements()
+                .contains(this);
     }
 
     public boolean weatherPrerequisiteRequire() {

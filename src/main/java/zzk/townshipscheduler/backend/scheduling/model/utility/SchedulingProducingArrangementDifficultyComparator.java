@@ -8,15 +8,22 @@ import java.util.Comparator;
 public class SchedulingProducingArrangementDifficultyComparator implements Comparator<SchedulingProducingArrangement> {
 
     @Override
-    public int compare(SchedulingProducingArrangement former, SchedulingProducingArrangement latter) {
+    public int compare(
+            SchedulingProducingArrangement former,
+            SchedulingProducingArrangement latter
+    ) {
         return new CompareToBuilder()
                 .append(
-                        former.getDeepPrerequisiteProducingArrangements().size(),
-                        latter.getDeepPrerequisiteProducingArrangements().size()
+                        former.getDeepPrerequisiteProducingArrangementsSize(),
+                        latter.getDeepPrerequisiteProducingArrangementsSize()
                 )
                 .append(
                         former.getStaticDeepProducingDuration(),
                         latter.getStaticDeepProducingDuration()
+                )
+                .append(
+                        former.getId(),
+                        latter.getId()
                 )
                 .toComparison();
     }

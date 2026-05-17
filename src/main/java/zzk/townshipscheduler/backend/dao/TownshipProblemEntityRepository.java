@@ -11,14 +11,17 @@ import java.util.Optional;
 public interface TownshipProblemEntityRepository extends JpaRepository<TownshipProblemEntity, String> {
 
     @EntityGraph("problem.g.full")
-    <T> Optional<T> findByUuid(String uuid, Class<T> projectionClass);
+    <T> Optional<T> findByUuid(
+            String uuid,
+            Class<T> projectionClass
+    );
 
     @Query(
-        """
-             select tpe from TownshipProblemEntity as tpe
-        """
+            """
+                 select tpe from TownshipProblemEntity as tpe
+            """
     )
-    @EntityGraph(attributePaths = {"problemSerialized"},type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(attributePaths = {"problemSerialized"}, type = EntityGraph.EntityGraphType.LOAD)
     <T> Collection<T> queryAll(Class<T> projectionClass);
 
 }

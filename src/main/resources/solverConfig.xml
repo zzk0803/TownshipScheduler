@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<solver xmlns="https://timefold.ai/xsd/solver"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<solver xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://timefold.ai/xsd/solver"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
     <environmentMode>PHASE_ASSERT</environmentMode>
@@ -21,21 +21,49 @@
 
     <!--region constructionHeuristic-->
     <!--    <constructionHeuristic>-->
-    <!--        <constructionHeuristicType>WEAKEST_FIT</constructionHeuristicType>-->
-    <!--        <changeMoveSelector>-->
-    <!--            <filterClass>-->
-    <!--                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
-    <!--            </filterClass>-->
-    <!--            <valueSelector variableName="planningFactoryInstance"-->
-    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">-->
+
+    <!--        <queuedValuePlacer>-->
+    <!--            <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>-->
+    <!--            <valueSelector id="constructionHeuristic1_valueSelector_arrangements" variableName="planningArrangementsSequence">-->
+    <!--                <cacheType>PHASE</cacheType>-->
+    <!--                <selectionOrder>SORTED</selectionOrder>-->
+    <!--                <comparatorClass>zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator-->
+    <!--                </comparatorClass>-->
     <!--            </valueSelector>-->
-    <!--        </changeMoveSelector>-->
-    <!--        <changeMoveSelector>-->
-    <!--            <valueSelector variableName="planningDateTimeSlot"-->
-    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">-->
-    <!--            </valueSelector>-->
-    <!--        </changeMoveSelector>-->
+    <!--            <unionMoveSelector>-->
+    <!--                <listChangeMoveSelector>-->
+    <!--                    <valueSelector mimicSelectorRef="constructionHeuristic1_valueSelector_arrangements"/>-->
+    <!--                    <destinationSelector>-->
+    <!--                        <entitySelector>-->
+    <!--                            <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>-->
+    <!--                        </entitySelector>-->
+    <!--                    </destinationSelector>-->
+    <!--                </listChangeMoveSelector>-->
+    <!--            </unionMoveSelector>-->
+    <!--        </queuedValuePlacer>-->
+
+    <!--        <forager>-->
+    <!--            <pickEarlyType>FIRST_FEASIBLE_SCORE_OR_NON_DETERIORATING_HARD</pickEarlyType>-->
+    <!--        </forager>-->
     <!--    </constructionHeuristic>-->
+
+    <!--    <constructionHeuristic>-->
+    <!--        <queuedEntityPlacer>-->
+    <!--            <entitySelector id="constructionHeuristic2_entitySelector_SchedulingProducingArrangement">-->
+    <!--                <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement</entityClass>-->
+    <!--                <cacheType>PHASE</cacheType>-->
+    <!--                <selectionOrder>SORTED</selectionOrder>-->
+    <!--            </entitySelector>-->
+
+    <!--            <changeMoveSelector>-->
+    <!--                <entitySelector mimicSelectorRef="constructionHeuristic2_entitySelector_SchedulingProducingArrangement"/>-->
+    <!--                <valueSelector id="constructionHeuristic2_changeMoveSelector_assignedTools"-->
+    <!--                               variableName="planningDelaySlot">-->
+    <!--                </valueSelector>-->
+    <!--            </changeMoveSelector>-->
+    <!--        </queuedEntityPlacer>-->
+    <!--    </constructionHeuristic>-->
+
     <!--endregion-->
 
     <!--region init-->
@@ -51,15 +79,15 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>45</slidingWindowSeconds>
-                <minimumImprovementRatio>0.01</minimumImprovementRatio>
+                <slidingWindowMinutes>1</slidingWindowMinutes>
+                <minimumImprovementRatio>0.125</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 
         <unionMoveSelector>
 
             <changeMoveSelector>
-                <fixedProbabilityWeight>5.0</fixedProbabilityWeight>
+                <fixedProbabilityWeight>3</fixedProbabilityWeight>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDelaySlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
@@ -74,14 +102,12 @@
             <listSwapMoveSelector/>
             <subListChangeMoveSelector/>
             <subListSwapMoveSelector/>
-            <!--<kOptListMoveSelector/>-->
 
         </unionMoveSelector>
 
         <acceptor>
-            <entityTabuSize>5</entityTabuSize>
-            <valueTabuSize>2</valueTabuSize>
-            <stepCountingHillClimbingSize>519</stepCountingHillClimbingSize>
+            <entityTabuRatio>0.125</entityTabuRatio>
+            <stepCountingHillClimbingSize>375</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 

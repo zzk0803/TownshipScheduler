@@ -36,7 +36,6 @@ public class TownshipSchedulingPrepareComponent {
             Collection<OrderEntity> orderEntityList,
             DateTimeSlotSize dateTimeSlotSize,
             LocalDateTime workCalendarStart,
-            LocalDateTime workCalendarEnd,
             LocalTime sleepStartPickerValue,
             LocalTime sleepEndPickerValue
     ) {
@@ -60,7 +59,7 @@ public class TownshipSchedulingPrepareComponent {
                         .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
                         .dateTimeSlotSize(dateTimeSlotSize)
                         .workCalendarStart(workCalendarStart)
-                        .workCalendarEnd(workCalendarEnd)
+//                        .workCalendarEnd(workCalendarEnd)
                         .sleepStartPickerValue(sleepStartPickerValue)
                         .sleepEndPickerValue(sleepEndPickerValue)
                         .build()

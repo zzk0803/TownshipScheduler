@@ -38,7 +38,7 @@ class ProblemTransferProcess {
 
     private final LocalDateTime workCalendarStart;
 
-    private final LocalDateTime workCalendarEnd;
+//    private final LocalDateTime workCalendarEnd;
 
     private final LocalTime sleepStartPickerValue;
 
@@ -52,7 +52,7 @@ class ProblemTransferProcess {
         this.townshipSchedulingRequest = townshipSchedulingRequest;
         this.dateTimeSlotSize = townshipSchedulingRequest.getDateTimeSlotSize();
         this.workCalendarStart = townshipSchedulingRequest.getWorkCalendarStart();
-        this.workCalendarEnd = townshipSchedulingRequest.getWorkCalendarEnd();
+//        this.workCalendarEnd = townshipSchedulingRequest.getWorkCalendarEnd();
         this.sleepStartPickerValue = townshipSchedulingRequest.getSleepStartPickerValue();
         this.sleepEndPickerValue = townshipSchedulingRequest.getSleepEndPickerValue();
         this.idProductMap = new HashMap<>();
@@ -73,8 +73,8 @@ class ProblemTransferProcess {
                 new ArrayList<>(this.idFactoryTypeMap.values())
         );
 
-        SchedulingWorkCalendar schedulingWorkCalendar
-                = SchedulingWorkCalendar.with(workCalendarStart, workCalendarEnd);
+//        SchedulingWorkCalendar schedulingWorkCalendar
+//                = SchedulingWorkCalendar.with(workCalendarStart, workCalendarEnd);
 
         this.schedulingPlayer.setSleepStart(this.sleepStartPickerValue);
         this.schedulingPlayer.setSleepEnd(this.sleepEndPickerValue);
@@ -86,7 +86,7 @@ class ProblemTransferProcess {
                 .schedulingOrderList(new ArrayList<>(this.schedulingOrders))
                 .schedulingFactoryInstanceList(new ArrayList<>(this.schedulingFactoryInstances))
                 .schedulingPlayer(this.schedulingPlayer)
-                .schedulingWorkCalendar(schedulingWorkCalendar)
+                .schedulingWorkCalendarStart(workCalendarStart)
                 .dateTimeSlotSize(this.dateTimeSlotSize)
                 .build();
     }

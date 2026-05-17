@@ -312,6 +312,16 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <arguments>
+                                <arguments>
+                                    <argument>-XX:+UseZGC</argument>
+                                    <argument>-Xms2g</argument>
+                                    <argument>-Xmx8g</argument>
+                                    <argument>-Xss16m</argument>
+                                </arguments>
+                            </arguments>
+                        </configuration>
                     </plugin>
 
                     <!-- Runs the integration tests (*IT) after the server is started -->

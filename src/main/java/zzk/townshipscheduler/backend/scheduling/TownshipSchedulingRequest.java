@@ -27,7 +27,7 @@ public class TownshipSchedulingRequest {
 
     LocalDateTime workCalendarStart;
 
-    LocalDateTime workCalendarEnd;
+//    LocalDateTime workCalendarEnd;
 
     LocalTime sleepStartPickerValue;
 

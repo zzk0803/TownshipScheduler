@@ -297,7 +297,7 @@ public class SchedulingViewPresenter {
             Collection<OrderEntity> orderEntityList,
             DateTimeSlotSize dateTimeSlotSize,
             LocalDateTime workCalendarStart,
-            LocalDateTime workCalendarEnd,
+//            LocalDateTime workCalendarEnd,
             LocalTime sleepStartPickerValue,
             LocalTime sleepEndPickerValue
     ) {
@@ -310,7 +310,7 @@ public class SchedulingViewPresenter {
                 orderEntityList,
                 dateTimeSlotSize,
                 workCalendarStart,
-                workCalendarEnd,
+//                workCalendarEnd,
                 sleepStartPickerValue,
                 sleepEndPickerValue
         );

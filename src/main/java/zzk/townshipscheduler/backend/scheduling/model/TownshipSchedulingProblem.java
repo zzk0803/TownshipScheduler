@@ -101,30 +101,42 @@ public class TownshipSchedulingProblem implements Serializable {
 
     public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(SchedulingFactoryInstance schedulingFactoryInstance) {
         return getSchedulingProducingArrangementList().stream()
-                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo().equals(schedulingFactoryInstance.getSchedulingFactoryInfo()))
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo()
+                        .equals(schedulingFactoryInstance.getSchedulingFactoryInfo()))
                 .toList();
     }
 
-    public SchedulingDateTimeSlot getDateTimeSlotWithMinDateTimeAndDelayAmount(LocalDateTime floorLocalDateTime, Integer delaySlot) {
+    public SchedulingDateTimeSlot getDateTimeSlotWithMinDateTimeAndDelayAmount(
+            LocalDateTime floorLocalDateTime,
+            Integer delaySlot
+    ) {
+        Objects.requireNonNull(floorLocalDateTime);
         int delay = delaySlot == null
                 ? 0
                 : delaySlot;
-        Objects.requireNonNull(floorLocalDateTime);
 
-        NavigableSet<SchedulingDateTimeSlot> filtered = this.schedulingDateTimeSlots.tailSet(
-                SchedulingDateTimeSlot.getOneFromValueRange(
-                        this.schedulingDateTimeSlots,
-                        floorLocalDateTime
-                ),
+        SchedulingDateTimeSlot ceilinged = SchedulingDateTimeSlot.ceilingDateTimeFromValueRange(
+                this.schedulingDateTimeSlots,
+                floorLocalDateTime
+        );
+        NavigableSet<SchedulingDateTimeSlot> dateTimeSlotsTailSet = this.schedulingDateTimeSlots.tailSet(
+                ceilinged,
                 true
         );
-        return filtered.stream()
+        //return dateTimeSlotsTailSet.first();
+        return dateTimeSlotsTailSet.stream()
                 .skip(delay)
                 .findFirst()
                 .orElseThrow(() -> {
-                    log.error("floorLocalDateTime={},delaySlot={},could'nt find right value from datatimeslots {}", floorLocalDateTime, delaySlot, filtered);
-                    return new IllegalStateException();
-                });
+                                 log.error(
+                                         "floorLocalDateTime={},delaySlot={},could'nt find right value from datatimeslots {}",
+                                         floorLocalDateTime,
+                                         delaySlot,
+                                         dateTimeSlotsTailSet
+                                 );
+                                 return new IllegalStateException();
+                             }
+                );
     }
 
 }

@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import org.jspecify.annotations.NonNull;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -23,8 +24,8 @@ import java.util.*;
 public class SchedulingFactoryInstance
         implements Serializable {
 
-    public static final String PLANNING_FACTORY_INSTANCE_PRODUCING_ARRANGEMENTS
-            = "planningFactoryInstanceProducingArrangements";
+    public static final String PLANNING_ARRANGEMENTS_SEQUENCE
+            = "planningArrangementsSequence";
 
     public static final String VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT
             = "valueRangeForSchedulingProducingArrangement";
@@ -52,8 +53,11 @@ public class SchedulingFactoryInstance
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
     @JsonIgnore
-    @PlanningListVariable(valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT)
-    private List<SchedulingProducingArrangement> planningFactoryInstanceProducingArrangements = new ArrayList<>();
+    @PlanningListVariable(
+            valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT,
+            comparatorClass = SchedulingProducingArrangementDifficultyComparator.class
+    )
+    private List<SchedulingProducingArrangement> planningArrangementsSequence = new ArrayList<>();
 
     @DeepPlanningClone
     private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMap = new TreeMap<>();
@@ -125,6 +129,11 @@ public class SchedulingFactoryInstance
         return cascadeUpdatesAfter(factoryProcessSequence, result);
     }
 
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return this.getSchedulingFactoryInfo()
+                .weatherFactoryProducingTypeIsQueue();
+    }
+
     private FactoryComputedDateTimePair computeDateTimePair(
             FactoryProcessSequence factoryProcessSequence,
             TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
@@ -135,23 +144,6 @@ public class SchedulingFactoryInstance
         LocalDateTime producingDateTime = calcProducingDateTime(factoryProcessSequence, prevEntry);
         LocalDateTime completedDateTime = calcCompletedDateTime(factoryProcessSequence, producingDateTime);
         return new FactoryComputedDateTimePair(producingDateTime, completedDateTime);
-    }
-
-    private LocalDateTime calcCompletedDateTime(FactoryProcessSequence factoryProcessSequence, LocalDateTime producingDateTime) {
-        return producingDateTime.plus(factoryProcessSequence.getProducingDuration());
-    }
-
-    private LocalDateTime calcProducingDateTime(
-            FactoryProcessSequence factoryProcessSequence,
-            Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> previousEntry
-    ) {
-        LocalDateTime previousCompleted = (previousEntry == null)
-                ? null
-                : previousEntry.getValue()
-                        .completedDateTime();
-
-        LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted)) ? arrangeDateTime : previousCompleted;
     }
 
     private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
@@ -165,6 +157,28 @@ public class SchedulingFactoryInstance
         );
     }
 
+    private LocalDateTime calcProducingDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> previousEntry
+    ) {
+        LocalDateTime previousCompleted = (previousEntry == null)
+                ? null
+                : previousEntry.getValue()
+                        .completedDateTime();
+
+        LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
+        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted))
+                ? arrangeDateTime
+                : previousCompleted;
+    }
+
+    private LocalDateTime calcCompletedDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            LocalDateTime producingDateTime
+    ) {
+        return producingDateTime.plus(factoryProcessSequence.getProducingDuration());
+    }
+
     private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
             FactoryProcessSequence fromSequence,
             Map<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainer,
@@ -173,7 +187,9 @@ public class SchedulingFactoryInstance
         NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailMap =
                 statefulContainerAsMap.tailMap(fromSequence, false);
 
-        if (tailMap.isEmpty()) return resultContainer;
+        if (tailMap.isEmpty()) {
+            return resultContainer;
+        }
 
         Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> startPrevEntry =
                 statefulContainerAsMap.lowerEntry(tailMap.firstKey());
@@ -216,18 +232,18 @@ public class SchedulingFactoryInstance
         return resultContainer;
     }
 
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return this.getSchedulingFactoryInfo()
-                .weatherFactoryProducingTypeIsQueue();
-    }
-
     private @NonNull FactoryComputedDateTimePair computeDateTimePair(FactoryProcessSequence factoryProcessSequence) {
         return this.computeDateTimePair(factoryProcessSequence, this.shadowProcessSequenceToComputePairMap);
     }
 
-    private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, LocalDateTime previousCompletedDateTime) {
+    private LocalDateTime calcProducingDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            LocalDateTime previousCompletedDateTime
+    ) {
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-        return (previousCompletedDateTime == null || arrangeDateTime.isAfter(previousCompletedDateTime)) ? arrangeDateTime : previousCompletedDateTime;
+        return (previousCompletedDateTime == null || arrangeDateTime.isAfter(previousCompletedDateTime))
+                ? arrangeDateTime
+                : previousCompletedDateTime;
     }
 
     public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
@@ -258,11 +274,18 @@ public class SchedulingFactoryInstance
         return resultContainer;
     }
 
-    private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, FactoryComputedDateTimePair previousComputedPair) {
-        LocalDateTime previousCompleted = (previousComputedPair == null) ? null : previousComputedPair.completedDateTime();
+    private LocalDateTime calcProducingDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            FactoryComputedDateTimePair previousComputedPair
+    ) {
+        LocalDateTime previousCompleted = (previousComputedPair == null)
+                ? null
+                : previousComputedPair.completedDateTime();
 
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted)) ? arrangeDateTime : previousCompleted;
+        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted))
+                ? arrangeDateTime
+                : previousCompleted;
     }
 
     public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
@@ -275,7 +298,8 @@ public class SchedulingFactoryInstance
 
     @Override
     public String toString() {
-        return "SchedulingFactoryInstance{" + "readableIdentifier='" + factoryReadableIdentifier + '\'' + ", producingLength=" + producingLength + ", " +
+        return "SchedulingFactoryInstance{" + "readableIdentifier='" + factoryReadableIdentifier + '\'' + ", producingLength=" + producingLength +
+                ", " +
                 "reapWindowSize=" + reapWindowSize + '}';
     }
 

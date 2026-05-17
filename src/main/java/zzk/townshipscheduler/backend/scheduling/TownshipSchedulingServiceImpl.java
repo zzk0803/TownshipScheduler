@@ -95,7 +95,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
                 .withFinalBestSolutionEventConsumer(
                         finalBestSolutionEvent -> {
                             defaultConsumer.andThen(finalBestSolutionEventConsumer)
-                                    .andThen(this::persist)
+//                                    .andThen(this::persist)
                                     .accept(finalBestSolutionEvent.solution())
                             ;
                         })
