@@ -19,7 +19,7 @@ public class FactoryProcessSequence implements Comparable<FactoryProcessSequence
             .thenComparingInt(FactoryProcessSequence::getSequenceId);
 
     @Serial
-    private static final long serialVersionUID = -264984659974196003L;
+    private static final long serialVersionUID = -2296858586337992130L;
 
     LocalDateTime arrangeDateTime;
 

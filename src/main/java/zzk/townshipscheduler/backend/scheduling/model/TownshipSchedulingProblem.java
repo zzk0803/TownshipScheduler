@@ -1,9 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRange;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
@@ -14,7 +11,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.TreeSet;
 
@@ -24,10 +20,8 @@ import java.util.TreeSet;
 @PlanningSolution
 public class TownshipSchedulingProblem implements Serializable {
 
-    public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY = "valueRangeForDateTimeSlotDelay";
-
     @Serial
-    private static final long serialVersionUID = 3805461933411932083L;
+    private static final long serialVersionUID = 719813705385100065L;
 
     private String uuid;
 
@@ -94,11 +88,6 @@ public class TownshipSchedulingProblem implements Serializable {
         return new TownshipSchedulingProblemBuilder();
     }
 
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
-    public ValueRange<Integer> valueRangeForDateTimeSlotDelay() {
-        return ValueRangeFactory.createIntValueRange(0, 10);
-    }
-
     public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(SchedulingFactoryInstance schedulingFactoryInstance) {
         return getSchedulingProducingArrangementList().stream()
                 .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo()
@@ -111,32 +100,17 @@ public class TownshipSchedulingProblem implements Serializable {
             Integer delaySlot
     ) {
         Objects.requireNonNull(floorLocalDateTime);
-        int delay = delaySlot == null
-                ? 0
-                : delaySlot;
 
-        SchedulingDateTimeSlot ceilinged = SchedulingDateTimeSlot.ceilingDateTimeFromValueRange(
+        int delayMinute = (
+                delaySlot == null
+                        ? 0
+                        : delaySlot
+        ) * getDateTimeSlotSize().getMinute();
+
+        return SchedulingDateTimeSlot.ceilingDateTimeFromValueRange(
                 this.schedulingDateTimeSlots,
-                floorLocalDateTime
+                floorLocalDateTime.plusMinutes(delayMinute)
         );
-        NavigableSet<SchedulingDateTimeSlot> dateTimeSlotsTailSet = this.schedulingDateTimeSlots.tailSet(
-                ceilinged,
-                true
-        );
-        //return dateTimeSlotsTailSet.first();
-        return dateTimeSlotsTailSet.stream()
-                .skip(delay)
-                .findFirst()
-                .orElseThrow(() -> {
-                                 log.error(
-                                         "floorLocalDateTime={},delaySlot={},could'nt find right value from datatimeslots {}",
-                                         floorLocalDateTime,
-                                         delaySlot,
-                                         dateTimeSlotsTailSet
-                                 );
-                                 return new IllegalStateException();
-                             }
-                );
     }
 
 }

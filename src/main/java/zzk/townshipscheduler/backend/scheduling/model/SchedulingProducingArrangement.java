@@ -1,6 +1,9 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRange;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.*;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
@@ -29,6 +32,8 @@ import java.util.*;
 public class SchedulingProducingArrangement
         implements Serializable {
 
+    public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY = "valueRangeForDateTimeSlotDelay";
+
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
 
     public static final String PLANNING_DELAY_SLOT = "planningDelaySlot";
@@ -47,12 +52,14 @@ public class SchedulingProducingArrangement
     public static final String SHADOW_ARRANGE_DATE_TIME = "arrangeDateTime";
 
     @Serial
-    private static final long serialVersionUID = 6629361363383573381L;
+    private static final long serialVersionUID = 7524280731369623680L;
+
 
     @EqualsAndHashCode.Include
     @ToString.Include
     private Integer id;
 
+    @EqualsAndHashCode.Include
     @ToString.Include
     private String uuid;
 
@@ -106,7 +113,7 @@ public class SchedulingProducingArrangement
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
+    @PlanningVariable(valueRangeProviderRefs = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
     private Integer planningDelaySlot;
 
     @JsonIgnore
@@ -191,7 +198,7 @@ public class SchedulingProducingArrangement
             }
     )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
-        if (this.planningDelaySlot == null || this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime == null) {
+        if (this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime == null) {
             return null;
         }
 
@@ -417,6 +424,22 @@ public class SchedulingProducingArrangement
 
     public void setArrangeDateTime(LocalDateTime localDateTime) {
         throw new UnsupportedOperationException();
+    }
+
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
+    public ValueRange<Integer> valueRangeForDateTimeSlotDelay(TownshipSchedulingProblem townshipSchedulingProblem) {
+//        int slotMinutes = townshipSchedulingProblem.getDateTimeSlotSize()
+//                .getMinute();
+//        var startDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar()
+//                .getStartDateTime();
+//        var endDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar()
+//                .getEndDateTime();
+//        int slotCount = SchedulingDateTimeSlot.calcLocalDateTimePairSlotCount(
+//                startDateTime.plus(getStaticDeepPrerequisiteProducingDuration())
+//                , endDateTime
+//                , slotMinutes
+//        );
+        return ValueRangeFactory.createIntValueRange(0, 5);
     }
 
 }

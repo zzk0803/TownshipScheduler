@@ -22,7 +22,6 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     public Constraint @NonNull [] defineConstraints(@NonNull ConstraintFactory constraintFactory) {
         return new Constraint[]{
                 penalizeInconsistent(constraintFactory),
-//                forbidBadDateTimeSlotAssignInFactorySequences(constraintFactory),
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteArrangement(constraintFactory),
                 shouldMaximizeArrangementAssign(constraintFactory),

@@ -1,7 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -21,7 +20,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR = Comparator.comparing(SchedulingDateTimeSlot::getStart);
 
     @Serial
-    private static final long serialVersionUID = 2326492222976719319L;
+    private static final long serialVersionUID = -36055068413393349L;
 
     @EqualsAndHashCode.Include
     private Integer id;
@@ -31,12 +30,6 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     private LocalDateTime end;
 
     private int durationInMinute;
-
-    @JsonIdentityReference
-    private SchedulingDateTimeSlot previous;
-
-    @JsonIdentityReference
-    private SchedulingDateTimeSlot next;
 
     public SchedulingDateTimeSlot(
             LocalDateTime start,
@@ -81,25 +74,38 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         Objects.requireNonNull(localDateTime);
         Objects.requireNonNull(valueRange);
         return valueRange.ceiling(new SchedulingDateTimeSlot(localDateTime, localDateTime));
-
-//        for (SchedulingDateTimeSlot schedulingDateTimeSlot : valueRange) {
-//            LocalDateTime slotStart = schedulingDateTimeSlot.getStart();
-//            LocalDateTime slotEnd = schedulingDateTimeSlot.getEnd();
-//            if (
-//                    (localDateTime.isEqual(slotStart) || localDateTime.isAfter(slotStart))
-//                            && localDateTime.isBefore(slotEnd)
-//            ) {
-//                return schedulingDateTimeSlot;
-//            }
-//        }
-//
-//        return null;
     }
 
     public static TreeSet<SchedulingDateTimeSlot> toValueRange(
             final LocalDateTime startInclusive,
             final LocalDateTime endExclusive,
             final int durationInMinute
+    ) {
+        int slot = calcLocalDateTimePairSlotCount(startInclusive, endExclusive, durationInMinute);
+        TreeSet<SchedulingDateTimeSlot> dateTimeSlotTreeSet = new TreeSet<>();
+        LocalDateTime slotStart = startInclusive;
+        LocalDateTime slotEnd = startInclusive.plusMinutes(durationInMinute);
+        AtomicInteger idRoller = new AtomicInteger(0);
+        SchedulingDateTimeSlot schedulingDateTimeSlot;
+        for (long i = 0; i < slot; i++) {
+            schedulingDateTimeSlot = new SchedulingDateTimeSlot();
+            schedulingDateTimeSlot.setId(idRoller.incrementAndGet());
+            schedulingDateTimeSlot.setStart(slotStart);
+            schedulingDateTimeSlot.setEnd(slotEnd);
+            schedulingDateTimeSlot.setDurationInMinute(durationInMinute);
+
+            dateTimeSlotTreeSet.add(schedulingDateTimeSlot);
+
+            slotStart = slotStart.plusMinutes(durationInMinute);
+            slotEnd = slotEnd.plusMinutes(durationInMinute);
+        }
+        return dateTimeSlotTreeSet;
+    }
+
+    public static int calcLocalDateTimePairSlotCount(
+            LocalDateTime startInclusive,
+            LocalDateTime endExclusive,
+            int durationInMinute
     ) {
         int minutesNumber = Math.toIntExact(startInclusive.until(endExclusive, ChronoUnit.MINUTES));
         int slot = minutesNumber / durationInMinute;
@@ -108,30 +114,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
                         ? 1
                         : 0
         );
-        TreeSet<SchedulingDateTimeSlot> result = new TreeSet<>();
-        LocalDateTime slotStart = startInclusive;
-        LocalDateTime slotEnd = startInclusive.plusMinutes(durationInMinute);
-        AtomicInteger idRoller = new AtomicInteger(0);
-        SchedulingDateTimeSlot schedulingDateTimeSlot;
-        SchedulingDateTimeSlot previous = null;
-        for (long i = 0; i < slot; i++) {
-            schedulingDateTimeSlot = new SchedulingDateTimeSlot();
-            schedulingDateTimeSlot.setId(idRoller.incrementAndGet());
-            schedulingDateTimeSlot.setStart(slotStart);
-            schedulingDateTimeSlot.setEnd(slotEnd);
-            schedulingDateTimeSlot.setDurationInMinute(durationInMinute);
-
-            result.add(schedulingDateTimeSlot);
-            if (Objects.nonNull(previous)) {
-                previous.setNext(schedulingDateTimeSlot);
-                schedulingDateTimeSlot.setPrevious(previous);
-            }
-            previous = schedulingDateTimeSlot;
-
-            slotStart = slotStart.plusMinutes(durationInMinute);
-            slotEnd = slotEnd.plusMinutes(durationInMinute);
-        }
-        return result;
+        return slot;
     }
 
     public SchedulingDateTimeSlot calcDelayDateTimeSlot(

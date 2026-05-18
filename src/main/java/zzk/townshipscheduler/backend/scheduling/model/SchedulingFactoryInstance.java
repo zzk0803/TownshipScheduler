@@ -31,7 +31,7 @@ public class SchedulingFactoryInstance
             = "valueRangeForSchedulingProducingArrangement";
 
     @Serial
-    private static final long serialVersionUID = -4151844387461751037L;
+    private static final long serialVersionUID = -7146926432206516227L;
 
     @PlanningId
     @EqualsAndHashCode.Include
