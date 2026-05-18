@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 
 @Slf4j
@@ -79,11 +80,12 @@ public class SchedulingProducingArrangement
     private IGameArrangeObject currentActionObject;
 
     @JsonBackReference
-    private Set<SchedulingProducingArrangement> prerequisiteProducingArrangements = new LinkedHashSet<>();
+    private SequencedSet<SchedulingProducingArrangement> prerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    //@DeepPlanningClone
     @JsonBackReference
     @JsonIgnore
-    private Set<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
+    private SequencedSet<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
     @EqualsAndHashCode.Include
     private int deepPrerequisiteProducingArrangementsSize;
@@ -175,19 +177,20 @@ public class SchedulingProducingArrangement
         return producingArrangement;
     }
 
-    @ShadowSources({"deepPrerequisiteProducingArrangements[].completedDateTime"})
+    @ShadowSources(value = {"deepPrerequisiteProducingArrangements[].completedDateTime"})
     public LocalDateTime supplierForShadowDeepPrerequisiteProducingArrangementsFinishedDateTime(TownshipSchedulingProblem townshipSchedulingProblem) {
-        LocalDateTime finishedDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar()
-                .getStartDateTime();
-        if (this.deepPrerequisiteProducingArrangements != null) {
-            for (SchedulingProducingArrangement prerequisiteProducingArrangement : this.deepPrerequisiteProducingArrangements) {
-                if (prerequisiteProducingArrangement.completedDateTime == null) {
-                    return null;
-                }
-                finishedDateTime = ObjectUtils.max(finishedDateTime, prerequisiteProducingArrangement.completedDateTime);
-            }
+        if (this.deepPrerequisiteProducingArrangements.stream()
+                .anyMatch(schedulingProducingArrangement -> schedulingProducingArrangement.completedDateTime == null)) {
+            return null;
         }
-        return finishedDateTime;
+
+        return this.deepPrerequisiteProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .max(LocalDateTime::compareTo)
+                .orElse(
+                        townshipSchedulingProblem.getSchedulingWorkCalendar()
+                                .getStartDateTime()
+                );
     }
 
     @ShadowSources(
@@ -195,6 +198,7 @@ public class SchedulingProducingArrangement
                     "planningDelaySlot",
                     "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime",
                     "previousProducingArrangement.planningDelaySlot",
+                    "previousProducingArrangement.shadowDateTimeSlot"
             }
     )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -210,10 +214,14 @@ public class SchedulingProducingArrangement
                 );
             }
             else {
+                SchedulingDateTimeSlot previousArrangementShadowDateTimeSlot = previousProducingArrangement.shadowDateTimeSlot;
+                if (previousArrangementShadowDateTimeSlot == null) {
+                    return null;
+                }
                 return townshipSchedulingProblem.getDateTimeSlotWithMinDateTimeAndDelayAmount(
                         ObjectUtils.max(
                                 this.shadowDeepPrerequisiteProducingArrangementsFinishedDateTime,
-                                previousProducingArrangement.shadowDateTimeSlot.getStart()
+                                previousArrangementShadowDateTimeSlot.getStart()
                         ),
                         this.planningDelaySlot
                 );
@@ -309,8 +317,28 @@ public class SchedulingProducingArrangement
                 .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
-    public boolean isPlanningAssigned() {
-        return getShadowDateTimeSlot() != null && getPlanningFactoryInstance() != null;
+    public boolean boolPlanningWellBeing() {
+        return Stream.of(
+                        getPlanningFactoryInstance(),
+                        getShadowDateTimeSlot(),
+                        getProducingDateTime(),
+                        getCompletedDateTime()
+                )
+                .allMatch(Objects::nonNull);
+    }
+
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getArrangeDateTime() {
+        return this.shadowDateTimeSlot != null
+                ? this.shadowDateTimeSlot.getStart()
+                : null;
+    }
+
+    public void setArrangeDateTime(LocalDateTime localDateTime) {
+        throw new UnsupportedOperationException();
     }
 
     public void advancedSetupOrThrow() {
@@ -319,7 +347,7 @@ public class SchedulingProducingArrangement
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
 //        Objects.requireNonNull(getSchedulingWorkCalendar());
-        Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements = calcDeepPrerequisiteProducingArrangements();
+        SequencedSet<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements = calcDeepPrerequisiteProducingArrangements();
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements);
         setDeepPrerequisiteProducingArrangementsSize(calcDeepPrerequisiteProducingArrangements.size());
         setStaticDeepProducingDuration(calcStaticProducingDuration());
@@ -345,10 +373,10 @@ public class SchedulingProducingArrangement
         return getProducingExecutionMode().getMaterials();
     }
 
-    private Set<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
+    private SequencedSet<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements() {
         LinkedList<SchedulingProducingArrangement> queue = new LinkedList<>(List.of(this));
         Set<SchedulingProducingArrangement> visited = new HashSet<>();
-        Set<SchedulingProducingArrangement> result = new LinkedHashSet<>();
+        LinkedHashSet<SchedulingProducingArrangement> result = new LinkedHashSet<>();
 
         while (!queue.isEmpty()) {
             SchedulingProducingArrangement current = queue.removeFirst();
@@ -412,18 +440,12 @@ public class SchedulingProducingArrangement
         return !getDeepPrerequisiteProducingArrangements().isEmpty();
     }
 
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getArrangeDateTime() {
-        return this.shadowDateTimeSlot != null
-                ? this.shadowDateTimeSlot.getStart()
-                : null;
+    public boolean boolHasDeadline() {
+        return getSchedulingOrder().boolHasDeadline();
     }
 
-    public void setArrangeDateTime(LocalDateTime localDateTime) {
-        throw new UnsupportedOperationException();
+    public LocalDateTime getDeadline() {
+        return getSchedulingOrder().getDeadline();
     }
 
     @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)

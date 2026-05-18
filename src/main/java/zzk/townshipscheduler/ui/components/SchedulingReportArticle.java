@@ -18,10 +18,7 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -69,6 +66,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
     private void buildWithArrangementsContent(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         var byDateTimeByFactoryByProductMapToCount
                 = schedulingProducingArrangementList.stream()
+                .filter(schedulingProducingArrangement -> Objects.nonNull(schedulingProducingArrangement.getArrangeDateTime()))
                 .collect(
                         Collectors.groupingBy(
                                 SchedulingProducingArrangement::getArrangeDateTime,

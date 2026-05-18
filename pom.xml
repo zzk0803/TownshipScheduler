@@ -315,9 +315,9 @@
                         <configuration>
                             <arguments>
                                 <arguments>
-                                    <argument>-XX:+UseZGC</argument>
-                                    <argument>-Xms2g</argument>
-                                    <argument>-Xmx8g</argument>
+                                    <argument>-XX:+UseParallelGC</argument>
+                                    <argument>-Xms1g</argument>
+                                    <argument>-Xmx4g</argument>
                                     <argument>-Xss16m</argument>
                                 </arguments>
                             </arguments>
