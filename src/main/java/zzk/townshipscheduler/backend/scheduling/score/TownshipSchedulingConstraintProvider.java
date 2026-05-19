@@ -72,9 +72,9 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
                 .join(
                         constraintFactory.forEach(SchedulingProducingArrangement.class)
-                                .filter(SchedulingProducingArrangement::boolPlanningWellBeing),
-                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
-                        Joiners.lessThanOrEqual(SchedulingProducingArrangement::getIndexInFactory)
+                                .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
+                        , Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance)
+//                        , Joiners.lessThanOrEqual(SchedulingProducingArrangement::getIndexInFactory)
                 )
                 .filter((left, right) -> {
                     LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
@@ -174,7 +174,8 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
 //                                    return completedDateTime != null
 //                                            ? Duration.between(deadline, completedDateTime)
 //                                            .toMinutes()
-//                                            : Duration.between(schedulingWorkCalendar.getStartDateTime(), schedulingWorkCalendar.getEndDateTime())
+//                                            : Duration.between(schedulingWorkCalendar.getStartDateTime(), schedulingWorkCalendar
+//                                            .getEndDateTime())
 //                                                    .toMinutes();
 //                                }
 //                        )
