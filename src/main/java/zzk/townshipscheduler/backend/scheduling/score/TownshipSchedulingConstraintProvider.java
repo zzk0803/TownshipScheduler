@@ -26,6 +26,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
         return new Constraint[]{
                 penalizeInconsistent(constraintFactory),
                 mustSureArrangementAssign(constraintFactory),
+                //forbidBadDateTimeSlotAssignInFactorySequences(constraintFactory),
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteArrangement(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
@@ -46,10 +47,25 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     }
 
     private Constraint mustSureArrangementAssign(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachIncludingUnassigned(SchedulingProducingArrangement.class)
+        return constraintFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
                 .filter(Predicate.not(SchedulingProducingArrangement::boolPlanningWellBeing))
                 .penalize(HardMediumSoftBigDecimalScore.ONE_HARD)
-                .asConstraint("shouldMaximizeArrangementAssign");
+                .asConstraint("mustSureArrangementAssign");
+    }
+
+    private Constraint forbidBadDateTimeSlotAssignInFactorySequences(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .ifExists(
+                        SchedulingProducingArrangement.class,
+                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance),
+                        Joiners.equal(
+                                Function.identity(),
+                                SchedulingProducingArrangement::getPreviousProducingArrangement
+                        ),
+                        Joiners.greaterThan(SchedulingProducingArrangement::getShadowDateTimeSlot)
+                )
+                .penalize(HardMediumSoftBigDecimalScore.ONE_HARD)
+                .asConstraint("forbidBadDateTimeSlotAssignInFactorySequences");
     }
 
 //    private Constraint forbidBadDateTimeSlotAssignInFactorySequences(@NonNull ConstraintFactory constraintFactory) {
@@ -186,7 +202,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
-                .filter(SchedulingProducingArrangement::isOrderDirect)
+                .filter(SchedulingProducingArrangement::boolOrderDirect)
                 .join(SchedulingWorkCalendar.class)
                 .filter((schedulingProducingArrangement, schedulingWorkCalendar) -> {
                     LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();

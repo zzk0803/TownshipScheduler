@@ -47,7 +47,7 @@ public class SchedulingProducingExecutionMode implements Serializable {
                             SchedulingProduct schedulingProduct = entry.getKey();
                             int amount = entry.getValue();
                             return IntStream.range(0, amount)
-                                    .mapToObj(_ -> schedulingProduct.calcFactoryActions(getProduct()))
+                                    .mapToObj(_ -> schedulingProduct.generateArrangements(getProduct()))
                                     .flatMap(Collection::stream);
                         })
                         .toList();

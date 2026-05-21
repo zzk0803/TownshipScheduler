@@ -55,7 +55,8 @@ public class SchedulingFactoryInstance
     @JsonIgnore
     @PlanningListVariable(
             valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT,
-            comparatorClass = SchedulingProducingArrangementDifficultyComparator.class
+            comparatorClass = SchedulingProducingArrangementDifficultyComparator.class,
+            allowsUnassignedValues = true
     )
     private List<SchedulingProducingArrangement> planningArrangementsSequence = new ArrayList<>();
 

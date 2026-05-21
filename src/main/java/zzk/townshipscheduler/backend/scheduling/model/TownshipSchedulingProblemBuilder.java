@@ -110,7 +110,7 @@ public class TownshipSchedulingProblemBuilder {
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount = this.schedulingProducingArrangementList.stream()
-                .filter(SchedulingProducingArrangement::isOrderDirect)
+                .filter(SchedulingProducingArrangement::boolOrderDirect)
                 .count();
         int totalItemProducingArrangementCount = this.schedulingProducingArrangementList.size();
         int dateTimeValueRangeCount = this.schedulingDateTimeSlots.size();
@@ -148,7 +148,7 @@ public class TownshipSchedulingProblemBuilder {
         var producingArrangementArrayList
                 = this.schedulingOrderList
                 .stream()
-                .map(SchedulingOrder::calcFactoryActions)
+                .map(SchedulingOrder::generateArrangements)
                 .flatMap(Collection::stream)
                 .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
                 .flatMap(Collection::stream)
@@ -259,17 +259,17 @@ public class TownshipSchedulingProblemBuilder {
                     .orElseThrow();
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
 
-            if (producingArrangement.isOrderDirect()) {
+            if (producingArrangement.boolOrderDirect()) {
                 iteratingArrangement.setSchedulingOrderProduct(producingArrangement.getSchedulingProduct());
                 iteratingArrangement.setSchedulingOrderProductArrangementId(producingArrangement.getId());
             }
 
-            List<SchedulingProducingArrangement> materialsActions
+            List<SchedulingProducingArrangement> materialArrangements
                     = producingExecutionMode.materialsActions();
-            iteratingArrangement.appendPrerequisiteArrangements(materialsActions);
-            for (SchedulingProducingArrangement materialsAction : materialsActions) {
-                materialsAction.setSchedulingOrder(arrangementSchedulingOrder);
-                dealingChain.addLast(materialsAction);
+            iteratingArrangement.appendPrerequisiteArrangements(materialArrangements);
+            for (SchedulingProducingArrangement materialArrangement : materialArrangements) {
+                materialArrangement.setSchedulingOrder(arrangementSchedulingOrder);
+                dealingChain.addLast(materialArrangement);
             }
 
         }

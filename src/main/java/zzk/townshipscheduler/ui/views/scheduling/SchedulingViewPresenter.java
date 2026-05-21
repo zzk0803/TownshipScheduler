@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
@@ -196,7 +195,7 @@ public class SchedulingViewPresenter {
                                     townshipSchedulingProblem
                             );
                             getSchedulingView().getArrangementReportArticle()
-                                    .update(townshipSchedulingProblem)
+                                    .push(townshipSchedulingProblem);
                             ;
                             this.setupOrderBriefGrid();
                             getSchedulingView().getArrangementTimelinePanel()
@@ -226,7 +225,7 @@ public class SchedulingViewPresenter {
 
         arrangementTreeData.addItems(
                 arrangementList.stream()
-                        .filter(SchedulingProducingArrangement::isOrderDirect)
+                        .filter(SchedulingProducingArrangement::boolOrderDirect)
                         .toList(),
                 SchedulingProducingArrangement::getPrerequisiteProducingArrangements
         );
@@ -401,7 +400,7 @@ public class SchedulingViewPresenter {
                 .size();
         long orderItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
                 .stream()
-                .filter(SchedulingProducingArrangement::isOrderDirect)
+                .filter(SchedulingProducingArrangement::boolOrderDirect)
                 .count()
                 ;
         int totalItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()

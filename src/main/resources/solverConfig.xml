@@ -23,8 +23,43 @@
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
-    <constructionHeuristic>
 
+    <!--region constructionHeuristic::pooledEntityPlacer__cartesianProductMoveSelector-->
+    <!--    <constructionHeuristic>-->
+    <!--        <pooledEntityPlacer>-->
+    <!--            <cartesianProductMoveSelector>-->
+    <!--                <changeMoveSelector>-->
+    <!--                    <entitySelector id="constructionHeuristic2_entitySelector_SchedulingProducingArrangement">-->
+    <!--                        <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement</entityClass>-->
+    <!--                        <cacheType>PHASE</cacheType>-->
+    <!--                        <selectionOrder>SORTED</selectionOrder>-->
+    <!--                        <comparatorClass>-->
+    <!--                            zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator-->
+    <!--                        </comparatorClass>-->
+    <!--                        <sorterOrder>ASCENDING</sorterOrder>-->
+    <!--                    </entitySelector>-->
+    <!--                    <valueSelector id="constructionHeuristic2_changeMoveSelector_assignedTools"-->
+    <!--                                   variableName="planningDelaySlot">-->
+    <!--                    </valueSelector>-->
+    <!--                </changeMoveSelector>-->
+
+    <!--                <listChangeMoveSelector>-->
+    <!--                    <valueSelector id="constructionHeuristic1_valueSelector_arrangements" variableName="planningArrangementsSequence">-->
+    <!--                        <cacheType>PHASE</cacheType>-->
+    <!--                        <selectionOrder>SORTED</selectionOrder>-->
+    <!--                        <comparatorClass>-->
+    <!--                            zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator-->
+    <!--                        </comparatorClass>-->
+    <!--                        <sorterOrder>ASCENDING</sorterOrder>-->
+    <!--                    </valueSelector>-->
+    <!--                </listChangeMoveSelector>-->
+    <!--            </cartesianProductMoveSelector>-->
+    <!--        </pooledEntityPlacer>-->
+    <!--    </constructionHeuristic>-->
+    <!--    endregion-->
+
+    <!--region constructionHeuristic::double constructionHeuristic-->
+    <constructionHeuristic>
         <queuedEntityPlacer>
             <entitySelector id="constructionHeuristic2_entitySelector_SchedulingProducingArrangement">
                 <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement</entityClass>
@@ -39,18 +74,23 @@
                 </valueSelector>
             </changeMoveSelector>
         </queuedEntityPlacer>
-
     </constructionHeuristic>
 
     <constructionHeuristic>
+
+        <termination>
+            <minutesSpentLimit>1</minutesSpentLimit>
+        </termination>
 
         <queuedValuePlacer>
             <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>
             <valueSelector id="constructionHeuristic1_valueSelector_arrangements" variableName="planningArrangementsSequence">
                 <cacheType>PHASE</cacheType>
                 <selectionOrder>SORTED</selectionOrder>
-                <comparatorClass>zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator
+                <comparatorClass>
+                    zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator
                 </comparatorClass>
+                <sorterOrder>ASCENDING</sorterOrder>
             </valueSelector>
             <unionMoveSelector>
                 <listChangeMoveSelector>
@@ -71,12 +111,14 @@
     </constructionHeuristic>
     <!--endregion-->
 
-    <!--region init-->
-    <!--    <customPhase>-->
-    <!--        <customPhaseCommandClass>-->
-    <!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
-    <!--        </customPhaseCommandClass>-->
-    <!--    </customPhase>-->
+    <!--endregion-->
+
+    <!--region customPhase-->
+<!--    <customPhase>-->
+<!--        <customPhaseCommandClass>-->
+<!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
+<!--        </customPhaseCommandClass>-->
+<!--    </customPhase>-->
     <!--    endregion-->
 
     <!--region local search-->
@@ -95,43 +137,45 @@
             <listSwapMoveSelector/>
             <subListChangeMoveSelector/>
             <subListSwapMoveSelector/>
+            <kOptListMoveSelector/>
 
-            <unionMoveSelector>
+            <changeMoveSelector>
                 <fixedProbabilityWeight>3</fixedProbabilityWeight>
-                <changeMoveSelector>
-                    <fixedProbabilityWeight>2</fixedProbabilityWeight>
-                    <entitySelector id="localSearch_changeMoveSelector(filtered)_es_Arrangement_planningDelaySlot">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                        <filterClass>
-                            zzk.townshipscheduler.backend.scheduling.algorithm.ChangeMoveProducingArrangementEntityFilter
-                        </filterClass>
-                    </entitySelector>
-                    <valueSelector variableName="planningDelaySlot"
-                                   id="localSearch_changeMoveSelector(filtered)_vs_Arrangement_planningDelaySlot">
-                    </valueSelector>
-                </changeMoveSelector>
-                <changeMoveSelector>
-                    <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDelaySlot">
-                        <entityClass>
-                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
-                        </entityClass>
-                    </entitySelector>
-                    <valueSelector variableName="planningDelaySlot"
-                                   id="localSearch_changeMoveSelector_vs_Arrangement_planningDelaySlot">
-                    </valueSelector>
-                </changeMoveSelector>
-            </unionMoveSelector>
+                <entitySelector id="localSearch_changeMoveSelector(queue)_es_Arrangement_planningDelaySlot">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                    <filterClass>
+                        zzk.townshipscheduler.backend.scheduling.algorithm.ChangeMoveProducingArrangementEntityQueueTypeFilter
+                    </filterClass>
+                </entitySelector>
+                <valueSelector variableName="planningDelaySlot"
+                               id="localSearch_changeMoveSelector(queue)_vs_Arrangement_planningDelaySlot">
+                </valueSelector>
+            </changeMoveSelector>
+
+            <changeMoveSelector>
+                <entitySelector id="localSearch_changeMoveSelector(slot)_es_Arrangement_planningDelaySlot">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                    <filterClass>
+                        zzk.townshipscheduler.backend.scheduling.algorithm.ChangeMoveProducingArrangementEntitySlotTypeFilter
+                    </filterClass>
+                </entitySelector>
+                <valueSelector variableName="planningDelaySlot"
+                               id="localSearch_changeMoveSelector(slot)_vs_Arrangement_planningDelaySlot">
+                </valueSelector>
+            </changeMoveSelector>
 
         </unionMoveSelector>
 
         <acceptor>
-            <lateAcceptanceSize>7</lateAcceptanceSize>
+            <lateAcceptanceSize>11</lateAcceptanceSize>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>1</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>

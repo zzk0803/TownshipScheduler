@@ -1,6 +1,9 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRange;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
@@ -19,6 +22,8 @@ import java.util.TreeSet;
 @NoArgsConstructor
 @PlanningSolution
 public class TownshipSchedulingProblem implements Serializable {
+
+    public static final String VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY = "valueRangeForDateTimeSlotDelay";
 
     @Serial
     private static final long serialVersionUID = 719813705385100065L;
@@ -95,7 +100,7 @@ public class TownshipSchedulingProblem implements Serializable {
                 .toList();
     }
 
-    public SchedulingDateTimeSlot getDateTimeSlotWithMinDateTimeAndDelayAmount(
+    public SchedulingDateTimeSlot calcDateTimeSlotWithMinDateTimeAndDelayAmount(
             LocalDateTime floorLocalDateTime,
             Integer delaySlot
     ) {
@@ -111,6 +116,11 @@ public class TownshipSchedulingProblem implements Serializable {
                 this.schedulingDateTimeSlots,
                 floorLocalDateTime.plusMinutes(delayMinute)
         );
+    }
+
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
+    public ValueRange<Integer> valueRangeForDateTimeSlotDelay() {
+        return ValueRangeFactory.createIntValueRange(0, 10);
     }
 
 }

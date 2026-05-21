@@ -49,12 +49,12 @@ public class SchedulingProducingArrangementVO {
     ) {
         SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
         this.id = schedulingProducingArrangement.getId();
-        this.uuid = schedulingProducingArrangement.getUuid();
+        this.uuid = schedulingProducingArrangement.getUuid().toString();
         this.order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder().getId());
         this.product = schedulingProducingArrangement.getSchedulingProduct().getName();
         this.orderProduct = schedulingProducingArrangement.getSchedulingOrderProduct().getName();
         this.orderProductArrangementId = schedulingProducingArrangement.getSchedulingOrderProductArrangementId();
-        this.boolDirectToOrder = schedulingProducingArrangement.isOrderDirect();
+        this.boolDirectToOrder = schedulingProducingArrangement.boolOrderDirect();
         this.factoryReadableIdentifier = planningFactoryInstance != null
                 ? planningFactoryInstance.getFactoryReadableIdentifier().toString()
                 : null;

@@ -140,7 +140,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
     ) {
         Map<SchedulingOrder, List<SchedulingProducingArrangement>> orderArrangeMap
                 = schedulingProducingArrangementList.stream()
-                .filter(SchedulingProducingArrangement::isOrderDirect)
+                .filter(SchedulingProducingArrangement::boolOrderDirect)
                 .collect(
                         Collectors.groupingBy(SchedulingProducingArrangement::getSchedulingOrder)
                 );

@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
-import ai.timefold.solver.core.api.domain.common.PlanningId;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -78,19 +77,19 @@ public final class SchedulingOrder implements IGameArrangeObject, Serializable {
 //    }
 
     @Override
-    public List<SchedulingProducingArrangement> calcFactoryActions() {
-        return this.calcFactoryActions(this);
+    public List<SchedulingProducingArrangement> generateArrangements() {
+        return this.generateArrangements(this);
     }
 
     @Override
-    public List<SchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
+    public List<SchedulingProducingArrangement> generateArrangements(IGameArrangeObject targetObject) {
          return this.getProductAmountBill().entrySet()
                 .stream()
                 .flatMap(entry -> {
                     SchedulingProduct schedulingProduct = entry.getKey();
                     int amount = entry.getValue();
                     return IntStream.range(0, amount)
-                            .mapToObj(_ -> schedulingProduct.calcFactoryActions(targetObject))
+                            .mapToObj(_ -> schedulingProduct.generateArrangements(targetObject))
                             .flatMap(Collection::stream)
                             .peek(
                                     schedulingProducingArrangement -> schedulingProducingArrangement.setSchedulingOrder(this)

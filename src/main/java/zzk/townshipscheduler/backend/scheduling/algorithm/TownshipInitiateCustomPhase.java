@@ -11,7 +11,10 @@ import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -42,6 +45,7 @@ public class TownshipInitiateCustomPhase
                 = producingArrangements.stream()
                 .sorted(new SchedulingProducingArrangementDifficultyComparator())
                 .toList();
+        log.info("difficultySortedProducingArrangements:{} ", difficultySortedProducingArrangements);
         ArrayDeque<SchedulingProducingArrangement> initiatingDeque
                 = new ArrayDeque<>(difficultySortedProducingArrangements);
 
@@ -103,12 +107,14 @@ public class TownshipInitiateCustomPhase
         VariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer> arrangementIntegerVariableMetaModel
                 = arrangementPlanningEntityMetaModel.variable(SchedulingProducingArrangement.PLANNING_DELAY_SLOT);
         PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer> arrangementPlanningDelaySlotVariableMetaModel
-                = (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer>) arrangementIntegerVariableMetaModel;
+                =
+                (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer>) arrangementIntegerVariableMetaModel;
 
         VariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement> arrangementVariableMetaModel
                 = factoryInstancePlanningEntityMetaModel.variable(SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE);
         PlanningListVariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement> planningArrangementVariableMetaModel
-                = (PlanningListVariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement>) arrangementVariableMetaModel;
+                =
+                (PlanningListVariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement>) arrangementVariableMetaModel;
 
         phaseCommandContext.execute(
                 mutableSolutionView -> {

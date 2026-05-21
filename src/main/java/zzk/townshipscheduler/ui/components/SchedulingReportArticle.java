@@ -2,10 +2,15 @@ package zzk.townshipscheduler.ui.components;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -30,6 +35,10 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
 
     private Function<String, Image> fetchImgByIdProvider;
 
+    private Button button;
+
+    private VerticalLayout contentLayout;
+
     public SchedulingReportArticle(TownshipSchedulingProblem townshipSchedulingProblem) {
         this.townshipSchedulingProblem = townshipSchedulingProblem;
     }
@@ -40,6 +49,16 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
     ) {
         this.townshipSchedulingProblem = townshipSchedulingProblem;
         this.fetchImgByIdProvider = fetchImgByIdProvider;
+
+        button = new Button(
+                VaadinIcon.REFRESH.create(),
+                click -> {
+                    update(this.townshipSchedulingProblem);
+                }
+        );
+        button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        contentLayout = new VerticalLayout();
     }
 
     public void update(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -48,11 +67,12 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
     }
 
     private void update() {
-        getContent().removeAll();
+        contentLayout.removeAll();
 
         if (townshipSchedulingProblem != null) {
             buildContentWithSolution(townshipSchedulingProblem);
-        } else {
+        }
+        else {
             buildEmptyContent();
         }
     }
@@ -61,6 +81,19 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         List<SchedulingProducingArrangement> schedulingProducingArrangementList
                 = townshipSchedulingProblem.getSchedulingProducingArrangementList();
         buildWithArrangementsContent(schedulingProducingArrangementList);
+    }
+
+    private void buildEmptyContent() {
+        Div wrapperDiv = new Div();
+        wrapperDiv.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.Height.FULL,
+                LumoUtility.Width.FULL,
+                LumoUtility.JustifyContent.CENTER,
+                LumoUtility.AlignItems.CENTER
+        );
+        wrapperDiv.add(new H1("N/A"));
+        getContent().add(wrapperDiv);
     }
 
     private void buildWithArrangementsContent(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
@@ -84,37 +117,37 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         grid.setItems(byDateTimeByFactoryByProductMapToCount.entrySet());
         grid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
         addErrorSpanIfNotFeasible();
-        getContent().addAndExpand(grid);
+        contentLayout.addAndExpand(grid);
     }
 
     private void addErrorSpanIfNotFeasible() {
         if (getTownshipSchedulingProblem().getScore().isFeasible()) {
             Span span = new Span("Eureka");
             span.getElement().getThemeList().add("badge success");
-            getContent().add(span);
-        } else {
+            contentLayout.add(span);
+        }
+        else {
             Span span = new Span("Not Feasible");
             span.getElement().getThemeList().add("badge contrast error");
-            getContent().add(span);
+            contentLayout.add(span);
         }
     }
 
-    private void buildEmptyContent() {
-        Div wrapperDiv = new Div();
-        wrapperDiv.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.Height.FULL,
-                LumoUtility.Width.FULL,
-                LumoUtility.JustifyContent.CENTER,
-                LumoUtility.AlignItems.CENTER
-        );
-        wrapperDiv.add(new H1("N/A"));
-        getContent().add(wrapperDiv);
+    public void push(TownshipSchedulingProblem townshipSchedulingProblem) {
+        setTownshipSchedulingProblem(townshipSchedulingProblem);
     }
 
     @Override
     protected void onAttach(AttachEvent attachEvent) {
         update();
+    }
+
+    @Override
+    protected VerticalLayout initContent() {
+        VerticalLayout verticalLayout = super.initContent();
+        verticalLayout.add(button);
+        verticalLayout.addAndExpand(contentLayout);
+        return verticalLayout;
     }
 
     private Image getProductImage(String productName) {
@@ -139,12 +172,6 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
             buildDateTimeContent(arrangeDateTime);
         }
 
-        private void buildDateTimeContent(LocalDateTime arrangeDateTime) {
-            Element dateTimeHeader = ElementFactory.createHeading4(
-                    arrangeDateTime.format(DateTimeFormatter.ofPattern("M-dd HH:mm")));
-            getContent().getElement().insertChild(0, dateTimeHeader);
-        }
-
         private void buildItemsContent(
                 Map<SchedulingFactoryInstance, Map<SchedulingProduct, Long>> factoryAndArrangements
         ) {
@@ -156,11 +183,10 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                             factoryArrangementsMapEntry -> {
                                 Card card = new Card();
                                 String factory = Optional.ofNullable(factoryArrangementsMapEntry.getKey()
-                                                .getFactoryReadableIdentifier())
+                                                                             .getFactoryReadableIdentifier())
                                         .map(
                                                 FactoryReadableIdentifier::getFactoryCategory)
-                                        .orElse("N/A")
-                                        ;
+                                        .orElse("N/A");
                                 card.setTitle(factory);
 
                                 Div itemAmountPairsDiv = new Div();
@@ -177,7 +203,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                                         .map((productAmountEntry) -> {
                                             Span span = new Span();
                                             String productName = Optional.ofNullable(productAmountEntry.getKey()
-                                                            .getName())
+                                                                                             .getName())
                                                     .orElse("N/A");
                                             span.add(getProductImage(productName));
                                             span.add(productName);
@@ -193,6 +219,12 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                     .forEach(itemsContent::add)
             ;
             getContent().add(itemsContent);
+        }
+
+        private void buildDateTimeContent(LocalDateTime arrangeDateTime) {
+            Element dateTimeHeader = ElementFactory.createHeading4(
+                    arrangeDateTime.format(DateTimeFormatter.ofPattern("M-dd HH:mm")));
+            getContent().getElement().insertChild(0, dateTimeHeader);
         }
 
         @Override

@@ -78,12 +78,12 @@ public final class SchedulingProduct implements IGameArrangeObject, Serializable
 //    }
 
     @Override
-    public List<SchedulingProducingArrangement> calcFactoryActions() {
-        return calcFactoryActions(this);
+    public List<SchedulingProducingArrangement> generateArrangements() {
+        return generateArrangements(this);
     }
 
     @Override
-    public List<SchedulingProducingArrangement> calcFactoryActions(IGameArrangeObject targetObject) {
+    public List<SchedulingProducingArrangement> generateArrangements(IGameArrangeObject targetObject) {
         return List.of(
                 SchedulingProducingArrangement.createProducingArrangement(
                         targetObject,

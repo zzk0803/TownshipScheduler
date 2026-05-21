@@ -6,7 +6,7 @@ import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
-public class ChangeMoveProducingArrangementEntityFilter implements SelectionFilter<TownshipSchedulingProblem, SchedulingProducingArrangement> {
+public class ChangeMoveProducingArrangementEntityQueueTypeFilter implements SelectionFilter<TownshipSchedulingProblem, SchedulingProducingArrangement> {
 
     @Override
     public boolean accept(
