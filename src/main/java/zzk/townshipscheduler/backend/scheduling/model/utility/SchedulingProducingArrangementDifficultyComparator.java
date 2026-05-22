@@ -11,18 +11,21 @@ public class SchedulingProducingArrangementDifficultyComparator implements Compa
     public int compare(SchedulingProducingArrangement former, SchedulingProducingArrangement latter) {
         return new CompareToBuilder()
                 .append(
-                        former.isDeepPrerequisiteArrangement(latter),
-                        latter.isDeepPrerequisiteArrangement(former)
+                        former.getSchedulingOrder().boolHasDeadline(),
+                        latter.getSchedulingOrder().boolHasDeadline()
                 )
                 .append(
                         former.getDeepPrerequisiteProducingArrangements().size(),
                         latter.getDeepPrerequisiteProducingArrangements().size()
                 )
                 .append(
-                        former.getStaticDeepProducingDuration(),
-                        latter.getStaticDeepProducingDuration()
+                        former.getPrerequisiteProducingArrangements().size(),
+                        latter.getPrerequisiteProducingArrangements().size()
                 )
-                .append(former.getId(), latter.getId())
+                .append(
+                        former.getUuid(),
+                        latter.getUuid()
+                )
                 .toComparison();
     }
 

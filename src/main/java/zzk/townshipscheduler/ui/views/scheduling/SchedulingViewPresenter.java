@@ -196,7 +196,7 @@ public class SchedulingViewPresenter {
                                     townshipSchedulingProblem
                             );
                             getSchedulingView().getArrangementReportArticle()
-                                    .update(townshipSchedulingProblem)
+                                    .push(townshipSchedulingProblem);
                             ;
                             this.setupOrderBriefGrid();
                             getSchedulingView().getArrangementTimelinePanel()
