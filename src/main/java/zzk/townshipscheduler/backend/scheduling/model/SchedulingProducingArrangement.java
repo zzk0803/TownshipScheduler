@@ -121,10 +121,10 @@ public class SchedulingProducingArrangement
     )
     private SchedulingProducingArrangement previousProducingArrangement;
 
-    @NextElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
-    )
-    private SchedulingProducingArrangement nextProducingArrangement;
+//    @NextElementShadowVariable(
+//            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
+//    )
+//    private SchedulingProducingArrangement nextProducingArrangement;
 
     @IndexShadowVariable(
             sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
@@ -186,9 +186,9 @@ public class SchedulingProducingArrangement
 
     @ShadowSources(
             value = {
-                    "planningDelaySlot",
-                    "shadowPrerequisiteProducingArrangementsFinishedDateTime",
-                    "previousProducingArrangement.shadowDateTimeSlot"
+                    "planningDelaySlot"
+                    , "shadowPrerequisiteProducingArrangementsFinishedDateTime"
+                    , "previousProducingArrangement.shadowDateTimeSlot"
             }
     )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -205,15 +205,17 @@ public class SchedulingProducingArrangement
             }
             else {
                 SchedulingDateTimeSlot previousArrangementShadowDateTimeSlot = previousProducingArrangement.shadowDateTimeSlot;
-                if (previousArrangementShadowDateTimeSlot == null) {
-                    return null;
-                }
-                return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                        ObjectUtils.max(
+                return ObjectUtils.max(
+                        townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
                                 this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
-                                previousArrangementShadowDateTimeSlot.getStart()
+                                this.planningDelaySlot
                         ),
-                        this.planningDelaySlot
+                        townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
+                                previousArrangementShadowDateTimeSlot == null
+                                        ? null
+                                        : previousArrangementShadowDateTimeSlot.getStart(),
+                                this.planningDelaySlot
+                        )
                 );
             }
         }

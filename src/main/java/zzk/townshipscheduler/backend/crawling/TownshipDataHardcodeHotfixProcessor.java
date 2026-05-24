@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
 import java.util.Arrays;

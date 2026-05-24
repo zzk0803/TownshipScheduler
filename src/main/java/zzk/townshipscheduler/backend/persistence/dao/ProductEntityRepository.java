@@ -1,6 +1,5 @@
-package zzk.townshipscheduler.backend.dao;
+package zzk.townshipscheduler.backend.persistence.dao;
 
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;

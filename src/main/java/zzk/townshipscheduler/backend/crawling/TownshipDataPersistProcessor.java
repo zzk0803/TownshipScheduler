@@ -9,7 +9,7 @@ import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
-import zzk.townshipscheduler.backend.dao.*;
+import zzk.townshipscheduler.backend.persistence.dao.*;
 import zzk.townshipscheduler.backend.service.ProductService;
 
 import java.util.List;

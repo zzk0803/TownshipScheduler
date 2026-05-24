@@ -28,6 +28,8 @@ public class TownshipSchedulingProblem implements Serializable {
     @Serial
     private static final long serialVersionUID = 719813705385100065L;
 
+    public static final int ONE_DAY_MINUTES = 3600;
+
     private String uuid;
 
     @ProblemFactCollectionProperty
@@ -104,7 +106,9 @@ public class TownshipSchedulingProblem implements Serializable {
             LocalDateTime floorLocalDateTime,
             Integer delaySlot
     ) {
-        Objects.requireNonNull(floorLocalDateTime);
+        if (floorLocalDateTime == null) {
+            return null;
+        }
 
         int delayMinute = (
                 delaySlot == null
@@ -120,7 +124,7 @@ public class TownshipSchedulingProblem implements Serializable {
 
     @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
     public ValueRange<Integer> valueRangeForDateTimeSlotDelay() {
-        return ValueRangeFactory.createIntValueRange(0, 10);
+        return ValueRangeFactory.createIntValueRange(0, ONE_DAY_MINUTES / getDateTimeSlotSize().getMinute());
     }
 
 }

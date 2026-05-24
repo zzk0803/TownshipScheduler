@@ -3,7 +3,7 @@ package zzk.townshipscheduler.backend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import zzk.townshipscheduler.backend.dao.*;
+import zzk.townshipscheduler.backend.persistence.dao.*;
 import zzk.townshipscheduler.backend.persistence.*;
 
 import java.util.List;

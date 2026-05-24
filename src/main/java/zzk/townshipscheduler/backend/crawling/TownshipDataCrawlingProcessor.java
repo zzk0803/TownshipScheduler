@@ -2,7 +2,6 @@ package zzk.townshipscheduler.backend.crawling;
 
 import io.arxila.javatuples.Pair;
 import jakarta.annotation.PreDestroy;
-import lombok.SneakyThrows;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,7 +13,7 @@ import org.springframework.core.retry.RetryException;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 
 import java.io.IOException;

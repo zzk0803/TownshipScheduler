@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 
 import java.util.*;
 import java.util.regex.Matcher;

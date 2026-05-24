@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.backend.scheduling;
 
-import ai.timefold.solver.core.api.score.BendableScore;
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.SolutionManager;
@@ -12,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.dao.TownshipProblemEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.TownshipProblemEntityRepository;
 import zzk.townshipscheduler.backend.persistence.TownshipProblemEntity;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 

@@ -12,7 +12,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 

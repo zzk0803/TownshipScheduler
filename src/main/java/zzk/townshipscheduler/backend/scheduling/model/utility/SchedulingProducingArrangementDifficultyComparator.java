@@ -14,20 +14,16 @@ public class SchedulingProducingArrangementDifficultyComparator implements Compa
     ) {
         return new CompareToBuilder()
                 .append(
-                        former.boolOrderDirect(),
-                        latter.boolOrderDirect()
-                )
-                .append(
                         former.getDeepPrerequisiteProducingArrangementsSize(),
                         latter.getDeepPrerequisiteProducingArrangementsSize()
                 )
                 .append(
-                        former.getPrerequisiteProducingArrangementsSize(),
-                        latter.getPrerequisiteProducingArrangementsSize()
+                        former.boolOrderDirect(),
+                        latter.boolOrderDirect()
                 )
                 .append(
-                        former.getUuid(),
-                        latter.getUuid()
+                        former.getId(),
+                        latter.getId()
                 )
                 .toComparison();
     }

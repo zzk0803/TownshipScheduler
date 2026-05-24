@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.domain.Sort;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
-import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.service.PlayerService;
 

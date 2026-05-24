@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.backend.dao;
+package zzk.townshipscheduler.backend.persistence.dao;
 
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;

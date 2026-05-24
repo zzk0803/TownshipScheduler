@@ -79,7 +79,7 @@
     <constructionHeuristic>
 
         <termination>
-            <minutesSpentLimit>1</minutesSpentLimit>
+            <secondsSpentLimit>90</secondsSpentLimit>
         </termination>
 
         <queuedValuePlacer>
@@ -99,6 +99,7 @@
                         <entitySelector>
                             <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>
                         </entitySelector>
+                        <valueSelector mimicSelectorRef="constructionHeuristic1_valueSelector_arrangements"/>
                     </destinationSelector>
                 </listChangeMoveSelector>
             </unionMoveSelector>
@@ -114,11 +115,11 @@
     <!--endregion-->
 
     <!--region customPhase-->
-<!--    <customPhase>-->
-<!--        <customPhaseCommandClass>-->
-<!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
-<!--        </customPhaseCommandClass>-->
-<!--    </customPhase>-->
+    <!--    <customPhase>-->
+    <!--        <customPhaseCommandClass>-->
+    <!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
+    <!--        </customPhaseCommandClass>-->
+    <!--    </customPhase>-->
     <!--    endregion-->
 
     <!--region local search-->

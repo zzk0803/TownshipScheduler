@@ -8,7 +8,7 @@ import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.atteo.evo.inflector.English;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;

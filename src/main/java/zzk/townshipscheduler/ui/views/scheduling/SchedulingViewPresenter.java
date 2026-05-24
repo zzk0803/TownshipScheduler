@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
@@ -22,8 +23,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.scheduling.TaskScheduler;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
-import zzk.townshipscheduler.backend.dao.OrderEntityRepository;
-import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.OrderEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
@@ -187,8 +188,9 @@ public class SchedulingViewPresenter {
                             TownshipSchedulingProblem townshipSchedulingProblem =
                                     this.getTownshipSchedulingProblemAtomicReference()
                                             .get();
+                            HardMediumSoftBigDecimalScore score = townshipSchedulingProblem.getScore();
                             getSchedulingView().getScoreAnalysisParagraph()
-                                    .setText(townshipSchedulingProblem.getScore().toString())
+                                    .setText(Objects.isNull(score)?"N/A":score.toString())
                             ;
                             this.setupArrangementsTreeGrid(
                                     getSchedulingView().getArrangementTreeGrid(),

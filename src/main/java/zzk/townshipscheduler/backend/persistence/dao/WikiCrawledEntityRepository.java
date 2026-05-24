@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.backend.dao;
+package zzk.townshipscheduler.backend.persistence.dao;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
