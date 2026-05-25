@@ -7,6 +7,8 @@ import java.util.Comparator;
 
 public class SchedulingProducingArrangementDifficultyComparator implements Comparator<SchedulingProducingArrangement> {
 
+    public static final Comparator<SchedulingProducingArrangement> INSTANCE = new SchedulingProducingArrangementDifficultyComparator();
+
     @Override
     public int compare(
             SchedulingProducingArrangement former,
@@ -14,12 +16,8 @@ public class SchedulingProducingArrangementDifficultyComparator implements Compa
     ) {
         return new CompareToBuilder()
                 .append(
-                        former.getDeepPrerequisiteProducingArrangementsSize(),
-                        latter.getDeepPrerequisiteProducingArrangementsSize()
-                )
-                .append(
-                        former.boolOrderDirect(),
-                        latter.boolOrderDirect()
+                        former.getUuid(),
+                        latter.getUuid()
                 )
                 .append(
                         former.getId(),

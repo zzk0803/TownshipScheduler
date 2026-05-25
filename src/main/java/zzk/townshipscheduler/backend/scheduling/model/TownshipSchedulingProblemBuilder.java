@@ -3,6 +3,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.extern.log4j.Log4j2;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.Duration;
@@ -274,6 +275,7 @@ public class TownshipSchedulingProblemBuilder {
 
         }
 
+         resultArrangementList.sort(SchedulingProducingArrangementDifficultyComparator.INSTANCE);
         return resultArrangementList;
     }
 

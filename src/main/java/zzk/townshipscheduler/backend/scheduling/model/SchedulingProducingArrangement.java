@@ -10,6 +10,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import zzk.townshipscheduler.backend.ProducingStructureType;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDelayStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
@@ -109,7 +110,10 @@ public class SchedulingProducingArrangement
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
+    @PlanningVariable(
+            valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY,
+            comparatorClass = SchedulingProducingArrangementDelayStrengthComparator.class
+    )
     private Integer planningDelaySlot;
 
     @JsonIgnore
@@ -205,17 +209,11 @@ public class SchedulingProducingArrangement
             }
             else {
                 SchedulingDateTimeSlot previousArrangementShadowDateTimeSlot = previousProducingArrangement.shadowDateTimeSlot;
-                return ObjectUtils.max(
-                        townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                                this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
-                                this.planningDelaySlot
-                        ),
-                        townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                                previousArrangementShadowDateTimeSlot == null
-                                        ? null
-                                        : previousArrangementShadowDateTimeSlot.getStart(),
-                                this.planningDelaySlot
-                        )
+                return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
+                        previousArrangementShadowDateTimeSlot == null
+                                ? this.shadowPrerequisiteProducingArrangementsFinishedDateTime
+                                : previousArrangementShadowDateTimeSlot.getStart(),
+                        this.planningDelaySlot
                 );
             }
         }
@@ -247,14 +245,13 @@ public class SchedulingProducingArrangement
 
     @ShadowSources(
             {
-                    "shadowPrerequisiteProducingArrangementsFinishedDateTime",
-                    "shadowDateTimeSlot",
-                    "previousProducingArrangement.completedDateTime",
-                    "planningFactoryInstance"
+                    "shadowPrerequisiteProducingArrangementsFinishedDateTime"
+                    , "shadowDateTimeSlot"
+                    , "previousProducingArrangement.completedDateTime"
+                    , "planningFactoryInstance"
             }
     )
     public LocalDateTime supplierForProducingDateTime() {
-        LocalDateTime producingDateTime = null;
         if (shadowDateTimeSlot == null || planningFactoryInstance == null) {
             return null;
         }

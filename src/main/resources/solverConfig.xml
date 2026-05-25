@@ -79,7 +79,7 @@
     <constructionHeuristic>
 
         <termination>
-            <secondsSpentLimit>90</secondsSpentLimit>
+            <secondsSpentLimit>30</secondsSpentLimit>
         </termination>
 
         <queuedValuePlacer>
@@ -172,7 +172,7 @@
         </unionMoveSelector>
 
         <acceptor>
-            <lateAcceptanceSize>11</lateAcceptanceSize>
+            <lateAcceptanceSize>19</lateAcceptanceSize>
         </acceptor>
 
         <forager>
