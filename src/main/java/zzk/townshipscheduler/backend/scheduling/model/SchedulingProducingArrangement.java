@@ -28,8 +28,7 @@ import java.util.stream.Stream;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement
-        implements Serializable {
+public class SchedulingProducingArrangement implements Serializable {
 
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
 
@@ -41,8 +40,8 @@ public class SchedulingProducingArrangement
 
     public static final String SHADOW_COMPLETED_DATE_TIME = "completedDateTime";
 
-    public static final String SHADOW_DEEP_PREREQUISITE_PRODUCING_ARRANGEMENTS_FINISHED_DATE_TIME
-            = "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime";
+    public static final String SHADOW_DEEP_PREREQUISITE_PRODUCING_ARRANGEMENTS_FINISHED_DATE_TIME =
+            "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime";
 
     public static final String PREVIOUS_PRODUCING_ARRANGEMENT = "previousProducingArrangement";
 
@@ -84,6 +83,7 @@ public class SchedulingProducingArrangement
 
     private int prerequisiteProducingArrangementsSize;
 
+    @EqualsAndHashCode.Include
     private int deepPrerequisiteProducingArrangementsSize;
 
     @JsonIgnore
@@ -114,12 +114,13 @@ public class SchedulingProducingArrangement
             valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY,
             comparatorClass = SchedulingProducingArrangementDelayStrengthComparator.class
     )
-    private Integer planningDelaySlot;
+    private Integer planningDelaySlot = 0;
 
     @JsonIgnore
     @ShadowVariable(supplierName = "supplierForShadowDateTimeSlot")
     private SchedulingDateTimeSlot shadowDateTimeSlot;
 
+    //    @ShadowVariable(supplierName = "supplierForPreviousProducingArrangement")
     @PreviousElementShadowVariable(
             sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
     )
@@ -152,10 +153,7 @@ public class SchedulingProducingArrangement
     @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
 
-    private SchedulingProducingArrangement(
-            IGameArrangeObject targetActionObject,
-            IGameArrangeObject currentActionObject
-    ) {
+    private SchedulingProducingArrangement(IGameArrangeObject targetActionObject, IGameArrangeObject currentActionObject) {
         this.targetActionObject = targetActionObject;
         this.currentActionObject = currentActionObject;
     }
@@ -164,10 +162,7 @@ public class SchedulingProducingArrangement
             IGameArrangeObject targetActionObject,
             IGameArrangeObject currentActionObject
     ) {
-        SchedulingProducingArrangement producingArrangement = new SchedulingProducingArrangement(
-                targetActionObject,
-                currentActionObject
-        );
+        SchedulingProducingArrangement producingArrangement = new SchedulingProducingArrangement(targetActionObject, currentActionObject);
         producingArrangement.setUuid(UuidGenerator.timeOrderedV6());
         return producingArrangement;
     }
@@ -182,45 +177,21 @@ public class SchedulingProducingArrangement
         return this.prerequisiteProducingArrangements.stream()
                 .map(SchedulingProducingArrangement::getCompletedDateTime)
                 .max(LocalDateTime::compareTo)
-                .orElse(
-                        townshipSchedulingProblem.getSchedulingWorkCalendar()
-                                .getStartDateTime()
-                );
+                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
     }
 
     @ShadowSources(
             value = {
-                    "planningDelaySlot"
-                    , "shadowPrerequisiteProducingArrangementsFinishedDateTime"
-                    , "previousProducingArrangement.shadowDateTimeSlot"
+                    "planningDelaySlot", "shadowPrerequisiteProducingArrangementsFinishedDateTime"
+//                    , "previousProducingArrangement.shadowDateTimeSlot"
             }
     )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
-        if (this.shadowPrerequisiteProducingArrangementsFinishedDateTime == null) {
-            return null;
-        }
-
-        if (this.weatherFactoryProducingTypeIsQueue()) {
-            if (previousProducingArrangement == null) {
-                return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                        this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
-                        this.planningDelaySlot
-                );
-            }
-            else {
-                SchedulingDateTimeSlot previousArrangementShadowDateTimeSlot = previousProducingArrangement.shadowDateTimeSlot;
-                return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                        previousArrangementShadowDateTimeSlot == null
-                                ? this.shadowPrerequisiteProducingArrangementsFinishedDateTime
-                                : previousArrangementShadowDateTimeSlot.getStart(),
-                        this.planningDelaySlot
-                );
-            }
-        }
 
         return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                this.shadowPrerequisiteProducingArrangementsFinishedDateTime,
-                this.planningDelaySlot
+                Objects.nonNull(this.shadowPrerequisiteProducingArrangementsFinishedDateTime)
+                        ? this.shadowPrerequisiteProducingArrangementsFinishedDateTime
+                        : null, this.planningDelaySlot
         );
 
     }
@@ -243,10 +214,33 @@ public class SchedulingProducingArrangement
         return (SchedulingProduct) getCurrentActionObject();
     }
 
+//    @ShadowSources(
+//            value = {
+//                    "planningFactoryInstance",
+//                    "shadowDateTimeSlot",
+//                    "indexInFactory"
+//            }
+//    )
+//    public SchedulingProducingArrangement supplierForPreviousProducingArrangement(TownshipSchedulingProblem townshipSchedulingProblem) {
+//        if (Stream.of(planningFactoryInstance, shadowDateTimeSlot, indexInFactory).anyMatch(Objects::isNull)) {
+//            return null;
+//        }
+//
+//        List<SchedulingProducingArrangement> planningArrangementsSequence =
+//                new ArrayList<>(this.planningFactoryInstance.getPlanningArrangementsSequence());
+//        planningArrangementsSequence.removeIf(schedulingProducingArrangement -> Objects.isNull(schedulingProducingArrangement
+//        .shadowDateTimeSlot));
+//        TreeSet<SchedulingProducingArrangement> sortedPlanningArrangementsSequence = new TreeSet<>(
+//                Comparator.comparing(SchedulingProducingArrangement::getShadowDateTimeSlot)
+//                        .thenComparingInt(SchedulingProducingArrangement::getIndexInFactory)
+//        );
+//        sortedPlanningArrangementsSequence.addAll(planningArrangementsSequence);
+//        return sortedPlanningArrangementsSequence.lower(this);
+//    }
+
     @ShadowSources(
-            {
-                    "shadowPrerequisiteProducingArrangementsFinishedDateTime"
-                    , "shadowDateTimeSlot"
+            value = {
+                    "shadowDateTimeSlot"
                     , "previousProducingArrangement.completedDateTime"
                     , "planningFactoryInstance"
             }
@@ -256,30 +250,13 @@ public class SchedulingProducingArrangement
             return null;
         }
 
+        LocalDateTime producingDateTime = null;
         final LocalDateTime arrangeDateTime = shadowDateTimeSlot.getStart();
-        switch (getFactoryProducingType()) {
-            case QUEUE -> {
-                if (previousProducingArrangement != null) {
-                    producingDateTime = ObjectUtils.max(
-                            arrangeDateTime,
-                            shadowPrerequisiteProducingArrangementsFinishedDateTime,
-                            previousProducingArrangement.completedDateTime
-                    );
-                }
-                else {
-                    producingDateTime = ObjectUtils.max(
-                            arrangeDateTime,
-                            shadowPrerequisiteProducingArrangementsFinishedDateTime
-                    );
-                }
-            }
-
-            case SLOT -> {
-                producingDateTime = ObjectUtils.max(
-                        arrangeDateTime,
-                        shadowPrerequisiteProducingArrangementsFinishedDateTime
-                );
-            }
+        if (getFactoryProducingType() == ProducingStructureType.QUEUE && getPreviousProducingArrangement() != null) {
+            producingDateTime = ObjectUtils.max(arrangeDateTime, previousProducingArrangement.completedDateTime);
+        }
+        else {
+            producingDateTime = arrangeDateTime;
         }
 
         return producingDateTime;
@@ -301,18 +278,13 @@ public class SchedulingProducingArrangement
 
     @JsonIgnore
     public boolean isFactoryMatch() {
-        return Objects.nonNull(getPlanningFactoryInstance())
-                && getPlanningFactoryInstance().getSchedulingFactoryInfo()
+        return Objects.nonNull(getPlanningFactoryInstance()) && getPlanningFactoryInstance().getSchedulingFactoryInfo()
                 .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
     public boolean boolPlanningWellBeing() {
-        return Stream.of(
-                getPlanningFactoryInstance(),
-                getShadowDateTimeSlot(),
-                getProducingDateTime(),
-                getCompletedDateTime()
-        ).allMatch(Objects::nonNull);
+        return Stream.of(getPlanningFactoryInstance(), getShadowDateTimeSlot(), getProducingDateTime(), getCompletedDateTime())
+                .allMatch(Objects::nonNull);
     }
 
     @JsonProperty("arrangeDateTime")
@@ -329,6 +301,16 @@ public class SchedulingProducingArrangement
         throw new UnsupportedOperationException();
     }
 
+    public void elementarySetup(
+            ArrangementIdRoller idRoller,
+//            SchedulingWorkCalendar workTimeLimit,
+            SchedulingPlayer schedulingPlayer
+    ) {
+        idRoller.setup(this);
+//        this.schedulingWorkCalendar = workTimeLimit;
+        this.schedulingPlayer = schedulingPlayer;
+    }
+
     public void advancedSetupOrThrow() {
         Objects.requireNonNull(this.getCurrentActionObject());
         Objects.requireNonNull(getId());
@@ -340,16 +322,6 @@ public class SchedulingProducingArrangement
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements);
         setDeepPrerequisiteProducingArrangementsSize(calcDeepPrerequisiteProducingArrangements.size());
         setStaticDeepProducingDuration(calcStaticProducingDuration());
-    }
-
-    public void elementarySetup(
-            ArrangementIdRoller idRoller,
-//            SchedulingWorkCalendar workTimeLimit,
-            SchedulingPlayer schedulingPlayer
-    ) {
-        idRoller.setup(this);
-//        this.schedulingWorkCalendar = workTimeLimit;
-        this.schedulingPlayer = schedulingPlayer;
     }
 
     @JsonIgnore
@@ -373,8 +345,7 @@ public class SchedulingProducingArrangement
                 continue;
             }
 
-            Set<SchedulingProducingArrangement> prerequisites =
-                    current.getPrerequisiteProducingArrangements();
+            Set<SchedulingProducingArrangement> prerequisites = current.getPrerequisiteProducingArrangements();
             if (prerequisites != null) {
                 for (SchedulingProducingArrangement iteratingSingleArrangement : prerequisites) {
                     if (iteratingSingleArrangement != null) {
@@ -394,7 +365,8 @@ public class SchedulingProducingArrangement
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
                 .filter(Objects::nonNull)
                 .max(Duration::compareTo)
-                .orElse(Duration.ZERO);
+                .orElse(Duration.ZERO)
+                ;
         setStaticDeepPrerequisiteProducingDuration(prerequisiteStaticProducingDuration);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
     }
@@ -418,13 +390,11 @@ public class SchedulingProducingArrangement
     }
 
     public boolean boolCallerDeepPrerequisiteToArg(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return schedulingProducingArrangement.getDeepPrerequisiteProducingArrangements()
-                .contains(this);
+        return schedulingProducingArrangement.getDeepPrerequisiteProducingArrangements().contains(this);
     }
 
     public boolean boolCallerDirectPrerequisiteToArg(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return schedulingProducingArrangement.getPrerequisiteProducingArrangements()
-                .contains(this);
+        return schedulingProducingArrangement.getPrerequisiteProducingArrangements().contains(this);
     }
 
     public boolean weatherPrerequisiteRequire() {

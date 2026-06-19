@@ -39,7 +39,7 @@ public class SchedulingProducingExecutionMode implements Serializable {
     public SchedulingProducingExecutionMode() {
     }
 
-    public List<SchedulingProducingArrangement> materialsActions() {
+    public List<SchedulingProducingArrangement> generateMaterialsArrangements() {
         return boolAtomicProduct()
                 ? List.of()
                 : materials.entrySet().stream()

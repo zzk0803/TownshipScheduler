@@ -6,14 +6,15 @@ import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
-public class ChangeMoveProducingArrangementEntitySlotTypeFilter implements SelectionFilter<TownshipSchedulingProblem, SchedulingProducingArrangement> {
+public class ChangeMoveProducingArrangementEntitySlotTypeFilter
+        implements SelectionFilter<TownshipSchedulingProblem, SchedulingProducingArrangement> {
 
     @Override
     public boolean accept(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement schedulingProducingArrangement
     ) {
-        return schedulingProducingArrangement.getFactoryProducingType()== ProducingStructureType.SLOT;
+        return schedulingProducingArrangement.getFactoryProducingType() == ProducingStructureType.SLOT || schedulingProducingArrangement.getPrerequisiteProducingArrangementsSize() == 0;
     }
 
 }

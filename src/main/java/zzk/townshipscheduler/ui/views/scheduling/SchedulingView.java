@@ -111,7 +111,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             else {
                 ConfirmDialog confirmDialog = new ConfirmDialog(
                         "ERROR",
-                        "scheduling not exist",
+                        "schedule not exist",
                         "OK",
                         confirmEvent -> {
                             UI.getCurrent()

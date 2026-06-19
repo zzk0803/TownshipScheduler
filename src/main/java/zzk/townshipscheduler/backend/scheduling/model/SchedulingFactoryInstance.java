@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -10,11 +11,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementStrengthComparator;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -53,7 +56,7 @@ public class SchedulingFactoryInstance
     @JsonIgnore
     @PlanningListVariable(
             valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_PRODUCING_ARRANGEMENT,
-            comparatorClass = SchedulingProducingArrangementDifficultyComparator.class,
+            comparatorClass = SchedulingProducingArrangementStrengthComparator.class,
             allowsUnassignedValues = true
     )
     private List<SchedulingProducingArrangement> planningArrangementsSequence = new ArrayList<>();

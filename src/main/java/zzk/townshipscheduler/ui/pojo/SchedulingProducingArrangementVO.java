@@ -8,6 +8,7 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 
 @Value
@@ -32,6 +33,14 @@ public class SchedulingProducingArrangementVO {
 
     String producingDuration;
 
+    int planningIndexInFactory;
+
+    int planningDelaySlotNum;
+
+    @JsonInclude
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    LocalDateTime prerequisiteCompletedDateTime;
+
     @JsonInclude
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime arrangeDateTime;
@@ -49,19 +58,32 @@ public class SchedulingProducingArrangementVO {
     ) {
         SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
         this.id = schedulingProducingArrangement.getId();
-        this.uuid = schedulingProducingArrangement.getUuid().toString();
-        this.order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder().getId());
-        this.product = schedulingProducingArrangement.getSchedulingProduct().getName();
-        this.orderProduct = schedulingProducingArrangement.getSchedulingOrderProduct().getName();
+        this.uuid = schedulingProducingArrangement.getUuid()
+                .toString();
+        this.order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder()
+                .getId());
+        this.product = schedulingProducingArrangement.getSchedulingProduct()
+                .getName();
+        this.orderProduct = schedulingProducingArrangement.getSchedulingOrderProduct()
+                .getName();
         this.orderProductArrangementId = schedulingProducingArrangement.getSchedulingOrderProductArrangementId();
         this.boolDirectToOrder = schedulingProducingArrangement.boolOrderDirect();
         this.factoryReadableIdentifier = planningFactoryInstance != null
-                ? planningFactoryInstance.getFactoryReadableIdentifier().toString()
+                ? planningFactoryInstance.getFactoryReadableIdentifier()
+                .toString()
                 : null;
-        this.producingDuration = schedulingProducingArrangement.getProducingDuration().toString();
+        this.producingDuration = schedulingProducingArrangement.getProducingDuration()
+                .toString();
         this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
         this.producingDateTime = schedulingProducingArrangement.getProducingDateTime();
         this.completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
+        this.planningIndexInFactory = Objects.nonNull(schedulingProducingArrangement.getIndexInFactory())
+                ? schedulingProducingArrangement.getIndexInFactory()
+                : -1;
+        this.planningDelaySlotNum = Objects.nonNull(schedulingProducingArrangement.getPlanningDelaySlot())
+                ? schedulingProducingArrangement.getPlanningDelaySlot()
+                : -1;
+        this.prerequisiteCompletedDateTime = schedulingProducingArrangement.getShadowPrerequisiteProducingArrangementsFinishedDateTime();
     }
 
 }

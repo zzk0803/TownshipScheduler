@@ -5,9 +5,9 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrange
 
 import java.util.Comparator;
 
-public class SchedulingProducingArrangementDifficultyComparator implements Comparator<SchedulingProducingArrangement> {
+public class SchedulingProducingArrangementStrengthComparator implements Comparator<SchedulingProducingArrangement> {
 
-    public static final Comparator<SchedulingProducingArrangement> INSTANCE = new SchedulingProducingArrangementDifficultyComparator();
+    public static final Comparator<SchedulingProducingArrangement> INSTANCE = new SchedulingProducingArrangementStrengthComparator();
 
     @Override
     public int compare(
@@ -15,10 +15,6 @@ public class SchedulingProducingArrangementDifficultyComparator implements Compa
             SchedulingProducingArrangement latter
     ) {
         return new CompareToBuilder()
-                .append(
-                        former.getDeepPrerequisiteProducingArrangementsSize(),
-                        latter.getDeepPrerequisiteProducingArrangementsSize()
-                )
                 .append(
                         former.getUuid(),
                         latter.getUuid()

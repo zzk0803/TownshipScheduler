@@ -185,7 +185,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                                 String factory = Optional.ofNullable(factoryArrangementsMapEntry.getKey()
                                                                              .getFactoryReadableIdentifier())
                                         .map(
-                                                FactoryReadableIdentifier::getFactoryCategory)
+                                                FactoryReadableIdentifier::toString)
                                         .orElse("N/A");
                                 card.setTitle(factory);
 

@@ -15,8 +15,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Tag("scheduling-vis-timeline-panel")
-@NpmPackage(value = "vis-timeline", version = "8.5.0")
-@NpmPackage(value = "@js-joda/core", version = "5.6.5")
+@NpmPackage(value = "vis-timeline", version = "8.5.1")
+@NpmPackage(value = "@js-joda/core", version = "6.0.1")
 @JsModule("./components/scheduling-vis-timeline-panel.ts")
 @JsModule("./components/by-factory-timeline-components.ts")
 @JsModule("./components/by-order-timeline-components.ts")
@@ -50,7 +50,10 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     private void updateRemoteFull(TownshipSchedulingProblem townshipSchedulingProblem) {
-        setPropertyObject("schedulingWorkCalendar", townshipSchedulingProblem.getSchedulingWorkCalendar());
+        setPropertyObject(
+                "schedulingWorkCalendar",
+                townshipSchedulingProblem.getSchedulingWorkCalendar()
+        );
         setPropertyList(
                 "schedulingOrders",
                 toOrderVo(townshipSchedulingProblem.getSchedulingOrderList())

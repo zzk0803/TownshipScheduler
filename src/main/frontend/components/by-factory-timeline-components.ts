@@ -4,12 +4,7 @@ import '@vaadin/vertical-layout';
 import {visStyles, visTownshipStyles} from './external-styles';
 // import {vaadinStyles, visStyles, visTownshipStyles} from './external-styles';
 import {DataGroup, DataItem} from 'vis-timeline';
-import {
-    SchedulingFactoryInstance,
-    SchedulingOrder,
-    SchedulingProducingArrangement,
-    SchedulingWorkCalendar
-} from './type';
+import {SchedulingFactoryInstance, SchedulingOrder, SchedulingProducingArrangement, SchedulingWorkCalendar} from './type';
 
 
 @customElement('by-factory-timeline-components')
@@ -153,7 +148,7 @@ export class ByFactoryTimelineComponents
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
                             group: arrangement?.factoryReadableIdentifier,
-                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id}</p>`,
+                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id + "(sequence=" + arrangement.planningIndexInFactory + ",delay=" + arrangement.planningDelaySlotNum + ",prerequisiteCompleted" + arrangement.prerequisiteCompletedDateTime + ")"}</p>`,
                             start: producingDateTime,
                             end: completedDateTime,
                             type: 'range',

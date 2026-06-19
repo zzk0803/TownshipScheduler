@@ -101,11 +101,17 @@ export declare interface SchedulingProducingArrangement {
 
     producingDuration: string,
 
+    prerequisiteCompletedDateTime: string,
+
     arrangeDateTime: string,
 
     producingDateTime: string,
 
-    completedDateTime: string
+    completedDateTime: string,
+
+    planningIndexInFactory: number,
+
+    planningDelaySlotNum: number
 
 }
 
