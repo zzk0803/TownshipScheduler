@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import zzk.townshipscheduler.backend.ProducingStructureType;
+import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementFactorySequenceVariableListener;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
@@ -27,7 +28,8 @@ import java.util.*;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement implements Serializable {
+public class SchedulingProducingArrangement
+        implements Serializable {
 
     public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 
@@ -97,7 +99,10 @@ public class SchedulingProducingArrangement implements Serializable {
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @JsonIgnore
-    @PlanningVariable(valueRangeProviderRefs = {VALUE_RANGE_FOR_DATE_TIME_SLOT})
+    @PlanningVariable(
+            valueRangeProviderRefs = {VALUE_RANGE_FOR_DATE_TIME_SLOT},
+            comparatorClass = SchedulingDateTimeSlotStrengthComparator.class
+    )
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
     @JsonIgnore
@@ -109,7 +114,7 @@ public class SchedulingProducingArrangement implements Serializable {
             sourceVariableName = PLANNING_DATA_TIME_SLOT,
             variableListenerClass = SchedulingProducingArrangementFactorySequenceVariableListener.class
     )
-    private FactoryProcessSequence shadowFactoryProcessSequence;
+    private SchedulingFactoryInstance.FactoryProcessSequence shadowFactoryProcessSequence;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -142,15 +147,15 @@ public class SchedulingProducingArrangement implements Serializable {
                 currentActionObject
         );
         producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
-                .toString());
+                                             .toString());
         return producingArrangement;
     }
 
     @JsonIgnore
     public boolean isFactoryMatch() {
         return Objects.nonNull(getPlanningFactoryInstance())
-                && getPlanningFactoryInstance().getSchedulingFactoryInfo()
-                .typeEqual(getSchedulingProduct().getRequireFactory());
+                       && getPlanningFactoryInstance().getSchedulingFactoryInfo()
+                                  .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
     @JsonProperty("schedulingProduct")
@@ -248,10 +253,10 @@ public class SchedulingProducingArrangement implements Serializable {
     private Duration calcStaticProducingDuration() {
         Duration selfDuration = getProducingDuration();
         Duration prerequisiteStaticProducingDuration = getPrerequisiteProducingArrangements().stream()
-                .map(SchedulingProducingArrangement::calcStaticProducingDuration)
-                .filter(Objects::nonNull)
-                .max(Duration::compareTo)
-                .orElse(Duration.ZERO)
+                                                               .map(SchedulingProducingArrangement::calcStaticProducingDuration)
+                                                               .filter(Objects::nonNull)
+                                                               .max(Duration::compareTo)
+                                                               .orElse(Duration.ZERO)
                 ;
         setStaticDeepPrerequisiteProducingDuration(prerequisiteStaticProducingDuration);
         return selfDuration.plus(prerequisiteStaticProducingDuration);

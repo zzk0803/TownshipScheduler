@@ -19,10 +19,6 @@ public class SchedulingProducingArrangementDifficultyComparator implements Compa
                         latter.getDeepPrerequisiteProducingArrangements().size()
                 )
                 .append(
-                        former.getPrerequisiteProducingArrangements().size(),
-                        latter.getPrerequisiteProducingArrangements().size()
-                )
-                .append(
                         former.getUuid(),
                         latter.getUuid()
                 )

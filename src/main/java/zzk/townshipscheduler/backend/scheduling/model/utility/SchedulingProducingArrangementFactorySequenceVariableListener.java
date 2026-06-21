@@ -54,7 +54,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
         SchedulingFactoryInstance planningFactoryInstance
                 = schedulingProducingArrangement.getPlanningFactoryInstance();
         SchedulingDateTimeSlot planningDateTimeSlot = schedulingProducingArrangement.getPlanningDateTimeSlot();
-        FactoryProcessSequence oldFactoryProcessSequence
+        SchedulingFactoryInstance.FactoryProcessSequence oldFactoryProcessSequence
                 = schedulingProducingArrangement.getShadowFactoryProcessSequence();
         if (Objects.isNull(planningFactoryInstance) || Objects.isNull(planningDateTimeSlot)) {
             doShadowVariableUpdate(
@@ -68,8 +68,8 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
         }
 
         if (planningFactoryInstance.weatherFactoryProducingTypeIsQueue()) {
-            FactoryProcessSequence newFactoryProcessSequence
-                    = new FactoryProcessSequence(schedulingProducingArrangement);
+            SchedulingFactoryInstance.FactoryProcessSequence newFactoryProcessSequence
+                    = new SchedulingFactoryInstance.FactoryProcessSequence(schedulingProducingArrangement);
             if (!Objects.equals(oldFactoryProcessSequence, newFactoryProcessSequence)) {
                 if (Objects.nonNull(oldFactoryProcessSequence)) {
                     scoreDirectorWorkingSolution.lookupFactoryInstance(oldFactoryProcessSequence)
@@ -77,7 +77,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                                 schedulingFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
                             });
                 }
-                Map<FactoryProcessSequence, FactoryComputedDateTimePair> affectedArrangementUpdatedDateTime
+                Map<SchedulingFactoryInstance.FactoryProcessSequence, SchedulingFactoryInstance.FactoryComputedDateTimePair> affectedArrangementUpdatedDateTime
                         = planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
                 doShadowVariableUpdate(
                         scoreDirector,
@@ -96,7 +96,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
             doShadowVariableUpdate(
                     scoreDirector,
                     schedulingProducingArrangement,
-                    new FactoryProcessSequence(schedulingProducingArrangement),
+                    new SchedulingFactoryInstance.FactoryProcessSequence(schedulingProducingArrangement),
                     SchedulingProducingArrangement::setShadowFactoryProcessSequence,
                     SchedulingProducingArrangement.SHADOW_FACTORY_PROCESS_SEQUENCE
             );
@@ -159,16 +159,16 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
     private void doUpdateDateTime(
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement schedulingProducingArrangement,
-            Map<FactoryProcessSequence, FactoryComputedDateTimePair> preparedProducingAndCompletedMap
+            Map<SchedulingFactoryInstance.FactoryProcessSequence, SchedulingFactoryInstance.FactoryComputedDateTimePair> preparedProducingAndCompletedMap
     ) {
-        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
+        SchedulingFactoryInstance.FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
         LocalDateTime oldProducingDateTime = schedulingProducingArrangement.getProducingDateTime();
         LocalDateTime oldCompletedDateTime = schedulingProducingArrangement.getCompletedDateTime();
         if (factoryProcessSequence == null) {
             return;
         }
 
-        FactoryComputedDateTimePair newDateTimePair
+        SchedulingFactoryInstance.FactoryComputedDateTimePair newDateTimePair
                 = preparedProducingAndCompletedMap.get(factoryProcessSequence);
         if (newDateTimePair == null) {
             return;

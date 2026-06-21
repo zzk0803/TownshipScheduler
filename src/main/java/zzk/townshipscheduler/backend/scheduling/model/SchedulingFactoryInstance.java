@@ -5,21 +5,20 @@ import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Setter;
+import lombok.*;
 import org.jspecify.annotations.NonNull;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
-public class SchedulingFactoryInstance implements Serializable {
+public class SchedulingFactoryInstance
+        implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -4151844387461751037L;
@@ -50,6 +49,10 @@ public class SchedulingFactoryInstance implements Serializable {
     @DeepPlanningClone
     private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMap = new TreeMap<>();
 
+    public static TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> createStatefulContainer() {
+        return new TreeMap<>();
+    }
+
     public void setupFactoryReadableIdentifier() {
         setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
     }
@@ -58,18 +61,38 @@ public class SchedulingFactoryInstance implements Serializable {
         return schedulingFactoryInfo.getCategoryName();
     }
 
-    public long calcRemainProducingQueueSize(LocalDateTime argDateTime) {
-        long count = 0L;
-        for (SchedulingProducingArrangement planningFactoryInstanceProducingArrangement : this.planningFactoryInstanceProducingArrangements) {
-            LocalDateTime arrangementArrangeDateTime = planningFactoryInstanceProducingArrangement.getArrangeDateTime();
-            LocalDateTime arrangementCompletedDateTime = planningFactoryInstanceProducingArrangement.getCompletedDateTime();
-            boolean b1 = !arrangementArrangeDateTime.isAfter(argDateTime);
-            boolean b2 = arrangementCompletedDateTime.isAfter(argDateTime);
-            if (b1 & b2) {
-                count++;
-            }
-        }
-        return count;
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> changeFactoryProcessSequence(
+            SchedulingProducingArrangement schedulingProducingArrangement,
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+    ) {
+        return changeFactoryProcessSequence(
+                new FactoryProcessSequence(schedulingProducingArrangement),
+                statefulContainerAsMap
+        );
+    }
+
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> changeFactoryProcessSequence(
+            FactoryProcessSequence factoryProcessSequence,
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+    ) {
+        statefulContainerAsMap.keySet()
+                .stream()
+                .filter(
+                        existProcessSequence -> existProcessSequence.getArrangementId()
+                                                        .equals(factoryProcessSequence.getArrangementId())
+                                                && existProcessSequence.compareTo(factoryProcessSequence) != 0
+                )
+                .forEach(filteredProcessSequence -> {
+                    this.removeFactoryProcessSequence(filteredProcessSequence, statefulContainerAsMap);
+                })
+        ;
+        return this.addFactoryProcessSequence(factoryProcessSequence, statefulContainerAsMap);
+    }
+
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
+            SchedulingProducingArrangement schedulingProducingArrangement
+    ) {
+        return addFactoryProcessSequence(new FactoryProcessSequence(schedulingProducingArrangement));
     }
 
     public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
@@ -104,7 +127,10 @@ public class SchedulingFactoryInstance implements Serializable {
             return result;
         }
 
-        FactoryComputedDateTimePair computedDateTimePair = computeDateTimePair(factoryProcessSequence, statefulContainerAsMap);
+        FactoryComputedDateTimePair computedDateTimePair = computeDateTimePair(
+                factoryProcessSequence,
+                statefulContainerAsMap
+        );
 
         statefulContainerAsMap.put(factoryProcessSequence, computedDateTimePair);
         result.put(factoryProcessSequence, computedDateTimePair);
@@ -124,7 +150,10 @@ public class SchedulingFactoryInstance implements Serializable {
         return new FactoryComputedDateTimePair(producingDateTime, completedDateTime);
     }
 
-    private LocalDateTime calcCompletedDateTime(FactoryProcessSequence factoryProcessSequence, LocalDateTime producingDateTime) {
+    private LocalDateTime calcCompletedDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            LocalDateTime producingDateTime
+    ) {
         return producingDateTime.plus(factoryProcessSequence.getProducingDuration());
     }
 
@@ -135,10 +164,12 @@ public class SchedulingFactoryInstance implements Serializable {
         LocalDateTime previousCompleted = (previousEntry == null)
                 ? null
                 : previousEntry.getValue()
-                        .completedDateTime();
+                  .completedDateTime();
 
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted)) ? arrangeDateTime : previousCompleted;
+        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted))
+                ? arrangeDateTime
+                : previousCompleted;
     }
 
     private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
@@ -167,7 +198,7 @@ public class SchedulingFactoryInstance implements Serializable {
 
         LocalDateTime currentCompleted = (startPrevEntry != null)
                 ? startPrevEntry.getValue()
-                .completedDateTime()
+                  .completedDateTime()
                 : null;
 
         Set<FactoryProcessSequence> iteratingSet = tailMap.keySet();
@@ -182,10 +213,10 @@ public class SchedulingFactoryInstance implements Serializable {
             LocalDateTime newCompleted = newProducing.plus(current.getProducingDuration());
 
             if (existingPair != null
-                    && existingPair.producingDateTime()
-                    .equals(newProducing)
-                    && existingPair.completedDateTime()
-                    .equals(newCompleted)
+                && existingPair.producingDateTime()
+                        .equals(newProducing)
+                && existingPair.completedDateTime()
+                        .equals(newCompleted)
             ) {
                 break;
             }
@@ -208,13 +239,34 @@ public class SchedulingFactoryInstance implements Serializable {
                 .weatherFactoryProducingTypeIsQueue();
     }
 
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
+            SchedulingProducingArrangement schedulingProducingArrangement,
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+    ) {
+        return addFactoryProcessSequence(
+                new FactoryProcessSequence(schedulingProducingArrangement),
+                statefulContainerAsMap
+        );
+    }
+
     private @NonNull FactoryComputedDateTimePair computeDateTimePair(FactoryProcessSequence factoryProcessSequence) {
         return this.computeDateTimePair(factoryProcessSequence, this.shadowProcessSequenceToComputePairMap);
     }
 
-    private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, LocalDateTime previousCompletedDateTime) {
+    private LocalDateTime calcProducingDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            LocalDateTime previousCompletedDateTime
+    ) {
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-        return (previousCompletedDateTime == null || arrangeDateTime.isAfter(previousCompletedDateTime)) ? arrangeDateTime : previousCompletedDateTime;
+        return (previousCompletedDateTime == null || arrangeDateTime.isAfter(previousCompletedDateTime))
+                ? arrangeDateTime
+                : previousCompletedDateTime;
+    }
+
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
+            SchedulingProducingArrangement schedulingProducingArrangement
+    ) {
+        return removeFactoryProcessSequence(new FactoryProcessSequence(schedulingProducingArrangement));
     }
 
     public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
@@ -245,11 +297,28 @@ public class SchedulingFactoryInstance implements Serializable {
         return resultContainer;
     }
 
-    private LocalDateTime calcProducingDateTime(FactoryProcessSequence factoryProcessSequence, FactoryComputedDateTimePair previousComputedPair) {
-        LocalDateTime previousCompleted = (previousComputedPair == null) ? null : previousComputedPair.completedDateTime();
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
+            SchedulingProducingArrangement schedulingProducingArrangement,
+            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+    ) {
+        return removeFactoryProcessSequence(
+                new FactoryProcessSequence(schedulingProducingArrangement),
+                statefulContainerAsMap
+        );
+    }
+
+    private LocalDateTime calcProducingDateTime(
+            FactoryProcessSequence factoryProcessSequence,
+            FactoryComputedDateTimePair previousComputedPair
+    ) {
+        LocalDateTime previousCompleted = (previousComputedPair == null)
+                ? null
+                : previousComputedPair.completedDateTime();
 
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
-        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted)) ? arrangeDateTime : previousCompleted;
+        return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted))
+                ? arrangeDateTime
+                : previousCompleted;
     }
 
     public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
@@ -263,12 +332,59 @@ public class SchedulingFactoryInstance implements Serializable {
     @Override
     public String toString() {
         return "SchedulingFactoryInstance{" + "readableIdentifier='" + factoryReadableIdentifier + '\'' + ", producingLength=" + producingLength + ", " +
-                "reapWindowSize=" + reapWindowSize + '}';
+               "reapWindowSize=" + reapWindowSize + '}';
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
         return this.getSchedulingFactoryInfo()
                 .typeEqual(that.getSchedulingFactoryInfo());
+    }
+
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+    @Value
+    public static class FactoryProcessSequence
+            implements Comparable<FactoryProcessSequence>, Serializable {
+
+        public static final Comparator<FactoryProcessSequence> COMPARATOR
+                = Comparator.comparing(FactoryProcessSequence::getSchedulingFactoryInstanceReadableIdentifier)
+                .thenComparing(FactoryProcessSequence::getArrangeDateTime)
+                .thenComparingInt(FactoryProcessSequence::getArrangementId);
+
+        @Serial
+        private static final long serialVersionUID = -264984659974196003L;
+
+        @EqualsAndHashCode.Include
+        LocalDateTime arrangeDateTime;
+
+        @EqualsAndHashCode.Include
+        Integer arrangementId;
+
+        @EqualsAndHashCode.Include
+        FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
+
+        Duration producingDuration;
+
+        public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
+            this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
+            this.producingDuration = schedulingProducingArrangement.getProducingDuration();
+            this.arrangementId = schedulingProducingArrangement.getId();
+            this.schedulingFactoryInstanceReadableIdentifier
+                    = schedulingProducingArrangement.getPlanningFactoryInstance()
+                    .getFactoryReadableIdentifier();
+        }
+
+        @Override
+        public int compareTo(FactoryProcessSequence that) {
+            return COMPARATOR.compare(this, that);
+        }
+
+    }
+
+    public static record FactoryComputedDateTimePair(
+            LocalDateTime producingDateTime,
+            LocalDateTime completedDateTime
+    ) implements Serializable {
+
     }
 
 }

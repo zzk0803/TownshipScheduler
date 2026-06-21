@@ -102,7 +102,7 @@ public class TownshipSchedulingProblem implements Serializable {
     }
 
     public List<SchedulingProducingArrangement> lookupProducingArrangements(
-            Collection<FactoryProcessSequence> factoryProcessSequences
+            Collection<SchedulingFactoryInstance.FactoryProcessSequence> factoryProcessSequences
     ) {
         return getSchedulingProducingArrangementList().stream()
                 .filter(schedulingProducingArrangement -> factoryProcessSequences.contains(schedulingProducingArrangement.getShadowFactoryProcessSequence()))
@@ -118,7 +118,7 @@ public class TownshipSchedulingProblem implements Serializable {
                 .findFirst();
     }
 
-    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(FactoryProcessSequence factoryProcessSequence) {
+    public Optional<SchedulingFactoryInstance> lookupFactoryInstance(SchedulingFactoryInstance.FactoryProcessSequence factoryProcessSequence) {
         return getSchedulingFactoryInstanceList().stream()
                 .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
                         .equals(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()))
