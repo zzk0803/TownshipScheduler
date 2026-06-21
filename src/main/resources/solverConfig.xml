@@ -6,7 +6,7 @@
 
     <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
 
-    <environmentMode>PHASE_ASSERT</environmentMode>
+    <environmentMode>FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
@@ -95,6 +95,7 @@
             </diminishedReturns>
         </termination>
 
+
         <unionMoveSelector>
 
             <changeMoveSelector>
@@ -125,14 +126,20 @@
                 </valueSelector>
             </changeMoveSelector>
 
-            <listChangeMoveSelector/>
+            <listChangeMoveSelector>
+                <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementListChangeMoveFilter</filterClass>
+                <valueSelector>
+                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementListChangeValueFilter</filterClass>
+                </valueSelector>
+            </listChangeMoveSelector>
+
             <listSwapMoveSelector/>
-            <subListChangeMoveSelector>
-                <selectReversingMoveToo>true</selectReversingMoveToo>
-            </subListChangeMoveSelector>
-            <subListSwapMoveSelector>
-                <selectReversingMoveToo>true</selectReversingMoveToo>
-            </subListSwapMoveSelector>
+            <!--            <subListChangeMoveSelector>-->
+            <!--                <selectReversingMoveToo>true</selectReversingMoveToo>-->
+            <!--            </subListChangeMoveSelector>-->
+            <!--            <subListSwapMoveSelector>-->
+            <!--                <selectReversingMoveToo>true</selectReversingMoveToo>-->
+            <!--            </subListSwapMoveSelector>-->
             <kOptListMoveSelector/>
 
         </unionMoveSelector>

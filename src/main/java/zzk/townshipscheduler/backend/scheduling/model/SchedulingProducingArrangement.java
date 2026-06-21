@@ -153,7 +153,10 @@ public class SchedulingProducingArrangement implements Serializable {
     @ShadowVariable(supplierName = "supplierForCompletedDateTime")
     private LocalDateTime completedDateTime;
 
-    private SchedulingProducingArrangement(IGameArrangeObject targetActionObject, IGameArrangeObject currentActionObject) {
+    private SchedulingProducingArrangement(
+            IGameArrangeObject targetActionObject,
+            IGameArrangeObject currentActionObject
+    ) {
         this.targetActionObject = targetActionObject;
         this.currentActionObject = currentActionObject;
     }
@@ -162,7 +165,10 @@ public class SchedulingProducingArrangement implements Serializable {
             IGameArrangeObject targetActionObject,
             IGameArrangeObject currentActionObject
     ) {
-        SchedulingProducingArrangement producingArrangement = new SchedulingProducingArrangement(targetActionObject, currentActionObject);
+        SchedulingProducingArrangement producingArrangement = new SchedulingProducingArrangement(
+                targetActionObject,
+                currentActionObject
+        );
         producingArrangement.setUuid(UuidGenerator.timeOrderedV6());
         return producingArrangement;
     }
@@ -191,7 +197,8 @@ public class SchedulingProducingArrangement implements Serializable {
         return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
                 Objects.nonNull(this.shadowPrerequisiteProducingArrangementsFinishedDateTime)
                         ? this.shadowPrerequisiteProducingArrangementsFinishedDateTime
-                        : null, this.planningDelaySlot
+                        : null,
+                this.planningDelaySlot
         );
 
     }
@@ -253,9 +260,11 @@ public class SchedulingProducingArrangement implements Serializable {
         LocalDateTime producingDateTime = null;
         final LocalDateTime arrangeDateTime = shadowDateTimeSlot.getStart();
         if (getFactoryProducingType() == ProducingStructureType.QUEUE && getPreviousProducingArrangement() != null) {
-            producingDateTime = ObjectUtils.max(arrangeDateTime, previousProducingArrangement.completedDateTime);
-        }
-        else {
+            producingDateTime = ObjectUtils.max(
+                    arrangeDateTime,
+                    previousProducingArrangement.completedDateTime
+            );
+        } else {
             producingDateTime = arrangeDateTime;
         }
 
@@ -283,7 +292,12 @@ public class SchedulingProducingArrangement implements Serializable {
     }
 
     public boolean boolPlanningWellBeing() {
-        return Stream.of(getPlanningFactoryInstance(), getShadowDateTimeSlot(), getProducingDateTime(), getCompletedDateTime())
+        return Stream.of(
+                        getPlanningFactoryInstance(),
+                        getShadowDateTimeSlot(),
+                        getProducingDateTime(),
+                        getCompletedDateTime()
+                )
                 .allMatch(Objects::nonNull);
     }
 
