@@ -10,8 +10,8 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDelayStrengthComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDelayStrengthComparator;
+import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.io.Serial;
@@ -188,7 +188,8 @@ public class SchedulingProducingArrangement implements Serializable {
 
     @ShadowSources(
             value = {
-                    "planningDelaySlot", "shadowPrerequisiteProducingArrangementsFinishedDateTime"
+                    "planningDelaySlot",
+                    "shadowPrerequisiteProducingArrangementsFinishedDateTime"
 //                    , "previousProducingArrangement.shadowDateTimeSlot"
             }
     )
@@ -235,8 +236,10 @@ public class SchedulingProducingArrangement implements Serializable {
 //
 //        List<SchedulingProducingArrangement> planningArrangementsSequence =
 //                new ArrayList<>(this.planningFactoryInstance.getPlanningArrangementsSequence());
-//        planningArrangementsSequence.removeIf(schedulingProducingArrangement -> Objects.isNull(schedulingProducingArrangement
-//        .shadowDateTimeSlot));
+//        planningArrangementsSequence.removeIf(
+//                schedulingProducingArrangement -> Objects.isNull(schedulingProducingArrangement.shadowDateTimeSlot)
+//        );
+//
 //        TreeSet<SchedulingProducingArrangement> sortedPlanningArrangementsSequence = new TreeSet<>(
 //                Comparator.comparing(SchedulingProducingArrangement::getShadowDateTimeSlot)
 //                        .thenComparingInt(SchedulingProducingArrangement::getIndexInFactory)
@@ -331,10 +334,8 @@ public class SchedulingProducingArrangement implements Serializable {
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
 //        Objects.requireNonNull(getSchedulingWorkCalendar());
-        SequencedSet<SchedulingProducingArrangement> calcDeepPrerequisiteProducingArrangements =
-                calcDeepPrerequisiteProducingArrangements();
-        setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements);
-        setDeepPrerequisiteProducingArrangementsSize(calcDeepPrerequisiteProducingArrangements.size());
+        setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
+        setDeepPrerequisiteProducingArrangementsSize(getDeepPrerequisiteProducingArrangements().size());
         setStaticDeepProducingDuration(calcStaticProducingDuration());
     }
 
@@ -383,6 +384,10 @@ public class SchedulingProducingArrangement implements Serializable {
                 ;
         setStaticDeepPrerequisiteProducingDuration(prerequisiteStaticProducingDuration);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
+    }
+
+    public LocalDateTime calcStaticArrangeDateTime(LocalDateTime argDateTime) {
+        return argDateTime.plus(getStaticDeepPrerequisiteProducingDuration());
     }
 
     public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {

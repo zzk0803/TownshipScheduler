@@ -2,22 +2,19 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.solution.cloner.DeepPlanningClone;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Setter;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementStrengthComparator;
+import lombok.*;
+import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementStrengthComparator;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.TreeMap;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -309,6 +306,65 @@ public class SchedulingFactoryInstance
     public boolean typeEqual(SchedulingFactoryInstance that) {
         return this.getSchedulingFactoryInfo()
                 .typeEqual(that.getSchedulingFactoryInfo());
+    }
+
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+    @Value
+    public static class FactoryProcessSequence implements Comparable<FactoryProcessSequence>, Serializable {
+
+        public static final Comparator<FactoryProcessSequence> COMPARATOR
+                = Comparator.comparing(FactoryProcessSequence::getArrangeDateTime)
+                .thenComparingInt(FactoryProcessSequence::getSequenceId);
+
+        @Serial
+        private static final long serialVersionUID = -2296858586337992130L;
+
+        LocalDateTime arrangeDateTime;
+
+        Integer sequenceId;
+
+        @EqualsAndHashCode.Include
+        Integer arrangeId;
+
+        @EqualsAndHashCode.Include
+        FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
+
+        Duration producingDuration;
+
+        public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
+            this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
+            this.producingDuration = schedulingProducingArrangement.getProducingDuration();
+            this.arrangeId = schedulingProducingArrangement.getId();
+            this.sequenceId = schedulingProducingArrangement.getIndexInFactory();
+            this.schedulingFactoryInstanceReadableIdentifier
+                    = schedulingProducingArrangement.getPlanningFactoryInstance()
+                    .getFactoryReadableIdentifier();
+        }
+
+        @Override
+        public int compareTo(FactoryProcessSequence that) {
+            return COMPARATOR.compare(this, that);
+        }
+
+    }
+
+    public static record FactoryComputedDateTimePair(
+            LocalDateTime producingDateTime,
+            LocalDateTime completedDateTime
+    )
+            implements Serializable, Comparable<FactoryComputedDateTimePair> {
+
+        @Override
+        public int compareTo(FactoryComputedDateTimePair that) {
+            return Comparator.comparing(FactoryComputedDateTimePair::producingDateTime)
+                    .thenComparing(FactoryComputedDateTimePair::completedDateTime)
+                    .compare(
+                            this,
+                            that
+                    )
+                    ;
+        }
+
     }
 
 }

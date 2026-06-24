@@ -12,15 +12,7 @@ public class ProducingArrangementListChangeValueFilter implements SelectionFilte
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SchedulingProducingArrangement selection
     ) {
-        if (selection.getShadowPrerequisiteProducingArrangementsFinishedDateTime() == null) {
-            return false;
-        }
-
-        if (selection.getShadowDateTimeSlot() == null) {
-            return false;
-        }
-
-        return true;
+        return selection.getShadowPrerequisiteProducingArrangementsFinishedDateTime() != null && selection.getShadowDateTimeSlot() != null;
     }
 
 }

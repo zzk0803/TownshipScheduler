@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.backend.scheduling.model.utility;
+package zzk.townshipscheduler.backend.scheduling.algorithm;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 

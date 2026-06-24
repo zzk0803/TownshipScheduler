@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.backend.scheduling.model.utility;
+package zzk.townshipscheduler.backend.scheduling.algorithm;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
@@ -18,10 +18,6 @@ public class SchedulingProducingArrangementStrengthComparator implements Compara
                 .append(
                         former.getUuid(),
                         latter.getUuid()
-                )
-                .append(
-                        former.getId(),
-                        latter.getId()
                 )
                 .toComparison();
     }

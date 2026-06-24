@@ -4,8 +4,6 @@
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
 
-    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
-
     <environmentMode>FULL_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
@@ -48,7 +46,7 @@
     <!--                <cacheType>PHASE</cacheType>-->
     <!--                <selectionOrder>SORTED</selectionOrder>-->
     <!--                <comparatorClass>-->
-    <!--                    zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator-->
+    <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator-->
     <!--                </comparatorClass>-->
     <!--                <sorterOrder>ASCENDING</sorterOrder>-->
     <!--            </valueSelector>-->
@@ -133,23 +131,23 @@
                 </valueSelector>
             </listChangeMoveSelector>
 
-            <listSwapMoveSelector/>
+            <!--            <listSwapMoveSelector/>-->
             <!--            <subListChangeMoveSelector>-->
             <!--                <selectReversingMoveToo>true</selectReversingMoveToo>-->
             <!--            </subListChangeMoveSelector>-->
             <!--            <subListSwapMoveSelector>-->
             <!--                <selectReversingMoveToo>true</selectReversingMoveToo>-->
             <!--            </subListSwapMoveSelector>-->
-            <kOptListMoveSelector/>
+            <!--            <kOptListMoveSelector/>-->
 
         </unionMoveSelector>
 
         <acceptor>
-            <lateAcceptanceSize>29</lateAcceptanceSize>
+            <lateAcceptanceSize>1000</lateAcceptanceSize>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>3</acceptedCountLimit>
+            <acceptedCountLimit>4</acceptedCountLimit>
         </forager>
 
     </localSearch>
