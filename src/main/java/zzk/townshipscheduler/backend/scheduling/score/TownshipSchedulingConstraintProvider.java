@@ -167,7 +167,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                             );
                         }
                 )
-                .map(schedulingProducingArrangement -> {
+                .expand(schedulingProducingArrangement -> {
                          LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
                          LocalDateTime workCalendarStart = schedulingProducingArrangement.getSchedulingWorkCalendar()
                                  .getStartDateTime();
@@ -183,7 +183,7 @@ public class TownshipSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .penalizeLong(
                         HardMediumSoftLongScore.ofMedium(100L),
-                        Duration::toMinutes
+                        (schedulingProducingArrangement, duration) -> duration.toMinutes()
                 )
                 .asConstraint("shouldNotBrokenCalendarEnd");
     }
