@@ -176,8 +176,8 @@ export class ByOrderTimelineComponents
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
                             group: group,
-                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id + "(sequence=" + arrangement.planningIndexInFactory + ",delay=" + arrangement.planningDelaySlotNum + ",prerequisiteCompleted" + arrangement.prerequisiteCompletedDateTime + ")"}</p>`,
                             type: 'range',
+                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id }</p>`,
                             start: arrangement?.producingDateTime,
                             end: arrangement?.completedDateTime,
                             subgroup: arrangement?.uuid

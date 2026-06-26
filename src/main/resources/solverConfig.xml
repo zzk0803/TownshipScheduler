@@ -68,11 +68,7 @@
     <!--        </forager>-->
 
     <!--    </constructionHeuristic>-->
-    <constructionHeuristic>
-        <forager>
-            <pickEarlyType>FIRST_FEASIBLE_SCORE_OR_NON_DETERIORATING_HARD</pickEarlyType>
-        </forager>
-    </constructionHeuristic>
+    <constructionHeuristic/>
     <!--endregion-->
 
     <!--region customPhase-->
@@ -111,6 +107,7 @@
             </changeMoveSelector>
 
             <changeMoveSelector>
+                <fixedProbabilityWeight>3.0</fixedProbabilityWeight>
                 <entitySelector id="localSearch_listChangeMoveSelector_changeMoveSelector(queue)_es_Arrangement_planningDelaySlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
@@ -124,21 +121,15 @@
                 </valueSelector>
             </changeMoveSelector>
 
-            <listChangeMoveSelector>
-                <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementListChangeMoveFilter</filterClass>
-                <valueSelector>
-                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementListChangeValueFilter</filterClass>
-                </valueSelector>
-            </listChangeMoveSelector>
-
-            <!--            <listSwapMoveSelector/>-->
-            <!--            <subListChangeMoveSelector>-->
-            <!--                <selectReversingMoveToo>true</selectReversingMoveToo>-->
-            <!--            </subListChangeMoveSelector>-->
-            <!--            <subListSwapMoveSelector>-->
-            <!--                <selectReversingMoveToo>true</selectReversingMoveToo>-->
-            <!--            </subListSwapMoveSelector>-->
-            <!--            <kOptListMoveSelector/>-->
+            <listChangeMoveSelector/>
+            <listSwapMoveSelector/>
+            <subListChangeMoveSelector>
+                <selectReversingMoveToo>true</selectReversingMoveToo>
+            </subListChangeMoveSelector>
+            <subListSwapMoveSelector>
+                <selectReversingMoveToo>true</selectReversingMoveToo>
+            </subListSwapMoveSelector>
+            <kOptListMoveSelector/>
 
         </unionMoveSelector>
 

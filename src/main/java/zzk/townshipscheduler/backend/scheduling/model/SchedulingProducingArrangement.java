@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
+import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.variable.*;
 import com.fasterxml.jackson.annotation.*;
@@ -55,6 +56,7 @@ public class SchedulingProducingArrangement implements Serializable {
     @EqualsAndHashCode.Include
     private Integer id;
 
+    @PlanningId
     @EqualsAndHashCode.Include
     private UUID uuid;
 
@@ -189,16 +191,22 @@ public class SchedulingProducingArrangement implements Serializable {
     @ShadowSources(
             value = {
                     "planningDelaySlot",
-                    "shadowPrerequisiteProducingArrangementsFinishedDateTime"
-//                    , "previousProducingArrangement.shadowDateTimeSlot"
+//                    "shadowPrerequisiteProducingArrangementsFinishedDateTime",
+                    "prerequisiteProducingArrangements[].completedDateTime"
             }
     )
     public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
 
+        LocalDateTime startDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime();
+        LocalDateTime idealArrangeDateTime = this.calcStaticArrangeDateTime(startDateTime);
+        LocalDateTime slackPrerequisiteDateTime = this.prerequisiteProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime())
+                ;
         return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                Objects.nonNull(this.shadowPrerequisiteProducingArrangementsFinishedDateTime)
-                        ? this.shadowPrerequisiteProducingArrangementsFinishedDateTime
-                        : null,
+                ObjectUtils.max(idealArrangeDateTime,slackPrerequisiteDateTime),
                 this.planningDelaySlot
         );
 
@@ -402,6 +410,10 @@ public class SchedulingProducingArrangement implements Serializable {
         this.prerequisiteProducingArrangements.forEach(
                 schedulingProducingArrangement -> schedulingProducingArrangement.setSuccessorProducingArrangement(this)
         );
+    }
+
+    public boolean boolBearSuccessorProducingArrangement() {
+        return getSuccessorProducingArrangement() != null;
     }
 
     public boolean boolOrderDirect() {

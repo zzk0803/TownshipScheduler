@@ -33,14 +33,6 @@ public class SchedulingProducingArrangementVO {
 
     String producingDuration;
 
-    int planningIndexInFactory;
-
-    int planningDelaySlotNum;
-
-    @JsonInclude
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime prerequisiteCompletedDateTime;
-
     @JsonInclude
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime arrangeDateTime;
@@ -77,13 +69,6 @@ public class SchedulingProducingArrangementVO {
         this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
         this.producingDateTime = schedulingProducingArrangement.getProducingDateTime();
         this.completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
-        this.planningIndexInFactory = Objects.nonNull(schedulingProducingArrangement.getIndexInFactory())
-                ? schedulingProducingArrangement.getIndexInFactory()
-                : -1;
-        this.planningDelaySlotNum = Objects.nonNull(schedulingProducingArrangement.getPlanningDelaySlot())
-                ? schedulingProducingArrangement.getPlanningDelaySlot()
-                : -1;
-        this.prerequisiteCompletedDateTime = schedulingProducingArrangement.getShadowPrerequisiteProducingArrangementsFinishedDateTime();
     }
 
 }
