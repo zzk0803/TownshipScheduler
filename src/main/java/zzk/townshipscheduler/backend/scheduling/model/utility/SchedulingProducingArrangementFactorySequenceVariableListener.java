@@ -8,7 +8,9 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
+import java.util.SequencedMap;
 import java.util.function.BiConsumer;
 
 public class SchedulingProducingArrangementFactorySequenceVariableListener
@@ -77,7 +79,7 @@ public class SchedulingProducingArrangementFactorySequenceVariableListener
                                 schedulingFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
                             });
                 }
-                Map<SchedulingFactoryInstance.FactoryProcessSequence, SchedulingFactoryInstance.FactoryComputedDateTimePair> affectedArrangementUpdatedDateTime
+                SequencedMap<SchedulingFactoryInstance.FactoryProcessSequence, SchedulingFactoryInstance.FactoryComputedDateTimePair> affectedArrangementUpdatedDateTime
                         = planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
                 doShadowVariableUpdate(
                         scoreDirector,

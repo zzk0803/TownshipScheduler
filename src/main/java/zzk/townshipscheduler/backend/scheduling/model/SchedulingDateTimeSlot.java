@@ -88,7 +88,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         return null;
     }
 
-    public static List<SchedulingDateTimeSlot> toValueRange(
+    public static NavigableSet<SchedulingDateTimeSlot> toValueRange(
             final LocalDateTime startInclusive,
             final LocalDateTime endExclusive,
             final int durationInMinute
@@ -96,7 +96,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
         int minutesNumber = Math.toIntExact(startInclusive.until(endExclusive, ChronoUnit.MINUTES));
         int slot = minutesNumber / durationInMinute;
         slot = slot + (minutesNumber % durationInMinute > 0 ? 1 : 0);
-        List<SchedulingDateTimeSlot> result = new ArrayList<>(slot);
+        NavigableSet<SchedulingDateTimeSlot> result = new TreeSet<>();
         LocalDateTime slotStart = startInclusive;
         LocalDateTime slotEnd = startInclusive.plusMinutes(durationInMinute);
         AtomicInteger idRoller = new AtomicInteger(0);

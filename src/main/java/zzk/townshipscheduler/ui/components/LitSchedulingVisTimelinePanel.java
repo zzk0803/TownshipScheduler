@@ -127,7 +127,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     private List<SchedulingProducingArrangementVO> toProducingArrangementVo(
-            List<SchedulingProducingArrangement> schedulingProducingArrangementList
+            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
     ) {
         return schedulingProducingArrangementList.stream()
                 .map(SchedulingProducingArrangementVO::new)
@@ -136,7 +136,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     private List<SchedulingProducingArrangementUnitGroupVo> toProducingArrangementUnitGroupVo(
-            List<SchedulingProducingArrangement> schedulingProducingArrangementList
+            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
     ) {
         Map<SchedulingOrder, List<SchedulingProducingArrangement>> orderArrangeMap
                 = schedulingProducingArrangementList.stream()

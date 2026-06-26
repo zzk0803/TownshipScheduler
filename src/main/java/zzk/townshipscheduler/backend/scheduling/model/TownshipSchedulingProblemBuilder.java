@@ -22,9 +22,9 @@ public class TownshipSchedulingProblemBuilder {
 
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
-    private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+    private NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
-    private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
+    private NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
     private SchedulingWorkCalendar schedulingWorkCalendar;
 
@@ -129,7 +129,7 @@ public class TownshipSchedulingProblemBuilder {
     private void setupDateTimeSlot() {
         LocalDateTime startDateTime = this.schedulingWorkCalendar.getStartDateTime();
         LocalDateTime endDateTime = this.schedulingWorkCalendar.getEndDateTime();
-        List<SchedulingDateTimeSlot> schedulingDateTimeSlots
+        NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots
                 = SchedulingDateTimeSlot.toValueRange(
                 startDateTime,
                 endDateTime,
@@ -138,7 +138,7 @@ public class TownshipSchedulingProblemBuilder {
         schedulingDateTimeSlots(schedulingDateTimeSlots);
     }
 
-    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(List<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
+    private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         return this;
     }
@@ -154,7 +154,7 @@ public class TownshipSchedulingProblemBuilder {
                 .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
                 .flatMap(Collection::stream)
                 .peek(SchedulingProducingArrangement::advancedSetupOrThrow)
-                .collect(Collectors.toCollection(ArrayList::new));
+                .collect(Collectors.toCollection(TreeSet::new));
 
         schedulingProducingArrangementList(producingArrangementArrayList);
     }
@@ -197,7 +197,7 @@ public class TownshipSchedulingProblemBuilder {
         return resultArrangementList;
     }
 
-    private TownshipSchedulingProblemBuilder schedulingProducingArrangementList(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
+    private TownshipSchedulingProblemBuilder schedulingProducingArrangementList(NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         this.schedulingProducingArrangementList = schedulingProducingArrangementList;
         return this;
     }

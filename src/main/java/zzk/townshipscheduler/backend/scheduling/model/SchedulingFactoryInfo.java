@@ -75,6 +75,10 @@ public class SchedulingFactoryInfo implements Serializable {
         return this.producingStructureType == ProducingStructureType.QUEUE;
     }
 
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return this.producingStructureType == ProducingStructureType.SLOT;
+    }
+
     public int calcMaxSupportedProductDurationMinutes() {
         if (this.maxSupportedProductDurationMinutes != null) {
             return this.maxSupportedProductDurationMinutes;

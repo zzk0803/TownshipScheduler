@@ -7,6 +7,9 @@ import java.util.Comparator;
 
 public class SchedulingProducingArrangementDifficultyComparator implements Comparator<SchedulingProducingArrangement> {
 
+    public static final SchedulingProducingArrangementDifficultyComparator INSTANCE =
+            new SchedulingProducingArrangementDifficultyComparator();
+
     @Override
     public int compare(SchedulingProducingArrangement former, SchedulingProducingArrangement latter) {
         return new CompareToBuilder()

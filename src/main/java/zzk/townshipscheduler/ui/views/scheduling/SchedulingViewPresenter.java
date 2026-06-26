@@ -215,12 +215,12 @@ public class SchedulingViewPresenter {
             TreeGrid<SchedulingProducingArrangement> treeGrid,
             TownshipSchedulingProblem townshipSchedulingProblem
     ) {
-        List<SchedulingProducingArrangement> arrangementList =
+        NavigableSet<SchedulingProducingArrangement> arrangementList =
                 townshipSchedulingProblem.getSchedulingProducingArrangementList();
         treeGrid.setTreeData(toTreeData(arrangementList));
     }
 
-    private TreeData<SchedulingProducingArrangement> toTreeData(List<SchedulingProducingArrangement> arrangementList) {
+    private TreeData<SchedulingProducingArrangement> toTreeData(NavigableSet<SchedulingProducingArrangement> arrangementList) {
         TreeData<SchedulingProducingArrangement> arrangementTreeData
                 = new TreeData<>();
 
@@ -246,7 +246,7 @@ public class SchedulingViewPresenter {
         TownshipSchedulingProblem problem = findCurrentProblem();
         SchedulingWorkCalendar schedulingWorkCalendar = problem.getSchedulingWorkCalendar();
         List<SchedulingOrder> schedulingOrderList = problem.getSchedulingOrderList();
-        List<SchedulingProducingArrangement> schedulingProducingArrangementList =
+        NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangementList =
                 problem.getSchedulingProducingArrangementList();
         return schedulingOrderList.stream()
                 .map(schedulingOrder -> {

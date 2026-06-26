@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -49,21 +50,24 @@ public class SchedulingFactoryInstance
     @DeepPlanningClone
     private TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> shadowProcessSequenceToComputePairMap = new TreeMap<>();
 
-    public static TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> createStatefulContainer() {
+    public static NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> createStatefulContainer() {
         return new TreeMap<>();
     }
 
     public void setupFactoryReadableIdentifier() {
-        setFactoryReadableIdentifier(new FactoryReadableIdentifier(getCategoryName(), getSeqNum()));
+        setFactoryReadableIdentifier(new FactoryReadableIdentifier(
+                getCategoryName(),
+                getSeqNum()
+        ));
     }
 
     public String getCategoryName() {
         return schedulingFactoryInfo.getCategoryName();
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> changeFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> changeFactoryProcessSequence(
             SchedulingProducingArrangement schedulingProducingArrangement,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
         return changeFactoryProcessSequence(
                 new FactoryProcessSequence(schedulingProducingArrangement),
@@ -71,60 +75,67 @@ public class SchedulingFactoryInstance
         );
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> changeFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> changeFactoryProcessSequence(
             FactoryProcessSequence factoryProcessSequence,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
-        statefulContainerAsMap.keySet()
+        List<FactoryProcessSequence> toRemoveSequences = statefulContainerAsMap.keySet()
                 .stream()
-                .filter(
-                        existProcessSequence -> existProcessSequence.getArrangementId()
-                                                        .equals(factoryProcessSequence.getArrangementId())
-                                                && existProcessSequence.compareTo(factoryProcessSequence) != 0
-                )
-                .forEach(filteredProcessSequence -> {
-                    this.removeFactoryProcessSequence(filteredProcessSequence, statefulContainerAsMap);
-                })
-        ;
-        return this.addFactoryProcessSequence(factoryProcessSequence, statefulContainerAsMap);
+                .filter(existProcessSequence -> existProcessSequence.getArrangementId()
+                        .equals(factoryProcessSequence.getArrangementId()) && existProcessSequence.compareTo(factoryProcessSequence) != 0)
+                .toList()
+                ;
+
+        for (FactoryProcessSequence filteredProcessSequence : toRemoveSequences) {
+            this.removeFactoryProcessSequence(
+                    filteredProcessSequence,
+                    statefulContainerAsMap
+            );
+        }
+
+        return this.addFactoryProcessSequence(
+                factoryProcessSequence,
+                statefulContainerAsMap
+        );
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
             SchedulingProducingArrangement schedulingProducingArrangement
     ) {
         return addFactoryProcessSequence(new FactoryProcessSequence(schedulingProducingArrangement));
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
             FactoryProcessSequence factoryProcessSequence
     ) {
-        return addFactoryProcessSequence(factoryProcessSequence, this.shadowProcessSequenceToComputePairMap);
+        return addFactoryProcessSequence(
+                factoryProcessSequence,
+                this.shadowProcessSequenceToComputePairMap
+        );
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
             FactoryProcessSequence factoryProcessSequence,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
-        Map<FactoryProcessSequence, FactoryComputedDateTimePair> result = new LinkedHashMap<>();
+        SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainerAsMap = new LinkedHashMap<>();
 
-        if (!weatherFactoryProducingTypeIsQueue()) {
+        if (weatherFactoryProducingTypeIsSlot()) {
             statefulContainerAsMap.put(
                     factoryProcessSequence,
                     new FactoryComputedDateTimePair(
                             factoryProcessSequence.getArrangeDateTime(),
-                            factoryProcessSequence.getArrangeDateTime()
-                                    .plus(factoryProcessSequence.getProducingDuration())
+                            factoryProcessSequence.getArrangeDateTime().plus(factoryProcessSequence.getProducingDuration())
                     )
             );
-            result.put(
+            resultContainerAsMap.put(
                     factoryProcessSequence,
                     new FactoryComputedDateTimePair(
                             factoryProcessSequence.getArrangeDateTime(),
-                            factoryProcessSequence.getArrangeDateTime()
-                                    .plus(factoryProcessSequence.getProducingDuration())
+                            factoryProcessSequence.getArrangeDateTime().plus(factoryProcessSequence.getProducingDuration())
                     )
             );
-            return result;
+            return resultContainerAsMap;
         }
 
         FactoryComputedDateTimePair computedDateTimePair = computeDateTimePair(
@@ -132,22 +143,40 @@ public class SchedulingFactoryInstance
                 statefulContainerAsMap
         );
 
-        statefulContainerAsMap.put(factoryProcessSequence, computedDateTimePair);
-        result.put(factoryProcessSequence, computedDateTimePair);
+        statefulContainerAsMap.put(
+                factoryProcessSequence,
+                computedDateTimePair
+        );
+        resultContainerAsMap.put(
+                factoryProcessSequence,
+                computedDateTimePair
+        );
 
-        return cascadeUpdatesAfter(factoryProcessSequence, result);
+        return cascadeUpdatesAfter(
+                factoryProcessSequence,
+                resultContainerAsMap
+        );
     }
 
     private FactoryComputedDateTimePair computeDateTimePair(
             FactoryProcessSequence factoryProcessSequence,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
-        Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prevEntry
-                = statefulContainerAsMap.lowerEntry(factoryProcessSequence);
+        Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> prevEntry =
+                statefulContainerAsMap.lowerEntry(factoryProcessSequence);
 
-        LocalDateTime producingDateTime = calcProducingDateTime(factoryProcessSequence, prevEntry);
-        LocalDateTime completedDateTime = calcCompletedDateTime(factoryProcessSequence, producingDateTime);
-        return new FactoryComputedDateTimePair(producingDateTime, completedDateTime);
+        LocalDateTime producingDateTime = calcProducingDateTime(
+                factoryProcessSequence,
+                prevEntry
+        );
+        LocalDateTime completedDateTime = calcCompletedDateTime(
+                factoryProcessSequence,
+                producingDateTime
+        );
+        return new FactoryComputedDateTimePair(
+                producingDateTime,
+                completedDateTime
+        );
     }
 
     private LocalDateTime calcCompletedDateTime(
@@ -163,8 +192,7 @@ public class SchedulingFactoryInstance
     ) {
         LocalDateTime previousCompleted = (previousEntry == null)
                 ? null
-                : previousEntry.getValue()
-                  .completedDateTime();
+                : previousEntry.getValue().completedDateTime();
 
         LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
         return (previousCompleted == null || arrangeDateTime.isAfter(previousCompleted))
@@ -172,9 +200,9 @@ public class SchedulingFactoryInstance
                 : previousCompleted;
     }
 
-    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
+    private SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
             FactoryProcessSequence fromSequence,
-            Map<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainerAsMap
+            SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainerAsMap
     ) {
         return cascadeUpdatesAfter(
                 fromSequence,
@@ -183,22 +211,25 @@ public class SchedulingFactoryInstance
         );
     }
 
-    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
+    private SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> cascadeUpdatesAfter(
             FactoryProcessSequence fromSequence,
-            Map<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainer,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainerAsMap,
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
-        NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailMap =
-                statefulContainerAsMap.tailMap(fromSequence, false);
+        NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> tailMap = statefulContainerAsMap.tailMap(
+                fromSequence,
+                false
+        );
 
-        if (tailMap.isEmpty()) return resultContainer;
+        if (tailMap.isEmpty()) {
+            return resultContainerAsMap;
+        }
 
         Map.Entry<FactoryProcessSequence, FactoryComputedDateTimePair> startPrevEntry =
                 statefulContainerAsMap.lowerEntry(tailMap.firstKey());
 
         LocalDateTime currentCompleted = (startPrevEntry != null)
-                ? startPrevEntry.getValue()
-                  .completedDateTime()
+                ? startPrevEntry.getValue().completedDateTime()
                 : null;
 
         Set<FactoryProcessSequence> iteratingSet = tailMap.keySet();
@@ -206,42 +237,46 @@ public class SchedulingFactoryInstance
             FactoryComputedDateTimePair existingPair = statefulContainerAsMap.get(current);
             LocalDateTime arrangeDateTime = current.getArrangeDateTime();
 
-            LocalDateTime newProducing
-                    = (currentCompleted == null || arrangeDateTime.isAfter(currentCompleted))
+            LocalDateTime newProducing = (currentCompleted == null || arrangeDateTime.isAfter(currentCompleted))
                     ? arrangeDateTime
                     : currentCompleted;
             LocalDateTime newCompleted = newProducing.plus(current.getProducingDuration());
 
-            if (existingPair != null
-                && existingPair.producingDateTime()
-                        .equals(newProducing)
-                && existingPair.completedDateTime()
-                        .equals(newCompleted)
-            ) {
+            if (existingPair != null && existingPair.producingDateTime().equals(newProducing) && existingPair.completedDateTime()
+                    .equals(newCompleted)) {
                 break;
             }
 
             statefulContainerAsMap.put(
                     current,
-                    new FactoryComputedDateTimePair(newProducing, newCompleted)
+                    new FactoryComputedDateTimePair(
+                            newProducing,
+                            newCompleted
+                    )
             );
-            resultContainer.put(
+            resultContainerAsMap.put(
                     current,
-                    new FactoryComputedDateTimePair(newProducing, newCompleted)
+                    new FactoryComputedDateTimePair(
+                            newProducing,
+                            newCompleted
+                    )
             );
             currentCompleted = newCompleted;
         }
-        return resultContainer;
+        return resultContainerAsMap;
     }
 
     public boolean weatherFactoryProducingTypeIsQueue() {
-        return this.getSchedulingFactoryInfo()
-                .weatherFactoryProducingTypeIsQueue();
+        return this.getSchedulingFactoryInfo().weatherFactoryProducingTypeIsQueue();
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return getSchedulingFactoryInfo().weatherFactoryProducingTypeIsSlot();
+    }
+
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> addFactoryProcessSequence(
             SchedulingProducingArrangement schedulingProducingArrangement,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
         return addFactoryProcessSequence(
                 new FactoryProcessSequence(schedulingProducingArrangement),
@@ -250,7 +285,10 @@ public class SchedulingFactoryInstance
     }
 
     private @NonNull FactoryComputedDateTimePair computeDateTimePair(FactoryProcessSequence factoryProcessSequence) {
-        return this.computeDateTimePair(factoryProcessSequence, this.shadowProcessSequenceToComputePairMap);
+        return this.computeDateTimePair(
+                factoryProcessSequence,
+                this.shadowProcessSequenceToComputePairMap
+        );
     }
 
     private LocalDateTime calcProducingDateTime(
@@ -263,13 +301,13 @@ public class SchedulingFactoryInstance
                 : previousCompletedDateTime;
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
             SchedulingProducingArrangement schedulingProducingArrangement
     ) {
         return removeFactoryProcessSequence(new FactoryProcessSequence(schedulingProducingArrangement));
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
             FactoryProcessSequence factoryProcessSequence
     ) {
         return removeFactoryProcessSequence(
@@ -278,28 +316,35 @@ public class SchedulingFactoryInstance
         );
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
             FactoryProcessSequence factoryProcessSequence,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
-        Map<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainer = new LinkedHashMap<>();
+        SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> resultContainerAsMap = new LinkedHashMap<>();
 
         if (!statefulContainerAsMap.containsKey(factoryProcessSequence)) {
-            return resultContainer;
+            return resultContainerAsMap;
         }
         statefulContainerAsMap.remove(factoryProcessSequence);
-        resultContainer.put(factoryProcessSequence, null);
+        resultContainerAsMap.put(
+                factoryProcessSequence,
+                null
+        );
 
         if (weatherFactoryProducingTypeIsQueue()) {
-            return cascadeUpdatesAfter(factoryProcessSequence, resultContainer, statefulContainerAsMap);
+            return cascadeUpdatesAfter(
+                    factoryProcessSequence,
+                    resultContainerAsMap,
+                    statefulContainerAsMap
+            );
         }
 
-        return resultContainer;
+        return resultContainerAsMap;
     }
 
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
+    public SequencedMap<FactoryProcessSequence, FactoryComputedDateTimePair> removeFactoryProcessSequence(
             SchedulingProducingArrangement schedulingProducingArrangement,
-            TreeMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
+            NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> statefulContainerAsMap
     ) {
         return removeFactoryProcessSequence(
                 new FactoryProcessSequence(schedulingProducingArrangement),
@@ -321,7 +366,7 @@ public class SchedulingFactoryInstance
                 : previousCompleted;
     }
 
-    public SortedMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
+    public NavigableMap<FactoryProcessSequence, FactoryComputedDateTimePair> prepareProducingAndCompletedMap() {
         return Collections.unmodifiableNavigableMap(this.shadowProcessSequenceToComputePairMap);
     }
 
@@ -331,13 +376,11 @@ public class SchedulingFactoryInstance
 
     @Override
     public String toString() {
-        return "SchedulingFactoryInstance{" + "readableIdentifier='" + factoryReadableIdentifier + '\'' + ", producingLength=" + producingLength + ", " +
-               "reapWindowSize=" + reapWindowSize + '}';
+        return "SchedulingFactoryInstance{" + "readableIdentifier='" + factoryReadableIdentifier + '\'' + ", producingLength=" + producingLength + ", " + "reapWindowSize=" + reapWindowSize + '}';
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
-        return this.getSchedulingFactoryInfo()
-                .typeEqual(that.getSchedulingFactoryInfo());
+        return this.getSchedulingFactoryInfo().typeEqual(that.getSchedulingFactoryInfo());
     }
 
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -345,10 +388,15 @@ public class SchedulingFactoryInstance
     public static class FactoryProcessSequence
             implements Comparable<FactoryProcessSequence>, Serializable {
 
-        public static final Comparator<FactoryProcessSequence> COMPARATOR
-                = Comparator.comparing(FactoryProcessSequence::getSchedulingFactoryInstanceReadableIdentifier)
-                .thenComparing(FactoryProcessSequence::getArrangeDateTime)
-                .thenComparingInt(FactoryProcessSequence::getArrangementId);
+        public static final Function<SchedulingProducingArrangement, Integer> DEFAULT_SEQUENTIAL_ID_FUNCTION =
+                SchedulingProducingArrangement::getId;
+
+        public static final Comparator<FactoryProcessSequence> COMPARATOR =
+                Comparator.comparing(FactoryProcessSequence::getSchedulingFactoryInstanceReadableIdentifier)
+                        .thenComparing(FactoryProcessSequence::getArrangeDateTime)
+                        .thenComparing(FactoryProcessSequence::getSequentialId)
+                        .thenComparing(FactoryProcessSequence::getArrangementId)
+                ;
 
         @Serial
         private static final long serialVersionUID = -264984659974196003L;
@@ -360,30 +408,50 @@ public class SchedulingFactoryInstance
         Integer arrangementId;
 
         @EqualsAndHashCode.Include
+        Integer sequentialId;
+
+        @EqualsAndHashCode.Include
         FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier;
 
         Duration producingDuration;
 
-        public FactoryProcessSequence(SchedulingProducingArrangement schedulingProducingArrangement) {
+        public FactoryProcessSequence(
+                SchedulingProducingArrangement schedulingProducingArrangement,
+                Function<SchedulingProducingArrangement, Integer> sequentialIdFunction
+        ) {
             this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
             this.producingDuration = schedulingProducingArrangement.getProducingDuration();
             this.arrangementId = schedulingProducingArrangement.getId();
-            this.schedulingFactoryInstanceReadableIdentifier
-                    = schedulingProducingArrangement.getPlanningFactoryInstance()
+            this.sequentialId = sequentialIdFunction.apply(schedulingProducingArrangement);
+            this.schedulingFactoryInstanceReadableIdentifier = schedulingProducingArrangement.getPlanningFactoryInstance()
+                    .getFactoryReadableIdentifier();
+        }
+
+        public FactoryProcessSequence(
+                SchedulingProducingArrangement schedulingProducingArrangement
+        ) {
+            this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
+            this.producingDuration = schedulingProducingArrangement.getProducingDuration();
+            this.arrangementId = schedulingProducingArrangement.getId();
+            this.sequentialId = DEFAULT_SEQUENTIAL_ID_FUNCTION.apply(schedulingProducingArrangement);
+            this.schedulingFactoryInstanceReadableIdentifier = schedulingProducingArrangement.getPlanningFactoryInstance()
                     .getFactoryReadableIdentifier();
         }
 
         @Override
         public int compareTo(FactoryProcessSequence that) {
-            return COMPARATOR.compare(this, that);
+            return COMPARATOR.compare(
+                    this,
+                    that
+            );
         }
 
     }
 
-    public static record FactoryComputedDateTimePair(
-            LocalDateTime producingDateTime,
-            LocalDateTime completedDateTime
-    ) implements Serializable {
+    public record FactoryComputedDateTimePair(
+            LocalDateTime producingDateTime, LocalDateTime completedDateTime
+    )
+            implements Serializable {
 
     }
 

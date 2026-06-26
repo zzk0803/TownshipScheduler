@@ -12,12 +12,14 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 
 @Data
 @PlanningSolution
 @NoArgsConstructor
-public class TownshipSchedulingProblem implements Serializable {
+public class TownshipSchedulingProblem
+        implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -399118697021610459L;
@@ -43,10 +45,10 @@ public class TownshipSchedulingProblem implements Serializable {
 
     @PlanningEntityCollectionProperty
 //    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT)
-    private List<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+    private NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
-    private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
+    private NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangementList;
 
     @ProblemFactProperty
     private SchedulingWorkCalendar schedulingWorkCalendar;
@@ -67,8 +69,8 @@ public class TownshipSchedulingProblem implements Serializable {
             List<SchedulingFactoryInfo> schedulingFactoryInfoList,
             List<SchedulingOrder> schedulingOrderList,
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
-            List<SchedulingDateTimeSlot> schedulingDateTimeSlots,
-            List<SchedulingProducingArrangement> schedulingProducingArrangementList,
+            NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots,
+            NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangementList,
             SchedulingWorkCalendar schedulingWorkCalendar,
             DateTimeSlotSize dateTimeSlotSize,
             SchedulingPlayer schedulingPlayer,

@@ -27,9 +27,9 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
 
         TownshipSchedulingProblem workingSolution
                 = scoreDirector.getWorkingSolution();
-        List<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
+        NavigableSet<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
                 = workingSolution.getSchedulingDateTimeSlots();
-        List<SchedulingProducingArrangement> producingArrangements
+        NavigableSet<SchedulingProducingArrangement> producingArrangements
                 = workingSolution.getSchedulingProducingArrangementList();
         List<SchedulingFactoryInstance> queueFactoryInstanceValueRange
                 = workingSolution.getSchedulingFactoryInstanceList();

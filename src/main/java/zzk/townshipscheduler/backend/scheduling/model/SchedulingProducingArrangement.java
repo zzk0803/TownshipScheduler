@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingDateTimeSlotStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
@@ -29,7 +30,7 @@ import java.util.*;
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
 public class SchedulingProducingArrangement
-        implements Serializable {
+        implements Serializable,Comparable<SchedulingProducingArrangement> {
 
     public static final String VALUE_RANGE_FOR_FACTORIES = "valueRangeForFactories";
 
@@ -54,7 +55,7 @@ public class SchedulingProducingArrangement
 
     @EqualsAndHashCode.Include
     @ToString.Include
-    private String uuid;
+    private UUID uuid;
 
     @JsonIdentityReference
     private SchedulingOrder schedulingOrder;
@@ -146,8 +147,7 @@ public class SchedulingProducingArrangement
                 targetActionObject,
                 currentActionObject
         );
-        producingArrangement.setUuid(UuidGenerator.timeOrderedV6()
-                                             .toString());
+        producingArrangement.setUuid(UuidGenerator.timeOrderedV6());
         return producingArrangement;
     }
 
@@ -302,6 +302,11 @@ public class SchedulingProducingArrangement
             TownshipSchedulingProblem townshipSchedulingProblem
     ) {
         return townshipSchedulingProblem.valueRangeDateTimeSlotsForArrangement(this);
+    }
+
+    @Override
+    public int compareTo(@NonNull SchedulingProducingArrangement that) {
+        return SchedulingProducingArrangementDifficultyComparator.INSTANCE.compare(this,that);
     }
 
 }
