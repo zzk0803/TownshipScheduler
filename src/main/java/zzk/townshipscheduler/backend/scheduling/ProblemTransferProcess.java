@@ -45,7 +45,7 @@ class ProblemTransferProcess {
 
     private final LocalTime sleepEndPickerValue;
 
-    private SchedulingPlayer schedulingPlayer;
+    private final SchedulingPlayer schedulingPlayer;
 
     public ProblemTransferProcess(
             TownshipSchedulingRequest townshipSchedulingRequest
@@ -63,6 +63,7 @@ class ProblemTransferProcess {
         this.schedulingOrders = new ArrayList<>();
         this.schedulingProductList = new ArrayList<>();
         this.schedulingFactoryInfoList = new ArrayList<>();
+        this.schedulingPlayer = new SchedulingPlayer();
     }
 
     public TownshipSchedulingProblem buildProblem() {
@@ -280,7 +281,6 @@ class ProblemTransferProcess {
     }
 
     private void fetchAndMapToSchedulingWarehouse() {
-        SchedulingPlayer schedulingPlayer = new SchedulingPlayer();
         Map<SchedulingProduct, Integer> productAmountMap = new LinkedHashMap<>();
 
         WarehouseEntity warehouseEntityProjection
@@ -294,7 +294,6 @@ class ProblemTransferProcess {
                     );
                 }
         );
-        this.schedulingPlayer = schedulingPlayer;
     }
 
     private void fetchAndMapToSchedulingOrder() {

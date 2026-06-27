@@ -111,7 +111,6 @@ public class SchedulingPlayer
 
     @JsonFormat(pattern = "HH:mm")
     private LocalTime sleepStart = DEFAULT_SLEEP_START;
-    //</editor-fold>
 
     @JsonFormat(pattern = "HH:mm")
     private LocalTime sleepEnd = DEFAULT_SLEEP_END;
