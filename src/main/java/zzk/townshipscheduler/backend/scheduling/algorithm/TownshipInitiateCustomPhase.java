@@ -2,7 +2,10 @@ package zzk.townshipscheduler.backend.scheduling.algorithm;
 
 import ai.timefold.solver.core.api.solver.phase.PhaseCommand;
 import ai.timefold.solver.core.api.solver.phase.PhaseCommandContext;
-import ai.timefold.solver.core.preview.api.domain.metamodel.*;
+import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningEntityMetaModel;
+import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningSolutionMetaModel;
+import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningVariableMetaModel;
+import ai.timefold.solver.core.preview.api.move.builtin.Moves;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
@@ -10,10 +13,7 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrange
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.LocalDateTime;
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -29,24 +29,19 @@ public class TownshipInitiateCustomPhase
 
         TownshipSchedulingProblem workingSolution
                 = phaseCommandContext.getWorkingSolution();
-        Set<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
+        NavigableSet<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
                 = workingSolution.getSchedulingDateTimeSlots();
-        List<SchedulingProducingArrangement> producingArrangements
-                = workingSolution.getSchedulingProducingArrangementList();
+        NavigableSet<SchedulingProducingArrangement> producingArrangements
+                = workingSolution.getSchedulingProducingArrangements();
         List<SchedulingFactoryInstance> queueFactoryInstanceValueRange
                 = workingSolution.getSchedulingFactoryInstanceList();
 
-
-        List<SchedulingDateTimeSlot> sortedDataTimeSlotValueRange = dateTimeSlotSetValueRange.stream()
-                .sorted()
-                .toList();
-        List<SchedulingProducingArrangement> difficultySortedProducingArrangements
-                = producingArrangements.stream()
-                .sorted(new SchedulingProducingArrangementDifficultyComparator())
-                .toList();
-        log.info("difficultySortedProducingArrangements:{} ", difficultySortedProducingArrangements);
+        log.info(
+                "difficultySortedProducingArrangements:{} ",
+                producingArrangements
+        );
         ArrayDeque<SchedulingProducingArrangement> initiatingDeque
-                = new ArrayDeque<>(difficultySortedProducingArrangements);
+                = new ArrayDeque<>(producingArrangements);
 
         while (!initiatingDeque.isEmpty()) {
             SchedulingProducingArrangement arrangement = initiatingDeque.removeFirst();
@@ -54,7 +49,7 @@ public class TownshipInitiateCustomPhase
                 setupArrangement(
                         phaseCommandContext,
                         arrangement,
-                        sortedDataTimeSlotValueRange,
+                        dateTimeSlotSetValueRange,
                         queueFactoryInstanceValueRange
                 );
             }
@@ -64,7 +59,7 @@ public class TownshipInitiateCustomPhase
     }
 
     private boolean shouldInitiating(SchedulingProducingArrangement arrangement) {
-        SchedulingDateTimeSlot planningDateTimeSlot = arrangement.getShadowDateTimeSlot();
+        SchedulingDateTimeSlot planningDateTimeSlot = arrangement.getPlanningDateTimeSlot();
         LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
         SchedulingFactoryInstance planningFactoryInstance = arrangement.getPlanningFactoryInstance();
         LocalDateTime producingDateTime = arrangement.getProducingDateTime();
@@ -82,7 +77,7 @@ public class TownshipInitiateCustomPhase
     private void setupArrangement(
             PhaseCommandContext<TownshipSchedulingProblem> phaseCommandContext,
             SchedulingProducingArrangement schedulingProducingArrangement,
-            List<SchedulingDateTimeSlot> dateTimeSlotList,
+            NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots,
             List<SchedulingFactoryInstance> factoryInstanceList
     ) {
         SchedulingFactoryInstance schedulingFactoryInstance
@@ -90,64 +85,54 @@ public class TownshipInitiateCustomPhase
                 .filter(slotFactoryInstance -> schedulingProducingArrangement.getRequiredFactoryInfo()
                         .typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
                 .findAny()
-                .get();
+                .get()
+                ;
         SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
                 schedulingProducingArrangement,
-                dateTimeSlotList
+                schedulingDateTimeSlots
         );
 
         PlanningSolutionMetaModel<TownshipSchedulingProblem> solutionMetaModel = phaseCommandContext.getSolutionMetaModel();
-        PlanningEntityMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement> arrangementPlanningEntityMetaModel
+        PlanningEntityMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement> schedulingProducingArrangementPlanningEntityMetaModel
                 = solutionMetaModel.entity(SchedulingProducingArrangement.class);
-        PlanningEntityMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance> factoryInstancePlanningEntityMetaModel
-                = solutionMetaModel.entity(SchedulingFactoryInstance.class);
 
-        VariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer> arrangementIntegerVariableMetaModel
-                = arrangementPlanningEntityMetaModel.variable(SchedulingProducingArrangement.PLANNING_DELAY_SLOT);
-        PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer>
-                arrangementPlanningDelaySlotVariableMetaModel
-                =
-                (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, Integer>) arrangementIntegerVariableMetaModel;
+        PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingDateTimeSlot>
+                dateTimeSlotPlanningVariableMetaModel
+                = (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingDateTimeSlot>)
+                schedulingProducingArrangementPlanningEntityMetaModel.<SchedulingDateTimeSlot>variable(SchedulingProducingArrangement.PLANNING_DATE_TIME_SLOT);
 
-        VariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement> arrangementVariableMetaModel
-                = factoryInstancePlanningEntityMetaModel.variable(SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE);
-        PlanningListVariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement>
-                planningArrangementVariableMetaModel
-                =
-                (PlanningListVariableMetaModel<TownshipSchedulingProblem, SchedulingFactoryInstance, SchedulingProducingArrangement>) arrangementVariableMetaModel;
+        PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingFactoryInstance>
+                factoryInstancePlanningVariableMetaModel
+                = (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingFactoryInstance>)
+                schedulingProducingArrangementPlanningEntityMetaModel.<SchedulingFactoryInstance>variable(SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE);
 
         phaseCommandContext.execute(
-                mutableSolutionView -> {
-                    mutableSolutionView.changeVariable(arrangementPlanningDelaySlotVariableMetaModel, schedulingProducingArrangement, 0);
-                    mutableSolutionView.assignValueAndAdd(
-                            planningArrangementVariableMetaModel,
-                            schedulingProducingArrangement,
-                            ElementPosition.of(
-                                    schedulingFactoryInstance,
-                                    schedulingFactoryInstance.getPlanningArrangementsSequence().size()
-                            )
-                    );
-                }
+                Moves.compose(
+                        Moves.change(
+                                factoryInstancePlanningVariableMetaModel,
+                                schedulingProducingArrangement,
+                                schedulingFactoryInstance
+                        ),
+                        Moves.change(
+                                dateTimeSlotPlanningVariableMetaModel,
+                                schedulingProducingArrangement,
+                                computedDataTimeSlot
+                        )
+                )
         );
 
     }
 
     private SchedulingDateTimeSlot calcApproximateArrangeDateTimeSlot(
             SchedulingProducingArrangement producingArrangement,
-            List<SchedulingDateTimeSlot> dateTimeSlotSet
+            NavigableSet<SchedulingDateTimeSlot> dateTimeSlotSet
     ) {
-        SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
-
-        if (!producingArrangement.getDeepPrerequisiteProducingArrangements().isEmpty()) {
-            result = SchedulingDateTimeSlot.fromRangeJumpCeil(
-                    dateTimeSlotSet,
-                    producingArrangement.calcStaticCompleteDateTime(result.getStart())
-            ).orElse(dateTimeSlotSet.getLast());
-
-        }
-
-        return result;
+        SchedulingDateTimeSlot dateTimeSlotSetFirst = dateTimeSlotSet.getFirst();
+        return SchedulingDateTimeSlot.ceilingDateTimeFromValueRange(
+                dateTimeSlotSet,
+                dateTimeSlotSetFirst.getStart()
+        );
     }
 
 

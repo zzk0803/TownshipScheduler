@@ -68,11 +68,11 @@ public class LitSchedulingVisTimelinePanel extends Component {
         );
         setPropertyList(
                 "schedulingProducingArrangements",
-                toProducingArrangementVo(townshipSchedulingProblem.getSchedulingProducingArrangementList())
+                toProducingArrangementVo(townshipSchedulingProblem.getSchedulingProducingArrangements())
         );
         setPropertyList(
                 "schedulingProducingArrangementUnitGroups",
-                toProducingArrangementUnitGroupVo(townshipSchedulingProblem.getSchedulingProducingArrangementList())
+                toProducingArrangementUnitGroupVo(townshipSchedulingProblem.getSchedulingProducingArrangements())
         );
         setPropertyNumber(
                 "dateTimeSlotSizeInMinute",
@@ -130,7 +130,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     private List<SchedulingProducingArrangementVO> toProducingArrangementVo(
-            List<SchedulingProducingArrangement> schedulingProducingArrangementList
+            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
     ) {
         return schedulingProducingArrangementList.stream()
                 .map(SchedulingProducingArrangementVO::new)
@@ -139,7 +139,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     private List<SchedulingProducingArrangementUnitGroupVo> toProducingArrangementUnitGroupVo(
-            List<SchedulingProducingArrangement> schedulingProducingArrangementList
+            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
     ) {
         Map<SchedulingOrder, List<SchedulingProducingArrangement>> orderArrangeMap
                 = schedulingProducingArrangementList.stream()
@@ -197,7 +197,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
         setPropertyList(
                 "schedulingProducingArrangements",
                 toProducingArrangementVo(
-                        townshipSchedulingProblem.getSchedulingProducingArrangementList()
+                        townshipSchedulingProblem.getSchedulingProducingArrangements()
                 )
         );
     }

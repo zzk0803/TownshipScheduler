@@ -2,16 +2,18 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.variable.*;
+import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
+import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDelayStrengthComparator;
+import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingDateTimeStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
@@ -22,6 +24,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance.FactoryProcessSequence;
+
 
 @Slf4j
 @Data
@@ -29,13 +33,16 @@ import java.util.stream.Stream;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement implements Serializable {
+public class SchedulingProducingArrangement
+        implements Serializable, Comparable<SchedulingProducingArrangement> {
+
+    public static final String VALUE_RANGE_FOR_SCHEDULING_FACTORY_INSTANCE = "valueRangeForSchedulingFactoryInstance";
 
     public static final String PLANNING_FACTORY_INSTANCE = "planningFactoryInstance";
 
-    public static final String PLANNING_DELAY_SLOT = "planningDelaySlot";
+    public static final String PLANNING_DATE_TIME_SLOT = "planningDateTimeSlot";
 
-    public static final String SHADOW_DATE_TIME_SLOT = "shadowDateTimeSlot";
+    public static final String SHADOW_ARRANGE_DATE_TIME = "arrangeDateTime";
 
     public static final String SHADOW_PRODUCING_DATE_TIME = "producingDateTime";
 
@@ -44,13 +51,8 @@ public class SchedulingProducingArrangement implements Serializable {
     public static final String SHADOW_DEEP_PREREQUISITE_PRODUCING_ARRANGEMENTS_FINISHED_DATE_TIME =
             "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime";
 
-    public static final String PREVIOUS_PRODUCING_ARRANGEMENT = "previousProducingArrangement";
-
-    public static final String SHADOW_ARRANGE_DATE_TIME = "arrangeDateTime";
-
     @Serial
     private static final long serialVersionUID = 7524280731369623680L;
-
 
     @ToString.Include
     @EqualsAndHashCode.Include
@@ -88,9 +90,9 @@ public class SchedulingProducingArrangement implements Serializable {
     @EqualsAndHashCode.Include
     private int deepPrerequisiteProducingArrangementsSize;
 
-    @JsonIgnore
-    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
-    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
+//    @JsonIgnore
+//    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
+//    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
 
     @JsonIgnore
     private SchedulingProducingArrangement successorProducingArrangement;
@@ -105,41 +107,14 @@ public class SchedulingProducingArrangement implements Serializable {
     @JsonIgnore
     private SchedulingProducingExecutionMode producingExecutionMode;
 
-    @JsonIgnore
-    @InverseRelationShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
-    )
+    @PlanningVariable(valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_FACTORY_INSTANCE)
     private SchedulingFactoryInstance planningFactoryInstance;
 
-    @JsonIgnore
-    @PlanningVariable(
-            valueRangeProviderRefs = TownshipSchedulingProblem.VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY,
-            comparatorClass = SchedulingProducingArrangementDelayStrengthComparator.class
-    )
-    private Integer planningDelaySlot = 0;
+    @PlanningVariable(comparatorClass = SchedulingDateTimeStrengthComparator.class)
+    private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @JsonIgnore
-    @ShadowVariable(supplierName = "supplierForShadowDateTimeSlot")
-    private SchedulingDateTimeSlot shadowDateTimeSlot;
-
-    //    @ShadowVariable(supplierName = "supplierForPreviousProducingArrangement")
-    @PreviousElementShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
-    )
-    private SchedulingProducingArrangement previousProducingArrangement;
-
-//    @NextElementShadowVariable(
-//            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
-//    )
-//    private SchedulingProducingArrangement nextProducingArrangement;
-
-    @IndexShadowVariable(
-            sourceVariableName = SchedulingFactoryInstance.PLANNING_ARRANGEMENTS_SEQUENCE
-    )
-    private Integer indexInFactory;
-
-    @ShadowVariablesInconsistent
-    private Boolean shadowVariablesInconsistent;
+    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
+    private FactoryProcessSequence factoryProcessSequence;
 
     @JsonProperty("producingDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -175,49 +150,12 @@ public class SchedulingProducingArrangement implements Serializable {
         return producingArrangement;
     }
 
-    @ShadowSources(value = {"prerequisiteProducingArrangements[].completedDateTime"})
-    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime(TownshipSchedulingProblem townshipSchedulingProblem) {
-        if (this.prerequisiteProducingArrangements.stream()
-                .anyMatch(schedulingProducingArrangement -> schedulingProducingArrangement.completedDateTime == null)) {
-            return null;
-        }
-
-        return this.prerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
-                .max(LocalDateTime::compareTo)
-                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
-    }
-
-    @ShadowSources(
-            value = {
-                    "planningDelaySlot",
-//                    "shadowPrerequisiteProducingArrangementsFinishedDateTime",
-                    "prerequisiteProducingArrangements[].completedDateTime"
-            }
-    )
-    public SchedulingDateTimeSlot supplierForShadowDateTimeSlot(TownshipSchedulingProblem townshipSchedulingProblem) {
-
-        LocalDateTime startDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime();
-        LocalDateTime idealArrangeDateTime = this.calcStaticArrangeDateTime(startDateTime);
-        LocalDateTime slackPrerequisiteDateTime = this.prerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
-                .filter(Objects::nonNull)
-                .max(LocalDateTime::compareTo)
-                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime())
-                ;
-        return townshipSchedulingProblem.calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-                ObjectUtils.max(idealArrangeDateTime,slackPrerequisiteDateTime),
-                this.planningDelaySlot
-        );
-
-    }
-
-    public boolean weatherFactoryProducingTypeIsQueue() {
-        return getFactoryProducingType() == ProducingStructureType.QUEUE;
-    }
-
-    public ProducingStructureType getFactoryProducingType() {
-        return getRequiredFactoryInfo().getProducingStructureType();
+    @ValueRangeProvider(id = VALUE_RANGE_FOR_SCHEDULING_FACTORY_INSTANCE)
+    public List<SchedulingFactoryInstance> valueRangeForSchedulingFactoryInstance(TownshipSchedulingProblem townshipSchedulingProblem) {
+        return townshipSchedulingProblem.getSchedulingFactoryInstanceList().stream()
+                .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getSchedulingFactoryInfo()
+                        .typeEqual(getRequiredFactoryInfo()))
+                .toList();
     }
 
     @JsonIgnore
@@ -230,65 +168,48 @@ public class SchedulingProducingArrangement implements Serializable {
         return (SchedulingProduct) getCurrentActionObject();
     }
 
-//    @ShadowSources(
-//            value = {
-//                    "planningFactoryInstance",
-//                    "shadowDateTimeSlot",
-//                    "indexInFactory"
-//            }
-//    )
-//    public SchedulingProducingArrangement supplierForPreviousProducingArrangement(TownshipSchedulingProblem townshipSchedulingProblem) {
-//        if (Stream.of(planningFactoryInstance, shadowDateTimeSlot, indexInFactory).anyMatch(Objects::isNull)) {
+    @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
+    public LocalDateTime supplierForProducingDateTime() {
+        return schedulingPlayer.queryProducingDateTime(this);
+    }
+
+    @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
+    public LocalDateTime supplierForCompletedDateTime() {
+        return schedulingPlayer.queryCompletedDateTime(this);
+    }
+
+//    @ShadowSources(value = {"prerequisiteProducingArrangements[].completedDateTime"})
+//    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime(TownshipSchedulingProblem
+//    townshipSchedulingProblem) {
+//        if (this.prerequisiteProducingArrangements.stream()
+//                .anyMatch(schedulingProducingArrangement -> schedulingProducingArrangement.completedDateTime == null)) {
 //            return null;
 //        }
 //
-//        List<SchedulingProducingArrangement> planningArrangementsSequence =
-//                new ArrayList<>(this.planningFactoryInstance.getPlanningArrangementsSequence());
-//        planningArrangementsSequence.removeIf(
-//                schedulingProducingArrangement -> Objects.isNull(schedulingProducingArrangement.shadowDateTimeSlot)
-//        );
-//
-//        TreeSet<SchedulingProducingArrangement> sortedPlanningArrangementsSequence = new TreeSet<>(
-//                Comparator.comparing(SchedulingProducingArrangement::getShadowDateTimeSlot)
-//                        .thenComparingInt(SchedulingProducingArrangement::getIndexInFactory)
-//        );
-//        sortedPlanningArrangementsSequence.addAll(planningArrangementsSequence);
-//        return sortedPlanningArrangementsSequence.lower(this);
+//        return this.prerequisiteProducingArrangements.stream()
+//                .map(SchedulingProducingArrangement::getCompletedDateTime)
+//                .max(LocalDateTime::compareTo)
+//                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
 //    }
 
-    @ShadowSources(
-            value = {
-                    "shadowDateTimeSlot"
-                    , "previousProducingArrangement.completedDateTime"
-                    , "planningFactoryInstance"
-            }
-    )
-    public LocalDateTime supplierForProducingDateTime() {
-        if (shadowDateTimeSlot == null || planningFactoryInstance == null) {
-            return null;
+    @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
+    public FactoryProcessSequence supplierForFactoryProcessSequence() {
+        if (planningFactoryInstance == null || planningDateTimeSlot == null) {
+            return factoryProcessSequence;
         }
-
-        LocalDateTime producingDateTime = null;
-        final LocalDateTime arrangeDateTime = shadowDateTimeSlot.getStart();
-        if (getFactoryProducingType() == ProducingStructureType.QUEUE && getPreviousProducingArrangement() != null) {
-            producingDateTime = ObjectUtils.max(
-                    arrangeDateTime,
-                    previousProducingArrangement.completedDateTime
-            );
-        } else {
-            producingDateTime = arrangeDateTime;
-        }
-
-        return producingDateTime;
+        return toFactoryProcessSequence();
     }
 
-    @ShadowSources({"producingDateTime"})
-    public LocalDateTime supplierForCompletedDateTime() {
-        if (producingDateTime == null) {
-            return null;
-        }
+    public FactoryProcessSequence toFactoryProcessSequence() {
+        return new FactoryProcessSequence(this);
+    }
 
-        return producingDateTime.plus(this.getProducingDuration());
+    public boolean weatherFactoryProducingTypeIsQueue() {
+        return getFactoryProducingType() == ProducingStructureType.QUEUE;
+    }
+
+    public ProducingStructureType getFactoryProducingType() {
+        return getRequiredFactoryInfo().getProducingStructureType();
     }
 
     @JsonProperty("producingDuration")
@@ -305,9 +226,7 @@ public class SchedulingProducingArrangement implements Serializable {
     public boolean boolPlanningWellBeing() {
         return Stream.of(
                         getPlanningFactoryInstance(),
-                        getShadowDateTimeSlot(),
-                        getProducingDateTime(),
-                        getCompletedDateTime()
+                        getPlanningDateTimeSlot()
                 )
                 .allMatch(Objects::nonNull);
     }
@@ -317,8 +236,8 @@ public class SchedulingProducingArrangement implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getArrangeDateTime() {
-        return this.shadowDateTimeSlot != null
-                ? this.shadowDateTimeSlot.getStart()
+        return this.planningDateTimeSlot != null
+                ? this.planningDateTimeSlot.getStart()
                 : null;
     }
 
@@ -438,6 +357,14 @@ public class SchedulingProducingArrangement implements Serializable {
 
     public LocalDateTime getDeadline() {
         return getSchedulingOrder().getDeadline();
+    }
+
+    @Override
+    public int compareTo(SchedulingProducingArrangement that) {
+        return SchedulingProducingArrangementDifficultyComparator.INSTANCE.compare(
+                this,
+                that
+        );
     }
 
 }

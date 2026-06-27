@@ -1,6 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -15,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@PlanningEntity
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot>, Serializable {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR = Comparator.comparing(SchedulingDateTimeSlot::getStart);
@@ -30,6 +33,9 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     private LocalDateTime end;
 
     private int durationInMinute;
+
+    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATE_TIME_SLOT)
+    private List<SchedulingProducingArrangement> planningArrangementsSequence = new ArrayList<>();
 
     public SchedulingDateTimeSlot(
             LocalDateTime start,

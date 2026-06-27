@@ -67,8 +67,8 @@ public class ProducingArrangementListChangeMoveFilter
         SchedulingFactoryInstance schedulingFactoryInstance = (SchedulingFactoryInstance) destinationEntity;
         SchedulingProducingArrangement arrangementBeforeDestination =
                 schedulingFactoryInstance.getPlanningArrangementsSequence().get(destinationIndex - 1);
-        return arrangementBeforeDestination.getShadowDateTimeSlot() != null
-                && arrangementBeforeDestination.getShadowDateTimeSlot().compareTo(arrangementMoved.getShadowDateTimeSlot()) <= 0;
+        return arrangementBeforeDestination.getPlanningDateTimeSlot() != null
+                && arrangementBeforeDestination.getPlanningDateTimeSlot().compareTo(arrangementMoved.getPlanningDateTimeSlot()) <= 0;
     }
 
 }

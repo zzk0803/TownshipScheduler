@@ -78,8 +78,8 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
     }
 
     private void buildContentWithSolution(TownshipSchedulingProblem townshipSchedulingProblem) {
-        List<SchedulingProducingArrangement> schedulingProducingArrangementList
-                = townshipSchedulingProblem.getSchedulingProducingArrangementList();
+        NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangementList
+                = townshipSchedulingProblem.getSchedulingProducingArrangements();
         buildWithArrangementsContent(schedulingProducingArrangementList);
     }
 
@@ -96,7 +96,7 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         getContent().add(wrapperDiv);
     }
 
-    private void buildWithArrangementsContent(List<SchedulingProducingArrangement> schedulingProducingArrangementList) {
+    private void buildWithArrangementsContent(NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangementList) {
         var byDateTimeByFactoryByProductMapToCount
                 = schedulingProducingArrangementList.stream()
                 .filter(schedulingProducingArrangement -> Objects.nonNull(schedulingProducingArrangement.getArrangeDateTime()))

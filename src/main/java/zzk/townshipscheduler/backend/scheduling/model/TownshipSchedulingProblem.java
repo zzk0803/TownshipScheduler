@@ -1,10 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRange;
-import ai.timefold.solver.core.api.domain.valuerange.ValueRangeFactory;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,9 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
+import java.util.NavigableSet;
 import java.util.TreeSet;
 
 @Slf4j
@@ -44,20 +41,21 @@ public class TownshipSchedulingProblem implements Serializable {
     @PlanningEntityCollectionProperty
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
-    @ProblemFactCollectionProperty
-    private TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
+    @PlanningEntityCollectionProperty
+    @ValueRangeProvider
+    private NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 
     @PlanningEntityCollectionProperty
-    private List<SchedulingProducingArrangement> schedulingProducingArrangementList;
+    private NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangements;
 
     @ProblemFactProperty
     private SchedulingWorkCalendar schedulingWorkCalendar;
 
-    @ProblemFactProperty
+    @PlanningEntityProperty
     private SchedulingPlayer schedulingPlayer;
 
     @PlanningScore
-    private HardMediumSoftBigDecimalScore score;
+    private HardMediumSoftScore score;
 
     private DateTimeSlotSize dateTimeSlotSize;
 
@@ -69,12 +67,12 @@ public class TownshipSchedulingProblem implements Serializable {
             List<SchedulingFactoryInfo> schedulingFactoryInfoList,
             List<SchedulingOrder> schedulingOrderList,
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
-            TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots,
-            List<SchedulingProducingArrangement> schedulingProducingArrangementList,
+            NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots,
+            NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangements,
             SchedulingWorkCalendar schedulingWorkCalendar,
             DateTimeSlotSize dateTimeSlotSize,
             SchedulingPlayer schedulingPlayer,
-            HardMediumSoftBigDecimalScore score,
+            HardMediumSoftScore score,
             SolverStatus solverStatus
     ) {
         this.uuid = uuid;
@@ -83,7 +81,7 @@ public class TownshipSchedulingProblem implements Serializable {
         this.schedulingOrderList = schedulingOrderList;
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
-        this.schedulingProducingArrangementList = schedulingProducingArrangementList;
+        this.schedulingProducingArrangements = schedulingProducingArrangements;
         this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;
         this.score = score;
@@ -93,38 +91,6 @@ public class TownshipSchedulingProblem implements Serializable {
 
     public static TownshipSchedulingProblemBuilder builder() {
         return new TownshipSchedulingProblemBuilder();
-    }
-
-    public List<SchedulingProducingArrangement> valueRangeForSchedulingProducingArrangement(SchedulingFactoryInstance schedulingFactoryInstance) {
-        return getSchedulingProducingArrangementList().stream()
-                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo()
-                        .equals(schedulingFactoryInstance.getSchedulingFactoryInfo()))
-                .toList();
-    }
-
-    public SchedulingDateTimeSlot calcDateTimeSlotWithMinDateTimeAndDelayAmount(
-            LocalDateTime floorLocalDateTime,
-            Integer delaySlot
-    ) {
-        if (floorLocalDateTime == null) {
-            return null;
-        }
-
-        int delayMinute = (
-                delaySlot == null
-                        ? 0
-                        : delaySlot
-        ) * getDateTimeSlotSize().getMinute();
-
-        return SchedulingDateTimeSlot.ceilingDateTimeFromValueRange(
-                this.schedulingDateTimeSlots,
-                floorLocalDateTime.plusMinutes(delayMinute)
-        );
-    }
-
-    @ValueRangeProvider(id = VALUE_RANGE_FOR_DATE_TIME_SLOT_DELAY)
-    public ValueRange<Integer> valueRangeForDateTimeSlotDelay() {
-        return ValueRangeFactory.createIntValueRange(0, ONE_DAY_MINUTES / getDateTimeSlotSize().getMinute());
     }
 
 }

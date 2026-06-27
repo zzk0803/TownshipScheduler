@@ -1,6 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
-import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
@@ -23,10 +23,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.scheduling.TaskScheduler;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
-import zzk.townshipscheduler.backend.persistence.dao.OrderEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
+import zzk.townshipscheduler.backend.persistence.dao.OrderEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareComponent;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
@@ -102,14 +102,17 @@ public class SchedulingViewPresenter {
     }
 
     public void setupArrangementsGrid(Grid<SchedulingProducingArrangement> grid) {
-        setupArrangementsGrid(grid, findCurrentProblem());
+        setupArrangementsGrid(
+                grid,
+                findCurrentProblem()
+        );
     }
 
     public void setupArrangementsGrid(
             Grid<SchedulingProducingArrangement> grid,
             TownshipSchedulingProblem townshipSchedulingProblem
     ) {
-        grid.setItems(townshipSchedulingProblem.getSchedulingProducingArrangementList());
+        grid.setItems(townshipSchedulingProblem.getSchedulingProducingArrangements());
     }
 
     public TownshipSchedulingProblem findCurrentProblem() {
@@ -168,7 +171,10 @@ public class SchedulingViewPresenter {
                         getSchedulingView().getTriggerButton()
                                 .setToState1()
                         ;
-                        Dialog dialog = new Dialog("ERROR", new Paragraph(throwable.toString()));
+                        Dialog dialog = new Dialog(
+                                "ERROR",
+                                new Paragraph(throwable.toString())
+                        );
                         dialog.open();
                     });
                     solutionResultPushScheduledFuture.cancel(true);
@@ -188,16 +194,19 @@ public class SchedulingViewPresenter {
                             TownshipSchedulingProblem townshipSchedulingProblem =
                                     this.getTownshipSchedulingProblemAtomicReference()
                                             .get();
-                            HardMediumSoftBigDecimalScore score = townshipSchedulingProblem.getScore();
+                            HardMediumSoftScore score = townshipSchedulingProblem.getScore();
                             getSchedulingView().getScoreAnalysisParagraph()
-                                    .setText(Objects.isNull(score)?"N/A":score.toString())
+                                    .setText(Objects.isNull(score)
+                                            ? "N/A"
+                                            : score.toString())
                             ;
                             this.setupArrangementsTreeGrid(
                                     getSchedulingView().getArrangementTreeGrid(),
                                     townshipSchedulingProblem
                             );
                             getSchedulingView().getArrangementReportArticle()
-                                    .push(townshipSchedulingProblem);
+                                    .push(townshipSchedulingProblem)
+                            ;
                             ;
                             this.setupOrderBriefGrid();
                             getSchedulingView().getArrangementTimelinePanel()
@@ -216,12 +225,12 @@ public class SchedulingViewPresenter {
             TreeGrid<SchedulingProducingArrangement> treeGrid,
             TownshipSchedulingProblem townshipSchedulingProblem
     ) {
-        List<SchedulingProducingArrangement> arrangementList =
-                townshipSchedulingProblem.getSchedulingProducingArrangementList();
+        Collection<SchedulingProducingArrangement> arrangementList =
+                townshipSchedulingProblem.getSchedulingProducingArrangements();
         treeGrid.setTreeData(toTreeData(arrangementList));
     }
 
-    private TreeData<SchedulingProducingArrangement> toTreeData(List<SchedulingProducingArrangement> arrangementList) {
+    private TreeData<SchedulingProducingArrangement> toTreeData(Collection<SchedulingProducingArrangement> arrangementList) {
         TreeData<SchedulingProducingArrangement> arrangementTreeData
                 = new TreeData<>();
 
@@ -247,8 +256,8 @@ public class SchedulingViewPresenter {
         TownshipSchedulingProblem problem = findCurrentProblem();
         SchedulingWorkCalendar schedulingWorkCalendar = problem.getSchedulingWorkCalendar();
         List<SchedulingOrder> schedulingOrderList = problem.getSchedulingOrderList();
-        List<SchedulingProducingArrangement> schedulingProducingArrangementList =
-                problem.getSchedulingProducingArrangementList();
+        Collection<SchedulingProducingArrangement> schedulingProducingArrangementList =
+                problem.getSchedulingProducingArrangements();
         return schedulingOrderList.stream()
                 .map(schedulingOrder -> {
                     SchedulingOrderVo schedulingOrderVo = new SchedulingOrderVo();
@@ -387,25 +396,28 @@ public class SchedulingViewPresenter {
     public void setupScoreAnalysisParagraph() {
         getSchedulingView().getScoreAnalysisParagraph()
                 .setText(
-                       "N/A"
+                        "N/A"
                 )
         ;
     }
 
     public void setupArrangementsTreeGrid(TreeGrid<SchedulingProducingArrangement> treeGrid) {
-        setupArrangementsTreeGrid(treeGrid, findCurrentProblem());
+        setupArrangementsTreeGrid(
+                treeGrid,
+                findCurrentProblem()
+        );
     }
 
     public Paragraph buildBriefText() {
         TownshipSchedulingProblem currentProblem = findCurrentProblem();
         int orderSize = currentProblem.getSchedulingOrderList()
                 .size();
-        long orderItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
+        long orderItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangements()
                 .stream()
                 .filter(SchedulingProducingArrangement::boolOrderDirect)
                 .count()
                 ;
-        int totalItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangementList()
+        int totalItemProducingArrangementCount = currentProblem.getSchedulingProducingArrangements()
                 .size();
         int dateTimeValueRangeCount = currentProblem.getSchedulingDateTimeSlots()
                 .size();

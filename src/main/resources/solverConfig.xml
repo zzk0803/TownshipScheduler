@@ -3,8 +3,7 @@
         xmlns="https://timefold.ai/xsd/solver"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
-
-    <environmentMode>FULL_ASSERT</environmentMode>
+    <environmentMode>PHASE_ASSERT</environmentMode>
 
     <solutionClass>zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem</solutionClass>
     <entityClass>
@@ -13,65 +12,39 @@
     <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
+    <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot
+    </entityClass>
+    <entityClass>
+        zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayer
+    </entityClass>
+
 
     <scoreDirectorFactory>
         <constraintProviderClass>
             zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider
         </constraintProviderClass>
+        <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
-    <!--    <constructionHeuristic>-->
-    <!--        <queuedEntityPlacer>-->
-    <!--            <entitySelector id="constructionHeuristic2_entitySelector_SchedulingProducingArrangement">-->
-    <!--                <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement</entityClass>-->
-    <!--                <cacheType>PHASE</cacheType>-->
-    <!--                <selectionOrder>SORTED</selectionOrder>-->
-    <!--            </entitySelector>-->
-
-    <!--            <changeMoveSelector>-->
-    <!--                <entitySelector mimicSelectorRef="constructionHeuristic2_entitySelector_SchedulingProducingArrangement"/>-->
-    <!--                <valueSelector id="constructionHeuristic2_changeMoveSelector_assignedTools"-->
-    <!--                               variableName="planningDelaySlot">-->
-    <!--                </valueSelector>-->
-    <!--            </changeMoveSelector>-->
-    <!--        </queuedEntityPlacer>-->
-    <!--    </constructionHeuristic>-->
-
-    <!--    <constructionHeuristic>-->
-
-    <!--        <queuedValuePlacer>-->
-    <!--            <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>-->
-    <!--            <valueSelector id="constructionHeuristic1_valueSelector_arrangements" variableName="planningArrangementsSequence">-->
-    <!--                <cacheType>PHASE</cacheType>-->
-    <!--                <selectionOrder>SORTED</selectionOrder>-->
-    <!--                <comparatorClass>-->
-    <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator-->
-    <!--                </comparatorClass>-->
-    <!--                <sorterOrder>ASCENDING</sorterOrder>-->
-    <!--            </valueSelector>-->
-    <!--            <unionMoveSelector>-->
-    <!--                <listChangeMoveSelector>-->
-    <!--                    <valueSelector mimicSelectorRef="constructionHeuristic1_valueSelector_arrangements"/>-->
-    <!--                    <destinationSelector>-->
-    <!--                        <entitySelector>-->
-    <!--                            <entityClass>zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance</entityClass>-->
-    <!--                        </entitySelector>-->
-    <!--                        <valueSelector mimicSelectorRef="constructionHeuristic1_valueSelector_arrangements"/>-->
-    <!--                    </destinationSelector>-->
-    <!--                </listChangeMoveSelector>-->
-    <!--            </unionMoveSelector>-->
-    <!--        </queuedValuePlacer>-->
-
-    <!--        <forager>-->
-    <!--            <pickEarlyType>FIRST_FEASIBLE_SCORE_OR_NON_DETERIORATING_HARD</pickEarlyType>-->
-    <!--        </forager>-->
-
-    <!--    </constructionHeuristic>-->
-    <constructionHeuristic/>
+    <constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+        <valueSorterManner>ASCENDING</valueSorterManner>
+        <changeMoveSelector>
+            <valueSelector variableName="planningFactoryInstance"
+                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">
+            </valueSelector>
+        </changeMoveSelector>
+        <changeMoveSelector>
+            <valueSelector variableName="planningDateTimeSlot"
+                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
+            </valueSelector>
+        </changeMoveSelector>
+    </constructionHeuristic>
     <!--endregion-->
 
-    <!--region customPhase-->
+    <!--region init-->
     <!--    <customPhase>-->
     <!--        <customPhaseCommandClass>-->
     <!--            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipInitiateCustomPhase-->
@@ -84,61 +57,98 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>30</slidingWindowSeconds>
+                <slidingWindowSeconds>45</slidingWindowSeconds>
                 <minimumImprovementRatio>0.01</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 
-
         <unionMoveSelector>
 
             <changeMoveSelector>
-                <entitySelector id="localSearch_changeMoveSelector(slot)_es_Arrangement_planningDelaySlot">
+                <!--                <filterClass>-->
+                <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
+                <!--                </filterClass>-->
+                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.ChangeMoveProducingArrangementEntitySlotTypeFilter
-                    </filterClass>
                 </entitySelector>
-                <valueSelector variableName="planningDelaySlot"
-                               id="localSearch_changeMoveSelector(slot)_vs_Arrangement_planningDelaySlot">
+                <valueSelector variableName="planningFactoryInstance"
+                               id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
                 </valueSelector>
             </changeMoveSelector>
 
             <changeMoveSelector>
-                <fixedProbabilityWeight>3.0</fixedProbabilityWeight>
-                <entitySelector id="localSearch_listChangeMoveSelector_changeMoveSelector(queue)_es_Arrangement_planningDelaySlot">
+                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.ChangeMoveProducingArrangementEntityQueueTypeFilter
-                    </filterClass>
                 </entitySelector>
-                <valueSelector variableName="planningDelaySlot"
-                               id="localSearch_listChangeMoveSelector_changeMoveSelector(queue)_vs_Arrangement_planningDelaySlot">
+                <valueSelector variableName="planningDateTimeSlot"
+                               id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
                 </valueSelector>
             </changeMoveSelector>
 
-            <listChangeMoveSelector/>
-            <listSwapMoveSelector/>
-            <subListChangeMoveSelector>
-                <selectReversingMoveToo>true</selectReversingMoveToo>
-            </subListChangeMoveSelector>
-            <subListSwapMoveSelector>
-                <selectReversingMoveToo>true</selectReversingMoveToo>
-            </subListSwapMoveSelector>
-            <kOptListMoveSelector/>
+            <swapMoveSelector>
+                <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                </entitySelector>
+                <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                </secondaryEntitySelector>
+                <variableNameIncludes>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                </variableNameIncludes>
+            </swapMoveSelector>
+
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector variableName="planningDateTimeSlot"
+                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">
+                </valueSelector>
+            </pillarChangeMoveSelector>
+
+            <pillarSwapMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <secondaryPillarSelector>
+                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </secondaryPillarSelector>
+                <variableNameIncludes>
+                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                </variableNameIncludes>
+            </pillarSwapMoveSelector>
 
         </unionMoveSelector>
 
         <acceptor>
-            <lateAcceptanceSize>1000</lateAcceptanceSize>
+            <entityTabuSize>5</entityTabuSize>
+            <valueTabuSize>2</valueTabuSize>
+            <stepCountingHillClimbingSize>519</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>4</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>
