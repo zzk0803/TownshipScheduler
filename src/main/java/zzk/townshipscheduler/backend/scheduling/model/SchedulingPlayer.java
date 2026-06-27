@@ -15,9 +15,13 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Gatherer;
+import java.util.stream.Stream;
 
 import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance.FactoryComputedDateTimePair;
 import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance.FactoryProcessSequence;
@@ -26,79 +30,39 @@ import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryIn
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity
-public class SchedulingPlayer
-        implements Serializable {
+public class SchedulingPlayer implements Serializable {
 
     public static final LocalTime DEFAULT_SLEEP_START = LocalTime.MIDNIGHT.minusHours(2);
 
     public static final LocalTime DEFAULT_SLEEP_END = LocalTime.MIDNIGHT.plusHours(8);
 
-    //<editor-fold desc="SLOT_GATHERER">
-    public static final Gatherer<
-            FactoryProcessSequence,
-            FormerCompletedDateTimeRef,
-            Pair<FactoryProcessSequence, FactoryComputedDateTimePair>
-            > SLOT_GATHERER = Gatherer.of(
-            () -> null,
-            (_, arrangement, downstream) -> {
 
-                var arrangeDateTime = arrangement.getArrangeDateTime();
-                var producingDuration = arrangement.getProducingDuration();
+    public static final Gatherer<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> QUEUE_GATHERER = Gatherer.ofSequential(
+            AtomicReference::new, (ref, sequence, downstream) -> {
+                LocalDateTime arrangeDateTime = sequence.getArrangeDateTime();
                 if (arrangeDateTime == null) {
                     return true;
                 }
 
-                return downstream.push(new Pair<>(
-                        arrangement,
-                        new FactoryComputedDateTimePair(
-                                arrangeDateTime,
-                                arrangeDateTime.plus(producingDuration)
-                        )
-                )) && !downstream.isRejecting();
+                LocalDateTime prevEnd = ref.get();
+                LocalDateTime start = (prevEnd == null || prevEnd.isBefore(arrangeDateTime))
+                        ? arrangeDateTime
+                        : prevEnd;
 
-            },
-            Gatherer.defaultCombiner(),
-            Gatherer.defaultFinisher()
-    );
-    //</editor-fold>
+                LocalDateTime end = start.plus(sequence.getProducingDuration());
 
-    //<editor-fold desc="QUEUE_GATHERER">
-    public static final Gatherer<
-            FactoryProcessSequence,
-            FormerCompletedDateTimeRef,
-            Pair<FactoryProcessSequence, FactoryComputedDateTimePair>
-            > QUEUE_GATHERER = Gatherer.ofSequential(
-            FormerCompletedDateTimeRef::new,
-            (formerCompletedRef, arrangement, downstream) -> {
-                LocalDateTime arrangeDateTime = arrangement.getArrangeDateTime();
-                if (arrangeDateTime == null) {
-                    return true;
-                }
-                LocalDateTime previousCompletedDateTime = formerCompletedRef.value;
-                LocalDateTime start;
-                if (previousCompletedDateTime == null) {
-                    start = arrangeDateTime;
-                } else {
-                    start = previousCompletedDateTime.isAfter(arrangeDateTime)
-                            ? previousCompletedDateTime
-                            : arrangeDateTime;
-                }
-                LocalDateTime end = start.plus(arrangement.getProducingDuration());
-                formerCompletedRef.value = end;
+                ref.set(end);
+
                 return downstream.push(new Pair<>(
-                        arrangement,
-                        new FactoryComputedDateTimePair(
-                                start,
-                                end
-                        )
+                        sequence,
+                        new FactoryComputedDateTimePair(start, end)
                 )) && !downstream.isRejecting();
             }
     );
-    //</editor-fold>
 
-    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE =
-            factoryProcessSequence -> Objects.nonNull(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()) && Objects.nonNull(
-                    factoryProcessSequence.getArrangeDateTime());
+    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE = factoryProcessSequence -> Objects.nonNull(
+            factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()) && Objects.nonNull(
+            factoryProcessSequence.getArrangeDateTime());
 
     @Serial
     private static final long serialVersionUID = -2467531974779697853L;
@@ -121,68 +85,83 @@ public class SchedulingPlayer
     @ToString.Include
     @DeepPlanningClone
     @ShadowVariable(supplierName = "supplierForShadowComputedMap")
-    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> shadowComputedMap =
-            new LinkedHashMap<>();
+    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> shadowComputedMap = new LinkedHashMap<>();
 
     @ShadowSources(value = {"schedulingProducingArrangements[].factoryProcessSequence"})
     public Map<FactoryProcessSequence, FactoryComputedDateTimePair> supplierForShadowComputedMap() {
-        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotCollected =
-                this.schedulingProducingArrangements.stream()
-                        .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
-                        .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot)
-                        .collect(Collectors.groupingBy(
-                                schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
-                                        .getFactoryReadableIdentifier(),
-                                Collectors.collectingAndThen(
-                                        Collectors.toCollection(TreeSet::new),
-                                        producingArrangements -> producingArrangements.stream()
-                                                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
-                                                .filter(FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE)
-                                                .sorted(FactoryProcessSequence.COMPARATOR)
-                                                .gather(SLOT_GATHERER)
-                                                .collect(
-                                                        LinkedHashMap::new,
-                                                        (accumulatorMap, pair) -> accumulatorMap.put(
-                                                                pair.value0(),
-                                                                pair.value1()
-                                                        ),
-                                                        LinkedHashMap::putAll
-                                                )
-                                )
-                        ));
 
-        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> queueCollected =
-                this.schedulingProducingArrangements.stream()
-                        .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
-                        .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue)
-                        .collect(Collectors.groupingBy(
-                                schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
-                                        .getFactoryReadableIdentifier(),
-                                Collectors.collectingAndThen(
-                                        Collectors.toCollection(TreeSet::new),
-                                        producingArrangements -> producingArrangements.stream()
-                                                .map(SchedulingProducingArrangement::getFactoryProcessSequence)
-                                                .filter(FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE)
-                                                .sorted(FactoryProcessSequence.COMPARATOR)
-                                                .gather(QUEUE_GATHERER)
-                                                .collect(
-                                                        LinkedHashMap::new,
-                                                        (accumulatorMap, pair) -> accumulatorMap.put(
-                                                                pair.value0(),
-                                                                pair.value1()
-                                                        ),
-                                                        LinkedHashMap::putAll
-                                                )
-                                )
-                        ));
+        Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> slotProcessor = stream -> stream.filter(
+                seq -> seq.getArrangeDateTime() != null).map(seq -> new Pair<>(
+                seq,
+                new FactoryComputedDateTimePair(
+                        seq.getArrangeDateTime(),
+                        seq.getArrangeDateTime().plus(seq.getProducingDuration())
+                )
+        ));
+
+        Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> queueProcessor = stream -> stream.gather(
+                QUEUE_GATHERER);
+
+        return this.schedulingProducingArrangements.stream()
+                .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
+                .filter(spa -> spa.getFactoryProcessSequence() != null)
+                .collect(Collectors.teeing(
+                        buildSinglePassCollector(
+                                SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot,
+                                slotProcessor
+                        ),
+                        buildSinglePassCollector(
+                                SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue,
+                                queueProcessor
+                        ),
+                        this::mergeFinalResults
+                ));
+    }
+
+    private Collector<SchedulingProducingArrangement, ?, Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>>> buildSinglePassCollector(
+            Predicate<SchedulingProducingArrangement> typeFilter,
+            Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> processor
+    ) {
+
+        return Collectors.filtering(
+                typeFilter,
+                Collectors.groupingBy(
+                        spa -> spa.getPlanningFactoryInstance().getFactoryReadableIdentifier(),
+                        LinkedHashMap::new,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                list -> {
+                                    list.sort(Comparator.comparing(
+                                            SchedulingProducingArrangement::getFactoryProcessSequence,
+                                            FactoryProcessSequence.COMPARATOR
+                                    ));
+
+                                    return processor.apply(
+                                                    list.stream()
+                                                            .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                                            )
+                                            .collect(
+                                                    Collectors.toMap(
+                                                            Pair::value0,
+                                                            Pair::value1,
+                                                            (existing, replacement) -> replacement,
+                                                            LinkedHashMap::new
+                                                    )
+                                            );
+                                }
+                        )
+                )
+        );
+    }
+
+    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> mergeFinalResults(
+            Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotMap,
+            Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> queueMap
+    ) {
 
         Map<FactoryProcessSequence, FactoryComputedDateTimePair> result = new LinkedHashMap<>();
-        for (Map<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairMap : slotCollected.values()) {
-            result.putAll(computedDateTimePairMap);
-        }
-        for (Map<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairMap : queueCollected.values()) {
-            result.putAll(computedDateTimePairMap);
-        }
+        slotMap.values().forEach(result::putAll);
+        queueMap.values().forEach(result::putAll);
         return result;
     }
 
@@ -212,12 +191,6 @@ public class SchedulingPlayer
             return null;
         }
         return computedDateTimePair.completedDateTime();
-    }
-
-    public static class FormerCompletedDateTimeRef {
-
-        public LocalDateTime value = null;
-
     }
 
 }
