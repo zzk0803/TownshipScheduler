@@ -34,8 +34,11 @@ public class SchedulingPlayer
     public static final LocalTime DEFAULT_SLEEP_END = LocalTime.MIDNIGHT.plusHours(8);
 
     //<editor-fold desc="SLOT_GATHERER">
-    public static final Gatherer<FactoryProcessSequence, FormerCompletedDateTimeRef, Pair<FactoryProcessSequence,
-            FactoryComputedDateTimePair>> SLOT_GATHERER = Gatherer.of(
+    public static final Gatherer<
+            FactoryProcessSequence,
+            FormerCompletedDateTimeRef,
+            Pair<FactoryProcessSequence, FactoryComputedDateTimePair>
+            > SLOT_GATHERER = Gatherer.of(
             () -> null,
             (_, arrangement, downstream) -> {
 
@@ -94,7 +97,8 @@ public class SchedulingPlayer
     //</editor-fold>
 
     public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE =
-            factoryProcessSequence -> Objects.nonNull(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()) && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
+            factoryProcessSequence -> Objects.nonNull(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()) && Objects.nonNull(
+                    factoryProcessSequence.getArrangeDateTime());
 
     @Serial
     private static final long serialVersionUID = -2467531974779697853L;
@@ -126,12 +130,12 @@ public class SchedulingPlayer
         Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotCollected =
                 this.schedulingProducingArrangements.stream()
                         .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
-                        .filter(Predicate.not(SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue))
+                        .filter(SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot)
                         .collect(Collectors.groupingBy(
                                 schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
                                         .getFactoryReadableIdentifier(),
                                 Collectors.collectingAndThen(
-                                        Collectors.toList(),
+                                        Collectors.toCollection(TreeSet::new),
                                         producingArrangements -> producingArrangements.stream()
                                                 .map(SchedulingProducingArrangement::getFactoryProcessSequence)
                                                 .filter(FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE)
@@ -139,15 +143,14 @@ public class SchedulingPlayer
                                                 .gather(SLOT_GATHERER)
                                                 .collect(
                                                         LinkedHashMap::new,
-                                                        (treeMap, pair) -> treeMap.put(
+                                                        (accumulatorMap, pair) -> accumulatorMap.put(
                                                                 pair.value0(),
                                                                 pair.value1()
                                                         ),
                                                         LinkedHashMap::putAll
                                                 )
                                 )
-                        ))
-                ;
+                        ));
 
         Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> queueCollected =
                 this.schedulingProducingArrangements.stream()
@@ -157,23 +160,22 @@ public class SchedulingPlayer
                                 schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
                                         .getFactoryReadableIdentifier(),
                                 Collectors.collectingAndThen(
-                                        Collectors.toList(),
+                                        Collectors.toCollection(TreeSet::new),
                                         producingArrangements -> producingArrangements.stream()
                                                 .map(SchedulingProducingArrangement::getFactoryProcessSequence)
                                                 .filter(FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE)
                                                 .sorted(FactoryProcessSequence.COMPARATOR)
                                                 .gather(QUEUE_GATHERER)
                                                 .collect(
-                                                        HashMap::new,
-                                                        (treeMap, pair) -> treeMap.put(
+                                                        LinkedHashMap::new,
+                                                        (accumulatorMap, pair) -> accumulatorMap.put(
                                                                 pair.value0(),
                                                                 pair.value1()
                                                         ),
-                                                        HashMap::putAll
+                                                        LinkedHashMap::putAll
                                                 )
                                 )
-                        ))
-                ;
+                        ));
 
         Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> result = new LinkedHashMap<>();
         result.putAll(slotCollected);
@@ -182,7 +184,8 @@ public class SchedulingPlayer
     }
 
     public LocalDateTime queryProducingDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
-        SchedulingFactoryInstance.FactoryComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
+        SchedulingFactoryInstance.FactoryComputedDateTimePair computedDateTimePair = query(
+                schedulingProducingArrangement);
         if (computedDateTimePair == null) {
             return null;
         }

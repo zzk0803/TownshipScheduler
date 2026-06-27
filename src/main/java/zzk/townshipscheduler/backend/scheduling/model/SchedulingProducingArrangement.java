@@ -204,6 +204,10 @@ public class SchedulingProducingArrangement
         return new FactoryProcessSequence(this);
     }
 
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return getFactoryProducingType() == ProducingStructureType.SLOT;
+    }
+
     public boolean weatherFactoryProducingTypeIsQueue() {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
     }
