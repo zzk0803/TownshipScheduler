@@ -50,19 +50,19 @@ public class SchedulingPlayer implements Serializable {
                     return true;
                 }
 
-                LocalDateTime prevEnd = previousCompletedDateTimeRef.get();
-                LocalDateTime start = (prevEnd == null || prevEnd.isBefore(arrangeDateTime))
+                LocalDateTime previousCompletedDateTime = previousCompletedDateTimeRef.get();
+                LocalDateTime currentProducingDateTime = (previousCompletedDateTime == null || previousCompletedDateTime.isBefore(arrangeDateTime))
                         ? arrangeDateTime
-                        : prevEnd;
+                        : previousCompletedDateTime;
 
-                LocalDateTime end = start.plus(sequence.getProducingDuration());
+                LocalDateTime currentCompletedDateTime = currentProducingDateTime.plus(sequence.getProducingDuration());
 
-                previousCompletedDateTimeRef.set(end);
+                previousCompletedDateTimeRef.set(currentCompletedDateTime);
 
                 return downstream.push(
                         new Pair<>(
                                 sequence,
-                                new FactoryComputedDateTimePair(start, end)
+                                new FactoryComputedDateTimePair(currentProducingDateTime, currentCompletedDateTime)
                         )
                 ) && !downstream.isRejecting();
             }
@@ -128,7 +128,7 @@ public class SchedulingPlayer implements Serializable {
 
     private Collector<SchedulingProducingArrangement, ?, Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>>> buildSinglePassCollector(
             Predicate<SchedulingProducingArrangement> factoryTypePredicate,
-            Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> processor
+            Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> processSequenceToComputedPairFunction
     ) {
 
         return Collectors.filtering(
@@ -147,18 +147,17 @@ public class SchedulingPlayer implements Serializable {
                                             )
                                     );
 
-                                    return processor.apply(
-                                                    schedulingProducingArrangements.stream()
-                                                            .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                                    return processSequenceToComputedPairFunction.apply(
+                                            schedulingProducingArrangements.stream()
+                                                    .map(SchedulingProducingArrangement::getFactoryProcessSequence)
+                                    ).collect(
+                                            Collectors.toMap(
+                                                    Pair::value0,
+                                                    Pair::value1,
+                                                    (existing, replacement) -> replacement,
+                                                    LinkedHashMap::new
                                             )
-                                            .collect(
-                                                    Collectors.toMap(
-                                                            Pair::value0,
-                                                            Pair::value1,
-                                                            (existing, replacement) -> replacement,
-                                                            LinkedHashMap::new
-                                                    )
-                                            );
+                                    );
                                 }
                         )
                 )
