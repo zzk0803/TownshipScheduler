@@ -65,13 +65,13 @@
         <unionMoveSelector>
 
             <changeMoveSelector>
-                <!--                <filterClass>-->
-                <!--                    zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryChangeMoveSelectionFilter-->
-                <!--                </filterClass>-->
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
+                    <filterClass>
+                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                    </filterClass>
                 </entitySelector>
                 <valueSelector variableName="planningFactoryInstance"
                                id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
