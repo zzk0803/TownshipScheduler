@@ -122,11 +122,11 @@ public class SchedulingPlayer
     @ToString.Include
     @DeepPlanningClone
     @ShadowVariable(supplierName = "supplierForShadowComputedMap")
-    private Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> shadowComputedMap =
+    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> shadowComputedMap =
             new LinkedHashMap<>();
 
     @ShadowSources(value = {"schedulingProducingArrangements[].factoryProcessSequence"})
-    public Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> supplierForShadowComputedMap() {
+    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> supplierForShadowComputedMap() {
         Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotCollected =
                 this.schedulingProducingArrangements.stream()
                         .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
@@ -177,15 +177,18 @@ public class SchedulingPlayer
                                 )
                         ));
 
-        Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> result = new LinkedHashMap<>();
-        result.putAll(slotCollected);
-        result.putAll(queueCollected);
+        Map<FactoryProcessSequence, FactoryComputedDateTimePair> result = new LinkedHashMap<>();
+        for (Map<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairMap : slotCollected.values()) {
+            result.putAll(computedDateTimePairMap);
+        }
+        for (Map<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairMap : queueCollected.values()) {
+            result.putAll(computedDateTimePairMap);
+        }
         return result;
     }
 
     public LocalDateTime queryProducingDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
-        SchedulingFactoryInstance.FactoryComputedDateTimePair computedDateTimePair = query(
-                schedulingProducingArrangement);
+        FactoryComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
         if (computedDateTimePair == null) {
             return null;
         }
@@ -201,12 +204,7 @@ public class SchedulingPlayer
             return null;
         }
 
-        Map<FactoryProcessSequence, FactoryComputedDateTimePair> computedDateTimePairTreeMap =
-                this.shadowComputedMap.get(factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier());
-        if (Objects.isNull(computedDateTimePairTreeMap)) {
-            return null;
-        }
-        return computedDateTimePairTreeMap.get(factoryProcessSequence);
+        return this.shadowComputedMap.get(factoryProcessSequence);
     }
 
     public LocalDateTime queryCompletedDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
