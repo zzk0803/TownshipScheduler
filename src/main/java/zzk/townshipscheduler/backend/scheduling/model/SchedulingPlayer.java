@@ -37,32 +37,51 @@ public class SchedulingPlayer implements Serializable {
     public static final LocalTime DEFAULT_SLEEP_END = LocalTime.MIDNIGHT.plusHours(8);
 
 
-    public static final Gatherer<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> QUEUE_GATHERER = Gatherer.ofSequential(
-            AtomicReference::new, (ref, sequence, downstream) -> {
+    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE
+            = factoryProcessSequence -> Objects.nonNull(
+            factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())
+                                        && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
+
+    public static final Gatherer<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> QUEUE_GATHERER
+            = Gatherer.ofSequential(
+            AtomicReference::new, (previousCompletedDateTimeRef, sequence, downstream) -> {
                 LocalDateTime arrangeDateTime = sequence.getArrangeDateTime();
                 if (arrangeDateTime == null) {
                     return true;
                 }
 
-                LocalDateTime prevEnd = ref.get();
+                LocalDateTime prevEnd = previousCompletedDateTimeRef.get();
                 LocalDateTime start = (prevEnd == null || prevEnd.isBefore(arrangeDateTime))
                         ? arrangeDateTime
                         : prevEnd;
 
                 LocalDateTime end = start.plus(sequence.getProducingDuration());
 
-                ref.set(end);
+                previousCompletedDateTimeRef.set(end);
 
-                return downstream.push(new Pair<>(
-                        sequence,
-                        new FactoryComputedDateTimePair(start, end)
-                )) && !downstream.isRejecting();
+                return downstream.push(
+                        new Pair<>(
+                                sequence,
+                                new FactoryComputedDateTimePair(start, end)
+                        )
+                ) && !downstream.isRejecting();
             }
     );
 
-    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE = factoryProcessSequence -> Objects.nonNull(
-            factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier()) && Objects.nonNull(
-            factoryProcessSequence.getArrangeDateTime());
+    public static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> QUEUE_PROCESSOR
+            = stream -> stream.gather(QUEUE_GATHERER);
+
+    public static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> SLOT_PROCESSOR
+            = stream -> stream.filter(seq -> seq.getArrangeDateTime() != null)
+            .map(
+                    seq -> new Pair<>(
+                            seq,
+                            new FactoryComputedDateTimePair(
+                                    seq.getArrangeDateTime(),
+                                    seq.getArrangeDateTime().plus(seq.getProducingDuration())
+                            )
+                    )
+            );
 
     @Serial
     private static final long serialVersionUID = -2467531974779697853L;
@@ -90,54 +109,46 @@ public class SchedulingPlayer implements Serializable {
     @ShadowSources(value = {"schedulingProducingArrangements[].factoryProcessSequence"})
     public Map<FactoryProcessSequence, FactoryComputedDateTimePair> supplierForShadowComputedMap() {
 
-        Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> slotProcessor = stream -> stream.filter(
-                seq -> seq.getArrangeDateTime() != null).map(seq -> new Pair<>(
-                seq,
-                new FactoryComputedDateTimePair(
-                        seq.getArrangeDateTime(),
-                        seq.getArrangeDateTime().plus(seq.getProducingDuration())
-                )
-        ));
-
-        Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> queueProcessor = stream -> stream.gather(
-                QUEUE_GATHERER);
-
         return this.schedulingProducingArrangements.stream()
-                .filter(SchedulingProducingArrangement::boolPlanningWellBeing)
-                .filter(spa -> spa.getFactoryProcessSequence() != null)
-                .collect(Collectors.teeing(
-                        buildSinglePassCollector(
-                                SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot,
-                                slotProcessor
-                        ),
-                        buildSinglePassCollector(
-                                SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue,
-                                queueProcessor
-                        ),
-                        this::mergeFinalResults
-                ));
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.boolPlanningWellBeing() && schedulingProducingArrangement.getFactoryProcessSequence() != null)
+                .collect(
+                        Collectors.teeing(
+                                buildSinglePassCollector(
+                                        SchedulingProducingArrangement::weatherFactoryProducingTypeIsSlot,
+                                        SLOT_PROCESSOR
+                                ),
+                                buildSinglePassCollector(
+                                        SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue,
+                                        QUEUE_PROCESSOR
+                                ),
+                                this::mergeFinalResults
+                        )
+                );
     }
 
     private Collector<SchedulingProducingArrangement, ?, Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>>> buildSinglePassCollector(
-            Predicate<SchedulingProducingArrangement> typeFilter,
+            Predicate<SchedulingProducingArrangement> factoryTypePredicate,
             Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> processor
     ) {
 
         return Collectors.filtering(
-                typeFilter,
+                factoryTypePredicate,
                 Collectors.groupingBy(
-                        spa -> spa.getPlanningFactoryInstance().getFactoryReadableIdentifier(),
+                        schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
+                                .getFactoryReadableIdentifier(),
                         LinkedHashMap::new,
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
-                                list -> {
-                                    list.sort(Comparator.comparing(
-                                            SchedulingProducingArrangement::getFactoryProcessSequence,
-                                            FactoryProcessSequence.COMPARATOR
-                                    ));
+                                schedulingProducingArrangements -> {
+                                    schedulingProducingArrangements.sort(
+                                            Comparator.comparing(
+                                                    SchedulingProducingArrangement::getFactoryProcessSequence,
+                                                    FactoryProcessSequence.COMPARATOR
+                                            )
+                                    );
 
                                     return processor.apply(
-                                                    list.stream()
+                                                    schedulingProducingArrangements.stream()
                                                             .map(SchedulingProducingArrangement::getFactoryProcessSequence)
                                             )
                                             .collect(
