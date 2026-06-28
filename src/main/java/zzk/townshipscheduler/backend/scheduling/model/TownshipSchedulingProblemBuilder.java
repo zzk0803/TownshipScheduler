@@ -111,13 +111,15 @@ public class TownshipSchedulingProblemBuilder {
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount =
-                this.schedulingProducingArrangements.stream().filter(SchedulingProducingArrangement::boolOrderDirect).count();
+                this.schedulingProducingArrangements.stream()
+                        .filter(SchedulingProducingArrangement::boolOrderDirect)
+                        .count();
         int totalItemProducingArrangementCount = this.schedulingProducingArrangements.size();
         int dateTimeValueRangeCount = this.schedulingDateTimeSlots.size();
         int factoryCount = this.schedulingFactoryInstanceList.size();
         log.info(
                 "your township scheduling problem include {} order,contain {} final product item to make,and include all materials  need " +
-                        "{} " + "arrangement.factory value range " + "size:{},date times slot size:{}",
+                "{} " + "arrangement.factory value range " + "size:{},date times slot size:{}",
                 orderSize,
                 orderItemProducingArrangementCount,
                 totalItemProducingArrangementCount,
@@ -154,8 +156,7 @@ public class TownshipSchedulingProblemBuilder {
                 .map(productAction -> expandAndSetupIntoMaterials(idRoller, productAction))
                 .flatMap(Collection::stream)
                 .peek(SchedulingProducingArrangement::advancedSetupOrThrow)
-                .collect(Collectors.toCollection(TreeSet::new))
-                ;
+                .collect(Collectors.toCollection(TreeSet::new));
 
         schedulingProducingArrangements(producingArrangements);
     }
@@ -181,8 +182,7 @@ public class TownshipSchedulingProblemBuilder {
                     .getExecutionModeSet()
                     .stream()
                     .min(Comparator.comparing(SchedulingProducingExecutionMode::getExecuteDuration))
-                    .orElseThrow()
-                    ;
+                    .orElseThrow();
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
 
             if (producingArrangement.boolOrderDirect()) {
@@ -210,11 +210,15 @@ public class TownshipSchedulingProblemBuilder {
 
     private void trimUnrelatedObject() {
         List<SchedulingProduct> relatedSchedulingProduct =
-                this.schedulingProducingArrangements.stream().map(SchedulingProducingArrangement::getSchedulingProduct).toList();
+                this.schedulingProducingArrangements.stream()
+                        .map(SchedulingProducingArrangement::getSchedulingProduct)
+                        .toList();
         this.schedulingProductList.removeIf(product -> !relatedSchedulingProduct.contains(product));
 
         List<SchedulingFactoryInfo> relatedSchedulingFactoryInfo =
-                this.schedulingProducingArrangements.stream().map(SchedulingProducingArrangement::getRequiredFactoryInfo).toList();
+                this.schedulingProducingArrangements.stream()
+                        .map(SchedulingProducingArrangement::getRequiredFactoryInfo)
+                        .toList();
 
         this.schedulingFactoryInfoList.removeIf(schedulingFactoryInfo -> {
             boolean anyMatch = relatedSchedulingFactoryInfo.stream().anyMatch(streamIterating -> {
@@ -225,7 +229,8 @@ public class TownshipSchedulingProblemBuilder {
         this.schedulingFactoryInstanceList.removeIf(factory -> {
             SchedulingFactoryInfo schedulingFactoryInfo = factory.getSchedulingFactoryInfo();
             boolean anyMatch = relatedSchedulingFactoryInfo.stream().anyMatch(streamIterating -> {
-                boolean categoryEqual = streamIterating.getCategoryName().equals(schedulingFactoryInfo.getCategoryName());
+                boolean categoryEqual = streamIterating.getCategoryName()
+                        .equals(schedulingFactoryInfo.getCategoryName());
                 return categoryEqual;
             });
             return !anyMatch;
@@ -233,25 +238,48 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     private void setupWorkCalendar() {
-        Map<SchedulingFactoryInfo, Optional<Duration>> factoryTypeAndSumProductionOptionalMap =
-                this.schedulingProducingArrangements.stream().collect(Collectors.groupingBy(
-                        SchedulingProducingArrangement::getRequiredFactoryInfo, Collectors.collectingAndThen(
+        Map<SchedulingFactoryInfo, Duration> factoryTypeAndMaxPrerequisiteDurationMap =
+                this.schedulingProducingArrangements.stream()
+                        .collect(Collectors.groupingBy(
+                                SchedulingProducingArrangement::getRequiredFactoryInfo,
+                                Collectors.collectingAndThen(
+                                        Collectors.toList(),
+                                        schedulingProducingArrangements -> schedulingProducingArrangements.stream()
+                                                .map(SchedulingProducingArrangement::getStaticDeepPrerequisiteProducingDuration)
+                                                .max(Duration::compareTo)
+                                                .orElse(Duration.ZERO)
+                                )
+                        ));
+        Map<SchedulingFactoryInfo, Duration> factoryTypeTotalDurationMap = this.schedulingProducingArrangements.stream()
+                .collect(Collectors.groupingBy(
+                        SchedulingProducingArrangement::getRequiredFactoryInfo,
+                        Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 schedulingProducingArrangements -> schedulingProducingArrangements.stream()
-                                        .map(SchedulingProducingArrangement::getStaticDeepProducingDuration)
-                                        .max(Duration::compareTo)
+                                        .map(SchedulingProducingArrangement::getProducingDuration)
+                                        .reduce(Duration.ZERO, Duration::plus)
                         )
                 ));
-        Duration duration = factoryTypeAndSumProductionOptionalMap.values()
+        Optional<Duration> optionalDuration = factoryTypeAndMaxPrerequisiteDurationMap.entrySet()
                 .stream()
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .max(Duration::compareTo)
-                .orElse(Duration.ofDays(WORK_CALENDAR_END_OFFSET_DAYS))
-                ;
+                .max(Map.Entry.comparingByValue())
+                .map(factoryTypeAndMaxPrerequisiteDurationMapEntry -> {
+                    SchedulingFactoryInfo schedulingFactoryInfo = factoryTypeAndMaxPrerequisiteDurationMapEntry.getKey();
+                    Duration duration = factoryTypeAndMaxPrerequisiteDurationMapEntry.getValue();
+                    return duration.plus(factoryTypeTotalDurationMap.getOrDefault(
+                            schedulingFactoryInfo,
+                            Duration.ZERO
+                    ));
+                });
         LocalDateTime workCalendarStart = schedulingWorkCalendarStart.plusMinutes(WORK_CALENDAR_START_OFFSET_MINUTES);
         this.schedulingWorkCalendar =
-                new SchedulingWorkCalendar(workCalendarStart, workCalendarStart.plus(duration.plusDays(WORK_CALENDAR_END_OFFSET_DAYS)));
+                new SchedulingWorkCalendar(
+                        workCalendarStart,
+                        workCalendarStart.plus(
+                                optionalDuration.orElse(Duration.ZERO)
+                                        .plusDays(WORK_CALENDAR_END_OFFSET_DAYS)
+                        )
+                );
     }
 
     private void setupDateTimeSlot() {

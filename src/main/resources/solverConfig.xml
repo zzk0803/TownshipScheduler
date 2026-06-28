@@ -37,6 +37,9 @@
             </valueSelector>
         </changeMoveSelector>
         <changeMoveSelector>
+            <filterClass>
+                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryConstructionHeuristicChangeMoveSelectionFilter
+            </filterClass>
             <valueSelector variableName="planningDateTimeSlot"
                            id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
             </valueSelector>

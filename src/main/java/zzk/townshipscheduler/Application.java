@@ -16,12 +16,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.backoff.FixedBackOff;
-import zzk.townshipscheduler.backend.persistence.dao.AppUserEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.WarehouseEntityRepository;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
+import zzk.townshipscheduler.backend.persistence.dao.AppUserEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.WarehouseEntityRepository;
 
 import java.net.http.HttpClient;
 import java.util.concurrent.ExecutorService;
@@ -87,8 +87,7 @@ public class Application {
     @Bean("townshipTaskScheduler")
     public TaskScheduler taskScheduler() {
         SimpleAsyncTaskSchedulerBuilder taskSchedulerBuilder = new SimpleAsyncTaskSchedulerBuilder();
-        return taskSchedulerBuilder
-                .virtualThreads(true)
+        return taskSchedulerBuilder.virtualThreads(true)
                 .build();
     }
 
@@ -98,7 +97,7 @@ public class Application {
     }
 
     @Bean("httpClient")
-    public HttpClient object() {
+    public HttpClient httpClient() {
         return HttpClient.newHttpClient();
     }
 

@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 @Getter
 public class SchedulingViewPresenter {
 
-    public static final int UPDATE_FREQUENCY = 2;
+    public static final int UPDATE_FREQUENCY_IN_SECONDS = 5;
 
     private final OrderEntityRepository orderEntityRepository;
 
@@ -216,7 +216,7 @@ public class SchedulingViewPresenter {
                 ),
                 Instant.now()
                         .plusSeconds(1),
-                Duration.ofSeconds(UPDATE_FREQUENCY)
+                Duration.ofSeconds(UPDATE_FREQUENCY_IN_SECONDS)
         );
 
     }

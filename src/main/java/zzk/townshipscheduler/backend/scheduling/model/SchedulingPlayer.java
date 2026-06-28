@@ -36,49 +36,54 @@ public class SchedulingPlayer implements Serializable {
 
     public static final LocalTime DEFAULT_SLEEP_END = LocalTime.MIDNIGHT.plusHours(8);
 
-
     public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE
             = factoryProcessSequence -> Objects.nonNull(
             factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())
                                         && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
 
-    public static final Gatherer<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>> QUEUE_GATHERER
-            = Gatherer.ofSequential(
-            AtomicReference::new, (previousCompletedDateTimeRef, sequence, downstream) -> {
-                LocalDateTime arrangeDateTime = sequence.getArrangeDateTime();
-                if (arrangeDateTime == null) {
-                    return true;
-                }
+    public static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> QUEUE_PROCESSOR
+            = stream -> stream.gather(
+            Gatherer.<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>ofSequential(
+                    AtomicReference::new,
+                    (previousCompletedDateTimeRef, sequence, downstream) -> {
+                        LocalDateTime arrangeDateTime = sequence.getArrangeDateTime();
+                        if (arrangeDateTime == null) {
+                            return true;
+                        }
 
-                LocalDateTime previousCompletedDateTime = previousCompletedDateTimeRef.get();
-                LocalDateTime currentProducingDateTime = (previousCompletedDateTime == null || previousCompletedDateTime.isBefore(arrangeDateTime))
-                        ? arrangeDateTime
-                        : previousCompletedDateTime;
+                        LocalDateTime previousCompletedDateTime = previousCompletedDateTimeRef.get();
+                        LocalDateTime currentProducingDateTime =
+                                (previousCompletedDateTime == null
+                                 || previousCompletedDateTime.isBefore(arrangeDateTime))
+                                        ? arrangeDateTime
+                                        : previousCompletedDateTime;
 
-                LocalDateTime currentCompletedDateTime = currentProducingDateTime.plus(sequence.getProducingDuration());
+                        LocalDateTime currentCompletedDateTime = currentProducingDateTime.plus(sequence.getProducingDuration());
 
-                previousCompletedDateTimeRef.set(currentCompletedDateTime);
+                        previousCompletedDateTimeRef.set(currentCompletedDateTime);
 
-                return downstream.push(
-                        new Pair<>(
-                                sequence,
-                                new FactoryComputedDateTimePair(currentProducingDateTime, currentCompletedDateTime)
-                        )
-                ) && !downstream.isRejecting();
-            }
+                        return downstream.push(
+                                new Pair<>(
+                                        sequence,
+                                        new FactoryComputedDateTimePair(
+                                                currentProducingDateTime,
+                                                currentCompletedDateTime
+                                        )
+                                )
+                        ) && !downstream.isRejecting();
+                    }
+            )
     );
 
-    public static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> QUEUE_PROCESSOR
-            = stream -> stream.gather(QUEUE_GATHERER);
-
     public static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> SLOT_PROCESSOR
-            = stream -> stream.filter(seq -> seq.getArrangeDateTime() != null)
+            = stream -> stream.filter(factoryProcessSequence -> factoryProcessSequence.getArrangeDateTime() != null)
             .map(
-                    seq -> new Pair<>(
-                            seq,
+                    factoryProcessSequence -> new Pair<>(
+                            factoryProcessSequence,
                             new FactoryComputedDateTimePair(
-                                    seq.getArrangeDateTime(),
-                                    seq.getArrangeDateTime().plus(seq.getProducingDuration())
+                                    factoryProcessSequence.getArrangeDateTime(),
+                                    factoryProcessSequence.getArrangeDateTime()
+                                            .plus(factoryProcessSequence.getProducingDuration())
                             )
                     )
             );

@@ -9,13 +9,11 @@ public class SchedulingDateTimeStrengthComparator
 
     @Override
     public int compare(
-            SchedulingDateTimeSlot o1,
-            SchedulingDateTimeSlot o2
+            SchedulingDateTimeSlot former,
+            SchedulingDateTimeSlot latter
     ) {
-        return SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR.compare(
-                o1,
-                o2
-        );
+        return SchedulingDateTimeSlot.DATE_TIME_SLOT_COMPARATOR
+                .compare(former, latter);
     }
 
 }
