@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingDateTimeStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.ArrangementIdRoller;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.io.Serial;

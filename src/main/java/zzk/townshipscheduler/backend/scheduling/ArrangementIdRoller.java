@@ -1,4 +1,6 @@
-package zzk.townshipscheduler.backend.scheduling.model;
+package zzk.townshipscheduler.backend.scheduling;
+
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
