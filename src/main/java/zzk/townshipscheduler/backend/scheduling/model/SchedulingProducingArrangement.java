@@ -12,16 +12,18 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.ProducingStructureType;
+import zzk.townshipscheduler.backend.scheduling.ArrangementIdRoller;
 import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingDateTimeStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator;
-import zzk.townshipscheduler.backend.scheduling.ArrangementIdRoller;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -34,8 +36,7 @@ import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryIn
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity(comparatorClass = SchedulingProducingArrangementDifficultyComparator.class)
-public class SchedulingProducingArrangement
-        implements Serializable, Comparable<SchedulingProducingArrangement> {
+public class SchedulingProducingArrangement implements Serializable, Comparable<SchedulingProducingArrangement> {
 
     public static final String VALUE_RANGE_FOR_SCHEDULING_FACTORY_INSTANCE = "valueRangeForSchedulingFactoryInstance";
 
@@ -48,9 +49,6 @@ public class SchedulingProducingArrangement
     public static final String SHADOW_PRODUCING_DATE_TIME = "producingDateTime";
 
     public static final String SHADOW_COMPLETED_DATE_TIME = "completedDateTime";
-
-    public static final String SHADOW_DEEP_PREREQUISITE_PRODUCING_ARRANGEMENTS_FINISHED_DATE_TIME =
-            "shadowDeepPrerequisiteProducingArrangementsFinishedDateTime";
 
     @Serial
     private static final long serialVersionUID = 7524280731369623680L;
@@ -69,14 +67,18 @@ public class SchedulingProducingArrangement
     @JsonIdentityReference
     private SchedulingProduct schedulingOrderProduct;
 
-    private Integer schedulingOrderProductArrangementId;
-
     @JsonIdentityReference
     private IGameArrangeObject targetActionObject;
 
     @JsonIdentityReference
     @ToString.Include
     private IGameArrangeObject currentActionObject;
+
+    @JsonIgnore
+    private SchedulingProducingArrangement supportProducingArrangement;
+
+    @JsonIgnore
+    private SchedulingProducingArrangement supportOrderProducingArrangement;
 
     @JsonBackReference
     private SequencedSet<SchedulingProducingArrangement> prerequisiteProducingArrangements = new LinkedHashSet<>();
@@ -95,15 +97,15 @@ public class SchedulingProducingArrangement
 //    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
 //    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
 
-    @JsonIgnore
-    private SchedulingProducingArrangement successorProducingArrangement;
-
     private Duration staticDeepPrerequisiteProducingDuration;
 
     private Duration staticDeepProducingDuration;
 
     @JsonIgnore
     private SchedulingPlayer schedulingPlayer;
+
+    @JsonIgnore
+    private SchedulingWorkCalendar schedulingWorkCalendar;
 
     @JsonIgnore
     private SchedulingProducingExecutionMode producingExecutionMode;
@@ -153,7 +155,8 @@ public class SchedulingProducingArrangement
 
     @ValueRangeProvider(id = VALUE_RANGE_FOR_SCHEDULING_FACTORY_INSTANCE)
     public List<SchedulingFactoryInstance> valueRangeForSchedulingFactoryInstance(TownshipSchedulingProblem townshipSchedulingProblem) {
-        return townshipSchedulingProblem.getSchedulingFactoryInstanceList().stream()
+        return townshipSchedulingProblem.getSchedulingFactoryInstanceList()
+                .stream()
                 .filter(schedulingFactoryInstance -> schedulingFactoryInstance.getSchedulingFactoryInfo()
                         .typeEqual(getRequiredFactoryInfo()))
                 .toList();
@@ -229,11 +232,7 @@ public class SchedulingProducingArrangement
     }
 
     public boolean boolPlanningWellBeing() {
-        return Stream.of(
-                        getPlanningFactoryInstance(),
-                        getPlanningDateTimeSlot()
-                )
-                .allMatch(Objects::nonNull);
+        return Stream.of(getPlanningFactoryInstance(), getPlanningDateTimeSlot()).allMatch(Objects::nonNull);
     }
 
     @JsonProperty("arrangeDateTime")
@@ -241,9 +240,7 @@ public class SchedulingProducingArrangement
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ToString.Include
     public LocalDateTime getArrangeDateTime() {
-        return this.planningDateTimeSlot != null
-                ? this.planningDateTimeSlot.getStart()
-                : null;
+        return this.planningDateTimeSlot != null ? this.planningDateTimeSlot.getStart() : null;
     }
 
     public void setArrangeDateTime(LocalDateTime localDateTime) {
@@ -312,8 +309,7 @@ public class SchedulingProducingArrangement
                 .map(SchedulingProducingArrangement::calcStaticProducingDuration)
                 .filter(Objects::nonNull)
                 .max(Duration::compareTo)
-                .orElse(Duration.ZERO)
-                ;
+                .orElse(Duration.ZERO);
         setStaticDeepPrerequisiteProducingDuration(prerequisiteStaticProducingDuration);
         return selfDuration.plus(prerequisiteStaticProducingDuration);
     }
@@ -331,13 +327,12 @@ public class SchedulingProducingArrangement
     ) {
         this.prerequisiteProducingArrangements.addAll(prerequisiteArrangements);
         this.prerequisiteProducingArrangementsSize = this.prerequisiteProducingArrangements.size();
-        this.prerequisiteProducingArrangements.forEach(
-                schedulingProducingArrangement -> schedulingProducingArrangement.setSuccessorProducingArrangement(this)
-        );
+        this.prerequisiteProducingArrangements.forEach(schedulingProducingArrangement -> schedulingProducingArrangement.setSupportProducingArrangement(
+                this));
     }
 
     public boolean boolBearSuccessorProducingArrangement() {
-        return getSuccessorProducingArrangement() != null;
+        return getSupportProducingArrangement() != null;
     }
 
     public boolean boolOrderDirect() {
@@ -366,10 +361,75 @@ public class SchedulingProducingArrangement
 
     @Override
     public int compareTo(SchedulingProducingArrangement that) {
-        return SchedulingProducingArrangementDifficultyComparator.INSTANCE.compare(
-                this,
-                that
-        );
+        return SchedulingProducingArrangementDifficultyComparator.INSTANCE.compare(this, that);
+    }
+
+    public boolean boolCompleted() {
+        return getCompletedDateTime() != null;
+    }
+
+    public boolean boolCompletedAfterCalendarEnd() {
+        return !boolCompleted() || completedDateTime.isAfter(schedulingWorkCalendar.getEndDateTime());
+    }
+
+    public boolean boolCompletedAfterDeadline() {
+        return !boolCompleted() || completedDateTime.isAfter(getDeadline());
+    }
+
+    public int getEvaluateFactor() {
+        int factor = getDeadline() != null ? 100 : 1;
+        if (this.getSchedulingOrder() != null) {
+            OrderType orderType = this.getSchedulingOrder().getOrderType();
+            switch (orderType) {
+                case TRAIN -> {
+                    factor *= 10;
+                }
+                case AIRPLANE -> {
+                    factor *= 100;
+                }
+            }
+        }
+        return factor;
+    }
+
+    public Duration calcDeadlineToCompletedDuration() {
+        return Duration.between(getSchedulingOrder().getDeadline(), getCompletedDateTime());
+    }
+
+    public Duration calcCalendarEndToCompletedDuration() {
+        LocalDateTime workCalendarEnd = getSchedulingWorkCalendar().getEndDateTime();
+        return Duration.between(workCalendarEnd,getCompletedDateTime());
+    }
+
+    public Duration calcCalendarStartToArrangedDuration() {
+        LocalDateTime workCalendarStart = getSchedulingWorkCalendar().getStartDateTime();
+        return Duration.between(workCalendarStart, getArrangeDateTime());
+    }
+
+    public Duration calcCalendarStartToCompletedDuration() {
+        LocalDateTime workCalendarStart = getSchedulingWorkCalendar().getStartDateTime();
+        return Duration.between(workCalendarStart, getCompletedDateTime());
+    }
+
+    public Duration calcSleepArrangeDateTimeToNextAvailableDuration() {
+        LocalTime arrangeTime = this.getArrangeDateTime().toLocalTime();
+        LocalTime sleepStart = this.getSchedulingPlayer().getSleepStart();
+        LocalTime sleepEnd = this.getSchedulingPlayer().getSleepEnd();
+        if (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX)) {
+            return Duration.between(sleepEnd, LocalTime.MAX).plus(Duration.between(sleepStart, sleepEnd)).abs();
+        } else if (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd)) {
+            return Duration.between(sleepStart, sleepEnd).abs();
+        } else {
+            return Duration.ZERO;
+        }
+    }
+
+    public boolean boolArrangeDateTimeInPlayerSleepTime() {
+        LocalTime arrangeTime = this.getArrangeDateTime().toLocalTime();
+        LocalTime sleepStart = this.getSchedulingPlayer().getSleepStart();
+        LocalTime sleepEnd = this.getSchedulingPlayer().getSleepEnd();
+        return (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX))
+               || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
     }
 
 }

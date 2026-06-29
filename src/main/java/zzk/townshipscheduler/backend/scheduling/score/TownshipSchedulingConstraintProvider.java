@@ -7,13 +7,11 @@ import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingWorkCalendar;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class TownshipSchedulingConstraintProvider
         implements ConstraintProvider {
@@ -24,6 +22,7 @@ public class TownshipSchedulingConstraintProvider
         return new Constraint[]{
                 forbidBrokenFactoryAbility(constraintFactory),
                 forbidBrokenPrerequisiteArrangement(constraintFactory),
+                shouldArrangementCompleted(constraintFactory),
                 shouldNotBrokenDeadlineOrder(constraintFactory),
                 shouldNotBrokenCalendarEnd(constraintFactory),
                 preferNotArrangeInPlayerSleepTime(constraintFactory),
@@ -66,13 +65,12 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenPrerequisiteArrangement(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEach(SchedulingProducingArrangement.class)
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .join(
                         SchedulingProducingArrangement.class,
                         Joiners.equal(
                                 Function.identity(),
-                                SchedulingProducingArrangement::getSuccessorProducingArrangement
+                                SchedulingProducingArrangement::getSupportProducingArrangement
                         )
                 )
                 .groupBy(
@@ -93,6 +91,16 @@ public class TownshipSchedulingConstraintProvider
                 .asConstraint("forbidBrokenPrerequisiteArrangement");
     }
 
+    private Constraint shouldArrangementCompleted(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(Predicate.not(SchedulingProducingArrangement::boolCompleted))
+                .penalize(
+                        HardMediumSoftScore.ofMedium(50L),
+                        SchedulingProducingArrangement::getEvaluateFactor
+                )
+                .asConstraint("shouldArrangementCompleted");
+    }
+
     private Constraint shouldNotBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolOrderDirect)
@@ -106,86 +114,22 @@ public class TownshipSchedulingConstraintProvider
                             return completedDateTime == null || completedDateTime.isAfter(deadline);
                         })
                 )
-                .join(SchedulingWorkCalendar.class)
-                .expand((schedulingProducingArrangement,schedulingWorkCalendar) -> {
-                    LocalDateTime deadline = schedulingProducingArrangement.getSchedulingOrder().getDeadline();
-                    LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
-                    return completedDateTime != null
-                            ? Duration.between(deadline, completedDateTime)
-                            .toMinutes()
-                            : Duration.between(schedulingWorkCalendar.getStartDateTime(), schedulingWorkCalendar.getEndDateTime())
-                                    .toMinutes();
-                })
                 .penalize(
-                        HardMediumSoftScore.ONE_MEDIUM, (schedulingProducingArrangement, schedulingWorkCalendar, aLong) -> aLong
+                        HardMediumSoftScore.ONE_MEDIUM,
+                        (schedulingProducingArrangement) -> schedulingProducingArrangement.calcDeadlineToCompletedDuration()
+                                .toMinutes()
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");
-//        return constraintFactory.forEach(SchedulingOrder.class)
-//                .filter(SchedulingOrder::boolHasDeadline)
-//                .join(
-//                        constraintFactory.forEach(SchedulingProducingArrangement.class)
-//                                .filter(SchedulingProducingArrangement::isOrderDirect),
-//                        Joiners.equal(
-//                                Function.identity(),
-//                                SchedulingProducingArrangement::getSchedulingOrder
-//                        )
-//                )
-//                .filter((schedulingOrder, producingArrangement) -> {
-//                    LocalDateTime deadline = schedulingOrder.getDeadline();
-//                    LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
-//                    return completedDateTime == null || completedDateTime.isAfter(deadline);
-//                })
-//                .penalize()(
-//                        HardMediumSoftScore.ONE_MEDIUM,
-//                        (
-//                                (schedulingOrder, producingArrangement) -> {
-//                                    LocalDateTime deadline = schedulingOrder.getDeadline();
-//                                    LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
-//                                    return completedDateTime != null
-//                                            ? Duration.between(deadline, completedDateTime)
-//                                            .toMinutes()
-//                                            : Duration.between(
-//                                                            producingArrangement.getSchedulingWorkCalendar()
-//                                                                    .getStartDateTime(),
-//                                                            producingArrangement.getSchedulingWorkCalendar()
-//                                                                    .getEndDateTime()
-//                                                    )
-//                                                    .toMinutes();
-//                                }
-//                        )
-//                )
-//                .asConstraint("shouldNotBrokenDeadlineOrder");
     }
 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolOrderDirect)
-                .join(SchedulingWorkCalendar.class)
-                .filter((schedulingProducingArrangement,schedulingWorkCalendar) -> {
-                            LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
-                            return Objects.isNull(completedDateTime)
-                                    || completedDateTime.isAfter(
-                                    schedulingWorkCalendar.getEndDateTime()
-                            );
-                        }
-                )
-                .expand((schedulingProducingArrangement,schedulingWorkCalendar) -> {
-                            LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
-                            LocalDateTime workCalendarStart = schedulingWorkCalendar
-                                    .getStartDateTime();
-                            LocalDateTime workCalendarEnd = schedulingWorkCalendar
-                                    .getEndDateTime();
-                            if (completedDateTime != null) {
-                                return Duration.between(workCalendarEnd, completedDateTime);
-                            }
-                            else {
-                                return Duration.between(workCalendarStart, workCalendarEnd);
-                            }
-                        }
-                )
+                .filter(SchedulingProducingArrangement::boolCompletedAfterCalendarEnd)
                 .penalize(
                         HardMediumSoftScore.ofMedium(100L),
-                        (schedulingProducingArrangement, schedulingWorkCalendar, duration) ->  duration.toMinutes()
+                        (schedulingProducingArrangement) -> schedulingProducingArrangement.calcCalendarEndToCompletedDuration()
+                                .toMinutes()
                 )
                 .asConstraint("shouldNotBrokenCalendarEnd");
     }
@@ -194,16 +138,7 @@ public class TownshipSchedulingConstraintProvider
             @NonNull ConstraintFactory constraintFactory
     ) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(schedulingProducingArrangement -> {
-                    LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
-                    LocalTime sleepStart = schedulingProducingArrangement.getSchedulingPlayer()
-                            .getSleepStart();
-                    LocalTime sleepEnd = schedulingProducingArrangement.getSchedulingPlayer()
-                            .getSleepEnd();
-                    LocalTime arrangeTime = arrangeDateTime.toLocalTime();
-                    return (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX))
-                            || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
-                })
+                .filter(SchedulingProducingArrangement::boolArrangeDateTimeInPlayerSleepTime)
                 .penalize(
                         HardMediumSoftScore.ofSoft(10000L)
                 )
@@ -212,32 +147,21 @@ public class TownshipSchedulingConstraintProvider
 
     private Constraint preferMinimizeCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .join(SchedulingWorkCalendar.class)
+                .filter(SchedulingProducingArrangement::boolCompleted)
                 .penalize(
                         HardMediumSoftScore.ONE_SOFT,
-                        (arrangement,schedulingWorkCalendar) -> {
-                            var calendarStartDateTime = schedulingWorkCalendar.getStartDateTime();
-                            var completedDateTime = arrangement.getCompletedDateTime();
-                            Duration between = Duration.between(calendarStartDateTime, completedDateTime);
-                            return calcFactor(arrangement) * between.toMinutes();
-                        }
+                        (arrangement) -> calcFactor(arrangement) * arrangement.calcCalendarStartToCompletedDuration()
+                                .toMinutes()
                 )
                 .asConstraint("preferMinimizeCompletedDateTime");
     }
 
     private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .join(SchedulingWorkCalendar.class)
                 .penalize(
                         HardMediumSoftScore.ONE_SOFT,
-                        (arrangement,schedulingWorkCalendar) -> {
-                            return Duration.between(
-                                            schedulingWorkCalendar
-                                                    .getStartDateTime(),
-                                            arrangement.getArrangeDateTime()
-                                    )
-                                    .toMinutes() * calcFactor(arrangement);
-                        }
+                        (arrangement) -> arrangement.calcCalendarStartToArrangedDuration().toMinutes() *
+                                         calcFactor(arrangement)
                 )
                 .asConstraint("preferArrangeDateTimeAsSoonAsPassible");
     }
@@ -254,22 +178,21 @@ public class TownshipSchedulingConstraintProvider
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }
 
-    private int calcFactor(SchedulingProducingArrangement arrangement) {
-        int factor = 1;
+    public int calcFactor(SchedulingProducingArrangement arrangement) {
+        int factor = arrangement.getDeadline() != null ? 100 : 1;
         if (arrangement.getSchedulingOrder() != null) {
             OrderType orderType = arrangement.getSchedulingOrder()
                     .getOrderType();
             switch (orderType) {
                 case TRAIN -> {
-                    factor = 10;
+                    factor *= 10;
                 }
                 case AIRPLANE -> {
-                    factor = 100;
+                    factor *= 100;
                 }
             }
         }
         return factor;
     }
-
 
 }

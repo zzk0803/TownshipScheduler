@@ -23,8 +23,8 @@ public class ProducingArrangementPlanningFactoryConstructionHeuristicChangeMoveS
         var entity = (SchedulingProducingArrangement) selection.getEntity();
         var toPlanningValue = (SchedulingDateTimeSlot) selection.getToPlanningValue();
         LocalDateTime startDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime();
-        Duration producingDuration = entity.getStaticDeepProducingDuration();
-        LocalDateTime atLeastFeasibleArrangeDateTime = startDateTime.plus(producingDuration);
+        Duration staticDeepPrerequisiteProducingDuration = entity.getStaticDeepPrerequisiteProducingDuration();
+        LocalDateTime atLeastFeasibleArrangeDateTime = startDateTime.plus(staticDeepPrerequisiteProducingDuration);
         return toPlanningValue != null
                && !(toPlanningValue.getStart().isBefore(atLeastFeasibleArrangeDateTime));
     }

@@ -188,7 +188,7 @@ public class TownshipSchedulingProblemBuilder {
 
             if (producingArrangement.boolOrderDirect()) {
                 iteratingArrangement.setSchedulingOrderProduct(producingArrangement.getSchedulingProduct());
-                iteratingArrangement.setSchedulingOrderProductArrangementId(producingArrangement.getId());
+                iteratingArrangement.setSupportOrderProducingArrangement(producingArrangement);
             }
 
             List<SchedulingProducingArrangement> materialArrangements = producingExecutionMode.generateMaterialsArrangements();
@@ -281,6 +281,9 @@ public class TownshipSchedulingProblemBuilder {
                                         .plusDays(WORK_CALENDAR_END_OFFSET_DAYS)
                         )
                 );
+        for (SchedulingProducingArrangement schedulingProducingArrangement : this.schedulingProducingArrangements) {
+            schedulingProducingArrangement.setSchedulingWorkCalendar(this.schedulingWorkCalendar);
+        }
     }
 
     private void setupDateTimeSlot() {

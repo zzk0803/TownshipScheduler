@@ -60,8 +60,8 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>45</slidingWindowSeconds>
-                <minimumImprovementRatio>0.01</minimumImprovementRatio>
+                <slidingWindowSeconds>90</slidingWindowSeconds>
+                <minimumImprovementRatio>0.125</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 

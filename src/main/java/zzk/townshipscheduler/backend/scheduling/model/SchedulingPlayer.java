@@ -32,7 +32,7 @@ import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryIn
 @PlanningEntity
 public class SchedulingPlayer implements Serializable {
 
-    public static final LocalTime DEFAULT_SLEEP_START = LocalTime.MIDNIGHT.minusHours(2);
+    public static final LocalTime DEFAULT_SLEEP_START = LocalTime.MIN.minusHours(2);
 
     public static final LocalTime DEFAULT_SLEEP_END = LocalTime.MIDNIGHT.plusHours(8);
 

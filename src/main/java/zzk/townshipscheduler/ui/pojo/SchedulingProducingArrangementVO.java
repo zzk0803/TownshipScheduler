@@ -58,7 +58,7 @@ public class SchedulingProducingArrangementVO {
                 .getName();
         this.orderProduct = schedulingProducingArrangement.getSchedulingOrderProduct()
                 .getName();
-        this.orderProductArrangementId = schedulingProducingArrangement.getSchedulingOrderProductArrangementId();
+        this.orderProductArrangementId = schedulingProducingArrangement.getSupportOrderProducingArrangement().getId();
         this.boolDirectToOrder = schedulingProducingArrangement.boolOrderDirect();
         this.factoryReadableIdentifier = planningFactoryInstance != null
                 ? planningFactoryInstance.getFactoryReadableIdentifier()
