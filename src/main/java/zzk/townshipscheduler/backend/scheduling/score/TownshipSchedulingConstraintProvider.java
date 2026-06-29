@@ -33,6 +33,25 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+//                .groupBy(
+//                        SchedulingProducingArrangement::getPlanningFactoryInstance,
+//                        SchedulingProducingArrangement::getPlanningDateTimeSlot,
+//                        ConstraintCollectors.toConnectedTemporalRanges(
+//                                SchedulingProducingArrangement::getArrangeDateTime,
+//                                SchedulingProducingArrangement::getCompletedDateTime
+//                        )
+//                )
+//                .flattenLast(ConnectedRangeChain::getConnectedRanges)
+//                .filter((schedulingFactoryInstance, schedulingDateTimeSlot, arrangementChronoLocalDateTimeDurationConnectedRange) -> {
+//                    return arrangementChronoLocalDateTimeDurationConnectedRange.getContainedRangeCount() > schedulingFactoryInstance.getProducingLength();
+//                })
+//                .penalize(
+//                        HardMediumSoftScore.ONE_HARD,
+//                        (schedulingFactoryInstance, schedulingDateTimeSlot, arrangementChronoLocalDateTimeDurationConnectedRange) -> arrangementChronoLocalDateTimeDurationConnectedRange.getContainedRangeCount() - schedulingFactoryInstance.getProducingLength()
+//                )
+//                .asConstraint("forbidBrokenFactoryAbility");
+
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .join(
                         SchedulingProducingArrangement.class,
@@ -69,9 +88,9 @@ public class TownshipSchedulingConstraintProvider
                         precomputeFactory -> precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
                                 .join(
                                         precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class),
-                                        Joiners.equal(
-                                                Function.identity(),
-                                                SchedulingProducingArrangement::getSupportProducingArrangement
+                                        Joiners.containing(
+                                                SchedulingProducingArrangement::getDeepPrerequisiteProducingArrangements,
+                                                Function.identity()
                                         )
                                 )
                 )
