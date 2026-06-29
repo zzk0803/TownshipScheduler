@@ -65,14 +65,17 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenPrerequisiteArrangement(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .join(
-                        SchedulingProducingArrangement.class,
-                        Joiners.equal(
-                                Function.identity(),
-                                SchedulingProducingArrangement::getSupportProducingArrangement
-                        )
+        return constraintFactory.precompute(
+                        precomputeFactory -> precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
+                                .join(
+                                        precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class),
+                                        Joiners.equal(
+                                                Function.identity(),
+                                                SchedulingProducingArrangement::getSupportProducingArrangement
+                                        )
+                                )
                 )
+                .filter((whole, partial) -> whole.boolCompleted() && partial.boolCompleted())
                 .groupBy(
                         (whole, partial) -> whole,
                         ConstraintCollectors.max(
@@ -81,7 +84,8 @@ public class TownshipSchedulingConstraintProvider
                         )
                 )
                 .filter((whole, partialMax) -> whole.getArrangeDateTime()
-                        .isBefore(partialMax.getCompletedDateTime()))
+                        .isBefore(partialMax.getCompletedDateTime())
+                )
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
                         (whole, partialMax) ->
