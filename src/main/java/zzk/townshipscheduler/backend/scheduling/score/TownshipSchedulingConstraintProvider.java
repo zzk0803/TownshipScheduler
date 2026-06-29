@@ -94,22 +94,22 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint shouldNotBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::boolOrderDirect)
-                .ifExists(
-                        constraintFactory.forEach(SchedulingOrder.class)
-                                .filter(SchedulingOrder::boolHasDeadline),
-                        Joiners.equal(SchedulingProducingArrangement::getSchedulingOrder, Function.identity()),
-                        Joiners.filtering((producingArrangement, schedulingOrder) -> {
-                            LocalDateTime deadline = schedulingOrder.getDeadline();
-                            LocalDateTime completedDateTime = producingArrangement.getCompletedDateTime();
-                            return completedDateTime == null || completedDateTime.isAfter(deadline);
-                        })
+        return constraintFactory.precompute(
+                        precomputeFactory -> precomputeFactory.forEachUnfiltered(
+                                        SchedulingProducingArrangement.class)
+                                .filter(SchedulingProducingArrangement::boolOrderDirect)
+                                .ifExists(
+                                        precomputeFactory.forEachUnfiltered(SchedulingOrder.class)
+                                                .filter(SchedulingOrder::boolHasDeadline),
+                                        Joiners.equal(SchedulingProducingArrangement::getSchedulingOrder, Function.identity())
+                                )
                 )
+                .filter(SchedulingProducingArrangement::boolCompletedAfterDeadline)
                 .penalize(
-                        HardMediumSoftScore.ONE_MEDIUM,
-                        (schedulingProducingArrangement) -> schedulingProducingArrangement.calcDeadlineToCompletedDuration()
-                                .toMinutes()
+                        HardMediumSoftScore.ofMedium(100L),
+                        (schedulingProducingArrangement)
+                                -> schedulingProducingArrangement.calcDeadlineToCompletedDuration()
+                                           .toMinutes() * calcFactor(schedulingProducingArrangement)
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");
     }
@@ -119,7 +119,7 @@ public class TownshipSchedulingConstraintProvider
                 .filter(SchedulingProducingArrangement::boolOrderDirect)
                 .filter(SchedulingProducingArrangement::boolCompletedAfterCalendarEnd)
                 .penalize(
-                        HardMediumSoftScore.ofMedium(100L),
+                        HardMediumSoftScore.ONE_MEDIUM,
                         (schedulingProducingArrangement) -> schedulingProducingArrangement.calcCalendarEndToCompletedDuration()
                                 .toMinutes()
                 )

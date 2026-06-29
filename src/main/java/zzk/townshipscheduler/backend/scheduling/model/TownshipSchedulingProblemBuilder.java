@@ -272,15 +272,23 @@ public class TownshipSchedulingProblemBuilder {
                             Duration.ZERO
                     ));
                 });
+        Optional<LocalDateTime> deadlineOptional = this.schedulingOrderList.stream()
+                .filter(SchedulingOrder::boolHasDeadline)
+                .map(SchedulingOrder::getDeadline)
+                .max(LocalDateTime::compareTo);
         LocalDateTime workCalendarStart = schedulingWorkCalendarStart.plusMinutes(WORK_CALENDAR_START_OFFSET_MINUTES);
+        LocalDateTime computedCalendarEnd = workCalendarStart.plus(
+                optionalDuration.orElse(Duration.ZERO)
+                        .plusDays(WORK_CALENDAR_END_OFFSET_DAYS)
+        );
+
         this.schedulingWorkCalendar =
                 new SchedulingWorkCalendar(
                         workCalendarStart,
-                        workCalendarStart.plus(
-                                optionalDuration.orElse(Duration.ZERO)
-                                        .plusDays(WORK_CALENDAR_END_OFFSET_DAYS)
-                        )
+                        deadlineOptional.filter(deadline -> deadline.isAfter(computedCalendarEnd))
+                                .orElse(computedCalendarEnd)
                 );
+
         for (SchedulingProducingArrangement schedulingProducingArrangement : this.schedulingProducingArrangements) {
             schedulingProducingArrangement.setSchedulingWorkCalendar(this.schedulingWorkCalendar);
         }

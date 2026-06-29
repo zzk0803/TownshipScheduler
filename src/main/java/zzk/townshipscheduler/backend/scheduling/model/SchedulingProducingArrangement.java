@@ -373,7 +373,7 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
     }
 
     public boolean boolCompletedAfterDeadline() {
-        return !boolCompleted() || completedDateTime.isAfter(getDeadline());
+        return boolHasDeadline() && (!boolCompleted() || completedDateTime.isAfter(getDeadline()));
     }
 
     public int getEvaluateFactor() {
@@ -393,12 +393,15 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
     }
 
     public Duration calcDeadlineToCompletedDuration() {
-        return Duration.between(getSchedulingOrder().getDeadline(), getCompletedDateTime());
+        return Duration.between(
+                getSchedulingOrder().getDeadline(),
+                boolCompleted() ? getCompletedDateTime() : getSchedulingWorkCalendar().getEndDateTime()
+        );
     }
 
     public Duration calcCalendarEndToCompletedDuration() {
         LocalDateTime workCalendarEnd = getSchedulingWorkCalendar().getEndDateTime();
-        return Duration.between(workCalendarEnd,getCompletedDateTime());
+        return Duration.between(workCalendarEnd, getCompletedDateTime());
     }
 
     public Duration calcCalendarStartToArrangedDuration() {
