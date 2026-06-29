@@ -7,10 +7,8 @@ import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Entity
 @Getter
@@ -51,14 +49,16 @@ public class PlayerEntity {
     @OneToMany(
             targetEntity = FieldFactoryEntity.class,
             cascade = CascadeType.ALL,
-            mappedBy = "playerEntity"
+            mappedBy = "playerEntity",
+            orphanRemoval = true
     )
     @ToString.Exclude
     private Set<FieldFactoryEntity> fieldFactoryEntities = new HashSet<>();
 
     @OneToMany(
             targetEntity = OrderEntity.class,
-            mappedBy = "playerEntity"
+            mappedBy = "playerEntity",
+            orphanRemoval = true
     )
     @ToString.Exclude
     private Set<OrderEntity> orderEntities = new HashSet<>();
@@ -104,8 +104,24 @@ public class PlayerEntity {
         return fieldFactoryEntities.add(fieldFactoryEntity);
     }
 
+    public void removeAllFieldFactory() {
+        for (Iterator<FieldFactoryEntity> iterator = this.fieldFactoryEntities.iterator(); iterator.hasNext(); ) {
+            FieldFactoryEntity fieldFactoryEntity = iterator.next();
+            fieldFactoryEntity.setPlayerEntity(null);
+            iterator.remove();
+        }
+    }
+
     public boolean removeAllFieldFactory(Collection<? extends FieldFactoryEntity> fieldFactoryEntities) {
-        return fieldFactoryEntities.stream().map(this::removeFieldFactory).anyMatch(boolResult -> !boolResult);
+        boolean boolAllSuccess = true;
+        for (Iterator<? extends FieldFactoryEntity> iterator = fieldFactoryEntities.iterator(); iterator.hasNext(); ) {
+            FieldFactoryEntity fieldFactoryEntity = iterator.next();
+            if (!removeFieldFactory(fieldFactoryEntity)) {
+                boolAllSuccess = false;
+            }
+            iterator.remove();
+        }
+        return boolAllSuccess;
     }
 
     public boolean removeFieldFactory(FieldFactoryEntity fieldFactoryEntity) {

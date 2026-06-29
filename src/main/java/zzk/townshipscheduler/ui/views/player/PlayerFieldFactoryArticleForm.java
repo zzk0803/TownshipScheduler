@@ -12,15 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.backend.service.PlayerService;
 import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 @Slf4j
 class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
-
-//    private final PlayerService playerService;
-//
-//    private final PlayerEntity playerEntity;
 
     private final Binder<FieldFactoryEntity> binder;
 
@@ -30,16 +25,13 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
 
     private final IntegerField reapWindowSizeIntegerField;
 
-    private transient FieldFactoryEntity fieldFactoryEntity;
+    private FieldFactoryEntity fieldFactoryEntity;
 
     private transient FieldFactoryInfoEntity fieldFactoryInfoEntity;
 
     public PlayerFieldFactoryArticleForm(
-            PlayerEntity playerEntity,
-            PlayerService playerService
+            PlayerViewPresenter playerViewPresenter
     ) {
-//        this.playerEntity = playerEntity;
-//        this.playerService = playerService;
         this.binder = new Binder<>(FieldFactoryEntity.class);
         this.fieldFactoryEntity = new FieldFactoryEntity();
 
@@ -53,7 +45,7 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
         reapWindowSizeIntegerField = new IntegerField();
         reapWindowSizeIntegerField.setPlaceholder("Reap Window Size");
         fieldFactoryInfoEntityComboBox = new ComboBox<>();
-        fieldFactoryInfoEntityComboBox.setItems(playerService.findAvailableFieldFactoryInfoByPlayer(playerEntity));
+        fieldFactoryInfoEntityComboBox.setItems(playerViewPresenter.findAvailableFieldFactoryInfoByPlayer());
         fieldFactoryInfoEntityComboBox.setAllowCustomValue(false);
         fieldFactoryInfoEntityComboBox.setItemLabelGenerator(FieldFactoryInfoEntity::getCategory);
         fieldFactoryInfoEntityComboBox.addValueChangeListener(
@@ -77,7 +69,7 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
                 this,
                 PlayerFieldFactoryPersistRequestEvent.class,
                 request -> {
-                    playerService.saveFieldFactory(fieldFactoryEntity, playerEntity);
+                    playerViewPresenter.saveFieldFactory(fieldFactoryEntity);
                 }
         );
 

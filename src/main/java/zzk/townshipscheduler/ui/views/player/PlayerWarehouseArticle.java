@@ -32,19 +32,15 @@ import java.util.Map;
 @Slf4j
 class PlayerWarehouseArticle extends Composite<VerticalLayout> {
 
-    private final PlayerEntity currentPlayer;
-
-    private final PlayerService playerService;
+    private final PlayerViewPresenter playerViewPresenter;
 
     private final Grid<Map.Entry<ProductEntity, Integer>> grid;
 
     public PlayerWarehouseArticle(
-            PlayerEntity playerEntity,
-            PlayerService playerService,
+            PlayerViewPresenter playerViewPresenter,
             ProductsCategoriesPanel productsCategoriesPanel
     ) {
-        this.currentPlayer = playerEntity;
-        this.playerService = playerService;
+        this.playerViewPresenter = playerViewPresenter;
 
         setupMenuBar(productsCategoriesPanel);
         grid = new Grid<>();
@@ -105,8 +101,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
                             okClickEvent -> {
                                 productsCategoriesPanel.consumeSelected(productEntity -> {
                                     if (productEntity != null) {
-                                        WarehouseEntity updatedWarehouse = playerService.updateWarehouseStock(
-                                                playerService.findWarehouseEntityByPlayerEntity(currentPlayer),
+                                        WarehouseEntity updatedWarehouse = playerViewPresenter.updateWarehouseStock(
                                                 productEntity,
                                                 footerAmountField.getOptionalValue().orElse(1)
                                         );
@@ -127,7 +122,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
                 query -> {
                     int offset = query.getOffset();
                     int limit = query.getLimit();
-                    WarehouseEntity warehouseEntity = playerService.findWarehouseEntityByPlayerEntity(currentPlayer);
+                    WarehouseEntity warehouseEntity = playerViewPresenter.findWarehouseEntityByPlayerEntity();
 
                     Map<ProductEntity, Integer> itemAmountMap = warehouseEntity.getProductAmountMap();
                     return itemAmountMap.entrySet().stream().skip(offset).limit(limit);

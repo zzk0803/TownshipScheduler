@@ -3,13 +3,11 @@ package zzk.townshipscheduler.backend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import zzk.townshipscheduler.backend.persistence.dao.*;
+import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.persistence.dao.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -26,6 +24,8 @@ public class PlayerService {
     private final FieldFactoryEntityRepository fieldFactoryEntityRepository;
 
     private final WarehouseEntityRepository warehouseEntityRepository;
+
+    private final TransactionTemplate transactionTemplate;
 
     @Transactional(readOnly = true)
     public List<PlayerEntity> findAllPlayer() {
@@ -70,8 +70,8 @@ public class PlayerService {
 
     @Transactional
     public FieldFactoryEntity saveFieldFactory(FieldFactoryEntity fieldFactoryEntity, PlayerEntity playerEntity) {
+        playerEntity.addFieldFactory(fieldFactoryEntity);
         PlayerEntity mergedPlayer = playerEntityRepository.save(playerEntity);
-        fieldFactoryEntity.setPlayerEntity(mergedPlayer);
         int alreadyHave = fieldFactoryEntityRepository.countByPlayerEntityAndFieldFactoryInfoEntity(
                 mergedPlayer,
                 fieldFactoryEntity.getFieldFactoryInfoEntity()
@@ -88,69 +88,78 @@ public class PlayerService {
         return warehouseEntityRepository.findWarehouseEntityByPlayerEntity(playerEntity);
     }
 
-    @Transactional
-    public List<FieldFactoryInfoEntity> playerUpdate(PlayerEntity playerEntity) {
-        PlayerEntity managedPlayer = emergeAndUpdate(playerEntity);
-        List<FieldFactoryInfoEntity> fieldFactoryInfoEntitiesByLevelBetween = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelBetween(
-                playerEntity.getLevel() - 1,
-                playerEntity.getLevel()
-        );
-        fieldFactoryInfoEntitiesByLevelBetween.forEach(fieldFactoryInfoEntity -> {
-            FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(
-                    () -> managedPlayer);
-            fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getDefaultProducingCapacity());
-            fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getDefaultReapWindowCapacity());
-            fieldFactoryEntityRepository.save(fieldFactoryEntity);
+    public List<FieldFactoryEntity> playerUpdate(PlayerEntity playerEntity) {
+
+        return transactionTemplate.execute(status -> {
+            List<FieldFactoryInfoEntity> fieldFactoryInfoEntitiesByLevelBetween
+                    = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelBetween(
+                    playerEntity.getLevel() - 1,
+                    playerEntity.getLevel()
+            );
+            return fieldFactoryInfoEntitiesByLevelBetween.stream()
+                    .map(fieldFactoryInfoEntity -> {
+                        FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(
+                                () -> playerEntity);
+                        fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getDefaultProducingCapacity());
+                        fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getDefaultReapWindowCapacity());
+                        return fieldFactoryEntityRepository.save(fieldFactoryEntity);
+                    })
+                    .toList();
         });
-
-        return fieldFactoryInfoEntitiesByLevelBetween;
     }
 
-    @Transactional
     public PlayerEntity emergeAndUpdate(PlayerEntity player) {
-        return playerEntityRepository.save(player);
+        return transactionTemplate.execute(_ -> playerEntityRepository.save(player));
     }
 
     @Transactional
-    public void playerFactoryToCorrespondedLevelInBatch(PlayerEntity playerEntity) {
-        PlayerEntity managedPlayer = playerEntityRepository.findPlayerById(playerEntity.getId()).orElse(playerEntity);
-        fieldFactoryEntityRepository.deleteAll(managedPlayer.getFieldFactoryEntities());
-
-        List<FieldFactoryInfoEntity> availableFieldFactoryInfoAsList
-                = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelLessThan(playerEntity.getLevel());
+    public PlayerEntity playerFactoryToCorrespondedLevelInBatch(PlayerEntity playerEntity) {
+        playerEntity.removeAllFieldFactory();
+        PlayerEntity managedPlayer = playerEntityRepository.saveAndFlush(playerEntity);
 
         FieldFactoryInfoEntity field
                 = fieldFactoryInfoEntityRepository.findByCategory(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA)
                 .orElseThrow();
-        IntStream.range(0, managedPlayer.getFieldAmount())
+        Set<FieldFactoryEntity> factoryEntities = IntStream.range(0, managedPlayer.getFieldAmount())
                 .mapToObj(i -> field.toFieldFactoryEntity(() -> managedPlayer))
-                .forEach(fieldFactoryEntityRepository::save);
+                .collect(Collectors.toSet());
+        managedPlayer.addAllFieldFactory(factoryEntities);
+        playerEntityRepository.save(managedPlayer);
 
-        availableFieldFactoryInfoAsList
-                .forEach(
-                        fieldFactoryInfoEntity -> {
-                            IntStream.range(0, fieldFactoryInfoEntity.getMaxInstanceAmount())
-                                    .forEach(_ -> {
-                                        FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(
-                                                () -> managedPlayer);
-                                        fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getMaxProducingCapacity());
-                                        fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getMaxReapWindowCapacity());
-                                        fieldFactoryEntityRepository.save(fieldFactoryEntity);
-                                    });
-                        }
-                );
+        List<FieldFactoryInfoEntity> availableFieldFactoryInfoAsList
+                = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelLessThan(managedPlayer.getLevel());
+        availableFieldFactoryInfoAsList.removeIf(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getCategory().equals("Crops"));
+        availableFieldFactoryInfoAsList.removeIf(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getCategory().equals(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA));
+
+        factoryEntities = availableFieldFactoryInfoAsList.stream()
+                .map(
+                        fieldFactoryInfoEntity -> IntStream.range(0, fieldFactoryInfoEntity.getMaxInstanceAmount())
+                                .mapToObj(_ -> {
+                                    FieldFactoryEntity fieldFactoryEntity
+                                            = fieldFactoryInfoEntity.toFieldFactoryEntity(() -> managedPlayer);
+                                    fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getMaxProducingCapacity());
+                                    fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getMaxReapWindowCapacity());
+                                    return fieldFactoryEntity;
+                                })
+                                .toList()
+                )
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+        managedPlayer.addAllFieldFactory(factoryEntities);
+        return playerEntityRepository.saveAndFlush(managedPlayer);
 
     }
 
-    @Transactional
     public WarehouseEntity updateWarehouseStock(
             WarehouseEntity playerWarehouse,
             ProductEntity productEntity,
             Integer amount
     ) {
-        WarehouseEntity mergedWarehouse = warehouseEntityRepository.save(playerWarehouse);
-        mergedWarehouse.doStockAction(productEntity, WarehouseEntity.WarehouseAction.SAVE, amount);
-        return mergedWarehouse;
+        return transactionTemplate.execute(status -> {
+            WarehouseEntity mergedWarehouse = warehouseEntityRepository.save(playerWarehouse);
+            mergedWarehouse.doStockAction(productEntity, WarehouseEntity.WarehouseAction.SAVE, amount);
+            return mergedWarehouse;
+        });
     }
 
 }

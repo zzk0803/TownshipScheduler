@@ -199,7 +199,7 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
     @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
     public FactoryProcessSequence supplierForFactoryProcessSequence() {
         if (planningFactoryInstance == null || planningDateTimeSlot == null) {
-            return factoryProcessSequence;
+            return null;
         }
         return toFactoryProcessSequence();
     }

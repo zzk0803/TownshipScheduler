@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend;
 
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinServletRequest;
+import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,15 +11,14 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
+import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
 
 import java.util.Optional;
 
-@Component
+@SpringComponent
 @RequiredArgsConstructor
 public class TownshipAuthenticationContext {
 
@@ -27,7 +27,9 @@ public class TownshipAuthenticationContext {
     private final PlayerEntityRepository playerEntityRepository;
 
     public Optional<PlayerEntity> getPlayerEntity() {
-        return Optional.ofNullable(getUserDetails()).flatMap(playerEntityRepository::findPlayerEntitiesByAccount);
+        AccountEntity accountEntity = getUserDetails();
+        return Optional.ofNullable(accountEntity)
+                .flatMap(playerEntityRepository::findPlayerEntitiesByAccount);
     }
 
     public AccountEntity getUserDetails() {
@@ -36,7 +38,7 @@ public class TownshipAuthenticationContext {
         Object principal = authentication.getPrincipal();
         if (principal instanceof AccountEntity accountEntity) {
             return accountEntity;
-        }else {
+        } else {
             return null;
         }
     }

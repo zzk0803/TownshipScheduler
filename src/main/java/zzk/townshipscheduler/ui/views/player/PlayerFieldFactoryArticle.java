@@ -20,15 +20,12 @@ import zzk.townshipscheduler.ui.utility.UiEventBus;
 
 class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
 
-    private final PlayerEntity currentPlayer;
-
-    private final PlayerService playerService;
+    private final PlayerViewPresenter playerViewPresenter;
 
     private final Grid<FieldFactoryEntity> factoryEntityGrid;
 
-    public PlayerFieldFactoryArticle(PlayerEntity player, PlayerService playerService) {
-        this.currentPlayer = player;
-        this.playerService = playerService;
+    public PlayerFieldFactoryArticle(PlayerViewPresenter playerViewPresenter) {
+        this.playerViewPresenter = playerViewPresenter;
 
         getContent().add(buildMenuBar());
 
@@ -41,6 +38,8 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
         factoryEntityGrid.addColumn(FieldFactoryEntity::getReapWindowSize)
                 .setHeader("Factory Reap Window Size");
         getContent().addAndExpand(factoryEntityGrid);
+
+        factoryEntityGrid.setItems(playerViewPresenter.findFieldFactoryEntityByPlayer());
     }
 
     public MenuBar buildMenuBar() {
@@ -52,7 +51,7 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
 
         MenuItem menuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.PLUS.create());
         menuItem.addSingleClickListener(menuItemClickEvent -> {
-            Dialog dialog = new Dialog(new PlayerFieldFactoryArticleForm(currentPlayer, playerService));
+            Dialog dialog = new Dialog(new PlayerFieldFactoryArticleForm(this.playerViewPresenter));
             dialog.setSizeUndefined();
             dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
 
@@ -85,11 +84,6 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
             dialog.open();
         });
         return fieldFactoryGridMenuBar;
-    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        factoryEntityGrid.setItems(playerService.findFieldFactoryEntityByPlayer(currentPlayer));
     }
 
 
