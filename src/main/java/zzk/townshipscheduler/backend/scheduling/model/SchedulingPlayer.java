@@ -23,9 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Gatherer;
 import java.util.stream.Stream;
 
-import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance.FactoryComputedDateTimePair;
-import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance.FactoryProcessSequence;
-
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
@@ -36,12 +33,12 @@ public class SchedulingPlayer implements Serializable {
 
     public static final LocalTime DEFAULT_SLEEP_END = LocalTime.MIDNIGHT.plusHours(8);
 
-    public static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE
+    private static final Predicate<FactoryProcessSequence> FACTORY_PROCESS_SEQUENCE_ASSIGNED_PREDICATE
             = factoryProcessSequence -> Objects.nonNull(
             factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())
                                         && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
 
-    public static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> QUEUE_PROCESSOR
+    private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> QUEUE_PROCESSOR
             = stream -> stream.gather(
             Gatherer.<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>ofSequential(
                     AtomicReference::new,
@@ -75,7 +72,7 @@ public class SchedulingPlayer implements Serializable {
             )
     );
 
-    public static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> SLOT_PROCESSOR
+    private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> SLOT_PROCESSOR
             = stream -> stream.filter(factoryProcessSequence -> factoryProcessSequence.getArrangeDateTime() != null)
             .map(
                     factoryProcessSequence -> new Pair<>(
