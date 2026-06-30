@@ -17,12 +17,20 @@ public class SchedulingProducingArrangementDifficultyComparator
     ) {
         return new CompareToBuilder()
                 .append(
+                        former.hasMultipleLevelPrerequisiteArrangements(),
+                        latter.hasMultipleLevelPrerequisiteArrangements()
+                )
+                .append(
                         former.getDeepPrerequisiteProducingArrangementsSize(),
                         latter.getDeepPrerequisiteProducingArrangementsSize()
                 )
                 .append(
                         former.boolBearSuccessorProducingArrangement(),
                         latter.boolBearSuccessorProducingArrangement()
+                )
+                .append(
+                        former.getStaticDeepPrerequisiteProducingDuration(),
+                        latter.getStaticDeepPrerequisiteProducingDuration()
                 )
                 .append(
                         former.getUuid(),

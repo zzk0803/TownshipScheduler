@@ -19,14 +19,9 @@ public class ProducingArrangementPlanningFactoryConstructionHeuristicChangeMoveS
             ScoreDirector<TownshipSchedulingProblem> scoreDirector,
             SelectorBasedChangeMove<TownshipSchedulingProblem> selection
     ) {
-        TownshipSchedulingProblem townshipSchedulingProblem = scoreDirector.getWorkingSolution();
-        var entity = (SchedulingProducingArrangement) selection.getEntity();
-        var toPlanningValue = (SchedulingDateTimeSlot) selection.getToPlanningValue();
-        LocalDateTime startDateTime = townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime();
-        Duration staticDeepPrerequisiteProducingDuration = entity.getStaticDeepPrerequisiteProducingDuration();
-        LocalDateTime atLeastFeasibleArrangeDateTime = startDateTime.plus(staticDeepPrerequisiteProducingDuration);
-        return toPlanningValue != null
-               && !(toPlanningValue.getStart().isBefore(atLeastFeasibleArrangeDateTime));
+        SchedulingProducingArrangement entity = (SchedulingProducingArrangement) selection.getEntity();
+        SchedulingDateTimeSlot toPlanningValue = (SchedulingDateTimeSlot) selection.getToPlanningValue();
+        return toPlanningValue != null && !(toPlanningValue.getStart().isBefore(entity.calcStaticIdealArrangeDateTime()));
     }
 
 }

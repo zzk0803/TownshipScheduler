@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance.FactoryProcessSequence;
 
@@ -231,8 +230,12 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
                 .typeEqual(getSchedulingProduct().getRequireFactory());
     }
 
-    public boolean boolPlanningWellBeing() {
-        return Stream.of(getPlanningFactoryInstance(), getPlanningDateTimeSlot()).allMatch(Objects::nonNull);
+    public boolean boolPlanningAssigned() {
+        return getPlanningFactoryInstance() != null && getPlanningDateTimeSlot() != null;
+    }
+
+    public boolean boolPlanningShadowVariableComputed() {
+        return getFactoryProcessSequence() != null && getProducingDateTime() != null && getCompletedDateTime() != null;
     }
 
     @JsonProperty("arrangeDateTime")
@@ -243,17 +246,11 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
         return this.planningDateTimeSlot != null ? this.planningDateTimeSlot.getStart() : null;
     }
 
-    public void setArrangeDateTime(LocalDateTime localDateTime) {
-        throw new UnsupportedOperationException();
-    }
-
     public void elementarySetup(
             ArrangementIdRoller idRoller,
-//            SchedulingWorkCalendar workTimeLimit,
             SchedulingPlayer schedulingPlayer
     ) {
         idRoller.setup(this);
-//        this.schedulingWorkCalendar = workTimeLimit;
         this.schedulingPlayer = schedulingPlayer;
     }
 
@@ -262,15 +259,9 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
         Objects.requireNonNull(getId());
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
-//        Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
         setDeepPrerequisiteProducingArrangementsSize(getDeepPrerequisiteProducingArrangements().size());
         setStaticDeepProducingDuration(calcStaticProducingDuration());
-    }
-
-    @JsonIgnore
-    public String getHumanReadable() {
-        return getCurrentActionObject().readable();
     }
 
     @JsonIgnore
@@ -314,11 +305,19 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
         return selfDuration.plus(prerequisiteStaticProducingDuration);
     }
 
-    public LocalDateTime calcStaticArrangeDateTime(LocalDateTime argDateTime) {
+    public LocalDateTime calcStaticIdealArrangeDateTime() {
+        return getSchedulingWorkCalendar().getStartDateTime().plus(getStaticDeepPrerequisiteProducingDuration());
+    }
+
+    public LocalDateTime calcStaticIdealArrangeDateTime(LocalDateTime argDateTime) {
         return argDateTime.plus(getStaticDeepPrerequisiteProducingDuration());
     }
 
-    public LocalDateTime calcStaticCompleteDateTime(LocalDateTime argDateTime) {
+    public LocalDateTime calcStaticIdealCompleteDateTime() {
+        return getSchedulingWorkCalendar().getStartDateTime().plus(getStaticDeepProducingDuration());
+    }
+
+    public LocalDateTime calcStaticIdealCompleteDateTime(LocalDateTime argDateTime) {
         return argDateTime.plus(getStaticDeepProducingDuration());
     }
 
@@ -327,8 +326,9 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
     ) {
         this.prerequisiteProducingArrangements.addAll(prerequisiteArrangements);
         this.prerequisiteProducingArrangementsSize = this.prerequisiteProducingArrangements.size();
-        this.prerequisiteProducingArrangements.forEach(schedulingProducingArrangement -> schedulingProducingArrangement.setSupportProducingArrangement(
-                this));
+        this.prerequisiteProducingArrangements.forEach(
+                schedulingProducingArrangement -> schedulingProducingArrangement.setSupportProducingArrangement(this)
+        );
     }
 
     public boolean boolBearSuccessorProducingArrangement() {
@@ -337,18 +337,6 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
 
     public boolean boolOrderDirect() {
         return getTargetActionObject() instanceof SchedulingOrder;
-    }
-
-    public boolean boolCallerDeepPrerequisiteToArg(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return schedulingProducingArrangement.getDeepPrerequisiteProducingArrangements().contains(this);
-    }
-
-    public boolean boolCallerDirectPrerequisiteToArg(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return schedulingProducingArrangement.getPrerequisiteProducingArrangements().contains(this);
-    }
-
-    public boolean weatherPrerequisiteRequire() {
-        return !getDeepPrerequisiteProducingArrangements().isEmpty();
     }
 
     public boolean boolHasDeadline() {
@@ -419,8 +407,8 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
         LocalTime sleepStart = this.getSchedulingPlayer().getSleepStart();
         LocalTime sleepEnd = this.getSchedulingPlayer().getSleepEnd();
         if (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX)) {
-            return Duration.between(sleepEnd, LocalTime.MAX).plus(Duration.between(sleepStart, sleepEnd)).abs();
-        } else if (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd)) {
+            return Duration.between(sleepEnd, LocalTime.MAX).plus(Duration.between(LocalTime.MIDNIGHT, sleepEnd)).abs();
+        } else if (arrangeTime.isAfter(LocalTime.MIDNIGHT) && arrangeTime.isBefore(sleepEnd)) {
             return Duration.between(sleepStart, sleepEnd).abs();
         } else {
             return Duration.ZERO;
@@ -432,7 +420,11 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
         LocalTime sleepStart = this.getSchedulingPlayer().getSleepStart();
         LocalTime sleepEnd = this.getSchedulingPlayer().getSleepEnd();
         return (arrangeTime.isAfter(sleepStart) && arrangeTime.isBefore(LocalTime.MAX))
-               || (arrangeTime.isAfter(LocalTime.MIN) && arrangeTime.isBefore(sleepEnd));
+               || (arrangeTime.isAfter(LocalTime.MIDNIGHT) && arrangeTime.isBefore(sleepEnd));
+    }
+
+    public boolean hasMultipleLevelPrerequisiteArrangements() {
+        return getDeepPrerequisiteProducingArrangementsSize() > getPrerequisiteProducingArrangementsSize();
     }
 
 }

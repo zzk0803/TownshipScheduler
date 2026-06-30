@@ -10,7 +10,6 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -132,7 +131,9 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolArrangeDateTimeInPlayerSleepTime)
                 .penalize(
-                        HardMediumSoftScore.ofSoft(10000L)
+                        HardMediumSoftScore.ofSoft(10),
+                        schedulingProducingArrangement -> schedulingProducingArrangement.calcSleepArrangeDateTimeToNextAvailableDuration()
+                                .toMinutes()
                 )
                 .asConstraint("preferNotArrangeInPlayerSleepTime");
     }

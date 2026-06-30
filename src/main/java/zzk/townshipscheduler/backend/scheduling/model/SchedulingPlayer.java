@@ -115,7 +115,7 @@ public class SchedulingPlayer implements Serializable {
     public Map<FactoryProcessSequence, FactoryComputedDateTimePair> supplierForShadowComputedMap() {
 
         return this.schedulingProducingArrangements.stream()
-                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.boolPlanningWellBeing() && schedulingProducingArrangement.getFactoryProcessSequence() != null)
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.boolPlanningAssigned() && schedulingProducingArrangement.getFactoryProcessSequence() != null)
                 .collect(
                         Collectors.teeing(
                                 buildSinglePassCollector(
