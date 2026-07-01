@@ -11,8 +11,7 @@ import com.vaadin.flow.data.validator.IntegerRangeValidator;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.ui.utility.UiEventBus;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 @Slf4j
 class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
@@ -65,7 +64,7 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
                 }
         );
 
-        UiEventBus.subscribe(
+        VaadinUiEventBus.subscribe(
                 this,
                 PlayerFieldFactoryPersistRequestEvent.class,
                 request -> {

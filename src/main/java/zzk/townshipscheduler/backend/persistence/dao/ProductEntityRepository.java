@@ -4,6 +4,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 
@@ -46,6 +47,7 @@ public interface ProductEntityRepository
             type = EntityGraph.EntityGraphType.LOAD
     )
     @Query("select p from ProductEntity p where p.level<=:level")
+    @Transactional(readOnly = true)
     Set<ProductEntity> queryForPrepareScheduling(Integer level);
 
     @EntityGraph(

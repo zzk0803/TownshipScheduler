@@ -11,9 +11,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
-public class UiEventBus {
+public class VaadinUiEventBus {
 
-    private UiEventBus() {
+    private VaadinUiEventBus() {
 
     }
 

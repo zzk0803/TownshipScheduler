@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.ui.views.player;
 
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -14,9 +13,7 @@ import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
-import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.backend.service.PlayerService;
-import zzk.townshipscheduler.ui.utility.UiEventBus;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
 
@@ -74,7 +71,7 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
                     new Button(
                             "Ok",
                             okClickEvent -> {
-                                UiEventBus.publish(new PlayerFieldFactoryPersistRequestEvent(this, false));
+                                VaadinUiEventBus.publish(new PlayerFieldFactoryPersistRequestEvent(this, false));
                                 dialog.close();
                                 factoryEntityGrid.getDataProvider().refreshAll();
                             }

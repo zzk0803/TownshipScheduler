@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/61e58826-14bb-4816-822f-f1c75a261d95 -->
     <groupId>zzk.project.townshipscheduler</groupId>
@@ -134,12 +134,16 @@
             <groupId>ai.timefold.solver</groupId>
             <artifactId>timefold-solver-spring-boot-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ai.timefold.solver</groupId>
+            <artifactId>timefold-solver-benchmark</artifactId>
+        </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.mapstruct</groupId>-->
-<!--            <artifactId>mapstruct</artifactId>-->
-<!--            <version>${org.mapstruct.version}</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.mapstruct</groupId>-->
+        <!--            <artifactId>mapstruct</artifactId>-->
+        <!--            <version>${org.mapstruct.version}</version>-->
+        <!--        </dependency>-->
 
         <!-- Source: https://mvnrepository.com/artifact/org.jsoup/jsoup -->
         <dependency>
@@ -168,7 +172,20 @@
             <artifactId>java-uuid-generator</artifactId>
             <version>5.2.0</version>
         </dependency>
+
+        <!--        <dependency>-->
+        <!--            <groupId>com.flowingcode.addons</groupId>-->
+        <!--            <artifactId>simple-timer</artifactId>-->
+        <!--            <version>2.2.0</version>-->
+        <!--        </dependency>-->
     </dependencies>
+
+    <!--    <repositories>-->
+    <!--        <repository>-->
+    <!--            <id>vaadin-addons</id>-->
+    <!--            <url>https://maven.vaadin.com/vaadin-addons</url>-->
+    <!--        </repository>-->
+    <!--    </repositories>-->
 
     <build>
         <defaultGoal>spring-boot:run</defaultGoal>
@@ -228,21 +245,21 @@
                     <source>${java.version}</source> <!-- depending on your project -->
                     <target>${java.version}</target> <!-- depending on your project -->
                     <annotationProcessorPaths>
-<!--                        <path>-->
-<!--                            <groupId>org.mapstruct</groupId>-->
-<!--                            <artifactId>mapstruct-processor</artifactId>-->
-<!--                            <version>${org.mapstruct.version}</version>-->
-<!--                        </path>-->
+                        <!--                        <path>-->
+                        <!--                            <groupId>org.mapstruct</groupId>-->
+                        <!--                            <artifactId>mapstruct-processor</artifactId>-->
+                        <!--                            <version>${org.mapstruct.version}</version>-->
+                        <!--                        </path>-->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
-<!--                        <path>-->
-<!--                            <groupId>org.projectlombok</groupId>-->
-<!--                            <artifactId>lombok-mapstruct-binding</artifactId>-->
-<!--                            <version>0.2.0</version>-->
-<!--                        </path>-->
+                        <!--                        <path>-->
+                        <!--                            <groupId>org.projectlombok</groupId>-->
+                        <!--                            <artifactId>lombok-mapstruct-binding</artifactId>-->
+                        <!--                            <version>0.2.0</version>-->
+                        <!--                        </path>-->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -317,8 +334,8 @@
                                 <arguments>
                                     <argument>-XX:+UseParallelGC</argument>
                                     <argument>-XX:+UseCompactObjectHeaders</argument>
-                                    <argument>-Xms1g</argument>
-                                    <argument>-Xmx4g</argument>
+                                    <argument>-Xms512m</argument>
+                                    <argument>-Xmx2g</argument>
                                     <argument>-Xss16m</argument>
                                 </arguments>
                             </arguments>

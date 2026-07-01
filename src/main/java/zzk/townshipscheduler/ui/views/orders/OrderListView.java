@@ -21,7 +21,7 @@ import jakarta.annotation.security.PermitAll;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.ui.components.OrderGridItemsCard;
-import zzk.townshipscheduler.ui.utility.UiEventBus;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -64,7 +64,7 @@ public class OrderListView extends VerticalLayout {
                             townshipAuthenticationContext
                     )
             );
-            UiEventBus.subscribe(
+            VaadinUiEventBus.subscribe(
                     dialog,
                     OrderFormView.OrderFormViewHasSubmitEvent.class,
                     componentEvent -> {

@@ -70,9 +70,9 @@ public class Application {
         };
     }
 
-    @Bean("townshipExecutorService")
+    @Bean
     public ExecutorService townshipExecutorService() {
-        return Executors.newVirtualThreadPerTaskExecutor();
+        return Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
     }
 
     @Bean
@@ -84,8 +84,8 @@ public class Application {
         );
     }
 
-    @Bean("townshipTaskScheduler")
-    public TaskScheduler taskScheduler() {
+    @Bean
+    public TaskScheduler townshipTaskScheduler() {
         SimpleAsyncTaskSchedulerBuilder taskSchedulerBuilder = new SimpleAsyncTaskSchedulerBuilder();
         return taskSchedulerBuilder.virtualThreads(true)
                 .build();

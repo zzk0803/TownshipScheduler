@@ -30,16 +30,22 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
+import zzk.townshipscheduler.ui.utility.VaadinUiAccessUtil;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
+import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.util.List;
 
 @Layout
 @AnonymousAllowed
-public class MainLayout extends AppLayout implements ApplicationContextAware {
+public class MainLayout
+        extends AppLayout
+        implements ApplicationContextAware {
 
     private H1 viewTitle;
 
     private transient AuthenticationContext authenticationContext;
+
 
     public MainLayout(AuthenticationContext authenticationContext) {
         this.authenticationContext = authenticationContext;
@@ -104,7 +110,31 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
                                 authenticationContext.logout();
                             }
                     );
+                    VaadinUiEventBus.subscribe(
+                            div,
+                            SchedulingView.SchedulingProcessingStartComponentEvent.class,
+                            componentEvent -> {
+                                VaadinUiAccessUtil.updateUI(
+                                        UI.getCurrent(),
+                                        () -> {
+                                            Notification.show("SchedulingView.SchedulingProcessingStartComponentEvent");
+                                        }
+                                );
+                            }
+                    );
 
+                    VaadinUiEventBus.subscribe(
+                            div,
+                            SchedulingView.SchedulingProcessingEndComponentEvent.class,
+                            componentEvent -> {
+                                VaadinUiAccessUtil.updateUI(
+                                        UI.getCurrent(),
+                                        () -> {
+                                            Notification.show("SchedulingView.SchedulingProcessingEndComponentEvent");
+                                        }
+                                );
+                            }
+                    );
                     rightWrapper.add(userMenu);
 
                 }, () -> {

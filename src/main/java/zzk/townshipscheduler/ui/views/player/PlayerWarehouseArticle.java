@@ -18,14 +18,12 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import lombok.extern.slf4j.Slf4j;
-import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
-import zzk.townshipscheduler.backend.service.PlayerService;
 import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.ProductsCategoriesPanel;
-import zzk.townshipscheduler.ui.utility.UiEventBus;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.util.Map;
 
@@ -61,7 +59,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
             return result;
         })).setHeader("item-amount");
 
-        UiEventBus.subscribe(
+        VaadinUiEventBus.subscribe(
                 this,
                 PlayerWarehouseArticleGridUpdateEvent.class,
                 componentEvent -> {
@@ -105,7 +103,7 @@ class PlayerWarehouseArticle extends Composite<VerticalLayout> {
                                                 productEntity,
                                                 footerAmountField.getOptionalValue().orElse(1)
                                         );
-                                        UiEventBus.publish(new PlayerWarehouseArticleGridUpdateEvent());
+                                        VaadinUiEventBus.publish(new PlayerWarehouseArticleGridUpdateEvent());
                                     }
                                 });
                                 dialog.close();

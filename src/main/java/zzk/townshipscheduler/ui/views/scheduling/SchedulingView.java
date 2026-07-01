@@ -1,8 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
-import com.vaadin.flow.component.AttachEvent;
-import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -17,6 +15,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.timepicker.TimePicker;
@@ -26,10 +25,12 @@ import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.util.StreamUtils;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.scheduling.model.*;
@@ -40,12 +41,15 @@ import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Route("/scheduling/:schedulingId?")
@@ -54,7 +58,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @PermitAll
 @Setter
 @Getter
-public class SchedulingView extends VerticalLayout implements BeforeEnterObserver {
+public class SchedulingView
+        extends VerticalLayout
+        implements BeforeEnterObserver {
 
     private final SchedulingViewPresenter schedulingViewPresenter;
 
@@ -101,14 +107,12 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 this.schedulingViewPresenter.setTownshipSchedulingProblemId(problemId);
                 removeAll();
                 schedulingDetailUi();
-            }
-            else if (this.schedulingViewPresenter.checkWeatherProblemIsPersisted(problemId)) {
+            } else if (this.schedulingViewPresenter.checkWeatherProblemIsPersisted(problemId)) {
                 this.schedulingViewPresenter.loadProblem(problemId);
                 this.schedulingViewPresenter.setTownshipSchedulingProblemId(problemId);
                 removeAll();
                 schedulingDetailUi();
-            }
-            else {
+            } else {
                 ConfirmDialog confirmDialog = new ConfirmDialog(
                         "ERROR",
                         "schedule not exist",
@@ -120,8 +124,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 );
                 confirmDialog.open();
             }
-        }
-        else {
+        } else {
             removeAll();
             schedulingOrdersUi();
         }
@@ -133,7 +136,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         addAndExpand(schedulingContentLayout);
 
         schedulingContentLayout.add(new Details("Order Brief", buildBriefPanel()));
-        schedulingContentLayout.add(buildBtnPanel());
+        schedulingContentLayout.add(buildScoreAndButtonPanel());
         tabSheet = new TabSheet();
         tabSheet.setWidthFull();
         tabSheet.add(
@@ -159,8 +162,6 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         Button newSchedulingBtn = new Button(VaadinIcon.PLUS.create());
         newSchedulingBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         newSchedulingBtn.addClickListener(clicked -> {
-            LocalDateTime formDateTime = LocalDateTime.now();
-
             Dialog dialog = new Dialog("Before Scheduler Start...");
             dialog.setSizeFull();
 
@@ -173,8 +174,8 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
             orderGrid.setSelectionMode(Grid.SelectionMode.MULTI);
             orderGrid.asMultiSelect()
                     .select(orderGrid.getGenericDataView()
-                                    .getItems()
-                                    .toList());
+                            .getItems()
+                            .toList());
             dialogWrapper.add(orderGrid);
 
             FormLayout schedulingForm = new FormLayout();
@@ -321,6 +322,63 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                     Notification.show("Done");
                 }
         );
+        problemGridContextMenu.addSeparator();
+        problemGridContextMenu.addItem(
+                "Benchmark",
+                clicked -> {
+                    UI ui = UI.getCurrent();
+                    Optional<SchedulingProblemVo> clickedItem = clicked.getItem();
+                    clickedItem.ifPresent(schedulingProblemVo -> {
+                        String problemUuid = schedulingProblemVo.getUuid();
+
+                        Dialog dialog = new Dialog();
+                        dialog.setModality(ModalityMode.STRICT);
+                        dialog.setCloseOnEsc(false);
+                        dialog.setCloseOnOutsideClick(false);
+
+                        VerticalLayout dialogWrapper = new VerticalLayout();
+                        dialogWrapper.setJustifyContentMode(JustifyContentMode.CENTER);
+
+                        ProgressBar progressBar = new ProgressBar();
+                        progressBar.setIndeterminate(true);
+
+                        dialog.setHeaderTitle("Benchmark is RUNNING...");
+
+                        dialogWrapper.add(progressBar);
+                        dialog.add(dialogWrapper);
+
+                        CompletableFuture<Optional<File>> completableFuture = this.schedulingViewPresenter.onBenchmarkStart(problemUuid);
+                        completableFuture.whenComplete(
+                                (optionalFile, throwable) -> {
+                                    ui.access(() -> {
+                                        dialogWrapper.remove(progressBar);
+                                        if (throwable != null) {
+                                            dialogWrapper.add(new Paragraph(throwable.toString()));
+                                            return;
+                                        }
+                                        optionalFile.ifPresent(file -> {
+                                            IFrame iFrame = new IFrame(file.getAbsolutePath());
+                                            dialog.setSizeFull();
+                                            dialogWrapper.setSizeFull();
+                                            dialogWrapper.addAndExpand(iFrame);
+                                        });
+                                    });
+                                }
+                        );
+
+                        dialog.getHeader()
+                                .add(new Button(VaadinIcon.CLOSE.create()) {{
+                                    addThemeVariants(ButtonVariant.WARNING);
+                                    addClickListener(event -> {
+                                        completableFuture.cancel(true);
+                                        dialog.close();
+                                    });
+                                }});
+
+                        dialog.open();
+                    });
+                }
+        );
         addAndExpand(grid);
 
     }
@@ -367,7 +425,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         orderBriefGrid.addColumn(new ComponentRenderer<>(
                         schedulingOrderVo -> {
                             return new Span(schedulingOrderVo.getOrderType()
-                                                    .name() + "#" + schedulingOrderVo.getSerial());
+                                    .name() + "#" + schedulingOrderVo.getSerial());
                         }))
                 .setHeader("Order Type # ID")
                 .setAutoWidth(true)
@@ -394,8 +452,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         DateTimePicker dateTimePicker = new DateTimePicker(deadline);
                         dateTimePicker.setReadOnly(true);
                         return dateTimePicker;
-                    }
-                    else {
+                    } else {
                         return new Text("N/A");
                     }
                 })
@@ -409,7 +466,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         return panel;
     }
 
-    private HorizontalLayout buildBtnPanel() {
+    private HorizontalLayout buildScoreAndButtonPanel() {
         HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
         Button startButon = new Button("Start");
         startButon.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
@@ -436,7 +493,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                     String name = producingArrangement.getSchedulingProduct()
                             .getName();
                     horizontalLayout.add(this.getSchedulingViewPresenter()
-                                                 .getProductImage(name));
+                            .getProductImage(name));
                     horizontalLayout.add(name);
                     return horizontalLayout;
                 })
@@ -464,12 +521,12 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                 .setAutoWidth(true)
                 .setHeader("Assign Factory")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getStaticDeepProducingDuration)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getProducingDuration)
                 .setSortable(true)
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
-                .setHeader("Static Producing Duration")
+                .setHeader("Item Producing Duration")
         ;
         arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getArrangeDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
@@ -534,7 +591,7 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
                         );
 
                         div.add(new Span(schedulingOrder.getOrderType()
-                                                 .name() + "#" + schedulingOrder.getId()));
+                                .name() + "#" + schedulingOrder.getId()));
                         productAmountBill.entrySet()
                                 .stream()
                                 .map((productAmountEntry) -> {
@@ -600,6 +657,36 @@ public class SchedulingView extends VerticalLayout implements BeforeEnterObserve
         layout.add(scoreAnalysisParagraph);
         getSchedulingViewPresenter().setupScoreAnalysisParagraph();
         return layout;
+    }
+
+    public static class SchedulingProcessingStartComponentEvent
+            extends ComponentEvent<SchedulingView> {
+
+        public SchedulingProcessingStartComponentEvent(
+                SchedulingView source,
+                boolean fromClient
+        ) {
+            super(
+                    source,
+                    fromClient
+            );
+        }
+
+    }
+
+    public static class SchedulingProcessingEndComponentEvent
+            extends ComponentEvent<SchedulingView> {
+
+        public SchedulingProcessingEndComponentEvent(
+                SchedulingView source,
+                boolean fromClient
+        ) {
+            super(
+                    source,
+                    fromClient
+            );
+        }
+
     }
 
 }

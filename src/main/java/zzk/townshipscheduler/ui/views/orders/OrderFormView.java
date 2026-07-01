@@ -43,7 +43,7 @@ import zzk.townshipscheduler.ui.components.BillDurationField;
 import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.ProductsAmountPanel;
 import zzk.townshipscheduler.ui.pojo.BillItem;
-import zzk.townshipscheduler.ui.utility.UiEventBus;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -124,7 +124,7 @@ public class OrderFormView extends VerticalLayout {
         add(assembleItemAppendBtn());
         add(assembleFooterPanel());
 
-        UiEventBus.subscribe(
+        VaadinUiEventBus.subscribe(
                 this,
                 ProductsAmountPanel.ProductCardSelectionAmountEvent.class,
                 componentEvent -> {
@@ -450,7 +450,7 @@ public class OrderFormView extends VerticalLayout {
         submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         submit.addClickListener(_ -> {
             onSubmit();
-            UiEventBus.publish(
+            VaadinUiEventBus.publish(
                     new OrderFormViewHasSubmitEvent(
                             this,
                             false

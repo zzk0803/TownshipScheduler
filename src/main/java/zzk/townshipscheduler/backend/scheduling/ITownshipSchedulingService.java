@@ -1,22 +1,33 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import ai.timefold.solver.core.api.solver.SolverJob;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public interface ITownshipSchedulingService {
 
+    TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest);
+
     boolean existSolvingJob(String problemId);
 
     boolean existProblem(String problemId);
 
-    TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest);
+    SolverStatus getProblemSolverStatus(String problemId);
 
-    void scheduling(
+    String getProblemSizeStatistics(String problemId);
+
+    TownshipSchedulingProblem getProblem(String problemId);
+
+    TownshipSchedulingProblem gatherProblem(String problemId);
+
+    SolverJob<TownshipSchedulingProblem> scheduling(
             String problemId,
             Consumer<TownshipSchedulingProblem> solverJobStartedEventConsumer,
             Consumer<TownshipSchedulingProblem> bestSolutionEventConsumer,
@@ -26,11 +37,7 @@ public interface ITownshipSchedulingService {
 
     void abort(String problemId);
 
-    TownshipSchedulingProblem getSchedule(String problemId);
-
-    SolverStatus getProblemSolverStatus(String problemId);
-
-    String getProblemSizeStatistics(String problemId);
+     CompletableFuture<Optional<File>> benchmark(String problemId);
 
 //    @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> analyze(
 //            @NonNull TownshipSchedulingProblem townshipSchedulingProblem

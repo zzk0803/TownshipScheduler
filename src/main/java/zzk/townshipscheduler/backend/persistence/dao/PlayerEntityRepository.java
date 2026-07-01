@@ -32,6 +32,7 @@ public interface PlayerEntityRepository extends JpaRepository<PlayerEntity, Long
             }
     )
     @Query("select p from PlayerEntity p where p.id=:playerId")
+    @Transactional(readOnly = true)
     Optional<PlayerEntity> queryForPrepareScheduling(@Param("playerId") Long playerId);
 
 }

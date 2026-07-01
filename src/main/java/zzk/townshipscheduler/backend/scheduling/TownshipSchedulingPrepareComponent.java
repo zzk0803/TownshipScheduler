@@ -4,14 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
-import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
+import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -52,17 +53,18 @@ public class TownshipSchedulingPrepareComponent {
 
         return optionalPlayerForScheduling
                 .map(playerEntityProjection -> TownshipSchedulingRequest.builder()
-                        .productEntities(products)
-                        .fieldFactoryInfoEntities(factoryInfos)
-                        .playerEntityOrderEntities(orderEntityList)
-                        .playerEntityFieldFactoryEntities(playerEntityProjection.getFieldFactoryEntities())
-                        .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
-                        .dateTimeSlotSize(dateTimeSlotSize)
-                        .workCalendarStart(workCalendarStart)
+                                .requestId(UuidGenerator.timeOrderedV6())
+                                .productEntities(products)
+                                .fieldFactoryInfoEntities(factoryInfos)
+                                .playerEntityOrderEntities(orderEntityList)
+                                .playerEntityFieldFactoryEntities(playerEntityProjection.getFieldFactoryEntities())
+                                .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
+                                .dateTimeSlotSize(dateTimeSlotSize)
+                                .workCalendarStart(workCalendarStart)
 //                        .workCalendarEnd(workCalendarEnd)
-                        .sleepStartPickerValue(sleepStartPickerValue)
-                        .sleepEndPickerValue(sleepEndPickerValue)
-                        .build()
+                                .sleepStartPickerValue(sleepStartPickerValue)
+                                .sleepEndPickerValue(sleepEndPickerValue)
+                                .build()
                 )
                 .orElseThrow();
 

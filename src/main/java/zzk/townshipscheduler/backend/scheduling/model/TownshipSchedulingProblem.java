@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,9 +15,9 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
-@Slf4j
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @PlanningSolution
 public class TownshipSchedulingProblem implements Serializable {
 

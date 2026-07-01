@@ -26,6 +26,7 @@ public final class CrawledDataCell implements Cloneable {
 
     private List<Img> imgList;
 
+    @Builder.Default
     private Type type = Type.CELL;
 
     private CellSpan span;

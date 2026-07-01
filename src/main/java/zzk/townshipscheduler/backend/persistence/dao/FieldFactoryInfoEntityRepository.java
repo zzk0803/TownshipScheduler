@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
     List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelBetween(Integer levelAfter, Integer levelBefore);
 
     @Query("select f from FieldFactoryInfoEntity f join fetch f.portfolioGoods as fpg where f.level<=:level and fpg.level<=:level ")
+    @Transactional(readOnly = true)
     Set<FieldFactoryInfoEntity> queryForPrepareScheduling(@Param("level") Integer level);
 
     @EntityGraph(

@@ -28,7 +28,7 @@ import com.vaadin.flow.function.SerializablePredicate;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
-import zzk.townshipscheduler.ui.utility.UiEventBus;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -76,7 +76,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
         );
         textFieldSuffixButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
         filterTextField.setSuffixComponent(textFieldSuffixButton);
-        UiEventBus.subscribe(
+        VaadinUiEventBus.subscribe(
                 filterTextField,
                 ProductCardProductSpanClickedEvent.class,
                 componentEvent -> {
@@ -264,7 +264,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
             nameSpan.getStyle().setBorderBottom("1px solid black");
             nameSpan.addEventListener(
                     "click", domEvent -> {
-                        UiEventBus.publish(
+                        VaadinUiEventBus.publish(
                                 new ProductCardProductSpanClickedEvent(this, false, productEntity.getName())
                         );
                     }
@@ -293,7 +293,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
             amountField.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
             amountField.addValueChangeListener(valueChangeEvent -> {
                 Integer value = valueChangeEvent.getValue();
-                UiEventBus.publish(
+                VaadinUiEventBus.publish(
                         new ProductCardSelectionAmountEvent(
                                 this,
                                 false,

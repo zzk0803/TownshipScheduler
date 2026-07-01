@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-public final class VaadinUtil {
+public final class VaadinUiAccessUtil {
 
-    private static final  Logger LOGGER = LoggerFactory.getLogger(VaadinUtil.class);
+    private static final  Logger LOGGER = LoggerFactory.getLogger(VaadinUiAccessUtil.class);
 
     @SuppressWarnings("java:S2142") // logging the exceptions is enough
     public static void updateUI(final  UI ui, final  Command command) {
@@ -47,7 +47,7 @@ public final class VaadinUtil {
         });
     }
 
-    private VaadinUtil() {
+    private VaadinUiAccessUtil() {
         throw new IllegalStateException("Utility classes can't be instantiated!");
     }
 

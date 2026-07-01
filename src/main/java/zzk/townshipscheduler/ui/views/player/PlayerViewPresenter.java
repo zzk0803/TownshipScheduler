@@ -1,5 +1,7 @@
 package zzk.townshipscheduler.ui.views.player;
 
+import com.vaadin.flow.spring.annotation.RouteScope;
+import com.vaadin.flow.spring.annotation.RouteScopeOwner;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 
 @SpringComponent
+@RouteScope
+@RouteScopeOwner(PlayerView.class)
 @RequiredArgsConstructor
 @Getter
 @Setter
