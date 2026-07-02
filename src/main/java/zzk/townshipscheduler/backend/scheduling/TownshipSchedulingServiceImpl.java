@@ -8,6 +8,7 @@ import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.flow.server.VaadinService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
@@ -134,15 +135,9 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     }
 
     @Override
-    public CompletableFuture<Optional<File>> benchmark(String problemId) {
-//        PlannerBenchmark plannerBenchmark = plannerBenchmarkFactory.buildPlannerBenchmark(idProblemMap.get(problemId));
-//        plannerBenchmark.benchmark();
-        PlannerBenchmarkFactory benchmarkFactory = PlannerBenchmarkFactory.createFromXmlResource(
-                "solverBenchmarkConfig.xml",
-                this.getClass()
-                        .getClassLoader()
-        );
-        PlannerBenchmark plannerBenchmark = benchmarkFactory.buildPlannerBenchmark(buildBenchmarkProblems(problemId));
+    public CompletableFuture<Optional<File>> benchmark(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
+        PlannerBenchmarkFactory benchmarkFactory = buildBenchmarkFactory(benchmarkRequest);
+        PlannerBenchmark plannerBenchmark = benchmarkFactory.buildPlannerBenchmark(buildBenchmarkProblems(benchmarkRequest));
         return CompletableFuture.supplyAsync(
                         plannerBenchmark::benchmark,
                         VaadinService.getCurrent()
@@ -157,33 +152,66 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
                 });
     }
 
-    private List<TownshipSchedulingProblem> buildBenchmarkProblems(String problemId) {
+    private @NonNull PlannerBenchmarkFactory buildBenchmarkFactory(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
+        TownshipSchedulingBenchmarkRequest.BenchmarkStrategy benchmarkStrategy = benchmarkRequest.getBenchmarkStrategy();
+        return switch (benchmarkStrategy) {
+            case BUILTIN -> PlannerBenchmarkFactory.createFromXmlResource(
+                    "solverBenchmarkConfig_builtin.xml",
+                    this.getClass()
+                            .getClassLoader()
+            );
+
+            case EVERY_CONSTRUCTION_HEURISTIC_TYPE_WITH_EVERY_LOCAL_SEARCH_TYPE -> PlannerBenchmarkFactory.createFromXmlResource(
+                    "solverBenchmarkConfig_every_construction_heuristic_type_with_every_local_search_type.xml",
+                    this.getClass()
+                            .getClassLoader()
+            );
+
+            case EVERY_LOCAL_SEARCH_TYPE -> PlannerBenchmarkFactory.createFromXmlResource(
+                    "solverBenchmarkConfig_every_local_search_type.xml",
+                    this.getClass()
+                            .getClassLoader()
+            );
+
+            case EVERY_CONSTRUCTION_HEURISTIC_TYPE -> PlannerBenchmarkFactory.createFromXmlResource(
+                    "solverBenchmarkConfig_every_construction_heuristic_type.xml",
+                    this.getClass()
+                            .getClassLoader()
+            );
+
+            case CONSTRUCTION_HEURISTIC_WITH_AND_WITHOUT_LOCAL_SEARCH -> PlannerBenchmarkFactory.createFromXmlResource(
+                    "solverBenchmarkConfig_construction_heuristic_with_and_without_local_search.xml",
+                    this.getClass()
+                            .getClassLoader()
+            );
+        };
+    }
+
+    private List<TownshipSchedulingProblem> buildBenchmarkProblems(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
         List<TownshipSchedulingProblem> benchmarkProblems = new ArrayList<>();
-        benchmarkProblems.add(getProblem(problemId));
-        TownshipSchedulingRequest originalQuest = problemIdRequestMap.get(problemId);
-        try {
-            TownshipSchedulingRequest lessScale = originalQuest.clone();
-            lessScale.getPlayerEntityOrderEntities()
-                    .forEach(orderEntity -> {
-                        Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
-                        productAmountMap.keySet()
-                                .forEach(productEntity -> productAmountMap.computeIfPresent(productEntity, (inMapProduct, integer) -> integer / 2 + 1));
-                    });
-            benchmarkProblems.add(prepareBenchmarkScheduling(lessScale));
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
+        benchmarkProblems.add(getProblem(benchmarkRequest.getProblemId()));
+        TownshipSchedulingRequest originalQuest = problemIdRequestMap.get(benchmarkRequest.getProblemId());
+
+        TownshipSchedulingBenchmarkRequest.BenchmarkSize benchmarkSize = benchmarkRequest.getBenchmarkSize();
+        if (benchmarkSize == TownshipSchedulingBenchmarkRequest.BenchmarkSize.SELF) {
+            return benchmarkProblems;
         }
-        try {
-            TownshipSchedulingRequest moreScale = originalQuest.clone();
-            moreScale.getPlayerEntityOrderEntities()
-                    .forEach(orderEntity -> {
-                        Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
-                        productAmountMap.keySet()
-                                .forEach(productEntity -> productAmountMap.computeIfPresent(productEntity, (inMapProduct, integer) -> integer * 2 - 1));
-                    });
-            benchmarkProblems.add(prepareBenchmarkScheduling(moreScale));
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
+
+        int problemSize = benchmarkSize.getProblemSize();
+        for (int i = 0; i < problemSize; i++) {
+            int factor = i + 1;
+            try {
+                TownshipSchedulingRequest moreScale = originalQuest.clone();
+                moreScale.getPlayerEntityOrderEntities()
+                        .forEach(orderEntity -> {
+                            Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
+                            productAmountMap.keySet()
+                                    .forEach(productEntity -> productAmountMap.computeIfPresent(productEntity, (inMapProduct, integer) -> integer + (factor + factor / 2)));
+                        });
+                benchmarkProblems.add(prepareBenchmarkScheduling(moreScale));
+            } catch (CloneNotSupportedException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return benchmarkProblems;

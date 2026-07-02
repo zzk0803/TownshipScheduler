@@ -88,13 +88,12 @@ public class MainLayout
         rightWrapper.add(configButton);
         authenticationContext.getAuthenticatedUser(AccountEntity.class).ifPresentOrElse(
                 appUserEntity -> {
+                    MenuBar userMenu = new MenuBar();
+                    userMenu.setThemeName("tertiary-inline contrast");
+
                     Avatar avatar = new Avatar(appUserEntity.getName());
                     avatar.setThemeName("xsmall");
                     avatar.getElement().setAttribute("tabindex", "-1");
-
-                    MenuBar userMenu = new MenuBar();
-                    userMenu.setThemeName("tertiary-inline contrast");
-                    MenuItem userName = userMenu.addItem("");
 
                     Div div = new Div();
                     div.add(avatar);
@@ -102,8 +101,10 @@ public class MainLayout
                     div.getElement().getStyle().set("display", "flex");
                     div.getElement().getStyle().set("align-items", "center");
                     div.getElement().getStyle().set("gap", "var(--lumo-space-s)");
-                    userName.add(div);
-                    SubMenu userNameSubMenu = userName.getSubMenu();
+
+                    MenuItem userNameMenuItem = userMenu.addItem("");
+                    userNameMenuItem.add(div);
+                    SubMenu userNameSubMenu = userNameMenuItem.getSubMenu();
                     userNameSubMenu.addItem(
                             "Sign out",
                             clickEvent -> {
@@ -111,7 +112,7 @@ public class MainLayout
                             }
                     );
                     VaadinUiEventBus.subscribe(
-                            div,
+                            userMenu,
                             SchedulingView.SchedulingProcessingStartComponentEvent.class,
                             componentEvent -> {
                                 VaadinUiAccessUtil.updateUI(
@@ -124,7 +125,7 @@ public class MainLayout
                     );
 
                     VaadinUiEventBus.subscribe(
-                            div,
+                            userMenu,
                             SchedulingView.SchedulingProcessingEndComponentEvent.class,
                             componentEvent -> {
                                 VaadinUiAccessUtil.updateUI(

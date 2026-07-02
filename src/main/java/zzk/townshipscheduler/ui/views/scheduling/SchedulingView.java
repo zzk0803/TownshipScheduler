@@ -18,21 +18,23 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.VaadinServlet;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.util.StreamUtils;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
+import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingBenchmarkRequest;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
 import zzk.townshipscheduler.ui.components.OrderGrid;
@@ -40,9 +42,9 @@ import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -323,62 +325,7 @@ public class SchedulingView
                 }
         );
         problemGridContextMenu.addSeparator();
-        problemGridContextMenu.addItem(
-                "Benchmark",
-                clicked -> {
-                    UI ui = UI.getCurrent();
-                    Optional<SchedulingProblemVo> clickedItem = clicked.getItem();
-                    clickedItem.ifPresent(schedulingProblemVo -> {
-                        String problemUuid = schedulingProblemVo.getUuid();
-
-                        Dialog dialog = new Dialog();
-                        dialog.setModality(ModalityMode.STRICT);
-                        dialog.setCloseOnEsc(false);
-                        dialog.setCloseOnOutsideClick(false);
-
-                        VerticalLayout dialogWrapper = new VerticalLayout();
-                        dialogWrapper.setJustifyContentMode(JustifyContentMode.CENTER);
-
-                        ProgressBar progressBar = new ProgressBar();
-                        progressBar.setIndeterminate(true);
-
-                        dialog.setHeaderTitle("Benchmark is RUNNING...");
-
-                        dialogWrapper.add(progressBar);
-                        dialog.add(dialogWrapper);
-
-                        CompletableFuture<Optional<File>> completableFuture = this.schedulingViewPresenter.onBenchmarkStart(problemUuid);
-                        completableFuture.whenComplete(
-                                (optionalFile, throwable) -> {
-                                    ui.access(() -> {
-                                        dialogWrapper.remove(progressBar);
-                                        if (throwable != null) {
-                                            dialogWrapper.add(new Paragraph(throwable.toString()));
-                                            return;
-                                        }
-                                        optionalFile.ifPresent(file -> {
-                                            IFrame iFrame = new IFrame(file.getAbsolutePath());
-                                            dialog.setSizeFull();
-                                            dialogWrapper.setSizeFull();
-                                            dialogWrapper.addAndExpand(iFrame);
-                                        });
-                                    });
-                                }
-                        );
-
-                        dialog.getHeader()
-                                .add(new Button(VaadinIcon.CLOSE.create()) {{
-                                    addThemeVariants(ButtonVariant.WARNING);
-                                    addClickListener(event -> {
-                                        completableFuture.cancel(true);
-                                        dialog.close();
-                                    });
-                                }});
-
-                        dialog.open();
-                    });
-                }
-        );
+        setupBenchmarkFeature(problemGridContextMenu);
         addAndExpand(grid);
 
     }
@@ -613,6 +560,89 @@ public class SchedulingView
         };
     }
 
+    private void setupBenchmarkFeature(GridContextMenu<SchedulingProblemVo> problemGridContextMenu) {
+        problemGridContextMenu.addItem(
+                "Benchmark",
+                clicked -> {
+                    UI ui = UI.getCurrent();
+                    Optional<SchedulingProblemVo> clickedItem = clicked.getItem();
+                    Dialog dialog = new Dialog();
+                    dialog.setModality(ModalityMode.STRICT);
+                    dialog.setCloseOnEsc(false);
+                    dialog.setCloseOnOutsideClick(false);
+                    dialog.setWidth(67.8F,Unit.VW);
+
+                    VerticalLayout dialogWrapper = new VerticalLayout();
+                    dialogWrapper.setJustifyContentMode(JustifyContentMode.CENTER);
+                    dialogWrapper.setAlignItems(Alignment.CENTER);
+                    dialogWrapper.setSizeFull();
+                    dialog.add(dialogWrapper);
+
+                    clickedItem.ifPresent(schedulingProblemVo -> {
+                        String problemUuid = schedulingProblemVo.getUuid();
+
+                        TownshipSchedulingBenchmarkRequestFormLayout form = new TownshipSchedulingBenchmarkRequestFormLayout(problemUuid);
+                        Button startButton = new Button(VaadinIcon.PLAY_CIRCLE_O.create()){{
+                            addThemeVariants(ButtonVariant.LUMO_PRIMARY,ButtonVariant.LUMO_LARGE);
+                        }};
+                        dialogWrapper.addAndExpand(form);
+                        dialogWrapper.add(startButton);
+                        startButton.addClickListener(_ -> {
+                            TownshipSchedulingBenchmarkRequest request = form.getTownshipSchedulingBenchmarkRequest();
+                            form.frozen();
+                            dialogWrapper.remove(startButton);
+
+                            ProgressBar progressBar = new ProgressBar();
+                            progressBar.setIndeterminate(true);
+
+                            dialog.setHeaderTitle("Benchmark is RUNNING...");
+
+                            dialogWrapper.add(progressBar);
+
+                            CompletableFuture<Optional<File>> completableFuture = this.schedulingViewPresenter.onBenchmarkStart(request);
+                            completableFuture.whenComplete(
+                                    (optionalFile, throwable) -> {
+                                        ui.access(() -> {
+                                            dialog.setHeaderTitle("Benchmark finished.");
+                                            dialogWrapper.remove(progressBar);
+                                            if (throwable != null) {
+                                                dialogWrapper.add(new Paragraph(throwable.toString()));
+                                                VaadinUiEventBus.publish(new SchedulingProcessingEndComponentEvent(SchedulingView.this,false,"benchmark end"));
+                                            }
+                                            optionalFile.ifPresent(file -> {
+                                                VaadinUiEventBus.publish(new SchedulingProcessingEndComponentEvent(SchedulingView.this,false,"benchmark end"));
+
+
+                                                String reportUrl = VaadinServlet.getCurrent().getServletContext().getContextPath() + file.getPath();
+
+                                                Anchor reportLink = new Anchor(reportUrl, "Report");
+                                                reportLink.setUnsafeHref(reportUrl);
+                                                reportLink.getElement().setAttribute("target", "_blank");
+                                                reportLink.getElement().setAttribute("router-ignore", true);
+
+                                                dialogWrapper.add(reportLink);
+                                                dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER,reportLink);
+                                            });
+                                        });
+                                    }
+                            );
+
+                            VaadinUiEventBus.publish(new SchedulingProcessingStartComponentEvent(SchedulingView.this,false,"benchmark start"));
+                        });
+
+                    });
+                    dialog.open();
+                    dialog.getHeader()
+                            .addComponentAsFirst(new Button(VaadinIcon.CLOSE.create()) {{
+                                addThemeVariants(ButtonVariant.WARNING);
+                                addClickListener(event -> {
+                                    dialog.close();
+                                });
+                            }});
+                }
+        );
+    }
+
     private SerializableFunction<SchedulingOrderVo, Main> funOrderBriefItemsRenderer() {
         return schedulingOrderVo -> {
             Main layout = new Main();
@@ -659,8 +689,61 @@ public class SchedulingView
         return layout;
     }
 
+    public static class TownshipSchedulingBenchmarkRequestFormLayout extends Composite<VerticalLayout> {
+
+        String problemUuid;
+
+        TextField problemId = new TextField("Problem Id");
+
+        Select<TownshipSchedulingBenchmarkRequest.BenchmarkSize> benchmarkSize = new Select<>("Benchmark Problem Size");
+
+        Select<TownshipSchedulingBenchmarkRequest.BenchmarkStrategy> benchmarkStrategy = new Select<>("Benchmark Strategy");
+
+        @Getter
+        TownshipSchedulingBenchmarkRequest townshipSchedulingBenchmarkRequest = new TownshipSchedulingBenchmarkRequest();
+
+        Binder<TownshipSchedulingBenchmarkRequest> binder = new Binder<>(TownshipSchedulingBenchmarkRequest.class);
+
+        public TownshipSchedulingBenchmarkRequestFormLayout(String problemUuid) {
+            this.problemUuid = problemUuid;
+            this.townshipSchedulingBenchmarkRequest.setProblemId(this.problemUuid);
+            this.binder.bindReadOnly(this.problemId, TownshipSchedulingBenchmarkRequest::getProblemId);
+            this.binder.forField(benchmarkSize)
+                    .bind(TownshipSchedulingBenchmarkRequest::getBenchmarkSize, TownshipSchedulingBenchmarkRequest::setBenchmarkSize);
+            this.binder.forField(benchmarkStrategy)
+                    .bind(TownshipSchedulingBenchmarkRequest::getBenchmarkStrategy, TownshipSchedulingBenchmarkRequest::setBenchmarkStrategy);
+            this.binder.setBean(townshipSchedulingBenchmarkRequest);
+
+            this.benchmarkSize.setItems(TownshipSchedulingBenchmarkRequest.BenchmarkSize.values());
+            this.benchmarkStrategy.setItems(TownshipSchedulingBenchmarkRequest.BenchmarkStrategy.values());
+
+            this.benchmarkSize.setValue(TownshipSchedulingBenchmarkRequest.BenchmarkSize.SELF);
+            this.benchmarkStrategy.setValue(TownshipSchedulingBenchmarkRequest.BenchmarkStrategy.BUILTIN);
+
+            getContent().add(problemId, benchmarkSize, benchmarkStrategy);
+        }
+
+        public void frozen() {
+            this.benchmarkSize.setReadOnly(true);
+            this.benchmarkStrategy.setReadOnly(true);
+        }
+
+    }
+
+
     public static class SchedulingProcessingStartComponentEvent
             extends ComponentEvent<SchedulingView> {
+
+        private String message;
+
+        public SchedulingProcessingStartComponentEvent(
+                SchedulingView source,
+                boolean fromClient,
+                String message
+        ) {
+            this(source, fromClient);
+            this.message = message;
+        }
 
         public SchedulingProcessingStartComponentEvent(
                 SchedulingView source,
@@ -676,6 +759,17 @@ public class SchedulingView
 
     public static class SchedulingProcessingEndComponentEvent
             extends ComponentEvent<SchedulingView> {
+
+        private String message;
+
+        public SchedulingProcessingEndComponentEvent(
+                SchedulingView source,
+                boolean fromClient,
+                String message
+        ) {
+            this(source, fromClient);
+            this.message = message;
+        }
 
         public SchedulingProcessingEndComponentEvent(
                 SchedulingView source,

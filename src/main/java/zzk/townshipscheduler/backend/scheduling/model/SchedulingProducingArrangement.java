@@ -16,6 +16,7 @@ import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.ArrangementIdRoller;
 import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingDateTimeStrengthComparator;
+import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingFactoryInstanceStrengthComparator;
 import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
@@ -107,7 +108,10 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
     @JsonIgnore
     private SchedulingProducingExecutionMode producingExecutionMode;
 
-    @PlanningVariable(valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_FACTORY_INSTANCE)
+    @PlanningVariable(
+            valueRangeProviderRefs = VALUE_RANGE_FOR_SCHEDULING_FACTORY_INSTANCE,
+            comparatorClass = SchedulingFactoryInstanceStrengthComparator.class
+    )
     private SchedulingFactoryInstance planningFactoryInstance;
 
     @PlanningVariable(comparatorClass = SchedulingDateTimeStrengthComparator.class)

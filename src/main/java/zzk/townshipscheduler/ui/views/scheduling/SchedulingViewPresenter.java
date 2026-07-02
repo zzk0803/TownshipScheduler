@@ -30,6 +30,7 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.dao.OrderEntityRepository;
 import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.scheduling.ITownshipSchedulingService;
+import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingBenchmarkRequest;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareComponent;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.model.*;
@@ -46,7 +47,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -367,8 +367,8 @@ public class SchedulingViewPresenter {
         this.schedulingService.load(problemId).orElseThrow(IllegalArgumentException::new);
     }
 
-    public CompletableFuture<Optional<File>> onBenchmarkStart(String problemId) {
-        return schedulingService.benchmark(problemId);
+    public CompletableFuture<Optional<File>> onBenchmarkStart(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
+        return schedulingService.benchmark(benchmarkRequest);
     }
 
 
