@@ -44,7 +44,6 @@ import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
-import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -574,6 +573,19 @@ public class SchedulingView
                     dialog.setCloseOnOutsideClick(false);
                     dialog.setWidth(67.8F, Unit.VW);
 
+                    Dialog.DialogHeader dialogHeader = dialog.getHeader();
+                    HorizontalLayout dialogHeaderLayout = new HorizontalLayout();
+                    dialogHeaderLayout.add(
+                            new Button(VaadinIcon.CLOSE.create()) {{
+                                addThemeVariants(ButtonVariant.WARNING);
+                                addClickListener(event -> {
+                                    dialog.close();
+                                });
+                            }}
+                    );
+                    dialogHeaderLayout.setWidthFull();
+                    dialogHeader.add(dialogHeaderLayout);
+
                     VerticalLayout dialogWrapper = new VerticalLayout();
                     dialogWrapper.setJustifyContentMode(JustifyContentMode.CENTER);
                     dialogWrapper.setAlignItems(Alignment.CENTER);
@@ -636,25 +648,15 @@ public class SchedulingView
                                                     );
                                                 }
                                         );
-                                        VaadinUiEventBus.publish(new SchedulingProcessingEndComponentEvent(SchedulingView.this, false, "benchmark end"));
-                                    }, VaadinService.getCurrent()
+                                    },
+                                    VaadinService.getCurrent()
                                             .getExecutor()
                             );
 
-                            VaadinUiEventBus.publish(new SchedulingProcessingStartComponentEvent(SchedulingView.this, false, "benchmark start"));
                         });
 
                     });
                     dialog.open();
-                    dialog.getHeader()
-                            .addComponentAsFirst(
-                                    new Button(VaadinIcon.CLOSE.create()) {{
-                                        addThemeVariants(ButtonVariant.WARNING);
-                                        addClickListener(event -> {
-                                            dialog.close();
-                                        });
-                                    }}
-                            );
                 }
         );
     }

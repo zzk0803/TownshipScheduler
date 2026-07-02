@@ -374,13 +374,15 @@ public class SchedulingViewPresenter {
         int factoryCount = currentProblem.getSchedulingFactoryInstanceList()
                 .size();
 
-        String formatted = ("""
-                your township scheduling problem include %s order
-                there's %s final product item to make
-                include all materials need %s arrangement.
-                factory value range size:%s
-                date times slot size:%s
-                """).formatted(
+        String formatted = (
+                """
+                        your township scheduling problem include %s order
+                        there's %s final product item to make
+                        include all materials need %s arrangement.
+                        factory value range size:%s
+                        date times slot size:%s
+                """
+        ).formatted(
                 orderSize,
                 orderItemProducingArrangementCount,
                 totalItemProducingArrangementCount,

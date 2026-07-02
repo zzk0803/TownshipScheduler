@@ -23,7 +23,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -139,15 +138,17 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         PlannerBenchmark plannerBenchmark = benchmarkFactory.buildPlannerBenchmark(buildBenchmarkProblems(benchmarkRequest));
         return CompletableFuture.supplyAsync(
                         plannerBenchmark::benchmark,
-                        VaadinService.getCurrent().getExecutor()
+                        VaadinService.getCurrent()
+                                .getExecutor()
                 )
                 .thenApply(parentDir -> {
-                    try {
-                        return findMostRecentBenchmarkFile(parentDir);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                            try {
+                                return findMostRecentBenchmarkFile(parentDir);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                );
     }
 
     private @NonNull PlannerBenchmarkFactory buildBenchmarkFactory(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
@@ -229,7 +230,8 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
 
         File directory = directories[0];
         Path path = searchFile(directory.toPath(), BENCHMARK_REPORT_FILE_NAME);
-        return Optional.of(path.toFile());
+        return Optional.ofNullable(path)
+                .map(Path::toFile);
     }
 
     public TownshipSchedulingProblem prepareBenchmarkScheduling(TownshipSchedulingRequest townshipSchedulingRequest) {

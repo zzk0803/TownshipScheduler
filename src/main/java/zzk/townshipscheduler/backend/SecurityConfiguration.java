@@ -38,7 +38,7 @@ public class SecurityConfiguration {
         );
 //        http.authorizeHttpRequests(
 //                authorize -> authorize.requestMatchers(
-//                                "/township-scheduler-benchmark/*/index.html"
+//                                "/township-scheduler-benchmark/**"
 //                        )
 //                        .permitAll()
 //        );
