@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
 
-    public static final String BENCHMARK_REPORT_FILE_NAME = "index.html";
-
     private final SolverManager<TownshipSchedulingProblem> solverManager;
 
     private final TownshipProblemEntityRepository townshipProblemEntityRepository;
