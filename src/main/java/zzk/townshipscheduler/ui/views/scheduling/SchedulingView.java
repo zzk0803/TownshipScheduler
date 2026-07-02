@@ -28,8 +28,8 @@ import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
-import com.vaadin.flow.server.VaadinServlet;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
@@ -38,6 +38,7 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingBenchmarkRequest;
 import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.utility.ReportZipUtil;
 import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
 import zzk.townshipscheduler.ui.components.OrderGrid;
 import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
@@ -46,14 +47,21 @@ import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipOutputStream;
 
 @Route("/scheduling/:schedulingId?")
 @PreserveOnRefresh
@@ -564,9 +572,9 @@ public class SchedulingView
     private void setupBenchmarkFeature(GridContextMenu<SchedulingProblemVo> problemGridContextMenu) {
         problemGridContextMenu.addItem(
                 "Benchmark",
-                clicked -> {
+                contextMenuItemClicked -> {
                     UI ui = UI.getCurrent();
-                    Optional<SchedulingProblemVo> clickedItem = clicked.getItem();
+                    Optional<SchedulingProblemVo> clickedItem = contextMenuItemClicked.getItem();
                     Dialog dialog = new Dialog();
                     dialog.setModality(ModalityMode.STRICT);
                     dialog.setCloseOnEsc(false);
@@ -578,7 +586,7 @@ public class SchedulingView
                     dialogHeaderLayout.add(
                             new Button(VaadinIcon.CLOSE.create()) {{
                                 addThemeVariants(ButtonVariant.WARNING);
-                                addClickListener(event -> {
+                                addClickListener(dialogCloseClicked -> {
                                     dialog.close();
                                 });
                             }}
@@ -625,20 +633,31 @@ public class SchedulingView
                                                     }
                                                     optionalFile.ifPresentOrElse(
                                                             file -> {
-                                                                String reportUrl = VaadinServlet.getCurrent()
-                                                                        .getServletContext()
-                                                                        .getContextPath() + file.getPath();
-                                                                Anchor reportLink = new Anchor(reportUrl, "Report");
-                                                                reportLink.setUnsafeHref(reportUrl);
-                                                                reportLink.getElement()
-                                                                        .setAttribute("target", "_blank");
-                                                                reportLink.getElement()
-                                                                        .setAttribute("router-ignore", true);
+                                                                if (!file.exists() || !file.isDirectory()) {
+                                                                    dialogWrapper.add(new Span("file not exist?!"));
+                                                                    return;
+                                                                }
 
-                                                                dialogWrapper.add(reportLink);
-                                                                dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER, reportLink);
+                                                                String timestamp = LocalDateTime.now()
+                                                                        .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                                                                String zipFileName = "Report_" + timestamp + ".zip";
+
+                                                                StreamResource resource = new StreamResource(
+                                                                        zipFileName,
+                                                                        () -> createZipInputStream("BenchmarkReport", file)
+                                                                );
+
+                                                                Anchor downloadLink = new Anchor(resource, "Download Benchmark Repost(zip)");
+                                                                downloadLink.getElement()
+                                                                        .setAttribute("download", true);
+                                                                downloadLink.getElement()
+                                                                        .getThemeList()
+                                                                        .add("primary");
+
+                                                                dialogWrapper.add(downloadLink);
+                                                                dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER, downloadLink);
                                                             }, () -> {
-                                                                Notification notification = new Notification("couldn't find index.html");
+                                                                Notification notification = new Notification("couldn't find benchmark file(s)");
                                                                 notification.addThemeVariants(NotificationVariant.ERROR);
                                                                 notification.setPosition(Notification.Position.MIDDLE);
                                                                 notification.setDuration(2);
@@ -705,6 +724,21 @@ public class SchedulingView
         layout.add(scoreAnalysisParagraph);
         getSchedulingViewPresenter().setupScoreAnalysisParagraph();
         return layout;
+    }
+
+    private InputStream createZipInputStream(String zipRootName, File file) {
+        try {
+            Path tempZip = Files.createTempFile("benchmark_report_", ".zip");
+
+            try (var zos = new ZipOutputStream(Files.newOutputStream(tempZip))) {
+                ReportZipUtil.zipReportDirectory(zos, file, zipRootName);
+            }
+
+            return Files.newInputStream(tempZip, StandardOpenOption.DELETE_ON_CLOSE);
+
+        } catch (IOException e) {
+            throw new RuntimeException("benchmark report zip failed", e);
+        }
     }
 
     public static class TownshipSchedulingBenchmarkRequestFormLayout extends Composite<VerticalLayout> {

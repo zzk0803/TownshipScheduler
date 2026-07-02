@@ -229,9 +229,8 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         );
 
         File directory = directories[0];
-        Path path = searchFile(directory.toPath(), BENCHMARK_REPORT_FILE_NAME);
-        return Optional.ofNullable(path)
-                .map(Path::toFile);
+//        Path path = searchFile(directory.toPath(), BENCHMARK_REPORT_FILE_NAME);
+        return Optional.ofNullable(directory);
     }
 
     public TownshipSchedulingProblem prepareBenchmarkScheduling(TownshipSchedulingRequest townshipSchedulingRequest) {
