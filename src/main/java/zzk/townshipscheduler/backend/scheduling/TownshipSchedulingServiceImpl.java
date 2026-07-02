@@ -23,6 +23,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -36,8 +37,6 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     public static final String BENCHMARK_REPORT_FILE_NAME = "index.html";
 
     private final SolverManager<TownshipSchedulingProblem> solverManager;
-
-    private final PlannerBenchmarkFactory plannerBenchmarkFactory;
 
     private final TownshipProblemEntityRepository townshipProblemEntityRepository;
 
@@ -140,8 +139,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         PlannerBenchmark plannerBenchmark = benchmarkFactory.buildPlannerBenchmark(buildBenchmarkProblems(benchmarkRequest));
         return CompletableFuture.supplyAsync(
                         plannerBenchmark::benchmark,
-                        VaadinService.getCurrent()
-                                .getExecutor()
+                        VaadinService.getCurrent().getExecutor()
                 )
                 .thenApply(parentDir -> {
                     try {

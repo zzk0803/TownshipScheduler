@@ -36,6 +36,12 @@ public class SecurityConfiguration {
                         )
                         .permitAll()
         );
+//        http.authorizeHttpRequests(
+//                authorize -> authorize.requestMatchers(
+//                                "/township-scheduler-benchmark/*/index.html"
+//                        )
+//                        .permitAll()
+//        );
 
         // Configure Vaadin's security using VaadinSecurityConfigurer
         http.with(

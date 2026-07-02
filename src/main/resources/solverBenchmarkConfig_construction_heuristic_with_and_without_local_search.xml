@@ -8,7 +8,7 @@
 
     <parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
 
-    <warmUpSecondsSpentLimit>30</warmUpSecondsSpentLimit>
+    <warmUpSecondsSpentLimit>0</warmUpSecondsSpentLimit>
 
     <inheritedSolverBenchmark>
         <solver>
@@ -38,7 +38,7 @@
             </scoreDirectorFactory>
 
             <termination>
-                <minutesSpentLimit>10</minutesSpentLimit>
+                <minutesSpentLimit>5</minutesSpentLimit>
             </termination>
 
             <!--region constructionHeuristic-->

@@ -35,11 +35,6 @@ public class LitSchedulingVisTimelinePanel extends Component {
         pullScheduleResult();
     }
 
-    @Override
-    protected void onDetach(DetachEvent detachEvent) {
-        super.onDetach(detachEvent);
-    }
-
     @ClientCallable
     public void pullScheduleResult() {
         updateRemoteFull();
@@ -76,9 +71,14 @@ public class LitSchedulingVisTimelinePanel extends Component {
         );
         setPropertyNumber(
                 "dateTimeSlotSizeInMinute",
-                townshipSchedulingProblem.getDateTimeSlotSize().getMinute()
+                townshipSchedulingProblem.getDateTimeSlotSize()
+                        .getMinute()
         );
 
+    }
+
+    private void setPropertyObject(String name, Object object) {
+        getElement().setPropertyBean(name, object);
     }
 
     private void setPropertyList(String name, List<?> listObject) {
@@ -89,7 +89,8 @@ public class LitSchedulingVisTimelinePanel extends Component {
         return schedulingOrderList.stream()
                 .map(schedulingOrder -> new LitSchedulingOrderVo(
                         schedulingOrder.getId(),
-                        schedulingOrder.getOrderType().name(),
+                        schedulingOrder.getOrderType()
+                                .name(),
                         Optional.ofNullable(schedulingOrder.getDeadline())
                                 .map(localDateTime -> localDateTime.format(
                                         DateTimeFormatter.ISO_LOCAL_DATE_TIME)
@@ -148,7 +149,8 @@ public class LitSchedulingVisTimelinePanel extends Component {
                         Collectors.groupingBy(SchedulingProducingArrangement::getSchedulingOrder)
                 );
 
-        return orderArrangeMap.entrySet().stream()
+        return orderArrangeMap.entrySet()
+                .stream()
                 .map(
                         orderAndArrangeList -> {
                             SchedulingOrder schedulingOrder = orderAndArrangeList.getKey();
@@ -156,7 +158,8 @@ public class LitSchedulingVisTimelinePanel extends Component {
                             SchedulingProducingArrangementUnitGroupVo groupVo
                                     = new SchedulingProducingArrangementUnitGroupVo(
                                     schedulingOrder.getId(),
-                                    schedulingOrder.getOrderType().name()
+                                    schedulingOrder.getOrderType()
+                                            .name()
                             );
 
                             Set<SchedulingProducingArrangementUnitGroupVo.NestedOrderProduct> nestedOrderProductSet = arrangeListValue.stream()
@@ -181,8 +184,9 @@ public class LitSchedulingVisTimelinePanel extends Component {
         getElement().setProperty(name, value);
     }
 
-    private void setPropertyObject(String name, Object object) {
-        getElement().setPropertyBean(name, object);
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        super.onDetach(detachEvent);
     }
 
     public void updateRemoteArrangements() {

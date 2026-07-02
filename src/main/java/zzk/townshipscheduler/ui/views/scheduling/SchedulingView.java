@@ -13,6 +13,7 @@ import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
@@ -27,6 +28,7 @@ import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServlet;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
@@ -570,7 +572,7 @@ public class SchedulingView
                     dialog.setModality(ModalityMode.STRICT);
                     dialog.setCloseOnEsc(false);
                     dialog.setCloseOnOutsideClick(false);
-                    dialog.setWidth(67.8F,Unit.VW);
+                    dialog.setWidth(67.8F, Unit.VW);
 
                     VerticalLayout dialogWrapper = new VerticalLayout();
                     dialogWrapper.setJustifyContentMode(JustifyContentMode.CENTER);
@@ -582,8 +584,8 @@ public class SchedulingView
                         String problemUuid = schedulingProblemVo.getUuid();
 
                         TownshipSchedulingBenchmarkRequestFormLayout form = new TownshipSchedulingBenchmarkRequestFormLayout(problemUuid);
-                        Button startButton = new Button(VaadinIcon.PLAY_CIRCLE_O.create()){{
-                            addThemeVariants(ButtonVariant.LUMO_PRIMARY,ButtonVariant.LUMO_LARGE);
+                        Button startButton = new Button(VaadinIcon.PLAY_CIRCLE_O.create()) {{
+                            addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
                         }};
                         dialogWrapper.addAndExpand(form);
                         dialogWrapper.add(startButton);
@@ -600,45 +602,59 @@ public class SchedulingView
                             dialogWrapper.add(progressBar);
 
                             CompletableFuture<Optional<File>> completableFuture = this.schedulingViewPresenter.onBenchmarkStart(request);
-                            completableFuture.whenComplete(
+                            completableFuture.whenCompleteAsync(
                                     (optionalFile, throwable) -> {
-                                        ui.access(() -> {
-                                            dialog.setHeaderTitle("Benchmark finished.");
-                                            dialogWrapper.remove(progressBar);
-                                            if (throwable != null) {
-                                                dialogWrapper.add(new Paragraph(throwable.toString()));
-                                                VaadinUiEventBus.publish(new SchedulingProcessingEndComponentEvent(SchedulingView.this,false,"benchmark end"));
-                                            }
-                                            optionalFile.ifPresent(file -> {
-                                                VaadinUiEventBus.publish(new SchedulingProcessingEndComponentEvent(SchedulingView.this,false,"benchmark end"));
+                                        ui.access(
+                                                () -> {
+                                                    dialog.setHeaderTitle("Benchmark finished.");
+                                                    dialogWrapper.remove(progressBar);
+                                                    if (throwable != null) {
+                                                        dialogWrapper.add(new Paragraph(throwable.toString()));
+                                                    }
+                                                    optionalFile.ifPresentOrElse(
+                                                            file -> {
+                                                                String reportUrl = VaadinServlet.getCurrent()
+                                                                        .getServletContext()
+                                                                        .getContextPath() + file.getPath();
+                                                                Anchor reportLink = new Anchor(reportUrl, "Report");
+                                                                reportLink.setUnsafeHref(reportUrl);
+                                                                reportLink.getElement()
+                                                                        .setAttribute("target", "_blank");
+                                                                reportLink.getElement()
+                                                                        .setAttribute("router-ignore", true);
 
-
-                                                String reportUrl = VaadinServlet.getCurrent().getServletContext().getContextPath() + file.getPath();
-
-                                                Anchor reportLink = new Anchor(reportUrl, "Report");
-                                                reportLink.setUnsafeHref(reportUrl);
-                                                reportLink.getElement().setAttribute("target", "_blank");
-                                                reportLink.getElement().setAttribute("router-ignore", true);
-
-                                                dialogWrapper.add(reportLink);
-                                                dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER,reportLink);
-                                            });
-                                        });
-                                    }
+                                                                dialogWrapper.add(reportLink);
+                                                                dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER, reportLink);
+                                                            }, () -> {
+                                                                Notification notification = new Notification("couldn't find index.html");
+                                                                notification.addThemeVariants(NotificationVariant.ERROR);
+                                                                notification.setPosition(Notification.Position.MIDDLE);
+                                                                notification.setDuration(2);
+                                                                notification.open();
+                                                                dialog.close();
+                                                            }
+                                                    );
+                                                }
+                                        );
+                                        VaadinUiEventBus.publish(new SchedulingProcessingEndComponentEvent(SchedulingView.this, false, "benchmark end"));
+                                    }, VaadinService.getCurrent()
+                                            .getExecutor()
                             );
 
-                            VaadinUiEventBus.publish(new SchedulingProcessingStartComponentEvent(SchedulingView.this,false,"benchmark start"));
+                            VaadinUiEventBus.publish(new SchedulingProcessingStartComponentEvent(SchedulingView.this, false, "benchmark start"));
                         });
 
                     });
                     dialog.open();
                     dialog.getHeader()
-                            .addComponentAsFirst(new Button(VaadinIcon.CLOSE.create()) {{
-                                addThemeVariants(ButtonVariant.WARNING);
-                                addClickListener(event -> {
-                                    dialog.close();
-                                });
-                            }});
+                            .addComponentAsFirst(
+                                    new Button(VaadinIcon.CLOSE.create()) {{
+                                        addThemeVariants(ButtonVariant.WARNING);
+                                        addClickListener(event -> {
+                                            dialog.close();
+                                        });
+                                    }}
+                            );
                 }
         );
     }
@@ -726,6 +742,14 @@ public class SchedulingView
         public void frozen() {
             this.benchmarkSize.setReadOnly(true);
             this.benchmarkStrategy.setReadOnly(true);
+        }
+
+        @Override
+        protected VerticalLayout initContent() {
+            VerticalLayout verticalLayout = super.initContent();
+            verticalLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+            verticalLayout.setDefaultHorizontalComponentAlignment(Alignment.STRETCH);
+            return verticalLayout;
         }
 
     }

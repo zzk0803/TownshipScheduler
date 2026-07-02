@@ -60,8 +60,8 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>90</slidingWindowSeconds>
-                <minimumImprovementRatio>0.125</minimumImprovementRatio>
+                <slidingWindowMinutes>1</slidingWindowMinutes>
+                <minimumImprovementRatio>0.05</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 
@@ -144,14 +144,14 @@
         </unionMoveSelector>
 
         <acceptor>
-            <entityTabuSize>5</entityTabuSize>
+            <entityTabuSize>2</entityTabuSize>
             <valueTabuSize>2</valueTabuSize>
-            <stepCountingHillClimbingSize>519</stepCountingHillClimbingSize>
+            <stepCountingHillClimbingSize>256</stepCountingHillClimbingSize>
             <stepCountingHillClimbingType>ACCEPTED_MOVE</stepCountingHillClimbingType>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>2</acceptedCountLimit>
+            <acceptedCountLimit>1</acceptedCountLimit>
         </forager>
 
     </localSearch>

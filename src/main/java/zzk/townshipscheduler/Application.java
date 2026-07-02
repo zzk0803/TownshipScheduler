@@ -70,17 +70,15 @@ public class Application {
         };
     }
 
-    @Bean
-    public ExecutorService townshipExecutorService() {
-        return Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
+    @Bean("cacheManager")
+    public CacheManager cacheManager() {
+        return new ConcurrentMapCacheManager();
     }
 
     @Bean
-    public RetryTemplate retryTemplate() {
-        return new RetryTemplate(
-                RetryPolicy.builder()
-                        .backOff(new FixedBackOff())
-                        .build()
+    public ExecutorService townshipExecutorService() {
+        return Executors.newWorkStealingPool(
+                Runtime.getRuntime().availableProcessors()
         );
     }
 
@@ -91,9 +89,13 @@ public class Application {
                 .build();
     }
 
-    @Bean("cacheManager")
-    public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager();
+    @Bean
+    public RetryTemplate retryTemplate() {
+        return new RetryTemplate(
+                RetryPolicy.builder()
+                        .backOff(new FixedBackOff())
+                        .build()
+        );
     }
 
     @Bean("httpClient")
