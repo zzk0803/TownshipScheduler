@@ -401,7 +401,7 @@ public class SchedulingViewPresenter {
                 .orElseThrow(IllegalArgumentException::new);
     }
 
-    public CompletableFuture<Optional<File>> onBenchmarkStart(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
+    public CompletableFuture<File> onBenchmarkStart(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
         return schedulingService.benchmark(benchmarkRequest);
     }
 

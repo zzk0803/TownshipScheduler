@@ -131,7 +131,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     }
 
     @Override
-    public CompletableFuture<Optional<File>> benchmark(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
+    public CompletableFuture<File> benchmark(TownshipSchedulingBenchmarkRequest benchmarkRequest) {
         PlannerBenchmarkFactory benchmarkFactory = buildBenchmarkFactory(benchmarkRequest);
         PlannerBenchmark plannerBenchmark = benchmarkFactory.buildPlannerBenchmark(buildBenchmarkProblems(benchmarkRequest));
         return CompletableFuture.supplyAsync(
@@ -139,13 +139,16 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
                         VaadinService.getCurrent()
                                 .getExecutor()
                 )
-                .thenApply(parentDir -> {
+                .thenComposeAsync(
+                        parentDir -> {
                             try {
-                                return findMostRecentBenchmarkFile(parentDir);
+                                return CompletableFuture.completedFuture(findMostRecentBenchmarkFile(parentDir).orElseThrow());
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
-                        }
+                        },
+                        VaadinService.getCurrent()
+                                .getExecutor()
                 );
     }
 
@@ -153,7 +156,7 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         TownshipSchedulingBenchmarkRequest.BenchmarkStrategy benchmarkStrategy = benchmarkRequest.getBenchmarkStrategy();
         return switch (benchmarkStrategy) {
             case BUILTIN -> PlannerBenchmarkFactory.createFromXmlResource(
-                    "solverBenchmarkConfig_builtin.xml",
+                    "solverBenchmarkConfig.xml",
                     this.getClass()
                             .getClassLoader()
             );

@@ -621,9 +621,9 @@ public class SchedulingView
 
                             dialogWrapper.add(progressBar);
 
-                            CompletableFuture<Optional<File>> completableFuture = this.schedulingViewPresenter.onBenchmarkStart(request);
+                            CompletableFuture<File> completableFuture = this.schedulingViewPresenter.onBenchmarkStart(request);
                             completableFuture.whenCompleteAsync(
-                                    (optionalFile, throwable) -> {
+                                    (mayNullFile, throwable) -> {
                                         ui.access(
                                                 () -> {
                                                     dialog.setHeaderTitle("Benchmark finished.");
@@ -631,40 +631,40 @@ public class SchedulingView
                                                     if (throwable != null) {
                                                         dialogWrapper.add(new Paragraph(throwable.toString()));
                                                     }
-                                                    optionalFile.ifPresentOrElse(
-                                                            file -> {
-                                                                if (!file.exists() || !file.isDirectory()) {
-                                                                    dialogWrapper.add(new Span("file not exist?!"));
-                                                                    return;
-                                                                }
+                                                    if (mayNullFile != null) {
 
-                                                                String timestamp = LocalDateTime.now()
-                                                                        .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                                                                String zipFileName = "Report_" + timestamp + ".zip";
+                                                        if (!mayNullFile.exists() || !mayNullFile.isDirectory()) {
+                                                            dialogWrapper.add(new Span("file not exist?!"));
+                                                            return;
+                                                        }
 
-                                                                StreamResource resource = new StreamResource(
-                                                                        zipFileName,
-                                                                        () -> createZipInputStream("BenchmarkReport", file)
-                                                                );
+                                                        String timestamp = LocalDateTime.now()
+                                                                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                                                        String zipFileName = "Report_" + timestamp + ".zip";
 
-                                                                Anchor downloadLink = new Anchor(resource, "Download Benchmark Repost(zip)");
-                                                                downloadLink.getElement()
-                                                                        .setAttribute("download", true);
-                                                                downloadLink.getElement()
-                                                                        .getThemeList()
-                                                                        .add("primary");
+                                                        StreamResource resource = new StreamResource(
+                                                                zipFileName,
+                                                                () -> createZipInputStream("BenchmarkReport", mayNullFile)
+                                                        );
 
-                                                                dialogWrapper.add(downloadLink);
-                                                                dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER, downloadLink);
-                                                            }, () -> {
-                                                                Notification notification = new Notification("couldn't find benchmark file(s)");
-                                                                notification.addThemeVariants(NotificationVariant.ERROR);
-                                                                notification.setPosition(Notification.Position.MIDDLE);
-                                                                notification.setDuration(2);
-                                                                notification.open();
-                                                                dialog.close();
-                                                            }
-                                                    );
+                                                        Anchor downloadLink = new Anchor(resource, "Download Benchmark Repost(zip)");
+                                                        downloadLink.getElement()
+                                                                .setAttribute("download", true);
+                                                        downloadLink.getElement()
+                                                                .getThemeList()
+                                                                .add("primary");
+
+                                                        dialogWrapper.add(downloadLink);
+                                                        dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER, downloadLink);
+
+                                                    } else {
+                                                        Notification notification = new Notification("couldn't find benchmark file(s)");
+                                                        notification.addThemeVariants(NotificationVariant.ERROR);
+                                                        notification.setPosition(Notification.Position.MIDDLE);
+                                                        notification.setDuration(2);
+                                                        notification.open();
+                                                        dialog.close();
+                                                    }
                                                 }
                                         );
                                     },

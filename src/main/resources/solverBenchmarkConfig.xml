@@ -8,11 +8,8 @@
 
     <parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
 
-    <warmUpSecondsSpentLimit>0</warmUpSecondsSpentLimit>
-
     <inheritedSolverBenchmark>
         <solver>
-            <randomSeed>42</randomSeed>
 
             <solutionClass>
                 zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem
@@ -38,7 +35,7 @@
             </scoreDirectorFactory>
 
             <termination>
-                <minutesSpentLimit>10</minutesSpentLimit>
+                <minutesSpentLimit>5</minutesSpentLimit>
             </termination>
 
             <!--region constructionHeuristic-->
@@ -77,6 +74,8 @@
             <singleStatisticType>PICKED_MOVE_TYPE_STEP_SCORE_DIFF</singleStatisticType>
 
         </problemBenchmarks>
+
+        <subSingleCount>3</subSingleCount>
     </inheritedSolverBenchmark>
 
     <solverBenchmark>
@@ -84,7 +83,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -181,7 +183,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -278,7 +283,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -375,7 +383,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -472,7 +483,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -570,7 +584,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -665,7 +682,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -762,7 +782,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -859,7 +882,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -956,7 +982,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1046,7 +1075,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1141,7 +1173,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1234,7 +1269,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1327,7 +1365,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1416,11 +1457,111 @@
     </solverBenchmark>
 
     <solverBenchmark>
+        <name>TabuSearchValueWithMoreValueMoreAccept</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <valueTabuSize>5</valueTabuSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>1800</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+
+    <solverBenchmark>
         <name>TabuSearchMove</name>
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1509,13 +1650,15 @@
     </solverBenchmark>
 
 
-
     <solverBenchmark>
         <name>LateAcceptance</name>
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1608,7 +1751,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1702,7 +1848,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1799,7 +1948,10 @@
 
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1894,7 +2046,10 @@
 
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -1988,7 +2143,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2081,7 +2239,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2175,7 +2336,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2265,11 +2429,403 @@
     </solverBenchmark>
 
     <solverBenchmark>
+        <name>SimulatedAnnealingWithAllOneScoreLevelWithTabuValue</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <valueTabuSize>3</valueTabuSize>
+                    <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>1</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>SimulatedAnnealingWithAllOneScoreLevelWithTabuValueAccept</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <valueTabuSize>3</valueTabuSize>
+                    <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>SimulatedAnnealingWithAllOneScoreLevelWithLessTabuValueAccept</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <valueTabuSize>2</valueTabuSize>
+                    <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>SimulatedAnnealingWithAllOneScoreLevelWithMoreTabuValueAccept</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <valueTabuSize>6</valueTabuSize>
+                    <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+
+    <solverBenchmark>
         <name>SimulatedAnnealingWithAllOneScoreLevelWithTabuAndMoreAccept</name>
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2359,11 +2915,209 @@
     </solverBenchmark>
 
     <solverBenchmark>
+        <name>SimulatedAnnealingWithAllOneScoreLevelWithTabuRadioAndMoreAccept</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <entityTabuRatio>0.125</entityTabuRatio>
+                    <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>SimulatedAnnealingWithAllOneScoreLevelWithTabuFadeRadioAndMoreAccept</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <fadingEntityTabuRatio>0.125</fadingEntityTabuRatio>
+                    <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+
+    <solverBenchmark>
         <name>SimulatedAnnealingWithReasonableGuessScoreLevel</name>
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2457,7 +3211,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2551,7 +3308,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2641,13 +3401,114 @@
         </solver>
     </solverBenchmark>
 
+    <solverBenchmark>
+        <name>SimulatedAnnealingWithReasonableGuessScoreLevelAndMoreAcceptAndTabuValue</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <valueTabuSize>2</valueTabuSize>
+                    <simulatedAnnealingStartingTemperature>50hard/100medium/200soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
 
     <solverBenchmark>
         <name>GreatDelugeWithReasonableGuessScoreLevel</name>
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2740,7 +3601,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2833,7 +3697,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -2927,7 +3794,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -3020,7 +3890,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -3114,7 +3987,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -3193,7 +4069,7 @@
                 </unionMoveSelector>
 
                 <acceptor>
-                    <greatDelugeWaterLevelIncrementRatio>0.0002718281828459045</greatDelugeWaterLevelIncrementRatio>
+                    <greatDelugeWaterLevelIncrementRatio>0.002718281828459045</greatDelugeWaterLevelIncrementRatio>
                 </acceptor>
                 <forager>
                     <acceptedCountLimit>1</acceptedCountLimit>
@@ -3207,7 +4083,10 @@
         <solver>
             <localSearch>
                 <termination>
-                    <minutesSpentLimit>1</minutesSpentLimit>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
                 </termination>
 
                 <unionMoveSelector>
@@ -3286,7 +4165,202 @@
                 </unionMoveSelector>
 
                 <acceptor>
-                    <greatDelugeWaterLevelIncrementRatio>0.0002718281828459045</greatDelugeWaterLevelIncrementRatio>
+                    <greatDelugeWaterLevelIncrementRatio>0.002718281828459045</greatDelugeWaterLevelIncrementRatio>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>GreatDelugeWithHigherRatioAndMoreAcceptTabuRadio</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <entityTabuRatio>0.1</entityTabuRatio>
+                    <greatDelugeWaterLevelIncrementRatio>0.002718281828459045</greatDelugeWaterLevelIncrementRatio>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>4</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>GreatDelugeWithHigherRatioAndMoreAcceptTabuRadioTabuValue</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <diminishedReturns>
+                        <slidingWindowSeconds>10</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                    </diminishedReturns>
+                </termination>
+
+                <unionMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningFactoryInstance"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory"/>
+                    </changeMoveSelector>
+
+                    <changeMoveSelector>
+                        <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </changeMoveSelector>
+
+                    <swapMoveSelector>
+                        <entitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                        <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </secondaryEntitySelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </swapMoveSelector>
+
+                    <pillarChangeMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <valueSelector variableName="planningDateTimeSlot"
+                                       id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
+                    </pillarChangeMoveSelector>
+
+                    <pillarSwapMoveSelector>
+                        <pillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </pillarSelector>
+                        <secondaryPillarSelector>
+                            <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">
+                                <entityClass>
+                                    zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                                </entityClass>
+                            </entitySelector>
+                        </secondaryPillarSelector>
+                        <variableNameIncludes>
+                            <variableNameInclude>planningDateTimeSlot</variableNameInclude>
+                        </variableNameIncludes>
+                    </pillarSwapMoveSelector>
+
+                </unionMoveSelector>
+
+                <acceptor>
+                    <entityTabuRatio>0.1</entityTabuRatio>
+                    <valueTabuSize>2</valueTabuSize>
+                    <greatDelugeWaterLevelIncrementRatio>0.002718281828459045</greatDelugeWaterLevelIncrementRatio>
                 </acceptor>
                 <forager>
                     <acceptedCountLimit>4</acceptedCountLimit>

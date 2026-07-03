@@ -8,11 +8,8 @@
 
     <parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
 
-    <warmUpSecondsSpentLimit>0</warmUpSecondsSpentLimit>
-
     <inheritedSolverBenchmark>
         <solver>
-            <randomSeed>42</randomSeed>
 
             <solutionClass>
                 zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem
@@ -78,6 +75,8 @@
             <singleStatisticType>PICKED_MOVE_TYPE_STEP_SCORE_DIFF</singleStatisticType>
 
         </problemBenchmarks>
+
+        <subSingleCount>2</subSingleCount>
     </inheritedSolverBenchmark>
 
     <solverBenchmarkBluePrint>

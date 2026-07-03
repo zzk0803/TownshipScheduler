@@ -37,7 +37,7 @@ public interface ITownshipSchedulingService {
 
     void abort(String problemId);
 
-     CompletableFuture<Optional<File>> benchmark(TownshipSchedulingBenchmarkRequest benchmarkRequest);
+     CompletableFuture<File> benchmark(TownshipSchedulingBenchmarkRequest benchmarkRequest);
 
 //    @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> analyze(
 //            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
