@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * DTO for {@link SchedulingDateTimeSlot}
  */
 public record SchedulingDateTimeSlotViewModel(
-        Integer id,
+        int id,
         LocalDateTime start,
         LocalDateTime end
 ) implements Serializable {

@@ -124,7 +124,8 @@ public class TownshipSchedulingViewRecordComponent {
                         LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
                         LocalDateTime producingDateTime = schedulingProducingArrangement.getProducingDateTime();
                         LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
-                        List<SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId> prerequisiteProducingArrangements = schedulingProducingArrangement.getPrerequisiteProducingArrangements()
+                        List<SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId> prerequisiteProducingArrangements
+                                = schedulingProducingArrangement.getPrerequisiteProducingArrangements()
                                 .stream()
                                 .map(this::mapAndGetSchedulingProducingArrangementViewModel)
                                 .map(SchedulingProducingArrangementViewModel::arrangementViewModelId)
@@ -149,7 +150,7 @@ public class TownshipSchedulingViewRecordComponent {
                                 buildOrGetSchedulingFactoryInstanceViewModel(schedulingProducingArrangement.getPlanningFactoryInstance()),
                                 schedulingProducingArrangement.getArrangeDateTime(),
                                 schedulingProducingArrangement.getProducingDateTime(),
-                                schedulingProducingArrangement.getArrangeDateTime()
+                                schedulingProducingArrangement.getCompletedDateTime()
                         );
                     }
                 }

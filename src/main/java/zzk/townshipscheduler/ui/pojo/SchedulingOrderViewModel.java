@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * DTO for {@link SchedulingOrder}
  */
 public record SchedulingOrderViewModel(
-        Long id,
+        long id,
         OrderType orderType,
         LocalDateTime deadline,
         ProductAmountBillViewModel productAmountBill

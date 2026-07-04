@@ -8,8 +8,8 @@ import java.io.Serializable;
  * DTO for {@link SchedulingFactoryInstance}
  */
 public record SchedulingFactoryInstanceViewModel(
-        Integer id,
-        Long fieldFactoryId,
+        int id,
+        long fieldFactoryId,
         String categoryName,
         int seqNum,
         int producingLength,
