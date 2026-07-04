@@ -4,17 +4,17 @@ import java.util.Collection;
 import java.util.Set;
 
 public record LitSchedulingProducingArrangementUnitGroupViewModel(
-        Long orderId,
+        long orderId,
         String orderType,
-        Set<NestedOrderProductViewModel> nestedOrderProductViewModelList
+        Set<NestedOrderProductViewModel> nestedOrderProductList
 ) {
 
     public boolean add(NestedOrderProductViewModel nestedOrderProductViewModel) {
-        return nestedOrderProductViewModelList.add(nestedOrderProductViewModel);
+        return nestedOrderProductList.add(nestedOrderProductViewModel);
     }
 
     public boolean addAll(Collection<? extends NestedOrderProductViewModel> c) {
-        return nestedOrderProductViewModelList.addAll(c);
+        return nestedOrderProductList.addAll(c);
     }
 
     public static record NestedOrderProductViewModel(

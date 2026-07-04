@@ -151,9 +151,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
         Map<SchedulingOrderViewModel, List<SchedulingProducingArrangementViewModel>> orderArrangeMap
                 = schedulingProducingArrangementList.stream()
                 .filter(SchedulingProducingArrangementViewModel::boolDirectToOrder)
-                .collect(
-                        Collectors.groupingBy(SchedulingProducingArrangementViewModel::order)
-                );
+                .collect(Collectors.groupingBy(SchedulingProducingArrangementViewModel::order));
 
         return orderArrangeMap.entrySet()
                 .stream()
@@ -172,7 +170,7 @@ public class LitSchedulingVisTimelinePanel extends Component {
                                                         .id()
                                         );
                                     })
-                                    .collect(Collectors.toSet());
+                                    .collect(Collectors.toCollection(HashSet::new));
                             LitSchedulingProducingArrangementUnitGroupViewModel groupVo
                                     = new LitSchedulingProducingArrangementUnitGroupViewModel(
                                     schedulingOrder.id(),
