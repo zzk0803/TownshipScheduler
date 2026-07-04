@@ -36,6 +36,12 @@ public class TownshipSchedulingViewRecordComponent {
 
     private final AtomicReference<TownshipSchedulingProblem> townshipSchedulingProblemAtomicReference = new AtomicReference<>();
 
+    public TownshipSchedulingViewRecordComponent forOtherProblem(TownshipSchedulingProblem townshipSchedulingProblem) {
+        TownshipSchedulingViewRecordComponent schedulingViewRecordComponent = new TownshipSchedulingViewRecordComponent();
+        schedulingViewRecordComponent.townshipSchedulingProblemAtomicReference.set(townshipSchedulingProblem);
+        return schedulingViewRecordComponent;
+    }
+
     public TownshipSchedulingProblem getTownshipSchedulingProblem() {
         return townshipSchedulingProblemAtomicReference.get();
     }
@@ -56,7 +62,8 @@ public class TownshipSchedulingViewRecordComponent {
                 mapAndGetSchedulingProducingArrangementViewModel(),
                 mapAndGetSchedulingWorkCalendarViewModel(),
                 mapAndGetSchedulingPlayerViewModel(),
-                getTownshipSchedulingProblem().getSolverStatus().name(),
+                getTownshipSchedulingProblem().getSolverStatus()
+                        .name(),
                 Objects.isNull(score) ? "N/A" : score.toString(),
                 Objects.nonNull(score) && score.isFeasible()
         );
@@ -108,7 +115,8 @@ public class TownshipSchedulingViewRecordComponent {
                 (arrangementInMap, viewInMap) -> {
                     if (viewInMap == null) {
                         Integer id = schedulingProducingArrangement.getId();
-                        String uuid = schedulingProducingArrangement.getUuid().toString();
+                        String uuid = schedulingProducingArrangement.getUuid()
+                                .toString();
                         SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId modelId = SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId.of(
                                 id,
                                 uuid
@@ -170,7 +178,8 @@ public class TownshipSchedulingViewRecordComponent {
                 schedulingProduct,
                 productInMap -> {
                     return new SchedulingProductViewModel(
-                            SchedulingProductViewModel.SchedulingProductViewModelId.of(schedulingProduct.getId().getValue()),
+                            SchedulingProductViewModel.SchedulingProductViewModelId.of(schedulingProduct.getId()
+                                    .getValue()),
                             schedulingProduct.getName(),
                             schedulingProduct.getLevel(),
                             schedulingProduct.getGainWhenCompleted()
@@ -191,12 +200,17 @@ public class TownshipSchedulingViewRecordComponent {
         return this.schedulingFactoryInfoSchedulingFactoryInfoViewModelMap.computeIfAbsent(
                 schedulingFactoryInfo,
                 infoViewInMap -> {
-                    List<SchedulingProductViewModel> schedulingProductViewModelList = schedulingFactoryInfo.getPortfolio().stream().map(this::buildOrGetSchedulingProductViewModel).toList();
+                    List<SchedulingProductViewModel> schedulingProductViewModelList = schedulingFactoryInfo.getPortfolio()
+                            .stream()
+                            .map(this::buildOrGetSchedulingProductViewModel)
+                            .toList();
                     return new SchedulingFactoryInfoViewModel(
-                            schedulingFactoryInfo.getId().getValue(),
+                            schedulingFactoryInfo.getId()
+                                    .getValue(),
                             schedulingFactoryInfo.getCategoryName(),
                             schedulingFactoryInfo.getLevel(),
-                            schedulingFactoryInfo.getProducingStructureType().name(),
+                            schedulingFactoryInfo.getProducingStructureType()
+                                    .name(),
                             schedulingProductViewModelList,
                             schedulingFactoryInfo.getDefaultInstanceAmount(),
                             schedulingFactoryInfo.getDefaultProducingCapacity(),
@@ -231,7 +245,8 @@ public class TownshipSchedulingViewRecordComponent {
                         planningFactoryInstance.getSeqNum(),
                         planningFactoryInstance.getProducingLength(),
                         planningFactoryInstance.getReapWindowSize(),
-                        planningFactoryInstance.getFactoryReadableIdentifier().toString()
+                        planningFactoryInstance.getFactoryReadableIdentifier()
+                                .toString()
                 )
         );
     }
@@ -262,7 +277,8 @@ public class TownshipSchedulingViewRecordComponent {
                 orderInMap -> {
                     return new SchedulingOrderViewModel(
                             schedulingOrder.getId(),
-                            schedulingOrder.getOrderType(),
+                            schedulingOrder.getOrderType()
+                                    .name(),
                             schedulingOrder.getDeadline(),
                             new ProductAmountBillViewModel(productAmountPairs)
                     );

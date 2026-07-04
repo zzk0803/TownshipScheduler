@@ -3,6 +3,7 @@ package zzk.townshipscheduler.ui.pojo;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -44,6 +45,25 @@ public record TownshipSchedulingProblemViewModel(
                 score,
                 feasible
         );
+    }
+
+    public List<TownshipSchedulingProblemOrderBriefViewModel> toTownshipSchedulingProblemOrderBriefViewModels() {
+        return schedulingOrderViewModels.stream()
+                .map(
+                        schedulingOrder -> {
+                            LocalDateTime deadline = schedulingOrder.deadline() != null ? schedulingOrder.deadline() : schedulingWorkCalendar.endDateTime();
+                            return new TownshipSchedulingProblemOrderBriefViewModel(
+                                    Math.toIntExact(schedulingOrder.id()),
+                                    schedulingOrder.orderType(),
+                                    deadline,
+                                    schedulingOrder.productAmountBill(),
+                                    this.schedulingProducingArrangementViewModels.stream()
+                                            .filter(schedulingProducingArrangementViewModel -> schedulingProducingArrangementViewModel.order()
+                                                    .equals(schedulingOrder))
+                                            .toList()
+                            );
+                        })
+                .toList();
     }
 
 }

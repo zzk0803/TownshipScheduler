@@ -1,6 +1,5 @@
 package zzk.townshipscheduler.ui.pojo;
 
-import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 
 import java.io.Serializable;
@@ -11,7 +10,7 @@ import java.time.LocalDateTime;
  */
 public record SchedulingOrderViewModel(
         long id,
-        OrderType orderType,
+        String orderType,
         LocalDateTime deadline,
         ProductAmountBillViewModel productAmountBill
 ) implements Serializable {
