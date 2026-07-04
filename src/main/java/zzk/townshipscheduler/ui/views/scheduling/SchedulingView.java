@@ -43,8 +43,10 @@ import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
 import zzk.townshipscheduler.ui.components.OrderGrid;
 import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
 import zzk.townshipscheduler.ui.components.TriggerButton;
+import zzk.townshipscheduler.ui.pojo.SchedulingFactoryInstanceViewModel;
 import zzk.townshipscheduler.ui.pojo.SchedulingOrderVo;
 import zzk.townshipscheduler.ui.pojo.SchedulingProblemVo;
+import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementViewModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -83,7 +85,7 @@ public class SchedulingView
 
     private SchedulingReportArticle arrangementReportArticle;
 
-    private TreeGrid<SchedulingProducingArrangement> arrangementTreeGrid;
+    private TreeGrid<SchedulingProducingArrangementViewModel> arrangementTreeGrid;
 
     private TabSheet tabSheet;
 
@@ -92,12 +94,14 @@ public class SchedulingView
     private Paragraph briefText;
 
     public SchedulingView(
+            TownshipAuthenticationContext townshipAuthenticationContext,
             SchedulingViewPresenter schedulingViewPresenter,
-            TownshipAuthenticationContext townshipAuthenticationContext
+            TownshipSchedulingViewRecordComponent townshipSchedulingViewRecordComponent
     ) {
         this.schedulingViewPresenter = schedulingViewPresenter;
         this.schedulingViewPresenter.setSchedulingView(this);
         this.schedulingViewPresenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
+        this.schedulingViewPresenter.setTownshipSchedulingViewRecordComponent(townshipSchedulingViewRecordComponent);
         this.setSizeFull();
         this.add(new H1("Scheduling View"));
     }
@@ -116,11 +120,15 @@ public class SchedulingView
             String problemId = optionalSchedulingId.get();
             if (this.schedulingViewPresenter.checkWeatherReadyToSolve(problemId)) {
                 this.schedulingViewPresenter.setTownshipSchedulingProblemId(problemId);
+                this.schedulingViewPresenter.reflushAndGetCurrentProblem();
+                this.schedulingViewPresenter.reflushAndGetViewModel();
                 removeAll();
                 schedulingDetailUi();
             } else if (this.schedulingViewPresenter.checkWeatherProblemIsPersisted(problemId)) {
                 this.schedulingViewPresenter.loadProblem(problemId);
                 this.schedulingViewPresenter.setTownshipSchedulingProblemId(problemId);
+                this.schedulingViewPresenter.reflushAndGetCurrentProblem();
+                this.schedulingViewPresenter.reflushAndGetViewModel();
                 removeAll();
                 schedulingDetailUi();
             } else {
@@ -146,7 +154,10 @@ public class SchedulingView
         schedulingContentLayout.setSizeFull();
         addAndExpand(schedulingContentLayout);
 
-        schedulingContentLayout.add(new Details("Order Brief", buildBriefPanel()));
+        schedulingContentLayout.add(new Details(
+                "Order Brief",
+                buildBriefPanel()
+        ));
         schedulingContentLayout.add(buildScoreAndButtonPanel());
         tabSheet = new TabSheet();
         tabSheet.setWidthFull();
@@ -161,181 +172,11 @@ public class SchedulingView
         tabSheet.add(
                 "Report",
                 arrangementReportArticle = new SchedulingReportArticle(
-                        schedulingViewPresenter.findCurrentProblem(),
+                        schedulingViewPresenter.getTownshipSchedulingProblemViewModel(),
                         schedulingViewPresenter::getProductImage
                 )
         );
         schedulingContentLayout.addAndExpand(tabSheet);
-
-    }
-
-    private void schedulingOrdersUi() {
-        Button newSchedulingBtn = new Button(VaadinIcon.PLUS.create());
-        newSchedulingBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        newSchedulingBtn.addClickListener(clicked -> {
-            Dialog dialog = new Dialog("Before Scheduler Start...");
-            dialog.setSizeFull();
-
-            VerticalLayout dialogWrapper = new VerticalLayout();
-            dialogWrapper.setWidthFull();
-            dialog.add(dialogWrapper);
-
-            OrderGrid orderGrid = new OrderGrid(schedulingViewPresenter.fetchPlayerOrders(), false);
-            orderGrid.setPageSize(4);
-            orderGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-            orderGrid.asMultiSelect()
-                    .select(orderGrid.getGenericDataView()
-                            .getItems()
-                            .toList());
-            dialogWrapper.add(orderGrid);
-
-            FormLayout schedulingForm = new FormLayout();
-
-            Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
-            slotSizeSelect.setLabel("Scheduling Time Slot");
-            slotSizeSelect.setNoVerticalOverlap(true);
-            slotSizeSelect.setItems(DateTimeSlotSize.values());
-            slotSizeSelect.setValue(DateTimeSlotSize.HOUR);
-            schedulingForm.add(slotSizeSelect, 2);
-
-//            DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
-//            workCalendarStartPickerPicker.setMin(formDateTime);
-//            workCalendarStartPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30)));
-//            DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
-//            workCalendarEndPickerPicker.setMin(formDateTime);
-//            workCalendarEndPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30))
-//                    .plusDays(2));
-//            workCalendarEndPickerPicker.setMax(formDateTime.plusDays(9));
-//            schedulingForm.add(workCalendarStartPickerPicker, 1);
-//            schedulingForm.add(workCalendarEndPickerPicker, 1);
-
-            TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
-            playerSleepStartPicker.setValue(SchedulingPlayer.DEFAULT_SLEEP_START);
-            TimePicker playerSleepEndPicker = new TimePicker("Player Sleep End");
-            playerSleepEndPicker.setValue(SchedulingPlayer.DEFAULT_SLEEP_END);
-            schedulingForm.add(playerSleepStartPicker, 1);
-            schedulingForm.add(playerSleepEndPicker, 1);
-
-            dialogWrapper.add(schedulingForm);
-
-            Dialog.DialogFooter footer = dialog.getFooter();
-            footer.add(
-                    new Button(
-                            "Confirm",
-                            footerBtnClicked -> {
-                                Set<OrderEntity> selectedOrder = orderGrid.getSelectedItems();
-                                DateTimeSlotSize dateTimeSlotSize = slotSizeSelect.getValue();
-//                                LocalDateTime workCalendarStartPickerPickerValue =
-//                                        workCalendarStartPickerPicker.getValue();
-//                                LocalDateTime workCalendarEndPickerPickerValue = workCalendarEndPickerPicker.getValue();
-                                LocalTime sleepStartPickerValue = playerSleepStartPicker.getValue();
-                                LocalTime sleepEndPickerValue = playerSleepEndPicker.getValue();
-
-                                String uuid = schedulingViewPresenter.backendPrepareTownshipScheduling(
-                                        selectedOrder,
-                                        dateTimeSlotSize,
-                                        LocalDateTime.now(),
-//                                        LocalDateTime.now().plusDays(7),
-                                        sleepStartPickerValue,
-                                        sleepEndPickerValue
-                                );
-
-                                dialog.close();
-                                UI.getCurrent()
-                                        .navigate(
-                                                SchedulingView.class,
-                                                new RouteParam("schedulingId", uuid)
-                                        );
-                            }
-                    )
-            );
-
-            dialog.open();
-        });
-        add(newSchedulingBtn);
-
-        AtomicInteger idRoller = new AtomicInteger(1);
-        Grid<SchedulingProblemVo> grid = new Grid<>(SchedulingProblemVo.class, false);
-        grid.addColumn(vo -> idRoller.getAndIncrement())
-                .setHeader("#")
-                .setAutoWidth(true)
-                .setFlexGrow(0)
-        ;
-        grid.addColumn(new ComponentRenderer<>(
-                        schedulingProblemVo -> new RouterLink(
-                                schedulingProblemVo.getUuid(),
-                                SchedulingView.class,
-                                new RouteParameters("schedulingId", schedulingProblemVo.getUuid())
-                        )))
-                .setHeader("UUID")
-                .setAutoWidth(true)
-                .setFlexGrow(1)
-        ;
-        grid.addColumn(new ComponentRenderer<>(funOrdersGridItemsRenderer()))
-                .setHeader("Items")
-                .setAutoWidth(true)
-                .setFlexGrow(1)
-        ;
-        grid.addColumn(SchedulingProblemVo::getSolverStatus)
-                .setHeader("status")
-                .setAutoWidth(true)
-                .setFlexGrow(1)
-        ;
-        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
-
-        GridContextMenu<SchedulingProblemVo> problemGridContextMenu = grid.addContextMenu();
-        problemGridContextMenu.addItem(
-                "Unlink",
-                clicked -> {
-                    clicked.getItem()
-                            .ifPresentOrElse(
-                                    schedulingProblemVo -> {
-                                        String problemId = schedulingProblemVo.getUuid();
-                                        getSchedulingViewPresenter().getSchedulingService()
-                                                .unlink(problemId)
-                                        ;
-                                        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
-                                        Notification.show("Done");
-                                    }, () -> {
-                                        Notification.show("No Item");
-                                    }
-                            );
-                }
-        );
-        problemGridContextMenu.addItem(
-                "Remove",
-                itemContentClicked -> {
-                    itemContentClicked.getItem()
-                            .ifPresentOrElse(
-                                    schedulingProblemVo -> {
-                                        String problemId = schedulingProblemVo.getUuid();
-                                        getSchedulingViewPresenter().getSchedulingService()
-                                                .remove(problemId)
-                                        ;
-                                        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
-                                        Notification.show("Done");
-                                    }, () -> {
-                                        Notification.show("No Item");
-                                    }
-                            );
-
-                }
-        );
-        problemGridContextMenu.addSeparator();
-        problemGridContextMenu.addItem(
-                "Load Settled Problems",
-                clicked -> {
-                    idRoller.set(1);
-                    getSchedulingViewPresenter().getSchedulingService()
-                            .loadPersistedSchedulingProblem()
-                    ;
-                    grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
-                    Notification.show("Done");
-                }
-        );
-        problemGridContextMenu.addSeparator();
-        setupBenchmarkFeature(problemGridContextMenu);
-        addAndExpand(grid);
 
     }
 
@@ -352,7 +193,10 @@ public class SchedulingView
         this.getSchedulingViewPresenter()
                 .setupSlotSizeSelectReadValue(slotSizeSelect);
         slotSizeSelect.setReadOnly(true);
-        schedulingForm.add(slotSizeSelect, 2);
+        schedulingForm.add(
+                slotSizeSelect,
+                2
+        );
 
         DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
         this.getSchedulingViewPresenter()
@@ -362,8 +206,14 @@ public class SchedulingView
         this.getSchedulingViewPresenter()
                 .setupWorkCalendarEndPickerPickerReadValue(workCalendarEndPickerPicker);
         workCalendarEndPickerPicker.setReadOnly(true);
-        schedulingForm.add(workCalendarStartPickerPicker, 1);
-        schedulingForm.add(workCalendarEndPickerPicker, 1);
+        schedulingForm.add(
+                workCalendarStartPickerPicker,
+                1
+        );
+        schedulingForm.add(
+                workCalendarEndPickerPicker,
+                1
+        );
 
         TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
         this.getSchedulingViewPresenter()
@@ -373,11 +223,20 @@ public class SchedulingView
         this.getSchedulingViewPresenter()
                 .setupPlayerSleepEndPickerReadValue(playerSleepEndPicker);
         playerSleepEndPicker.setReadOnly(true);
-        schedulingForm.add(playerSleepStartPicker, 1);
-        schedulingForm.add(playerSleepEndPicker, 1);
+        schedulingForm.add(
+                playerSleepStartPicker,
+                1
+        );
+        schedulingForm.add(
+                playerSleepEndPicker,
+                1
+        );
         panel.add(schedulingForm);
 
-        orderBriefGrid = new Grid<>(SchedulingOrderVo.class, false);
+        orderBriefGrid = new Grid<>(
+                SchedulingOrderVo.class,
+                false
+        );
         orderBriefGrid.addColumn(new ComponentRenderer<>(
                         schedulingOrderVo -> {
                             return new Span(schedulingOrderVo.getOrderType()
@@ -422,32 +281,89 @@ public class SchedulingView
         return panel;
     }
 
+    private SerializableFunction<SchedulingOrderVo, Main> funOrderBriefItemsRenderer() {
+        return schedulingOrderVo -> {
+            Main layout = new Main();
+            layout.addClassNames(
+                    LumoUtility.Display.FLEX,
+                    LumoUtility.FlexDirection.ROW,
+                    LumoUtility.Margin.NONE,
+                    LumoUtility.Width.FULL,
+                    LumoUtility.Height.FULL
+            );
+            ProductAmountBill productAmountBill = schedulingOrderVo.getProductAmountBill();
+            Div div = new Div();
+            div.addClassNames(
+                    LumoUtility.Width.AUTO,
+                    LumoUtility.Display.FLEX,
+                    LumoUtility.FlexDirection.COLUMN
+            );
+
+            productAmountBill.entrySet()
+                    .stream()
+                    .map((productAmountEntry) -> {
+                        Span span = new Span();
+                        SchedulingProduct schedulingProduct = productAmountEntry.getKey();
+                        String productName = schedulingProduct.getName();
+                        span.add(this.schedulingViewPresenter.getProductImage(productName));
+                        span.add(productName);
+                        span.add(" x" + productAmountEntry.getValue());
+                        return span;
+                    })
+                    .forEach(div::add)
+            ;
+            layout.add(div);
+            return layout;
+        };
+    }
+
     private HorizontalLayout buildScoreAndButtonPanel() {
         HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
         Button startButon = new Button("Start");
-        startButon.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+        startButon.addThemeVariants(
+                ButtonVariant.LUMO_PRIMARY,
+                ButtonVariant.LUMO_LARGE
+        );
         startButon.addClickListener(_ -> this.schedulingViewPresenter.onStartButton());
         Button stopButton = new Button("Stop");
         stopButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         stopButton.addClickListener(_ -> this.schedulingViewPresenter.onStopButton());
-        this.triggerButton = new TriggerButton(startButon, stopButton);
+        this.triggerButton = new TriggerButton(
+                startButon,
+                stopButton
+        );
         this.schedulingViewPresenter.setButtonState(this.triggerButton);
         schedulingBtnPanel.setWidthFull();
         schedulingBtnPanel.setJustifyContentMode(JustifyContentMode.BETWEEN);
-        schedulingBtnPanel.add(buildScorePanel(), triggerButton);
+        schedulingBtnPanel.add(
+                buildScorePanel(),
+                triggerButton
+        );
         return schedulingBtnPanel;
+    }
+
+    private HorizontalLayout buildScorePanel() {
+        HorizontalLayout layout = new HorizontalLayout();
+        layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        layout.setJustifyContentMode(JustifyContentMode.START);
+        scoreAnalysisParagraph = new Paragraph();
+        layout.add(scoreAnalysisParagraph);
+        getSchedulingViewPresenter().setupScoreAnalysisParagraph();
+        return layout;
     }
 
     private VerticalLayout buildProducingArrangementsGrid() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        arrangementTreeGrid = new TreeGrid<>(SchedulingProducingArrangement.class, false);
+        arrangementTreeGrid = new TreeGrid<>(
+                SchedulingProducingArrangementViewModel.class,
+                false
+        );
         arrangementTreeGrid.setMultiSort(true);
         arrangementTreeGrid.addComponentHierarchyColumn(producingArrangement -> {
                     HorizontalLayout horizontalLayout = new HorizontalLayout();
                     horizontalLayout.setSpacing(false);
                     horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
-                    String name = producingArrangement.getSchedulingProduct()
-                            .getName();
+                    String name = producingArrangement.product().name();
                     horizontalLayout.add(this.getSchedulingViewPresenter()
                             .getProductImage(name));
                     horizontalLayout.add(name);
@@ -456,19 +372,17 @@ public class SchedulingView
                 .setResizable(true)
                 .setHeader("Product")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getSchedulingOrder)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::order)
                 .setRenderer(new TextRenderer<>(schedulingProducingArrangement -> {
-                    SchedulingOrder schedulingOrder = schedulingProducingArrangement.getSchedulingOrder();
-                    return schedulingOrder.getOrderType() + "#" + schedulingOrder.getId();
+                    return schedulingProducingArrangement.order().getReadable();
                 }))
                 .setResizable(true)
                 .setHeader("Order")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getPlanningFactoryInstance)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::assignedFactoryInstance)
                 .setRenderer(new TextRenderer<>(producingArrangement -> {
-                    return Optional.ofNullable(producingArrangement.getPlanningFactoryInstance())
-                            .map(schedulingFactoryInstance -> schedulingFactoryInstance.getFactoryReadableIdentifier()
-                                    .toString())
+                    return Optional.ofNullable(producingArrangement.assignedFactoryInstance())
+                            .map(SchedulingFactoryInstanceViewModel::factoryReadableIdentifier)
                             .orElse("N/A");
                 }
                 ))
@@ -477,16 +391,16 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setHeader("Assign Factory")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getProducingDuration)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::producingDuration)
                 .setSortable(true)
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Item Producing Duration")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getArrangeDateTime)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::arrangeDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
-                        SchedulingProducingArrangement::getArrangeDateTime,
+                        SchedulingProducingArrangementViewModel::arrangeDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setSortable(true)
@@ -495,18 +409,18 @@ public class SchedulingView
                 .setFlexGrow(1)
                 .setHeader("Arrange Date Time")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getProducingDateTime)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::producingDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
-                        SchedulingProducingArrangement::getProducingDateTime,
+                        SchedulingProducingArrangementViewModel::producingDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Producing Date Time")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangement::getCompletedDateTime)
+        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::completedDateTime)
                 .setRenderer(new LocalDateTimeRenderer<>(
-                        SchedulingProducingArrangement::getCompletedDateTime,
+                        SchedulingProducingArrangementViewModel::completedDateTime,
                         "yyyy-MM-dd HH:mm:ss"
                 ))
                 .setSortable(true)
@@ -523,6 +437,199 @@ public class SchedulingView
                 arrangementTreeGrid
         );
         return gameActionArticle;
+    }
+
+    private void schedulingOrdersUi() {
+        Button newSchedulingBtn = new Button(VaadinIcon.PLUS.create());
+        newSchedulingBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        newSchedulingBtn.addClickListener(clicked -> {
+            Dialog dialog = new Dialog("Before Scheduler Start...");
+            dialog.setSizeFull();
+
+            VerticalLayout dialogWrapper = new VerticalLayout();
+            dialogWrapper.setWidthFull();
+            dialog.add(dialogWrapper);
+
+            OrderGrid orderGrid = new OrderGrid(
+                    schedulingViewPresenter.fetchPlayerOrders(),
+                    false
+            );
+            orderGrid.setPageSize(4);
+            orderGrid.setSelectionMode(Grid.SelectionMode.MULTI);
+            orderGrid.asMultiSelect()
+                    .select(orderGrid.getGenericDataView()
+                            .getItems()
+                            .toList());
+            dialogWrapper.add(orderGrid);
+
+            FormLayout schedulingForm = new FormLayout();
+
+            Select<DateTimeSlotSize> slotSizeSelect = new Select<>();
+            slotSizeSelect.setLabel("Scheduling Time Slot");
+            slotSizeSelect.setNoVerticalOverlap(true);
+            slotSizeSelect.setItems(DateTimeSlotSize.values());
+            slotSizeSelect.setValue(DateTimeSlotSize.HOUR);
+            schedulingForm.add(
+                    slotSizeSelect,
+                    2
+            );
+
+//            DateTimePicker workCalendarStartPickerPicker = new DateTimePicker("Work Calendar Start");
+//            workCalendarStartPickerPicker.setMin(formDateTime);
+//            workCalendarStartPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30)));
+//            DateTimePicker workCalendarEndPickerPicker = new DateTimePicker("Work Calendar End");
+//            workCalendarEndPickerPicker.setMin(formDateTime);
+//            workCalendarEndPickerPicker.setValue(formDateTime.plus(Duration.ofMinutes(30))
+//                    .plusDays(2));
+//            workCalendarEndPickerPicker.setMax(formDateTime.plusDays(9));
+//            schedulingForm.add(workCalendarStartPickerPicker, 1);
+//            schedulingForm.add(workCalendarEndPickerPicker, 1);
+
+            TimePicker playerSleepStartPicker = new TimePicker("Player Sleep Start");
+            playerSleepStartPicker.setValue(SchedulingPlayer.DEFAULT_SLEEP_START);
+            TimePicker playerSleepEndPicker = new TimePicker("Player Sleep End");
+            playerSleepEndPicker.setValue(SchedulingPlayer.DEFAULT_SLEEP_END);
+            schedulingForm.add(
+                    playerSleepStartPicker,
+                    1
+            );
+            schedulingForm.add(
+                    playerSleepEndPicker,
+                    1
+            );
+
+            dialogWrapper.add(schedulingForm);
+
+            Dialog.DialogFooter footer = dialog.getFooter();
+            footer.add(
+                    new Button(
+                            "Confirm",
+                            footerBtnClicked -> {
+                                Set<OrderEntity> selectedOrder = orderGrid.getSelectedItems();
+                                DateTimeSlotSize dateTimeSlotSize = slotSizeSelect.getValue();
+//                                LocalDateTime workCalendarStartPickerPickerValue =
+//                                        workCalendarStartPickerPicker.getValue();
+//                                LocalDateTime workCalendarEndPickerPickerValue = workCalendarEndPickerPicker.getValue();
+                                LocalTime sleepStartPickerValue = playerSleepStartPicker.getValue();
+                                LocalTime sleepEndPickerValue = playerSleepEndPicker.getValue();
+
+                                String uuid = schedulingViewPresenter.backendPrepareTownshipScheduling(
+                                        selectedOrder,
+                                        dateTimeSlotSize,
+                                        LocalDateTime.now(),
+//                                        LocalDateTime.now().plusDays(7),
+                                        sleepStartPickerValue,
+                                        sleepEndPickerValue
+                                );
+
+                                dialog.close();
+                                UI.getCurrent()
+                                        .navigate(
+                                                SchedulingView.class,
+                                                new RouteParam(
+                                                        "schedulingId",
+                                                        uuid
+                                                )
+                                        );
+                            }
+                    )
+            );
+
+            dialog.open();
+        });
+        add(newSchedulingBtn);
+
+        AtomicInteger idRoller = new AtomicInteger(1);
+        Grid<SchedulingProblemVo> grid = new Grid<>(
+                SchedulingProblemVo.class,
+                false
+        );
+        grid.addColumn(vo -> idRoller.getAndIncrement())
+                .setHeader("#")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
+        ;
+        grid.addColumn(new ComponentRenderer<>(
+                        schedulingProblemVo -> new RouterLink(
+                                schedulingProblemVo.getUuid(),
+                                SchedulingView.class,
+                                new RouteParameters(
+                                        "schedulingId",
+                                        schedulingProblemVo.getUuid()
+                                )
+                        )))
+                .setHeader("UUID")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+        ;
+        grid.addColumn(new ComponentRenderer<>(funOrdersGridItemsRenderer()))
+                .setHeader("Items")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+        ;
+        grid.addColumn(SchedulingProblemVo::getSolverStatus)
+                .setHeader("status")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+        ;
+        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+
+        GridContextMenu<SchedulingProblemVo> problemGridContextMenu = grid.addContextMenu();
+        problemGridContextMenu.addItem(
+                "Unlink",
+                clicked -> {
+                    clicked.getItem()
+                            .ifPresentOrElse(
+                                    schedulingProblemVo -> {
+                                        String problemId = schedulingProblemVo.getUuid();
+                                        getSchedulingViewPresenter().getSchedulingService()
+                                                .unlink(problemId)
+                                        ;
+                                        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+                                        Notification.show("Done");
+                                    },
+                                    () -> {
+                                        Notification.show("No Item");
+                                    }
+                            );
+                }
+        );
+        problemGridContextMenu.addItem(
+                "Remove",
+                itemContentClicked -> {
+                    itemContentClicked.getItem()
+                            .ifPresentOrElse(
+                                    schedulingProblemVo -> {
+                                        String problemId = schedulingProblemVo.getUuid();
+                                        getSchedulingViewPresenter().getSchedulingService()
+                                                .remove(problemId)
+                                        ;
+                                        grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+                                        Notification.show("Done");
+                                    },
+                                    () -> {
+                                        Notification.show("No Item");
+                                    }
+                            );
+
+                }
+        );
+        problemGridContextMenu.addSeparator();
+        problemGridContextMenu.addItem(
+                "Load Settled Problems",
+                clicked -> {
+                    idRoller.set(1);
+                    getSchedulingViewPresenter().getSchedulingService()
+                            .loadPersistedSchedulingProblem()
+                    ;
+                    grid.setItems(schedulingViewPresenter.viewFromLinkedSchedulingProblem());
+                    Notification.show("Done");
+                }
+        );
+        problemGridContextMenu.addSeparator();
+        setupBenchmarkFeature(problemGridContextMenu);
+        addAndExpand(grid);
+
     }
 
     private SerializableFunction<SchedulingProblemVo, Main> funOrdersGridItemsRenderer() {
@@ -579,7 +686,10 @@ public class SchedulingView
                     dialog.setModality(ModalityMode.STRICT);
                     dialog.setCloseOnEsc(false);
                     dialog.setCloseOnOutsideClick(false);
-                    dialog.setWidth(67.8F, Unit.VW);
+                    dialog.setWidth(
+                            67.8F,
+                            Unit.VW
+                    );
 
                     Dialog.DialogHeader dialogHeader = dialog.getHeader();
                     HorizontalLayout dialogHeaderLayout = new HorizontalLayout();
@@ -605,7 +715,10 @@ public class SchedulingView
 
                         TownshipSchedulingBenchmarkRequestFormLayout form = new TownshipSchedulingBenchmarkRequestFormLayout(problemUuid);
                         Button startButton = new Button(VaadinIcon.PLAY_CIRCLE_O.create()) {{
-                            addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+                            addThemeVariants(
+                                    ButtonVariant.LUMO_PRIMARY,
+                                    ButtonVariant.LUMO_LARGE
+                            );
                         }};
                         dialogWrapper.addAndExpand(form);
                         dialogWrapper.add(startButton);
@@ -644,18 +757,30 @@ public class SchedulingView
 
                                                         StreamResource resource = new StreamResource(
                                                                 zipFileName,
-                                                                () -> createZipInputStream("BenchmarkReport", mayNullFile)
+                                                                () -> createZipInputStream(
+                                                                        "BenchmarkReport",
+                                                                        mayNullFile
+                                                                )
                                                         );
 
-                                                        Anchor downloadLink = new Anchor(resource, "Download Benchmark Repost(zip)");
+                                                        Anchor downloadLink = new Anchor(
+                                                                resource,
+                                                                "Download Benchmark Repost(zip)"
+                                                        );
                                                         downloadLink.getElement()
-                                                                .setAttribute("download", true);
+                                                                .setAttribute(
+                                                                        "download",
+                                                                        true
+                                                                );
                                                         downloadLink.getElement()
                                                                 .getThemeList()
                                                                 .add("primary");
 
                                                         dialogWrapper.add(downloadLink);
-                                                        dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER, downloadLink);
+                                                        dialogWrapper.setHorizontalComponentAlignment(
+                                                                Alignment.CENTER,
+                                                                downloadLink
+                                                        );
 
                                                     } else {
                                                         Notification notification = new Notification("couldn't find benchmark file(s)");
@@ -680,64 +805,34 @@ public class SchedulingView
         );
     }
 
-    private SerializableFunction<SchedulingOrderVo, Main> funOrderBriefItemsRenderer() {
-        return schedulingOrderVo -> {
-            Main layout = new Main();
-            layout.addClassNames(
-                    LumoUtility.Display.FLEX,
-                    LumoUtility.FlexDirection.ROW,
-                    LumoUtility.Margin.NONE,
-                    LumoUtility.Width.FULL,
-                    LumoUtility.Height.FULL
-            );
-            ProductAmountBill productAmountBill = schedulingOrderVo.getProductAmountBill();
-            Div div = new Div();
-            div.addClassNames(
-                    LumoUtility.Width.AUTO,
-                    LumoUtility.Display.FLEX,
-                    LumoUtility.FlexDirection.COLUMN
-            );
-
-            productAmountBill.entrySet()
-                    .stream()
-                    .map((productAmountEntry) -> {
-                        Span span = new Span();
-                        SchedulingProduct schedulingProduct = productAmountEntry.getKey();
-                        String productName = schedulingProduct.getName();
-                        span.add(this.schedulingViewPresenter.getProductImage(productName));
-                        span.add(productName);
-                        span.add(" x" + productAmountEntry.getValue());
-                        return span;
-                    })
-                    .forEach(div::add)
-            ;
-            layout.add(div);
-            return layout;
-        };
-    }
-
-    private HorizontalLayout buildScorePanel() {
-        HorizontalLayout layout = new HorizontalLayout();
-        layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        layout.setJustifyContentMode(JustifyContentMode.START);
-        scoreAnalysisParagraph = new Paragraph();
-        layout.add(scoreAnalysisParagraph);
-        getSchedulingViewPresenter().setupScoreAnalysisParagraph();
-        return layout;
-    }
-
-    private InputStream createZipInputStream(String zipRootName, File file) {
+    private InputStream createZipInputStream(
+            String zipRootName,
+            File file
+    ) {
         try {
-            Path tempZip = Files.createTempFile("benchmark_report_", ".zip");
+            Path tempZip = Files.createTempFile(
+                    "benchmark_report_",
+                    ".zip"
+            );
 
             try (var zos = new ZipOutputStream(Files.newOutputStream(tempZip))) {
-                ReportZipUtil.zipReportDirectory(zos, file, zipRootName);
+                ReportZipUtil.zipReportDirectory(
+                        zos,
+                        file,
+                        zipRootName
+                );
             }
 
-            return Files.newInputStream(tempZip, StandardOpenOption.DELETE_ON_CLOSE);
+            return Files.newInputStream(
+                    tempZip,
+                    StandardOpenOption.DELETE_ON_CLOSE
+            );
 
         } catch (IOException e) {
-            throw new RuntimeException("benchmark report zip failed", e);
+            throw new RuntimeException(
+                    "benchmark report zip failed",
+                    e
+            );
         }
     }
 
@@ -759,11 +854,20 @@ public class SchedulingView
         public TownshipSchedulingBenchmarkRequestFormLayout(String problemUuid) {
             this.problemUuid = problemUuid;
             this.townshipSchedulingBenchmarkRequest.setProblemId(this.problemUuid);
-            this.binder.bindReadOnly(this.problemId, TownshipSchedulingBenchmarkRequest::getProblemId);
+            this.binder.bindReadOnly(
+                    this.problemId,
+                    TownshipSchedulingBenchmarkRequest::getProblemId
+            );
             this.binder.forField(benchmarkSize)
-                    .bind(TownshipSchedulingBenchmarkRequest::getBenchmarkSize, TownshipSchedulingBenchmarkRequest::setBenchmarkSize);
+                    .bind(
+                            TownshipSchedulingBenchmarkRequest::getBenchmarkSize,
+                            TownshipSchedulingBenchmarkRequest::setBenchmarkSize
+                    );
             this.binder.forField(benchmarkStrategy)
-                    .bind(TownshipSchedulingBenchmarkRequest::getBenchmarkStrategy, TownshipSchedulingBenchmarkRequest::setBenchmarkStrategy);
+                    .bind(
+                            TownshipSchedulingBenchmarkRequest::getBenchmarkStrategy,
+                            TownshipSchedulingBenchmarkRequest::setBenchmarkStrategy
+                    );
             this.binder.setBean(townshipSchedulingBenchmarkRequest);
 
             this.benchmarkSize.setItems(TownshipSchedulingBenchmarkRequest.BenchmarkSize.values());
@@ -772,7 +876,11 @@ public class SchedulingView
             this.benchmarkSize.setValue(TownshipSchedulingBenchmarkRequest.BenchmarkSize.SELF);
             this.benchmarkStrategy.setValue(TownshipSchedulingBenchmarkRequest.BenchmarkStrategy.BUILTIN);
 
-            getContent().add(problemId, benchmarkSize, benchmarkStrategy);
+            getContent().add(
+                    problemId,
+                    benchmarkSize,
+                    benchmarkStrategy
+            );
         }
 
         public void frozen() {
@@ -801,7 +909,10 @@ public class SchedulingView
                 boolean fromClient,
                 String message
         ) {
-            this(source, fromClient);
+            this(
+                    source,
+                    fromClient
+            );
             this.message = message;
         }
 
@@ -827,7 +938,10 @@ public class SchedulingView
                 boolean fromClient,
                 String message
         ) {
-            this(source, fromClient);
+            this(
+                    source,
+                    fromClient
+            );
             this.message = message;
         }
 

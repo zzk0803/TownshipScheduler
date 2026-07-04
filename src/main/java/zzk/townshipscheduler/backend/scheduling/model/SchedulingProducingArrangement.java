@@ -86,6 +86,7 @@ public class SchedulingProducingArrangement implements Serializable, Comparable<
     @JsonIgnore
     private SequencedSet<SchedulingProducingArrangement> deepPrerequisiteProducingArrangements = new LinkedHashSet<>();
 
+    @EqualsAndHashCode.Include
     private int prerequisiteProducingArrangementsSize;
 
     @EqualsAndHashCode.Include

@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 @Value
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SchedulingFactoryInstanceVO implements Serializable {
+public class LitSchedulingFactoryInstanceVO implements Serializable {
 
     private static final long serialVersionUID = 8503586802835134749L;
 

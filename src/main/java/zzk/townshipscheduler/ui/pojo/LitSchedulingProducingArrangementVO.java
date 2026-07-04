@@ -8,12 +8,11 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 
 @Value
 @AllArgsConstructor
-public class SchedulingProducingArrangementVO {
+public class LitSchedulingProducingArrangementVO {
 
     int id;
 
@@ -45,7 +44,7 @@ public class SchedulingProducingArrangementVO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime completedDateTime;
 
-    public SchedulingProducingArrangementVO(
+    public LitSchedulingProducingArrangementVO(
             SchedulingProducingArrangement schedulingProducingArrangement
     ) {
         SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
