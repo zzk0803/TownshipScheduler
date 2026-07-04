@@ -10,6 +10,7 @@ import java.io.Serializable;
 public record SchedulingFactoryInstanceViewModel(
         int id,
         long fieldFactoryId,
+        int level,
         String categoryName,
         int seqNum,
         int producingLength,

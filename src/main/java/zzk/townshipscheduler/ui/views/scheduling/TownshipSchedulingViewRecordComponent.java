@@ -61,6 +61,8 @@ public class TownshipSchedulingViewRecordComponent {
                 mapAndGetSchedulingDateTimeSlotViewModel(),
                 mapAndGetSchedulingProducingArrangementViewModel(),
                 mapAndGetSchedulingWorkCalendarViewModel(),
+                getTownshipSchedulingProblem().getDateTimeSlotSize()
+                        .getMinute(),
                 mapAndGetSchedulingPlayerViewModel(),
                 getTownshipSchedulingProblem().getSolverStatus()
                         .name(),
@@ -117,18 +119,31 @@ public class TownshipSchedulingViewRecordComponent {
                         Integer id = schedulingProducingArrangement.getId();
                         String uuid = schedulingProducingArrangement.getUuid()
                                 .toString();
-                        SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId modelId = SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId.of(
+                        SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId modelId
+                                = SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId.of(
                                 id,
                                 uuid
                         );
                         SchedulingProductViewModel product = buildOrGetSchedulingProductViewModel(schedulingProducingArrangement.getSchedulingProduct());
-                        SchedulingProductViewModel orderProduct = buildOrGetSchedulingProductViewModel(schedulingProducingArrangement.getSchedulingOrderProduct());
+                        SchedulingProductViewModel orderProduct = buildOrGetSchedulingProductViewModel(
+                                schedulingProducingArrangement.getSchedulingOrderProduct()
+                        );
                         SchedulingOrderViewModel order = buildOrGetSchedulingOrderViewModel(schedulingProducingArrangement.getSchedulingOrder());
+                        SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId orderProductArrangementId =
+                                SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId.of(
+                                        schedulingProducingArrangement.getSupportOrderProducingArrangement()
+                                                .getId(),
+                                        schedulingProducingArrangement.getSupportOrderProducingArrangement()
+                                                .getUuid()
+                                                .toString()
+                                );
                         boolean boolOrderDirect = schedulingProducingArrangement.boolOrderDirect();
                         Duration producingDuration = schedulingProducingArrangement.getProducingDuration();
                         Duration staticDeepPrerequisiteProducingDuration = schedulingProducingArrangement.getStaticDeepPrerequisiteProducingDuration();
                         Duration staticDeepProducingDuration = schedulingProducingArrangement.getStaticDeepProducingDuration();
-                        SchedulingFactoryInstanceViewModel assignedFactoryInstance = buildOrGetSchedulingFactoryInstanceViewModel(schedulingProducingArrangement.getPlanningFactoryInstance());
+                        SchedulingFactoryInstanceViewModel assignedFactoryInstance = buildOrGetSchedulingFactoryInstanceViewModel(
+                                schedulingProducingArrangement.getPlanningFactoryInstance()
+                        );
                         LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
                         LocalDateTime producingDateTime = schedulingProducingArrangement.getProducingDateTime();
                         LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
@@ -143,6 +158,7 @@ public class TownshipSchedulingViewRecordComponent {
                                 product,
                                 orderProduct,
                                 order,
+                                orderProductArrangementId,
                                 boolOrderDirect,
                                 prerequisiteProducingArrangements,
                                 producingDuration,
@@ -241,6 +257,8 @@ public class TownshipSchedulingViewRecordComponent {
                 factoryInMap -> new SchedulingFactoryInstanceViewModel(
                         planningFactoryInstance.getId(),
                         planningFactoryInstance.getFieldFactoryId(),
+                        planningFactoryInstance.getSchedulingFactoryInfo()
+                                .getLevel(),
                         planningFactoryInstance.getCategoryName(),
                         planningFactoryInstance.getSeqNum(),
                         planningFactoryInstance.getProducingLength(),

@@ -3,11 +3,7 @@ package zzk.townshipscheduler.ui.components;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
-import zzk.townshipscheduler.backend.scheduling.model.*;
-import zzk.townshipscheduler.ui.pojo.LitSchedulingFactoryInstanceVO;
-import zzk.townshipscheduler.ui.pojo.LitSchedulingOrderVo;
-import zzk.townshipscheduler.ui.pojo.LitSchedulingProducingArrangementUnitGroupViewModel;
-import zzk.townshipscheduler.ui.pojo.LitSchedulingProducingArrangementVO;
+import zzk.townshipscheduler.ui.pojo.*;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
 import java.time.format.DateTimeFormatter;
@@ -41,38 +37,38 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     public void updateRemoteFull() {
-        updateRemoteFull(this.schedulingViewPresenter.getTownshipSchedulingProblem());
+        updateRemoteFull(this.schedulingViewPresenter.getTownshipSchedulingProblemViewModel());
     }
 
-    private void updateRemoteFull(TownshipSchedulingProblem townshipSchedulingProblem) {
+    private void updateRemoteFull(TownshipSchedulingProblemViewModel townshipSchedulingProblem) {
         setPropertyObject(
                 "schedulingWorkCalendar",
-                townshipSchedulingProblem.getSchedulingWorkCalendar()
+                townshipSchedulingProblem.schedulingWorkCalendar()
         );
         setPropertyList(
                 "schedulingOrders",
-                toOrderVo(townshipSchedulingProblem.getSchedulingOrderList())
+                toOrderVo(townshipSchedulingProblem.schedulingOrderViewModels())
         );
         setPropertyList(
                 "schedulingProducts",
-                townshipSchedulingProblem.getSchedulingProductList()
+                Arrays.asList(townshipSchedulingProblem.schedulingProductViewModels()
+                        .toArray())
         );
         setPropertyList(
                 "schedulingFactoryInstances",
-                toFactoryInstanceVo(townshipSchedulingProblem.getSchedulingFactoryInstanceList())
+                toFactoryInstanceVo(townshipSchedulingProblem.schedulingFactoryInstanceViewModels())
         );
         setPropertyList(
                 "schedulingProducingArrangements",
-                toProducingArrangementVo(townshipSchedulingProblem.getSchedulingProducingArrangements())
+                toProducingArrangementVo(townshipSchedulingProblem.schedulingProducingArrangementViewModels())
         );
         setPropertyList(
                 "schedulingProducingArrangementUnitGroups",
-                toProducingArrangementUnitGroupVo(townshipSchedulingProblem.getSchedulingProducingArrangements())
+                toProducingArrangementUnitGroupVo(townshipSchedulingProblem.schedulingProducingArrangementViewModels())
         );
         setPropertyNumber(
                 "dateTimeSlotSizeInMinute",
-                townshipSchedulingProblem.getDateTimeSlotSize()
-                        .getMinute()
+                townshipSchedulingProblem.dateTimeSlotDurationInMinute()
         );
 
     }
@@ -97,13 +93,12 @@ public class LitSchedulingVisTimelinePanel extends Component {
         );
     }
 
-    private List<LitSchedulingOrderVo> toOrderVo(List<SchedulingOrder> schedulingOrderList) {
+    private List<LitSchedulingOrderVo> toOrderVo(Collection<SchedulingOrderViewModel> schedulingOrderList) {
         return schedulingOrderList.stream()
                 .map(schedulingOrder -> new LitSchedulingOrderVo(
-                        schedulingOrder.getId(),
-                        schedulingOrder.getOrderType()
-                                .name(),
-                        Optional.ofNullable(schedulingOrder.getDeadline())
+                        schedulingOrder.id(),
+                        schedulingOrder.orderType(),
+                        Optional.ofNullable(schedulingOrder.deadline())
                                 .map(localDateTime -> localDateTime.format(
                                         DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                                 )
@@ -113,22 +108,21 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     private List<LitSchedulingFactoryInstanceVO> toFactoryInstanceVo(
-            List<SchedulingFactoryInstance> schedulingFactoryInstanceList
+            Collection<SchedulingFactoryInstanceViewModel> schedulingFactoryInstanceList
     ) {
         return schedulingFactoryInstanceList.stream()
                 .sorted(
                         Comparator.comparing(
-                                schedulingFactoryInstance -> schedulingFactoryInstance.getSchedulingFactoryInfo()
-                                        .getLevel())
+                                SchedulingFactoryInstanceViewModel::level
+                        )
                 )
                 .map(schedulingFactoryInstance -> {
-                    Integer id = schedulingFactoryInstance.getId();
-                    String categoryName = schedulingFactoryInstance.getCategoryName();
-                    int seqNum = schedulingFactoryInstance.getSeqNum();
-                    int producingLength = schedulingFactoryInstance.getProducingLength();
-                    int reapWindowSize = schedulingFactoryInstance.getReapWindowSize();
-                    FactoryReadableIdentifier factoryReadableIdentifier
-                            = schedulingFactoryInstance.getFactoryReadableIdentifier();
+                    Integer id = schedulingFactoryInstance.id();
+                    String categoryName = schedulingFactoryInstance.categoryName();
+                    int seqNum = schedulingFactoryInstance.seqNum();
+                    int producingLength = schedulingFactoryInstance.producingLength();
+                    int reapWindowSize = schedulingFactoryInstance.reapWindowSize();
+                    String factoryReadableIdentifier = schedulingFactoryInstance.factoryReadableIdentifier();
 
                     return new LitSchedulingFactoryInstanceVO(
                             id,
@@ -136,14 +130,14 @@ public class LitSchedulingVisTimelinePanel extends Component {
                             seqNum,
                             producingLength,
                             reapWindowSize,
-                            factoryReadableIdentifier.toString()
+                            factoryReadableIdentifier
                     );
                 })
                 .toList();
     }
 
     private List<LitSchedulingProducingArrangementVO> toProducingArrangementVo(
-            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
+            Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangementList
     ) {
         return schedulingProducingArrangementList.stream()
                 .map(LitSchedulingProducingArrangementVO::new)
@@ -152,37 +146,37 @@ public class LitSchedulingVisTimelinePanel extends Component {
     }
 
     private List<LitSchedulingProducingArrangementUnitGroupViewModel> toProducingArrangementUnitGroupVo(
-            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
+            Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangementList
     ) {
-        Map<SchedulingOrder, List<SchedulingProducingArrangement>> orderArrangeMap
+        Map<SchedulingOrderViewModel, List<SchedulingProducingArrangementViewModel>> orderArrangeMap
                 = schedulingProducingArrangementList.stream()
-                .filter(SchedulingProducingArrangement::boolOrderDirect)
+                .filter(SchedulingProducingArrangementViewModel::boolDirectToOrder)
                 .collect(
-                        Collectors.groupingBy(SchedulingProducingArrangement::getSchedulingOrder)
+                        Collectors.groupingBy(SchedulingProducingArrangementViewModel::order)
                 );
 
         return orderArrangeMap.entrySet()
                 .stream()
                 .map(
                         orderAndArrangeList -> {
-                            SchedulingOrder schedulingOrder = orderAndArrangeList.getKey();
-                            List<SchedulingProducingArrangement> arrangeListValue = orderAndArrangeList.getValue();
+                            SchedulingOrderViewModel schedulingOrder = orderAndArrangeList.getKey();
+                            List<SchedulingProducingArrangementViewModel> arrangeListValue = orderAndArrangeList.getValue();
                             Set<LitSchedulingProducingArrangementUnitGroupViewModel.NestedOrderProductViewModel> nestedOrderProductViewModelSet
                                     = arrangeListValue.stream()
                                     .map(schedulingProducingArrangement -> {
-                                        SchedulingProduct schedulingOrderProduct = schedulingProducingArrangement.getSchedulingOrderProduct();
+                                        SchedulingProductViewModel schedulingProductViewModel = schedulingProducingArrangement.orderProduct();
 
                                         return LitSchedulingProducingArrangementUnitGroupViewModel.NestedOrderProductViewModel.of(
-                                                schedulingOrderProduct.getName(),
-                                                schedulingProducingArrangement.getId()
+                                                schedulingProductViewModel.name(),
+                                                schedulingProducingArrangement.orderProductArrangementId()
+                                                        .id()
                                         );
                                     })
                                     .collect(Collectors.toSet());
                             LitSchedulingProducingArrangementUnitGroupViewModel groupVo
                                     = new LitSchedulingProducingArrangementUnitGroupViewModel(
-                                    schedulingOrder.getId(),
-                                    schedulingOrder.getOrderType()
-                                            .name(),
+                                    schedulingOrder.id(),
+                                    schedulingOrder.orderType(),
                                     nestedOrderProductViewModelSet
                             );
 
@@ -210,17 +204,17 @@ public class LitSchedulingVisTimelinePanel extends Component {
 
     public void updateRemoteArrangements() {
         updateRemoteArrangements(
-                this.schedulingViewPresenter.getTownshipSchedulingProblem()
+                this.schedulingViewPresenter.getTownshipSchedulingProblemViewModel()
         );
     }
 
     private void updateRemoteArrangements(
-            TownshipSchedulingProblem townshipSchedulingProblem
+            TownshipSchedulingProblemViewModel townshipSchedulingProblem
     ) {
         setPropertyList(
                 "schedulingProducingArrangements",
                 toProducingArrangementVo(
-                        townshipSchedulingProblem.getSchedulingProducingArrangements()
+                        townshipSchedulingProblem.schedulingProducingArrangementViewModels()
                 )
         );
     }
