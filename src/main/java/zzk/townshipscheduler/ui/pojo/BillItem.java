@@ -1,19 +1,21 @@
 package zzk.townshipscheduler.ui.pojo;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public  class BillItem {
+public record BillItem(
+        int serial,
+        ProductEntity productEntity,
+        int amount
+) {
 
-    private int serial;
+    public BillItem{
+        if (amount < 0) {
+            throw new IllegalArgumentException("amount never be negative");
+        }
+    }
 
-    private ProductEntity productEntity;
-
-    private int amount = 1;
+    public BillItem update(int amount) {
+        return new BillItem(this.serial, productEntity, amount);
+    }
 
 }

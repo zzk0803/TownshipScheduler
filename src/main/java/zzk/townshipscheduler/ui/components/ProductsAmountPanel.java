@@ -30,13 +30,13 @@ import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.io.Serial;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ProductsAmountPanel extends Composite<VerticalLayout> {
+public class ProductsAmountPanel
+        extends Composite<VerticalLayout> {
 
     private final TextField filterTextField;
 
@@ -44,12 +44,20 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
 
     private final Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier;
 
+    private final Consumer<Map<ProductEntity, Integer>> markedProductsConsumer;
+
     private Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
 
     private List<ProductEntity> productEntityList;
 
-    public ProductsAmountPanel(Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier) {
+    private Map<ProductEntity, Integer> markedProducts;
+
+    public ProductsAmountPanel(
+            Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier,
+            Consumer<Map<ProductEntity, Integer>> markedProductsConsumer
+    ) {
         this.factoryProductsSupplier = factoryProductsSupplier;
+        this.markedProductsConsumer = markedProductsConsumer;
         factoryProductsGrid = createGrid();
         getContent().addAndExpand(factoryProductsGrid);
 
@@ -110,21 +118,25 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
         return fieldFactoryInfoEntity -> {
             String factoryName = fieldFactoryInfoEntity.getCategory();
             return factoryName.contains(criteria)
-                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                           .anyMatch(productEntity -> {
-                               return productEntity.getName()
-                                              .toLowerCase()
-                                              .contains(criteria)
-                                      || productEntity.getBomString()
-                                              .toLowerCase()
-                                              .contains(criteria);
-                           })
-                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                           .map(ProductEntity::getBomString)
-                           .anyMatch(productBomString -> {
-                               return productBomString.toLowerCase().contains(criteria);
-                           });
+                    || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                    .anyMatch(productEntity -> {
+                        return productEntity.getName()
+                                .toLowerCase()
+                                .contains(criteria)
+                                || productEntity.getBomString()
+                                .toLowerCase()
+                                .contains(criteria);
+                    })
+                    || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                    .map(ProductEntity::getBomString)
+                    .anyMatch(productBomString -> {
+                        return productBomString.toLowerCase().contains(criteria);
+                    });
         };
+    }
+
+    public void consume() {
+        this.markedProductsConsumer.accept(markedProducts);
     }
 
     private Button createFilterButton() {
@@ -153,7 +165,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
                     }
                     case INTERMEDIATE -> {
                         result = !isAtomicProductFilter(fieldFactoryInfoEntity)
-                                 && !isFinalProductFilter(fieldFactoryInfoEntity);
+                                && !isFinalProductFilter(fieldFactoryInfoEntity);
                     }
                     case FINAL -> {
                         result = isFinalProductFilter(fieldFactoryInfoEntity);
@@ -172,7 +184,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
         return button;
     }
 
-    private  boolean isAtomicProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
+    private boolean isAtomicProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         boolean result;
         result = fieldFactoryInfoEntity.getPortfolioGoods().stream()
                 .anyMatch(productEntity -> productEntity.getBomString().isBlank());
@@ -193,7 +205,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
                             .flatMap(productManufactureInfoEntity -> productManufactureInfoEntity.getProductMaterialsRelations()
                                     .stream()
                             )
-                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(),subjectProduct));
+                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(), subjectProduct));
                 })
                 .toList();
     }
@@ -214,6 +226,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
                 .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getPortfolioGoods().stream())
                 .toList();
         this.factoryProductsGrid.setItems(fieldFactoryInfoEntities);
+        this.markedProducts = new HashMap<>();
     }
 
     private enum RadioButtonGroupValues {
@@ -229,7 +242,65 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
         }
     }
 
-    private static class FactoryProductsCard extends Composite<VerticalLayout> {
+    public static class ProductCardProductSpanClickedEvent
+            extends ComponentEvent<ProductCard> {
+
+        @Serial
+        private static final long serialVersionUID = -6166860285068559140L;
+
+        private final String productName;
+
+        public ProductCardProductSpanClickedEvent(
+                ProductCard source,
+                boolean fromClient,
+                String productName
+        ) {
+            super(source, fromClient);
+            this.productName = productName;
+        }
+
+        public String getProductName() {
+            return productName;
+        }
+
+    }
+
+    public static class ProductCardSelectionAmountEvent
+            extends ComponentEvent<ProductCard> {
+
+        @Serial
+        private static final long serialVersionUID = -8077793289788708966L;
+
+        private final ProductEntity product;
+
+        private final int amount;
+
+        public ProductCardSelectionAmountEvent(
+                ProductCard source,
+                boolean fromClient,
+                ProductEntity productEntity,
+                int amount
+        ) {
+            super(source, fromClient);
+            this.product = productEntity;
+            this.amount = amount;
+        }
+
+        public ProductEntity getProduct() {
+            return product;
+        }
+
+        public int getAmount() {
+            return amount;
+        }
+
+    }
+
+    private class FactoryProductsCard
+            extends Composite<VerticalLayout> {
+
+        @Serial
+        private static final long serialVersionUID = 4572783553859248795L;
 
         public FactoryProductsCard(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
             HorizontalLayout factoryHeaderLayout = new HorizontalLayout();
@@ -256,14 +327,16 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
 
     }
 
-    private static class ProductCard extends Composite<VerticalLayout> {
+    private class ProductCard
+            extends Composite<VerticalLayout> {
 
         public ProductCard(ProductEntity productEntity) {
             Element nameSpan = ElementFactory.createSpan(productEntity.getName());
             nameSpan.getStyle().setCursor("pointer");
             nameSpan.getStyle().setBorderBottom("1px solid black");
             nameSpan.addEventListener(
-                    "click", domEvent -> {
+                    "click",
+                    domEvent -> {
                         VaadinUiEventBus.publish(
                                 new ProductCardProductSpanClickedEvent(this, false, productEntity.getName())
                         );
@@ -277,7 +350,7 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
             getContent().add(createAmountField(productEntity));
         }
 
-        private  Image createImage(ProductEntity productEntity) {
+        private Image createImage(ProductEntity productEntity) {
             WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
             return ProductImages.productImage(
                     productEntity.getName(),
@@ -293,14 +366,12 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
             amountField.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
             amountField.addValueChangeListener(valueChangeEvent -> {
                 Integer value = valueChangeEvent.getValue();
-                VaadinUiEventBus.publish(
-                        new ProductCardSelectionAmountEvent(
-                                this,
-                                false,
-                                productEntity,
-                                value
-                        )
-                );
+                if (value < 0) {
+                    amountField.setValue(0);
+                    ProductsAmountPanel.this.markedProducts.remove(productEntity);
+                    return;
+                }
+                ProductsAmountPanel.this.markedProducts.put(productEntity, value);
             });
             return amountField;
         }
@@ -311,48 +382,6 @@ public class ProductsAmountPanel extends Composite<VerticalLayout> {
             VerticalLayout verticalLayout = super.initContent();
             verticalLayout.setWidth(200, Unit.PIXELS);
             return verticalLayout;
-        }
-
-    }
-
-    public static class ProductCardProductSpanClickedEvent extends ComponentEvent<ProductCard> {
-
-        private final String productName;
-
-        public ProductCardProductSpanClickedEvent(ProductCard source, boolean fromClient, String productName) {
-            super(source, fromClient);
-            this.productName = productName;
-        }
-
-        public String getProductName() {
-            return productName;
-        }
-
-    }
-
-    public static class ProductCardSelectionAmountEvent extends ComponentEvent<ProductCard> {
-
-        private final ProductEntity product;
-
-        private final int amount;
-
-        public ProductCardSelectionAmountEvent(
-                ProductCard source,
-                boolean fromClient,
-                ProductEntity productEntity,
-                int amount
-        ) {
-            super(source, fromClient);
-            this.product = productEntity;
-            this.amount = amount;
-        }
-
-        public ProductEntity getProduct() {
-            return product;
-        }
-
-        public int getAmount() {
-            return amount;
         }
 
     }

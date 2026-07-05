@@ -16,24 +16,37 @@ import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
+import lombok.Getter;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.ui.components.OrderGridItemsCard;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
+import java.io.Serial;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Route("/orders")
 @Menu(title = "Orders", order = 5.00d)
 @PermitAll
-public class OrderListView extends VerticalLayout {
+@Getter
+public class OrderListView
+        extends VerticalLayout {
+
+    @Serial
+    private static final long serialVersionUID = -1639218728062772870L;
 
     private final OrderListViewPresenter presenter;
 
     private final Grid<OrderEntity> grid;
+
+    private final ListSignal<OrderEntity> orderListSignal = new ListSignal<>();
 
     public OrderListView(
             OrderListViewPresenter presenter,
@@ -51,27 +64,26 @@ public class OrderListView extends VerticalLayout {
         grid.addComponentColumn(this::buildBillCard).setFlexGrow(1);
         addAndExpand(grid);
 
+        Signal.effect(
+                grid,
+                () -> {
+                    grid.setItems(orderListSignal.getValues().toList());
+                }
+        );
 
         Button addBillButton = new Button(VaadinIcon.PLUS.create());
         addBillButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
         addBillButton.setWidth("5rem");
         addBillButton.addClickListener(addBillClicked -> {
+            AtomicReference<Dialog> dialogReference = new AtomicReference<>();
             Dialog dialog = new Dialog(
                     new OrderFormView(
-                            this.presenter.getOrderEntityRepository(),
-                            this.presenter.getProductEntityRepository(),
-                            this.presenter.getFieldFactoryInfoEntityRepository(),
-                            townshipAuthenticationContext
+                            this,
+                            this.presenter,
+                            dialogReference
                     )
             );
-            VaadinUiEventBus.subscribe(
-                    dialog,
-                    OrderFormView.OrderFormViewHasSubmitEvent.class,
-                    componentEvent -> {
-                        dialog.close();
-                        presenter.fillGrid(grid);
-                    }
-            );
+            dialogReference.set(dialog);
             dialog.setSizeFull();
             dialog.open();
         });

@@ -161,7 +161,11 @@ public class SchedulingViewPresenter {
         );
         this.townshipSchedulingProblemSolverJobAtomicReference.set(townshipSchedulingProblemSolverJob);
 
-        this.solutionResultPushScheduledFuture = taskScheduler.scheduleAtFixedRate(pushSolverResult(), Instant.now().plusSeconds(1), Duration.ofSeconds(UPDATE_FREQUENCY_IN_SECONDS));
+        this.solutionResultPushScheduledFuture = taskScheduler.scheduleAtFixedRate(
+                pushSolverResult(),
+                Instant.now().plusSeconds(1),
+                Duration.ofSeconds(UPDATE_FREQUENCY_IN_SECONDS)
+        );
 
         VaadinUiEventBus.publish(new SchedulingView.SchedulingProcessingStartComponentEvent(schedulingView, false));
     }
@@ -187,10 +191,9 @@ public class SchedulingViewPresenter {
     }
 
     public void reflushAndGetViewModel(TownshipSchedulingProblem townshipSchedulingProblem) {
-        this.townshipSchedulingProblemViewModelAtomicReference.updateAndGet(townshipSchedulingProblemViewModel -> this.townshipSchedulingViewRecordComponent.updateAndGet(
-                reflushAndGetCurrentProblem(
-                        townshipSchedulingProblem), townshipSchedulingProblemViewModel
-        ));
+        this.townshipSchedulingProblemViewModelAtomicReference.updateAndGet(
+                townshipSchedulingProblemViewModel -> this.townshipSchedulingViewRecordComponent.updateAndGet(
+                        reflushAndGetCurrentProblem(townshipSchedulingProblem), townshipSchedulingProblemViewModel));
     }
 
     public TownshipSchedulingProblem reflushAndGetCurrentProblem(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -231,21 +234,14 @@ public class SchedulingViewPresenter {
     }
 
     public String backendPrepareTownshipScheduling(
-            Collection<OrderEntity> orderEntityList,
-            DateTimeSlotSize dateTimeSlotSize,
-            LocalDateTime workCalendarStart,
-            LocalTime sleepStartPickerValue,
+            Collection<OrderEntity> orderEntityList, DateTimeSlotSize dateTimeSlotSize, LocalDateTime workCalendarStart, LocalTime sleepStartPickerValue,
             LocalTime sleepEndPickerValue
     ) {
         PlayerEntity playerEntity = townshipAuthenticationContext.getPlayerEntity().orElseThrow();
 
         TownshipSchedulingRequest townshipSchedulingRequest = townshipSchedulingPrepareComponent.buildTownshipSchedulingRequest(
-                playerEntity,
-                orderEntityList,
-                dateTimeSlotSize,
-                workCalendarStart,
-                sleepStartPickerValue,
-                sleepEndPickerValue
+                playerEntity, orderEntityList, dateTimeSlotSize, workCalendarStart,
+                sleepStartPickerValue, sleepEndPickerValue
         );
         TownshipSchedulingProblem problem = schedulingService.prepareScheduling(townshipSchedulingRequest);
         return problem.getUuid();
@@ -262,8 +258,7 @@ public class SchedulingViewPresenter {
             TownshipSchedulingViewRecordComponent otherProblemViewRecordComponent = townshipSchedulingViewRecordComponent.forOtherProblem(problem);
 
             return new TownshipSchedulingProblemBriefViewModel(
-                    uuid,
-                    this.getSchedulingService().getProblemSolverStatus(uuid).name(),
+                    uuid, this.getSchedulingService().getProblemSolverStatus(uuid).name(),
                     otherProblemViewRecordComponent.mapAndGetSchedulingOrderViewModel()
             );
         }).collect(Collectors.toCollection(HashSet::new));

@@ -87,7 +87,7 @@ public class OrderEntity {
     private LocalDateTime finishedDateTime;
 
     public void addItem(ProductEntity productEntity, Integer amount) {
-        this.productAmountMap.put(productEntity, amount);
+        this.productAmountMap.merge(productEntity, amount,Integer::sum );
     }
 
     @Override
