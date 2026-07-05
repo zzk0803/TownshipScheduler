@@ -1,194 +1,89 @@
 package zzk.townshipscheduler.ui.components;
 
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
+import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.ui.pojo.*;
+import zzk.townshipscheduler.ui.pojo.ProductAmountBillViewModel;
+import zzk.townshipscheduler.ui.pojo.SchedulingReportArrangeDateTimeGroupViewModel;
+import zzk.townshipscheduler.ui.pojo.SchedulingReportFactoryGroupViewModel;
+import zzk.townshipscheduler.ui.pojo.SchedulingReportGroupsViewModel;
+import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
+import java.io.Serial;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class SchedulingReportArticle extends Composite<VerticalLayout> {
-
-    private TownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel;
+public class SchedulingReportArticle
+        extends Composite<VerticalLayout> {
 
     private Function<String, Image> fetchImgByIdProvider;
 
-    private Button button;
-
-    private VerticalLayout contentLayout;
+    private SchedulingReportArrangeDateTimeGroupsGrid grid;
 
     public SchedulingReportArticle(
-            TownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel,
+            SchedulingView schedulingView,
             Function<String, Image> fetchImgByIdProvider
     ) {
-        this(townshipSchedulingProblemViewModel);
         this.fetchImgByIdProvider = fetchImgByIdProvider;
 
-        button = new Button(
-                VaadinIcon.REFRESH.create(),
-                click -> {
-                    update(this.townshipSchedulingProblemViewModel);
+        grid = new SchedulingReportArrangeDateTimeGroupsGrid();
+        grid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
+
+        //        if (getTownshipSchedulingProblemViewModel().feasible()) {
+        //            Span span = new Span("Eureka");
+        //            span.getElement()
+        //                    .getThemeList()
+        //                    .add("badge success");
+        //            contentLayout.add(span);
+        //        } else {
+        //            Span span = new Span("Not Feasible");
+        //            span.getElement()
+        //                    .getThemeList()
+        //                    .add("badge  error");
+        //            contentLayout.add(span);
+        //        }
+
+        Span span = new Span();
+        span.getElement()
+                .getThemeList()
+                .add("badge");
+        span.bindText(
+                schedulingView.getTownshipSchedulingProblemViewModelSignal()
+                        .map(value -> value.feasible()
+                                      ? "Eureka"
+                                      : "Not Feasible")
+        );
+
+        this.getContent().
+                add(span);
+        this.getContent().
+                addAndExpand(grid);
+
+        Signal.effect(
+                grid,
+                () -> {
+                    Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal = schedulingView.getSchedulingReportGroupsViewModelSignal();
+                    SchedulingReportGroupsViewModel schedulingReportGroupsViewModel = schedulingReportGroupsViewModelSignal.get();
+                    grid.setItems(schedulingReportGroupsViewModel.schedulingReportArrangeDateTimeGroupViewModels());
                 }
         );
-        button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        contentLayout = new VerticalLayout();
-    }
-
-    public SchedulingReportArticle(TownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel) {
-        this.townshipSchedulingProblemViewModel = townshipSchedulingProblemViewModel;
-    }
-
-    public void update(TownshipSchedulingProblemViewModel townshipSchedulingProblem) {
-        this.townshipSchedulingProblemViewModel = townshipSchedulingProblem;
-        update();
-    }
-
-    private void update() {
-        contentLayout.removeAll();
-
-        if (townshipSchedulingProblemViewModel != null) {
-            buildContentWithSolution(townshipSchedulingProblemViewModel);
-        } else {
-            buildEmptyContent();
-        }
-    }
-
-    private void buildContentWithSolution(TownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel) {
-        buildWithArrangementsContent(townshipSchedulingProblemViewModel.schedulingProducingArrangementViewModels());
-    }
-
-    private void buildWithArrangementsContent(Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangementList) {
-        var byDateTimeByFactoryByProductMapToCount = toSchedulingReportGroupsViewModel(schedulingProducingArrangementList);
-        ByDateTimeByFactoryByProductMapToCountGrid grid = new ByDateTimeByFactoryByProductMapToCountGrid();
-        grid.setItems(byDateTimeByFactoryByProductMapToCount.schedulingReportArrangeDateTimeGroupViewModels());
-        grid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
-        addErrorSpanIfNotFeasible();
-        contentLayout.addAndExpand(grid);
-    }
-
-    private SchedulingReportGroupsViewModel toSchedulingReportGroupsViewModel(Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangementList) {
-        ArrayList<SchedulingReportArrangeDateTimeGroupViewModel> schedulingReportArrangeDateTimeGroupViewModels = schedulingProducingArrangementList.stream()
-                .filter(schedulingProducingArrangement -> Objects.nonNull(schedulingProducingArrangement.arrangeDateTime()))
-                .collect(
-                        Collectors.collectingAndThen(
-                                Collectors.groupingBy(
-                                        SchedulingProducingArrangementViewModel::arrangeDateTime,
-                                        TreeMap::new,
-                                        Collectors.collectingAndThen(
-                                                Collectors.groupingBy(
-                                                        SchedulingProducingArrangementViewModel::assignedFactoryInstance,
-                                                        Collectors.collectingAndThen(
-                                                                Collectors.groupingBy(
-                                                                        SchedulingProducingArrangementViewModel::product,
-                                                                        Collectors.counting()
-                                                                ),
-                                                                schedulingProductViewModelLongMap -> {
-                                                                    Collection<SchedulingProductAmountPair> schedulingProductAmountPairs
-                                                                            = schedulingProductViewModelLongMap.entrySet()
-                                                                            .stream()
-                                                                            .map(
-                                                                                    schedulingProductViewModelLongEntry -> {
-                                                                                        return new SchedulingProductAmountPair(
-                                                                                                schedulingProductViewModelLongEntry.getKey(),
-                                                                                                Math.toIntExact(schedulingProductViewModelLongEntry.getValue())
-                                                                                        );
-                                                                                    })
-                                                                            .collect(Collectors.toCollection(ArrayList::new));
-                                                                    return new ProductAmountBillViewModel(schedulingProductAmountPairs);
-                                                                }
-                                                        )
-                                                ),
-                                                schedulingFactoryInstanceViewModelProductAmountBillViewModelMap -> {
-                                                    return schedulingFactoryInstanceViewModelProductAmountBillViewModelMap.entrySet()
-                                                            .stream()
-                                                            .map(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry -> {
-                                                                return new SchedulingReportFactoryGroupViewModel(
-                                                                        schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getKey(),
-                                                                        schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getValue()
-                                                                );
-                                                            })
-                                                            .collect(Collectors.toCollection(ArrayList::new));
-                                                }
-                                        )
-                                ),
-                                localDateTimeCollectionTreeMap -> {
-                                    return localDateTimeCollectionTreeMap.entrySet().stream().map(localDateTimeCollectionEntry -> {
-                                        LocalDateTime arrangeDateTime = localDateTimeCollectionEntry.getKey();
-                                        Collection<SchedulingReportFactoryGroupViewModel> localDateTimeCollectionEntryValue = localDateTimeCollectionEntry.getValue();
-                                        return new SchedulingReportArrangeDateTimeGroupViewModel(
-                                                arrangeDateTime,
-                                                localDateTimeCollectionEntryValue
-                                        );
-                                    });
-                                }
-                        )
-                ).collect(Collectors.toCollection(ArrayList::new));
-        return new SchedulingReportGroupsViewModel(schedulingReportArrangeDateTimeGroupViewModels);
-    }
-
-    private void addErrorSpanIfNotFeasible() {
-        if (getTownshipSchedulingProblemViewModel().feasible()) {
-            Span span = new Span("Eureka");
-            span.getElement().getThemeList().add("badge success");
-            contentLayout.add(span);
-        } else {
-            Span span = new Span("Not Feasible");
-            span.getElement().getThemeList().add("badge  error");
-            contentLayout.add(span);
-        }
-    }
-
-    private void buildEmptyContent() {
-        Div wrapperDiv = new Div();
-        wrapperDiv.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.Height.FULL,
-                LumoUtility.Width.FULL,
-                LumoUtility.JustifyContent.CENTER,
-                LumoUtility.AlignItems.CENTER
-        );
-        wrapperDiv.add(new H1("N/A"));
-        getContent().add(wrapperDiv);
-    }
-
-    public void updateScheduling(TownshipSchedulingProblemViewModel townshipSchedulingProblem) {
-        setTownshipSchedulingProblemViewModel(townshipSchedulingProblem);
-    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        update();
-    }
-
-    @Override
-    protected VerticalLayout initContent() {
-        VerticalLayout verticalLayout = super.initContent();
-        verticalLayout.add(button);
-        verticalLayout.addAndExpand(contentLayout);
-        return verticalLayout;
     }
 
     private Image getProductImage(String productName) {
@@ -196,12 +91,19 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
     }
 
 
-    static class ByDateTimeByFactoryByProductMapToCountGrid
+    static class SchedulingReportArrangeDateTimeGroupsGrid
             extends Grid<SchedulingReportArrangeDateTimeGroupViewModel> {
+
+        @Serial
+        private static final long serialVersionUID = -1702605345408428854L;
 
     }
 
-    class DateTimeFactoryArrangementsCard extends Composite<HorizontalLayout> {
+    class DateTimeFactoryArrangementsCard
+            extends Composite<HorizontalLayout> {
+
+        @Serial
+        private static final long serialVersionUID = 6775155059195776013L;
 
         public DateTimeFactoryArrangementsCard(
                 SchedulingReportArrangeDateTimeGroupViewModel schedulingReportArrangeDateTimeGroupViewModel
@@ -244,7 +146,8 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
                                         .map((schedulingProductAmountPair) -> {
                                             Span span = new Span();
                                             String productName = Optional.ofNullable(
-                                                            schedulingProductAmountPair.product().name()
+                                                            schedulingProductAmountPair.product()
+                                                                    .name()
                                                     )
                                                     .orElse("N/A");
                                             span.add(getProductImage(productName));
@@ -266,10 +169,11 @@ public class SchedulingReportArticle extends Composite<VerticalLayout> {
         private void buildDateTimeContent(LocalDateTime arrangeDateTime) {
             Element dateTimeHeader = ElementFactory.createHeading4(
                     arrangeDateTime.format(DateTimeFormatter.ofPattern("M-dd HH:mm")));
-            getContent().getElement().insertChild(
-                    0,
-                    dateTimeHeader
-            );
+            getContent().getElement()
+                    .insertChild(
+                            0,
+                            dateTimeHeader
+                    );
         }
 
         @Override

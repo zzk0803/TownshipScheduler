@@ -23,6 +23,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
@@ -30,6 +31,8 @@ import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
@@ -55,10 +58,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipOutputStream;
@@ -90,6 +90,49 @@ public class SchedulingView
     private Grid<TownshipSchedulingProblemOrderBriefViewModel> orderBriefGrid;
 
     private Paragraph briefText;
+
+    private ValueSignal<TownshipSchedulingProblemViewModel> townshipSchedulingProblemViewModelSignal
+            = new ValueSignal<>(TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE);
+
+    private Signal<Collection<SchedulingProducingArrangementViewModel>> SchedulingProducingArrangementsSignal
+            = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
+        if (townshipSchedulingProblemViewModel == null
+                || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+        ) {
+            return List.of();
+        }
+        return townshipSchedulingProblemViewModel.schedulingProducingArrangementViewModels();
+    });
+
+    private Signal<Collection<TownshipSchedulingProblemOrderBriefViewModel>> townshipSchedulingProblemOrderBriefSignal
+            = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
+        if (townshipSchedulingProblemViewModel == null
+                || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+        ) {
+            return List.of();
+        }
+        return townshipSchedulingProblemViewModel.toTownshipSchedulingProblemOrderBriefViewModels();
+
+    });
+
+    private Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal
+            = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
+        if (townshipSchedulingProblemViewModel == null
+                || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+        ) {
+            return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
+        }
+        return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
+    });
+
+    private Signal<String> scoreSignal = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
+        if (townshipSchedulingProblemViewModel == null || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)) {
+            return "N/A";
+        }
+        return townshipSchedulingProblemViewModel.score();
+    });
+
+    private ValueSignal<Boolean> solverRunningSignal;
 
     public SchedulingView(
             TownshipAuthenticationContext townshipAuthenticationContext,
@@ -167,17 +210,21 @@ public class SchedulingView
         );
         tabSheet.add(
                 "Timeline",
-                arrangementTimelinePanel = new LitSchedulingVisTimelinePanel(schedulingViewPresenter)
+                arrangementTimelinePanel = new LitSchedulingVisTimelinePanel(
+                        this,
+                        schedulingViewPresenter
+                )
         );
         tabSheet.add(
                 "Report",
                 arrangementReportArticle = new SchedulingReportArticle(
-                        schedulingViewPresenter.getTownshipSchedulingProblemViewModel(),
+                        this,
                         schedulingViewPresenter::getProductImage
                 )
         );
         schedulingContentLayout.addAndExpand(tabSheet);
 
+        this.schedulingViewPresenter.signalTownshipSchedulingProblemViewModel();
     }
 
     private VerticalLayout buildBriefPanel() {
@@ -277,8 +324,14 @@ public class SchedulingView
                 .setFlexGrow(1)
         ;
         panel.addAndExpand(orderBriefGrid);
-        this.getSchedulingViewPresenter()
-                .setupOrderBriefGrid();
+
+        Signal.effect(
+                orderBriefGrid,
+                () -> {
+                    orderBriefGrid.setItems(this.townshipSchedulingProblemOrderBriefSignal.get());
+                }
+        );
+
         return panel;
     }
 
@@ -348,8 +401,8 @@ public class SchedulingView
         layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
         layout.setJustifyContentMode(JustifyContentMode.START);
         scoreAnalysisParagraph = new Paragraph();
+        scoreAnalysisParagraph.bindText(scoreSignal);
         layout.add(scoreAnalysisParagraph);
-        getSchedulingViewPresenter().setupScoreAnalysisParagraph();
         return layout;
     }
 
@@ -434,7 +487,21 @@ public class SchedulingView
 
         arrangementTreeGrid.setSizeFull();
 
-        schedulingViewPresenter.setupArrangementsTreeGrid(arrangementTreeGrid);
+        Signal.effect(
+                arrangementTreeGrid,
+                () -> {
+                    Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangementViewModels
+                            = SchedulingProducingArrangementsSignal.get();
+                    TreeData<SchedulingProducingArrangementViewModel> arrangementTreeData = new TreeData<>();
+                    arrangementTreeData.addItems(
+                            schedulingProducingArrangementViewModels.stream()
+                                    .filter(SchedulingProducingArrangementViewModel::boolDirectToOrder),
+                            parentArrangement -> schedulingProducingArrangementViewModels.stream()
+                                    .filter(parentArrangement::boolChild)
+                    );
+                    arrangementTreeGrid.setTreeData(arrangementTreeData);
+                }
+        );
 
         gameActionArticle.addAndExpand(
                 arrangementTreeGrid
@@ -838,7 +905,8 @@ public class SchedulingView
         }
     }
 
-    public static class TownshipSchedulingBenchmarkRequestFormLayout extends Composite<VerticalLayout> {
+    public static class TownshipSchedulingBenchmarkRequestFormLayout
+            extends Composite<VerticalLayout> {
 
         String problemUuid;
 
