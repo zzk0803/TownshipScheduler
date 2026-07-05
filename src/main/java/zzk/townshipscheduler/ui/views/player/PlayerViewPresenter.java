@@ -53,6 +53,10 @@ public class PlayerViewPresenter {
         return playerService.findAvailableFieldFactoryInfoByPlayer(getPlayer());
     }
 
+    public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfo() {
+        return playerService.findAvailableFieldFactoryInfo();
+    }
+
     public FieldFactoryEntity saveFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
         return playerService.saveFieldFactory(fieldFactoryEntity, getPlayer());
     }

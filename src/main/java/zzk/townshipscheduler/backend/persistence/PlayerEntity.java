@@ -20,6 +20,7 @@ import java.util.*;
         attributeNodes = {
                 @NamedAttributeNode(value = "warehouseEntity", subgraph = "player.warehouse"),
                 @NamedAttributeNode(value = "fieldFactoryEntities"),
+                @NamedAttributeNode(value = "orderEntities"),
                 @NamedAttributeNode(value = "account")
         },
         subgraphs = {

@@ -43,10 +43,7 @@ import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingBenchmarkReque
 import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayer;
 import zzk.townshipscheduler.backend.utility.ReportZipUtil;
-import zzk.townshipscheduler.ui.components.LitSchedulingVisTimelinePanel;
-import zzk.townshipscheduler.ui.components.OrderGrid;
-import zzk.townshipscheduler.ui.components.SchedulingReportArticle;
-import zzk.townshipscheduler.ui.components.TriggerButton;
+import zzk.townshipscheduler.ui.components.*;
 import zzk.townshipscheduler.ui.pojo.*;
 
 import java.io.File;
@@ -294,7 +291,39 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setFlexGrow(0)
         ;
-        orderBriefGrid.addColumn(new ComponentRenderer<>(funOrderBriefItemsRenderer()))
+        orderBriefGrid.addColumn(new ComponentRenderer<>(townshipSchedulingProblemOrderBriefViewModel1 -> {
+                    Main layout = new Main();
+                    layout.addClassNames(
+                            LumoUtility.Display.FLEX,
+                            LumoUtility.FlexDirection.ROW,
+                            LumoUtility.Margin.NONE,
+                            LumoUtility.Width.FULL,
+                            LumoUtility.Height.FULL
+                    );
+                    ProductAmountBillViewModel productAmountBill = townshipSchedulingProblemOrderBriefViewModel1.productAmountBill();
+                    Div div = new Div();
+                    div.addClassNames(
+                            LumoUtility.Width.AUTO,
+                            LumoUtility.Display.FLEX,
+                            LumoUtility.FlexDirection.COLUMN
+                    );
+
+                    productAmountBill.productAmountPairs()
+                            .stream()
+                            .map((schedulingProductAmountPair) -> {
+                                Span span = new Span();
+                                SchedulingProductViewModel schedulingProduct = schedulingProductAmountPair.product();
+                                String productName = schedulingProduct.name();
+                                span.add(this.schedulingViewPresenter.getProductImage(productName));
+                                span.add(productName);
+                                span.add(" x" + schedulingProductAmountPair.amount());
+                                return span;
+                            })
+                            .forEach(div::add)
+                    ;
+                    layout.add(div);
+                    return layout;
+                }))
                 .setHeader("Items")
                 .setAutoWidth(true)
                 .setFlexGrow(1)
@@ -335,53 +364,30 @@ public class SchedulingView
         return panel;
     }
 
-    private SerializableFunction<TownshipSchedulingProblemOrderBriefViewModel, Main> funOrderBriefItemsRenderer() {
-        return townshipSchedulingProblemOrderBriefViewModel -> {
-            Main layout = new Main();
-            layout.addClassNames(
-                    LumoUtility.Display.FLEX,
-                    LumoUtility.FlexDirection.ROW,
-                    LumoUtility.Margin.NONE,
-                    LumoUtility.Width.FULL,
-                    LumoUtility.Height.FULL
-            );
-            ProductAmountBillViewModel productAmountBill = townshipSchedulingProblemOrderBriefViewModel.productAmountBill();
-            Div div = new Div();
-            div.addClassNames(
-                    LumoUtility.Width.AUTO,
-                    LumoUtility.Display.FLEX,
-                    LumoUtility.FlexDirection.COLUMN
-            );
-
-            productAmountBill.productAmountPairs()
-                    .stream()
-                    .map((schedulingProductAmountPair) -> {
-                        Span span = new Span();
-                        SchedulingProductViewModel schedulingProduct = schedulingProductAmountPair.product();
-                        String productName = schedulingProduct.name();
-                        span.add(this.schedulingViewPresenter.getProductImage(productName));
-                        span.add(productName);
-                        span.add(" x" + schedulingProductAmountPair.amount());
-                        return span;
-                    })
-                    .forEach(div::add)
-            ;
-            layout.add(div);
-            return layout;
-        };
-    }
-
     private HorizontalLayout buildScoreAndButtonPanel() {
         HorizontalLayout schedulingBtnPanel = new HorizontalLayout();
+        LitTimer stopButtonTimer = new LitTimer();
+        stopButtonTimer.setHeight(1, Unit.REM);
+        stopButtonTimer.setWidth(5, Unit.REM);
         Button startButon = new Button("Start");
         startButon.addThemeVariants(
                 ButtonVariant.LUMO_PRIMARY,
                 ButtonVariant.LUMO_LARGE
         );
-        startButon.addClickListener(_ -> this.schedulingViewPresenter.onStartButton());
-        Button stopButton = new Button("Stop");
-        stopButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        stopButton.addClickListener(_ -> this.schedulingViewPresenter.onStopButton());
+        startButon.setSuffixComponent(VaadinIcon.PLAY.create());
+        startButon.addClickListener(_ -> {
+            stopButtonTimer.reset();
+            stopButtonTimer.start();
+            this.schedulingViewPresenter.onStartButton();
+        });
+        Button stopButton = new Button(stopButtonTimer);
+        stopButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_LARGE);
+        stopButtonTimer.setMode(LitTimer.Mode.COUNTUP);
+        stopButton.setSuffixComponent(VaadinIcon.STOP.create());
+        stopButton.addClickListener(_ -> {
+            stopButtonTimer.pause();
+            this.schedulingViewPresenter.onStopButton();
+        });
         this.triggerButton = new TriggerButton(
                 startButon,
                 stopButton
@@ -750,6 +756,7 @@ public class SchedulingView
                 "Benchmark",
                 contextMenuItemClicked -> {
                     UI ui = UI.getCurrent();
+                    Text text = new Text("Benchmark is RUNNING...");
                     Optional<TownshipSchedulingProblemBriefViewModel> clickedItem = contextMenuItemClicked.getItem();
                     Dialog dialog = new Dialog();
                     dialog.setModality(ModalityMode.STRICT);
@@ -762,6 +769,9 @@ public class SchedulingView
 
                     Dialog.DialogHeader dialogHeader = dialog.getHeader();
                     HorizontalLayout dialogHeaderLayout = new HorizontalLayout();
+                    dialogHeaderLayout.setAlignItems(Alignment.CENTER);
+                    dialogHeaderLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
+                    dialogHeaderLayout.setWidthFull();
                     dialogHeaderLayout.add(
                             new Button(VaadinIcon.CLOSE.create()) {{
                                 addThemeVariants(ButtonVariant.WARNING);
@@ -770,7 +780,8 @@ public class SchedulingView
                                 });
                             }}
                     );
-                    dialogHeaderLayout.setWidthFull();
+                    dialogHeaderLayout.add(text);
+
                     dialogHeader.add(dialogHeaderLayout);
 
                     VerticalLayout dialogWrapper = new VerticalLayout();
@@ -789,26 +800,31 @@ public class SchedulingView
                                     ButtonVariant.LUMO_LARGE
                             );
                         }};
+                        LitTimer timer = new LitTimer();
+                        timer.setWidth(13, Unit.REM);
+                        timer.setHeight(2, Unit.REM);
+                        timer.setMode(LitTimer.Mode.COUNTUP);
                         dialogWrapper.addAndExpand(form);
                         dialogWrapper.add(startButton);
                         startButton.addClickListener(_ -> {
                             TownshipSchedulingBenchmarkRequest request = form.getTownshipSchedulingBenchmarkRequest();
                             form.frozen();
                             dialogWrapper.remove(startButton);
+                            dialogWrapper.add(timer);
+                            dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER,timer);
 
                             ProgressBar progressBar = new ProgressBar();
                             progressBar.setIndeterminate(true);
-
-                            dialog.setHeaderTitle("Benchmark is RUNNING...");
-
                             dialogWrapper.add(progressBar);
 
                             CompletableFuture<File> completableFuture = this.schedulingViewPresenter.onBenchmarkStart(request);
+                            timer.start();
                             completableFuture.whenCompleteAsync(
                                     (mayNullFile, throwable) -> {
                                         ui.access(
                                                 () -> {
-                                                    dialog.setHeaderTitle("Benchmark finished.");
+                                                    text.setText("Benchmark finished.");
+                                                    timer.pause();
                                                     dialogWrapper.remove(progressBar);
                                                     if (throwable != null) {
                                                         dialogWrapper.add(new Paragraph(throwable.toString()));

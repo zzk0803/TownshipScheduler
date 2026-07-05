@@ -43,6 +43,11 @@ public class PlayerService {
     }
 
     @Transactional(readOnly = true)
+    public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfo() {
+        return new ArrayList<>(fieldFactoryInfoEntityRepository.findBy(FieldFactoryInfoEntity.class));
+    }
+
+    @Transactional(readOnly = true)
     public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer(PlayerEntity player) {
         Set<FieldFactoryInfoEntity> allFieldFactoryInfo
                 = fieldFactoryInfoEntityRepository.findBy(FieldFactoryInfoEntity.class);

@@ -34,7 +34,7 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
     ) {
         this.playerViewPresenter = playerViewPresenter;
         this.playerViewPresenter.setPlayerView(this);
-        setWidthFull();
+        setSizeFull();
     }
 
     @Override

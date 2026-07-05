@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -15,7 +16,8 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 
 import java.util.Optional;
 
-class PlayerBasicArticle extends Composite<VerticalLayout> {
+class PlayerBasicArticle
+        extends Composite<VerticalLayout> {
 
     private final PlayerViewPresenter playerViewPresenter;
 
@@ -47,8 +49,13 @@ class PlayerBasicArticle extends Composite<VerticalLayout> {
 
             dialog.setConfirmText("OK");
             dialog.addConfirmListener(event -> {
-                playerViewPresenter.playerFactoryToCorrespondedLevelInBatch(this.playerForm.player);
-                playerForm.reflash();
+                PlayerEntity playerEntity = this.playerForm.submitAndGet();
+                if (playerEntity != null) {
+                    playerViewPresenter.playerFactoryToCorrespondedLevelInBatch(playerEntity);
+                    playerForm.reflash();
+                }else {
+                    Notification.show("not success");
+                }
             });
 
             dialog.open();
@@ -56,16 +63,16 @@ class PlayerBasicArticle extends Composite<VerticalLayout> {
         return button;
     }
 
-    private class PlayerForm extends FormLayout {
+    private class PlayerForm
+            extends FormLayout {
 
-        PlayerEntity player;
+        PlayerEntity player = new PlayerEntity();
 
-        Binder<PlayerEntity> playerEntityBinder = new Binder<>();
+        Binder<PlayerEntity> binder;
 
         public PlayerForm(PlayerEntity player) {
-            this.player = player;
-            this.playerEntityBinder = new Binder<>(PlayerEntity.class);
-            this.playerEntityBinder.setBean(this.player);
+            this.binder = new Binder<>();
+            this.binder.setBean(player);
 
             this.setResponsiveSteps(
                     new ResponsiveStep("0", 1)
@@ -75,33 +82,36 @@ class PlayerBasicArticle extends Composite<VerticalLayout> {
             var levelField = new IntegerField("Level");
             var fieldAmountField = new IntegerField("Field Amount");
 
-            playerEntityBinder.bindReadOnly(
+            binder.bindReadOnly(
                     nameField,
                     playerEntity -> Optional.ofNullable(playerEntity.getAccount())
                             .map(AccountEntity::getName)
                             .orElse("NULL")
             );
-            playerEntityBinder.forField(levelField)
+            binder.forField(levelField)
                     .withValidator((integer, valueContext) -> integer > 0
-                            ? ValidationResult.ok()
-                            : ValidationResult.error("level number should >0")
+                                                              ? ValidationResult.ok()
+                                                              : ValidationResult.error("level number should >0")
                     )
                     .bind(PlayerEntity::getLevel, PlayerEntity::setLevel);
-            playerEntityBinder.forField(fieldAmountField)
+            binder.forField(fieldAmountField)
                     .withValidator((integer, valueContext) -> integer > 0
-                            ? ValidationResult.ok()
-                            : ValidationResult.error("field number should >0"))
+                                                              ? ValidationResult.ok()
+                                                              : ValidationResult.error("field number should >0"))
                     .bind(PlayerEntity::getFieldAmount, PlayerEntity::setFieldAmount);
-
 
             add(nameField);
             add(levelField);
             add(fieldAmountField);
         }
 
+        public PlayerEntity submitAndGet() {
+            return this.binder.getBean();
+        }
+
         public void reflash() {
             player = playerViewPresenter.getPlayer();
-            playerEntityBinder.readBean(player);
+            binder.readBean(player);
         }
 
     }

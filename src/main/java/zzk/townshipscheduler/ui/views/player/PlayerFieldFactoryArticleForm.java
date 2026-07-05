@@ -7,16 +7,19 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.validator.IntegerRangeValidator;
+import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ValueSignal;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 @Slf4j
-class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
+class PlayerFieldFactoryArticleForm
+        extends Composite<VerticalLayout> {
 
-    private final Binder<FieldFactoryEntity> binder;
+    private final Binder<FieldFactoryEntity> binder = new Binder<>(FieldFactoryEntity.class);
 
     private final ComboBox<FieldFactoryInfoEntity> fieldFactoryInfoEntityComboBox;
 
@@ -24,17 +27,19 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
 
     private final IntegerField reapWindowSizeIntegerField;
 
+    private final PlayerViewPresenter playerViewPresenter;
+
+    private ValueSignal<FieldFactoryInfoEntity> fieldFactoryInfoEntityValueSignal;
+
+    private ValueSignal<Integer> producingLengthIntegerFieldSignal;
+
+    private ValueSignal<Integer> reapWindowSizeIntegerFieldSignal;
+
     private FieldFactoryEntity fieldFactoryEntity;
 
-    private transient FieldFactoryInfoEntity fieldFactoryInfoEntity;
-
-    public PlayerFieldFactoryArticleForm(
-            PlayerViewPresenter playerViewPresenter
-    ) {
-        this.binder = new Binder<>(FieldFactoryEntity.class);
+    public PlayerFieldFactoryArticleForm(PlayerViewPresenter playerViewPresenter) {
+        this.playerViewPresenter = playerViewPresenter;
         this.fieldFactoryEntity = new FieldFactoryEntity();
-
-        this.binder.setBean(fieldFactoryEntity);
 
         FormLayout form = new FormLayout();
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
@@ -44,31 +49,32 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
         reapWindowSizeIntegerField = new IntegerField();
         reapWindowSizeIntegerField.setPlaceholder("Reap Window Size");
         fieldFactoryInfoEntityComboBox = new ComboBox<>();
-        fieldFactoryInfoEntityComboBox.setItems(playerViewPresenter.findAvailableFieldFactoryInfoByPlayer());
         fieldFactoryInfoEntityComboBox.setAllowCustomValue(false);
         fieldFactoryInfoEntityComboBox.setItemLabelGenerator(FieldFactoryInfoEntity::getCategory);
-        fieldFactoryInfoEntityComboBox.addValueChangeListener(
-                event -> {
-                    FieldFactoryInfoEntity factoryInfo = event.getValue();
-                    FieldFactoryInfoEntity oldValue = event.getOldValue();
-                    if (factoryInfo != oldValue) {
-                        this.fieldFactoryInfoEntity = factoryInfo;
-                        producingLengthIntegerField.clear();
-                        reapWindowSizeIntegerField.clear();
-                        producingLengthIntegerField.setMin(1);
-                        producingLengthIntegerField.setMax(factoryInfo.getMaxProducingCapacity());
-                        reapWindowSizeIntegerField.setMin(1);
-                        reapWindowSizeIntegerField.setMax(factoryInfo.getMaxReapWindowCapacity());
-                    }
+        fieldFactoryInfoEntityComboBox.setItems(this.playerViewPresenter.findAvailableFieldFactoryInfoByPlayer());
+        fieldFactoryInfoEntityComboBox.setRenderer(new ComponentRenderer<>(
+                fieldFactoryInfoEntity -> {
+                    return null;
+                }));
+        fieldFactoryInfoEntityComboBox.setValue(FieldFactoryInfoEntity.NULL_EMPTY_VALUE);
+        setupBinder();
 
-                }
-        );
-
-        VaadinUiEventBus.subscribe(
+        Signal.effect(
                 this,
-                PlayerFieldFactoryPersistRequestEvent.class,
-                request -> {
-                    playerViewPresenter.saveFieldFactory(fieldFactoryEntity);
+                () -> {
+                    if (
+                            fieldFactoryInfoEntityValueSignal != null
+                                    && fieldFactoryInfoEntityValueSignal.get() != null
+                                    && !FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(fieldFactoryInfoEntityValueSignal.get())
+                    ) {
+                        FieldFactoryInfoEntity selectedFieldFactoryType = fieldFactoryInfoEntityValueSignal.get();
+                        producingLengthIntegerField.setMin(1);
+                        producingLengthIntegerField.setMax(selectedFieldFactoryType.getMaxProducingCapacity());
+                        reapWindowSizeIntegerField.setMin(1);
+                        reapWindowSizeIntegerField.setMax(selectedFieldFactoryType.getMaxReapWindowCapacity());
+                        producingLengthIntegerFieldSignal.set(selectedFieldFactoryType.getDefaultProducingCapacity());
+                        reapWindowSizeIntegerFieldSignal.set(selectedFieldFactoryType.getDefaultReapWindowCapacity());
+                    }
                 }
         );
 
@@ -76,42 +82,57 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
         form.addFormItem(producingLengthIntegerField, "Producing Length");
         form.addFormItem(reapWindowSizeIntegerField, "Reap Window Size");
 
-        this.binder.forField(fieldFactoryInfoEntityComboBox)
+        getContent().add(form);
+    }
+
+    private Binder<FieldFactoryEntity> setupBinder() {
+        binder.readBean(fieldFactoryEntity);
+        Binder.Binding<FieldFactoryEntity, FieldFactoryInfoEntity> fieldFactoryInfoEntityBinding = binder.forField(fieldFactoryInfoEntityComboBox)
                 .asRequired()
                 .bind(
                         FieldFactoryEntity::getFieldFactoryInfoEntity,
                         FieldFactoryEntity::setFieldFactoryInfoEntity
                 );
-        this.binder.forField(producingLengthIntegerField)
+        fieldFactoryInfoEntityValueSignal = fieldFactoryInfoEntityBinding.valueSignal();
+        Binder.Binding<FieldFactoryEntity, Integer> producingLengthBinding = binder.forField(producingLengthIntegerField)
                 .asRequired()
-                .withValidator(new IntegerRangeValidator(
-                        "producing length should be %d-%d".formatted(
-                                fieldFactoryInfoEntity.getDefaultProducingCapacity(),
-                                fieldFactoryInfoEntity.getMaxProducingCapacity()
-                        ),
-                        fieldFactoryInfoEntity.getDefaultProducingCapacity(),
-                        fieldFactoryInfoEntity.getMaxProducingCapacity()
-                ))
+                .withValidator(
+                        (value, context) -> {
+                            FieldFactoryInfoEntity fieldFactoryInfoEntity = fieldFactoryInfoEntityValueSignal.get();
+                            return new IntegerRangeValidator(
+                                    "producing length should be %d-%d".formatted(
+                                            fieldFactoryInfoEntity.getDefaultProducingCapacity(),
+                                            fieldFactoryInfoEntity.getMaxProducingCapacity()
+                                    ),
+                                    fieldFactoryInfoEntity.getDefaultProducingCapacity(),
+                                    fieldFactoryInfoEntity.getMaxProducingCapacity()
+                            ).apply(value, context);
+                        }
+                )
                 .bind(
                         FieldFactoryEntity::getProducingLength,
                         FieldFactoryEntity::setProducingLength
                 );
-        this.binder.forField(reapWindowSizeIntegerField)
+        producingLengthIntegerFieldSignal = producingLengthBinding.valueSignal();
+        Binder.Binding<FieldFactoryEntity, Integer> reapWindowBinding = binder.forField(reapWindowSizeIntegerField)
                 .asRequired()
-                .withValidator(new IntegerRangeValidator(
-                        "reap window size should be %d-%d".formatted(
-                                fieldFactoryInfoEntity.getDefaultReapWindowCapacity(),
-                                fieldFactoryInfoEntity.getMaxReapWindowCapacity()
-                        ),
-                        fieldFactoryInfoEntity.getDefaultReapWindowCapacity(),
-                        fieldFactoryInfoEntity.getMaxReapWindowCapacity()
-                ))
+                .withValidator((value, context) -> {
+                    FieldFactoryInfoEntity fieldFactoryInfoEntity = fieldFactoryInfoEntityValueSignal.get();
+                    return new IntegerRangeValidator(
+                            "reap window size should be %d-%d".formatted(
+                                    fieldFactoryInfoEntity.getDefaultReapWindowCapacity(),
+                                    fieldFactoryInfoEntity.getMaxReapWindowCapacity()
+                            ),
+                            fieldFactoryInfoEntity.getDefaultReapWindowCapacity(),
+                            fieldFactoryInfoEntity.getMaxReapWindowCapacity()
+                    ).apply(value, context);
+                })
                 .bind(
                         FieldFactoryEntity::getReapWindowSize,
                         FieldFactoryEntity::setReapWindowSize
                 );
-
-        getContent().add(form);
+        reapWindowSizeIntegerFieldSignal = reapWindowBinding.valueSignal();
+        return binder;
     }
 
     @Override
@@ -122,5 +143,11 @@ class PlayerFieldFactoryArticleForm extends Composite<VerticalLayout> {
         return verticalLayout;
     }
 
+
+    public void submit() {
+        this.binder.writeBeanIfValid(new FieldFactoryEntity());
+        FieldFactoryEntity savingEntity = this.binder.getBean();
+        this.playerViewPresenter.saveFieldFactory(savingEntity);
+    }
 
 }

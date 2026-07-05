@@ -12,10 +12,14 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import lombok.Getter;
+import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
-class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
+@Getter
+class PlayerFieldFactoryArticle
+        extends Composite<VerticalLayout> {
 
     private final PlayerViewPresenter playerViewPresenter;
 
@@ -25,18 +29,24 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
         this.playerViewPresenter = playerViewPresenter;
 
         getContent().add(buildMenuBar());
+        getContent().addAndExpand(this.factoryEntityGrid = buildFieldFactoryGrid());
+    }
 
+    private @NonNull Grid<FieldFactoryEntity> buildFieldFactoryGrid() {
+        final Grid<FieldFactoryEntity> factoryEntityGrid;
         factoryEntityGrid = new Grid<>(FieldFactoryEntity.class, false);
-        factoryEntityGrid.addColumn(
+        Grid.Column<FieldFactoryEntity> typeColumn
+                = factoryEntityGrid.addColumn(
                 fieldFactory -> fieldFactory.getFieldFactoryInfoEntity().getCategory()
-        ).setHeader("Field&Factory Type");
-        factoryEntityGrid.addColumn(FieldFactoryEntity::getProducingLength)
+        ).setHeader("Field&FactoryType");
+        Grid.Column<FieldFactoryEntity> producingLengthColumn
+                = factoryEntityGrid.addColumn(FieldFactoryEntity::getProducingLength)
                 .setHeader("Factory Producing Length");
-        factoryEntityGrid.addColumn(FieldFactoryEntity::getReapWindowSize)
+        Grid.Column<FieldFactoryEntity> factoryReapWindowSizeColumn
+                = factoryEntityGrid.addColumn(FieldFactoryEntity::getReapWindowSize)
                 .setHeader("Factory Reap Window Size");
-        getContent().addAndExpand(factoryEntityGrid);
-
         factoryEntityGrid.setItems(playerViewPresenter.findFieldFactoryEntityByPlayer());
+        return factoryEntityGrid;
     }
 
     public MenuBar buildMenuBar() {
@@ -48,7 +58,8 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
 
         MenuItem menuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.PLUS.create());
         menuItem.addSingleClickListener(menuItemClickEvent -> {
-            Dialog dialog = new Dialog(new PlayerFieldFactoryArticleForm(this.playerViewPresenter));
+            PlayerFieldFactoryArticleForm playerFieldFactoryArticleForm = new PlayerFieldFactoryArticleForm(this.playerViewPresenter);
+            Dialog dialog = new Dialog(playerFieldFactoryArticleForm);
             dialog.setSizeUndefined();
             dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
 
@@ -71,7 +82,7 @@ class PlayerFieldFactoryArticle extends Composite<VerticalLayout> {
                     new Button(
                             "Ok",
                             okClickEvent -> {
-                                VaadinUiEventBus.publish(new PlayerFieldFactoryPersistRequestEvent(this, false));
+                                playerFieldFactoryArticleForm.submit();
                                 dialog.close();
                                 factoryEntityGrid.getDataProvider().refreshAll();
                             }

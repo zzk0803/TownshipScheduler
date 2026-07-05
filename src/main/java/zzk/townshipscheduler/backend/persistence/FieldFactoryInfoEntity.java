@@ -26,6 +26,12 @@ import java.util.function.Supplier;
 )
 public class FieldFactoryInfoEntity {
 
+    public static final FieldFactoryInfoEntity NULL_EMPTY_VALUE = new FieldFactoryInfoEntity() {{
+        setId(-1L);
+        setCategory("NULL_EMPTY_VALUE");
+        setLevel(-1);
+    }};
+
     public static final String FIELD_CATEGORY_CRITERIA = "Field";
 
     @Id
