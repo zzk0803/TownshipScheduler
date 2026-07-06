@@ -7,9 +7,47 @@ export class LitTimer
     static styles = css`
         :host {
             display: inline-block;
-            font-family: monospace;
-            font-size: 1.5rem;
-            font-variant-numeric: tabular-nums; /* 保证数字等宽，防止跳动 */
+            font-family: var(--flow-timer-font-family, var(--lumo-font-family));
+            font-size: var(--flow-timer-font-size, var(--lumo-font-size-xl));
+            color: var(--flow-timer-color, var(--lumo-body-text-color));
+            font-weight: var(--flow-timer-font-weight, 500);
+            letter-spacing: 0.05em;
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+        }
+
+        :host([theme~="small"]) {
+            --flow-timer-font-size: var(--lumo-font-size-s);
+        }
+
+        :host([theme~="large"]) {
+            --flow-timer-font-size: var(--lumo-font-size-xxxl);
+        }
+
+        :host([theme~="primary"]) {
+            --flow-timer-color: var(--lumo-primary-color);
+        }
+
+        :host([theme~="success"]) {
+            --flow-timer-color: var(--lumo-success-color);
+        }
+
+        :host([theme~="error"]) {
+            --flow-timer-color: var(--lumo-error-color);
+        }
+
+        :host([theme~="warning"]) {
+            --flow-timer-color: var(--lumo-warning-color);
+        }
+
+        :host([theme~="secondary"]) {
+            --flow-timer-color: var(--lumo-secondary-text-color);
+        }
+
+        .ms {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-left: 0.1em;
         }
     `;
 
@@ -81,7 +119,11 @@ export class LitTimer
     }
 
     render() {
-        return html`<span>${this.formatTime(this.currentTimeMs)}</span>`;
+        const {main, ms} = this.formatTime(this.currentTimeMs);
+        if (this.showMilliseconds) {
+            return html`<span>${main}<span class="ms">.${ms}</span></span>`;
+        }
+        return html`<span>${main}</span>`;
     }
 
     protected updated(changedProperties: PropertyValues) {
@@ -144,8 +186,8 @@ export class LitTimer
         this.accumulatedTime += performance.now() - this.startTime;
     }
 
-    // 格式化时间显示
-    private formatTime(ms: number): string {
+    // 优化了格式化方法，将毫秒部分拆分以便应用不同样式
+    private formatTime(ms: number): { main: string, ms: string } {
         const totalSeconds = Math.floor(ms / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -154,13 +196,11 @@ export class LitTimer
 
         const pad = (n: number) => n.toString()
             .padStart(2, '0');
-        let timeStr = hours > 0
+        let mainStr = hours > 0
             ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
             : `${pad(minutes)}:${pad(seconds)}`;
+        let msStr = pad(milliseconds);
 
-        if (this.showMilliseconds) {
-            timeStr += `.${pad(milliseconds)}`;
-        }
-        return timeStr;
+        return {main: mainStr, ms: msStr};
     }
 }

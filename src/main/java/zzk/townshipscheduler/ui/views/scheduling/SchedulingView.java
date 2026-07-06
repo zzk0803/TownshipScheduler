@@ -757,6 +757,7 @@ public class SchedulingView
                 contextMenuItemClicked -> {
                     UI ui = UI.getCurrent();
                     Text text = new Text("Benchmark is RUNNING...");
+                    text.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.BOLD, LumoUtility.TextColor.SECONDARY);
                     Optional<TownshipSchedulingProblemBriefViewModel> clickedItem = contextMenuItemClicked.getItem();
                     Dialog dialog = new Dialog();
                     dialog.setModality(ModalityMode.STRICT);
@@ -772,6 +773,7 @@ public class SchedulingView
                     dialogHeaderLayout.setAlignItems(Alignment.CENTER);
                     dialogHeaderLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
                     dialogHeaderLayout.setWidthFull();
+                    dialogHeaderLayout.addComponentAsFirst(text);
                     dialogHeaderLayout.add(
                             new Button(VaadinIcon.CLOSE.create()) {{
                                 addThemeVariants(ButtonVariant.WARNING);
@@ -780,7 +782,6 @@ public class SchedulingView
                                 });
                             }}
                     );
-                    dialogHeaderLayout.add(text);
 
                     dialogHeader.add(dialogHeaderLayout);
 
@@ -801,8 +802,7 @@ public class SchedulingView
                             );
                         }};
                         LitTimer timer = new LitTimer();
-                        timer.setWidth(13, Unit.REM);
-                        timer.setHeight(2, Unit.REM);
+                        timer.getElement().setAttribute("theme", "large");
                         timer.setMode(LitTimer.Mode.COUNTUP);
                         dialogWrapper.addAndExpand(form);
                         dialogWrapper.add(startButton);
@@ -811,7 +811,7 @@ public class SchedulingView
                             form.frozen();
                             dialogWrapper.remove(startButton);
                             dialogWrapper.add(timer);
-                            dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER,timer);
+                            dialogWrapper.setHorizontalComponentAlignment(Alignment.CENTER, timer);
 
                             ProgressBar progressBar = new ProgressBar();
                             progressBar.setIndeterminate(true);

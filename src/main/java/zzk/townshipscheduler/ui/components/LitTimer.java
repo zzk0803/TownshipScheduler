@@ -11,10 +11,9 @@ public class LitTimer
         implements HasSize, HasText, HasStyle {
 
     public LitTimer() {
-        // 默认配置
+
     }
 
-    // --- 属性设置 ---
 
     public void setMode(Mode mode) {
         getElement().setProperty("mode", mode.name().toLowerCase());
@@ -28,8 +27,6 @@ public class LitTimer
         getElement().setProperty("showMilliseconds", show);
     }
 
-    // --- 控制方法 ---
-
     public void start() {
         getElement().callJsFunction("start");
     }
@@ -42,8 +39,6 @@ public class LitTimer
         getElement().callJsFunction("reset");
     }
 
-    // --- 事件监听 ---
-
     public Registration addTickListener(ComponentEventListener<TickEvent> listener) {
         return addListener(TickEvent.class, listener);
     }
@@ -51,8 +46,6 @@ public class LitTimer
     public Registration addFinishListener(ComponentEventListener<FinishEvent> listener) {
         return addListener(FinishEvent.class, listener);
     }
-
-    // --- 枚举与事件类 ---
 
     public enum Mode {
         COUNTUP, COUNTDOWN

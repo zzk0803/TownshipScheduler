@@ -1,0 +1,10 @@
+flow-timer.compact {
+    --flow-timer-font-size: var(--lumo-font-size-s);
+    --flow-timer-font-weight: 400;
+    --flow-timer-color: var(--lumo-secondary-text-color);
+}
+/* 定义一个醒目的倒计时 */
+flow-timer.highlight {
+    --flow-timer-font-size: var(--lumo-font-size-xxxl);
+    --flow-timer-color: var(--lumo-primary-text-color);
+}
