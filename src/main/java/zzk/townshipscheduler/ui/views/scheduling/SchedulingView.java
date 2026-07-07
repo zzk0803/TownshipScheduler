@@ -760,7 +760,6 @@ public class SchedulingView
                 contextMenuItemClicked -> {
                     UI ui = UI.getCurrent();
                     Text text = new Text("Benchmark is RUNNING...");
-                    text.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.BOLD, LumoUtility.TextColor.SECONDARY);
                     Optional<TownshipSchedulingProblemBriefViewModel> clickedItem = contextMenuItemClicked.getItem();
                     Dialog dialog = new Dialog();
                     dialog.setModality(ModalityMode.STRICT);
