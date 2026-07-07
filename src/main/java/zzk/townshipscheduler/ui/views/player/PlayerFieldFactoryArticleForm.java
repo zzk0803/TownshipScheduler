@@ -1,32 +1,31 @@
 package zzk.townshipscheduler.ui.views.player;
 
 import com.vaadin.flow.component.AttachEvent;
-import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
-import com.vaadin.flow.data.validator.IntegerRangeValidator;
-import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 class PlayerFieldFactoryArticleForm
-        extends Composite<VerticalLayout> {
-
-    private final Binder<FieldFactoryEntity> binder = new Binder<>();
+        extends VerticalLayout {
 
     private final PlayerViewPresenter playerViewPresenter;
 
@@ -36,29 +35,35 @@ class PlayerFieldFactoryArticleForm
 
     private List<FieldFactoryInfoEntity> availableFieldFactoryInfoForPlayer;
 
-    private List<FieldFactoryInfoEntity> allFieldFactoryInfo;
+    private Map<FieldFactoryInfoEntity, Long> calcedPlayerPropertiesCountMap;
 
-    private ComboBox<FieldFactoryInfoEntity> fieldFactoryInfoEntityComboBox;
+    private Grid<FieldFactoryInfoEntity> fieldFactoryInfoEntityGrid;
 
-    private IntegerField producingLengthIntegerField;
+    private ValueSignal<FieldFactoryInfoEntity> selectedOrEditingFieldFactoryInfoValueSignal;
 
-    private IntegerField reapWindowSizeIntegerField;
+    private Signal<Boolean> fieldFactoryInfoSelectedSignal;
 
-    private ValueSignal<Boolean> createModeValueSignal = new ValueSignal<>(true);
+//    private IntegerField producingLengthIntegerField;
 
-    private ValueSignal<FieldFactoryInfoEntity> fieldFactoryInfoEntityValueSignal = new ValueSignal<>(FieldFactoryInfoEntity.NULL_EMPTY_VALUE);
+//    private ValueSignal<Integer> producingLengthIntegerSignal;
 
-    private ValueSignal<Integer> producingLengthSignal;
+//    private IntegerField reapWindowSizeIntegerField;
 
-    private ValueSignal<Integer> reapWindowSignal;
+//    private ValueSignal<Integer> reapWindowSizeIntegerSignal;
 
     private FieldFactoryEntity fieldFactoryEntity;
+
+    private Binder<FieldFactoryEntity> binder;
+
+    private boolean createMode;
 
     public PlayerFieldFactoryArticleForm(PlayerViewPresenter playerViewPresenter) {
         this.playerViewPresenter = playerViewPresenter;
         if (!this.playerViewPresenter.validate()) {
             throw new IllegalStateException("no player exist");
         }
+        fieldFactoryEntity = new FieldFactoryEntity();
+        createMode = true;
     }
 
     public PlayerFieldFactoryArticleForm(PlayerViewPresenter playerViewPresenter, FieldFactoryEntity fieldFactoryEntity) {
@@ -68,146 +73,157 @@ class PlayerFieldFactoryArticleForm
             throw new IllegalStateException("no player exist");
         }
         this.fieldFactoryEntity = fieldFactoryEntity;
+        createMode = false;
     }
 
     @Override
     protected void onAttach(AttachEvent attachEvent) {
-        this.allFieldFactoryInfo = this.playerViewPresenter.findAvailableFieldFactoryInfo();
+        removeAll();
+        setSizeFull();
+        setAlignItems(FlexComponent.Alignment.START);
+        setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+
+        this.availableFieldFactoryInfoForPlayer = this.playerViewPresenter.findAvailableFieldFactoryInfoIfPlayerLevelExist();
         this.fieldFactoryEntityForPlayer = this.playerViewPresenter.findFieldFactoryEntityByPlayer();
-        this.availableFieldFactoryInfoForPlayer = this.playerViewPresenter.findAvailableFieldFactoryInfoByPlayer(
-                this.playerViewPresenter.getPlayer().getLevel(),
-                new LinkedHashSet<>(this.allFieldFactoryInfo),
-                fieldFactoryEntityForPlayer
+        this.calcedPlayerPropertiesCountMap = this.playerViewPresenter.calcPlayerPropertiesCount(
+                this.fieldFactoryEntityForPlayer
         );
 
-        FormLayout form = new FormLayout();
-        form.setSizeFull();
-        form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
-        fieldFactoryInfoEntityComboBox = new ComboBox<>();
-        fieldFactoryInfoEntityComboBox.setAllowCustomValue(false);
-        fieldFactoryInfoEntityComboBox.setItemLabelGenerator(FieldFactoryInfoEntity::getCategory);
-        fieldFactoryInfoEntityComboBox.setItems(availableFieldFactoryInfoForPlayer);
-        if (this.fieldFactoryEntity != null) {
-            this.binder.setBean(this.fieldFactoryEntity);
-            this.createModeValueSignal.set(false);
-            fieldFactoryInfoEntityComboBox.setReadOnly(true);
-            binder.forField(fieldFactoryInfoEntityComboBox)
-                    .asRequired()
-                    .bindReadOnly(FieldFactoryEntity::getFieldFactoryInfoEntity);
+        fieldFactoryInfoEntityGrid = new Grid<>();
+        fieldFactoryInfoEntityGrid.addClassName("player-field-factory-article-form");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getCategory).setHeader("Category");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getLevel).setHeader("Level");
+        fieldFactoryInfoEntityGrid.addColumn(fieldFactoryInfoEntity -> {
+            return this.calcedPlayerPropertiesCountMap.getOrDefault(fieldFactoryInfoEntity, 0L) + "/" + fieldFactoryInfoEntity.getMaxInstanceAmount();
+        }).setHeader("Instance You Have/Max Instance");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getDefaultProducingCapacity).setHeader("Default Producing Capacity");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getMaxProducingCapacity).setHeader("Max Producing Capacity");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getDefaultReapWindowCapacity).setHeader("Default Reap Window");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getMaxReapWindowCapacity).setHeader("Max Reap Window");
+        fieldFactoryInfoEntityGrid.setItems(this.availableFieldFactoryInfoForPlayer);
+        fieldFactoryInfoEntityGrid.setItemSelectableProvider(
+                fieldFactoryInfoEntity -> calcedPlayerPropertiesCountMap.getOrDefault(fieldFactoryInfoEntity, 0L) < fieldFactoryInfoEntity.getMaxInstanceAmount()
+        );
+        fieldFactoryInfoEntityGrid.setPartNameGenerator(fieldFactoryInfoEntity -> {
+            if (calcedPlayerPropertiesCountMap.getOrDefault(fieldFactoryInfoEntity, 0L) < fieldFactoryInfoEntity.getMaxInstanceAmount()) {
+                return "field-factory-info-entity-accept";
+            } else {
+                return "field-factory-info-entity-reject";
+            }
+        });
+
+        if (createMode) {
+            selectedOrEditingFieldFactoryInfoValueSignal = new ValueSignal<>(FieldFactoryInfoEntity.NULL_EMPTY_VALUE);
+            fieldFactoryInfoEntityGrid.asSingleSelect().bindValue(
+                    selectedOrEditingFieldFactoryInfoValueSignal,
+                    value -> {
+                        var setToSignal = value == null
+                                ? FieldFactoryInfoEntity.NULL_EMPTY_VALUE
+                                : value;
+                        selectedOrEditingFieldFactoryInfoValueSignal.set(setToSignal);
+                    }
+            );
         } else {
-            this.fieldFactoryEntity = new FieldFactoryEntity();
-            this.binder.readBean(new FieldFactoryEntity());
-            binder.forField(fieldFactoryInfoEntityComboBox)
-                    .asRequired()
-                    .bind(FieldFactoryEntity::getFieldFactoryInfoEntity, FieldFactoryEntity::setFieldFactoryInfoEntity);
+            selectedOrEditingFieldFactoryInfoValueSignal = new ValueSignal<>(this.fieldFactoryEntity.getFieldFactoryInfoEntity());
+            fieldFactoryInfoEntityGrid.select(this.fieldFactoryEntity.getFieldFactoryInfoEntity());
+            fieldFactoryInfoEntityGrid.scrollToItem(this.fieldFactoryEntity.getFieldFactoryInfoEntity());
+            fieldFactoryInfoEntityGrid.setSelectionMode(Grid.SelectionMode.NONE);
         }
-        fieldFactoryInfoEntityComboBox.bindValue(
-                fieldFactoryInfoEntityValueSignal, fieldFactoryInfoEntityValueSignal::set
+
+        fieldFactoryInfoSelectedSignal
+                = selectedOrEditingFieldFactoryInfoValueSignal.map(obj -> Objects.nonNull(obj) && !FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(obj));
+        binder = new Binder<>(FieldFactoryEntity.class);
+        TextField fieldFactoryTypeTextField = new TextField("Field&Factory Type");
+        fieldFactoryTypeTextField.setReadOnly(true);
+        fieldFactoryTypeTextField.bindValue(
+                selectedOrEditingFieldFactoryInfoValueSignal.map(
+                        fieldFactoryInfoEntity -> fieldFactoryInfoEntity != null | FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(fieldFactoryInfoEntity)
+                                ? fieldFactoryInfoEntity.getCategory()
+                                : "N/A"),
+                null
         );
 
-        producingLengthIntegerField = new IntegerField();
-        producingLengthIntegerField.bindVisible(fieldFactoryInfoEntityValueSignal.map(Objects::nonNull));
-        producingLengthIntegerField.setPlaceholder("Producing Length");
-        producingLengthIntegerField.setValueChangeMode(ValueChangeMode.ON_CHANGE);
-        this.producingLengthSignal = binder.forField(producingLengthIntegerField)
+        IntegerField producingLength = new IntegerField("Producing Length");
+        Binder.Binding<FieldFactoryEntity, Integer> fieldFactoryEntityProducingLengthBinding
+                = binder.forField(producingLength)
                 .asRequired()
-                .withValidator(
-                        (value1, context1) -> {
-                            FieldFactoryInfoEntity fieldFactoryInfoEntity1 = fieldFactoryInfoEntityValueSignal.get();
-                            if (fieldFactoryInfoEntity1 == null) {
-                                return ValidationResult.error("fieldFactoryInfoEntity is unknow");
-                            }
-                            return new IntegerRangeValidator(
-                                    "producing length should be %d-%d".formatted(
-                                            fieldFactoryInfoEntity1.getDefaultProducingCapacity(),
-                                            fieldFactoryInfoEntity1.getMaxProducingCapacity()
-                                    ),
-                                    fieldFactoryInfoEntity1.getDefaultProducingCapacity(),
-                                    fieldFactoryInfoEntity1.getMaxProducingCapacity()
-                            ).apply(value1, context1);
-                        }
-                )
-                .bind(FieldFactoryEntity::getProducingLength, FieldFactoryEntity::setProducingLength).valueSignal();
-
-        reapWindowSizeIntegerField = new IntegerField();
-        reapWindowSizeIntegerField.bindVisible(fieldFactoryInfoEntityValueSignal.map(Objects::nonNull));
-        reapWindowSizeIntegerField.setPlaceholder("Reap Window Size");
-        reapWindowSizeIntegerField.setValueChangeMode(ValueChangeMode.ON_CHANGE);
-        this.reapWindowSignal = binder.forField(reapWindowSizeIntegerField)
+                .withValidator((value, context) -> {
+                    FieldFactoryInfoEntity fieldFactoryInfoEntity = selectedOrEditingFieldFactoryInfoValueSignal.get();
+                    if (fieldFactoryInfoEntity == null) {
+                        return ValidationResult.error("field&factory type unknow");
+                    }
+                    if (value < 0 || value > fieldFactoryInfoEntity.getMaxProducingCapacity()) {
+                        return ValidationResult.error("producing length should in (%d,%d]".formatted(0, fieldFactoryInfoEntity.getMaxProducingCapacity()));
+                    }
+                    return ValidationResult.ok();
+                })
+                .bind(FieldFactoryEntity::getProducingLength, FieldFactoryEntity::setProducingLength);
+//        producingLengthIntegerSignal = fieldFactoryEntityProducingLengthBinding.valueSignal();
+        producingLength.bindEnabled(fieldFactoryInfoSelectedSignal);
+        producingLength.bindVisible(fieldFactoryInfoSelectedSignal);
+        producingLength.bindMax(selectedOrEditingFieldFactoryInfoValueSignal.map(FieldFactoryInfoEntity::getMaxProducingCapacity));
+        producingLength.bindMin(selectedOrEditingFieldFactoryInfoValueSignal.map(FieldFactoryInfoEntity::getDefaultProducingCapacity));
+        if (createMode) {
+            producingLength.setValue(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek()).map(FieldFactoryInfoEntity::getDefaultProducingCapacity).orElse(3));
+        }
+        IntegerField reapWindow = new IntegerField("Reap Window");
+        Binder.Binding<FieldFactoryEntity, Integer> fieldFactoryEntityReapWindowBinding
+                = binder.forField(reapWindow)
                 .asRequired()
-                .withValidator(
-                        (value, context) -> {
-                            FieldFactoryInfoEntity fieldFactoryInfoEntity = fieldFactoryInfoEntityValueSignal.peek();
-                            if (fieldFactoryInfoEntity == null) {
-                                return ValidationResult.error("fieldFactoryInfoEntity is unknow");
-                            }
-                            return new IntegerRangeValidator(
-                                    "reap window size should be %d-%d".formatted(
-                                            fieldFactoryInfoEntity.getDefaultReapWindowCapacity(),
-                                            fieldFactoryInfoEntity.getMaxReapWindowCapacity()
-                                    ),
-                                    fieldFactoryInfoEntity.getDefaultReapWindowCapacity(),
-                                    fieldFactoryInfoEntity.getMaxReapWindowCapacity()
-                            ).apply(value, context);
-                        }
-                )
-                .bind(FieldFactoryEntity::getReapWindowSize, FieldFactoryEntity::setReapWindowSize).valueSignal();
+                .withValidator((value, context) -> {
+                    FieldFactoryInfoEntity fieldFactoryInfoEntity = selectedOrEditingFieldFactoryInfoValueSignal.get();
+                    if (fieldFactoryInfoEntity == null) {
+                        return ValidationResult.error("field&factory type unknow");
+                    }
+                    if (value < 0 || value > fieldFactoryInfoEntity.getMaxReapWindowCapacity()) {
+                        return ValidationResult.error("reap window should in [%d,%d]".formatted(6, fieldFactoryInfoEntity.getMaxReapWindowCapacity()));
+                    }
+                    return ValidationResult.ok();
+                })
+                .bind(FieldFactoryEntity::getReapWindowSize, FieldFactoryEntity::setReapWindowSize);
+//        reapWindowSizeIntegerSignal = fieldFactoryEntityReapWindowBinding.valueSignal();
+        reapWindow.bindEnabled(fieldFactoryInfoSelectedSignal);
+        reapWindow.bindVisible(fieldFactoryInfoSelectedSignal);
+        reapWindow.bindMax(selectedOrEditingFieldFactoryInfoValueSignal.map(FieldFactoryInfoEntity::getMaxReapWindowCapacity));
+        reapWindow.setMin(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek()).map(FieldFactoryInfoEntity::getDefaultReapWindowCapacity).orElse(6));
+        if (createMode) {
+            reapWindow.setValue(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek()).map(FieldFactoryInfoEntity::getDefaultReapWindowCapacity).orElse(6));
+        }
+        binder.readBean(fieldFactoryEntity);
 
-//        Signal.effect(
-//                producingLengthIntegerField,
-//                () -> {
-//                    if (fieldFactoryInfoEntityValueSignal.get() != null && FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(fieldFactoryInfoEntityValueSignal.get())) {
-//                        producingLengthSignal.set(fieldFactoryInfoEntityValueSignal.get().getDefaultProducingCapacity());
-//                    }
-//                }
-//        );
-//        Signal.effect(
-//                reapWindowSizeIntegerField,
-//                () -> {
-//                    if (fieldFactoryInfoEntityValueSignal.get() != null && FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(fieldFactoryInfoEntityValueSignal.get())) {
-//                        reapWindowSignal.set(fieldFactoryInfoEntityValueSignal.get().getDefaultReapWindowCapacity());
-//                    }
-//                }
-//        );
+        add(fieldFactoryInfoEntityGrid);
+        add(fieldFactoryTypeTextField);
+        add(new Hr());
+        add(new HorizontalLayout(producingLength, reapWindow));
 
-
-        Checkbox checkboxOnlyAvailable = new Checkbox("Only Available");
-        checkboxOnlyAvailable.bindValue(
-                availableFieldFactoryBooleanValueSignal,
-                availableFieldFactoryBooleanValueSignal::set
-        );
-        form.addFormItem(fieldFactoryInfoEntityComboBox, "Factory Type");
-        form.addFormItem(producingLengthIntegerField, "Producing Length");
-        form.addFormItem(reapWindowSizeIntegerField, "Reap Window Size");
-
-        getContent().add(checkboxOnlyAvailable);
-        getContent().addAndExpand(form);
     }
-
-    @Override
-    protected VerticalLayout initContent() {
-        VerticalLayout verticalLayout = super.initContent();
-        verticalLayout.setDefaultHorizontalComponentAlignment(FlexComponent.Alignment.STRETCH);
-        verticalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-        return verticalLayout;
-    }
-
 
     public boolean submit(boolean update) {
-        BinderValidationStatus<FieldFactoryEntity> result = this.binder.validate();
-        if (result.hasErrors()) {
+        FieldFactoryInfoEntity fieldFactoryInfoEntity = this.selectedOrEditingFieldFactoryInfoValueSignal.peek();
+        if (fieldFactoryInfoEntity == null || FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(fieldFactoryInfoEntity)) {
             return false;
         }
 
-        boolean beanIfValid = this.binder.writeBeanIfValid(this.fieldFactoryEntity);
-        if (beanIfValid) {
+        this.fieldFactoryEntity.setFieldFactoryInfoEntity(fieldFactoryInfoEntity);
+        BinderValidationStatus<FieldFactoryEntity> result = this.binder.validate();
+        boolean hasErrors = result.hasErrors();
+        //        || producingLengthIntegerSignal.peek() == null || reapWindowSizeIntegerSignal.peek() == null
+        if (hasErrors) {
+            return false;
+        } else {
+            try {
+                this.binder.writeBean(this.fieldFactoryEntity);
+            } catch (ValidationException e) {
+                return false;
+            }
             if (update) {
                 this.playerViewPresenter.updateFieldFactory(this.fieldFactoryEntity);
             } else {
                 this.playerViewPresenter.saveFieldFactory(this.fieldFactoryEntity);
             }
         }
-        return beanIfValid;
+
+        return true;
     }
 
 }

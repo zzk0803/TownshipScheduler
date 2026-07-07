@@ -6,9 +6,8 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.Delegate;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Sort;
-import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
@@ -20,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @SpringComponent
 @RouteScope
@@ -39,10 +39,6 @@ public class PlayerViewPresenter {
 
     private PlayerView playerView;
 
-    public boolean validate() {
-        return townshipAuthenticationContext != null && townshipAuthenticationContext.getPlayerEntity().isPresent();
-    }
-
     public Set<ProductEntity> fetchProducts() {
         return productEntityRepository.findBy(
                 ProductEntity.class,
@@ -61,24 +57,31 @@ public class PlayerViewPresenter {
         return playerService.playerFactoryToCorrespondedLevelInBatch(getPlayer());
     }
 
-    public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer() {
-        return playerService.findAvailableFieldFactoryInfoByPlayer(getPlayer());
+    public boolean validate() {
+        return townshipAuthenticationContext != null && townshipAuthenticationContext.getPlayerEntity().isPresent();
     }
 
     public PlayerEntity getPlayer() {
         return townshipAuthenticationContext.getPlayerEntity().get();
     }
 
+    public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer() {
+        return playerService.findAvailableFieldFactoryInfoByPlayer(getPlayer());
+    }
+
     public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer(int playerLevel, Set<FieldFactoryInfoEntity> allFieldFactoryInfo, List<FieldFactoryEntity> playersFieldFactory) {
         return playerService.findAvailableFieldFactoryInfoByPlayer(playerLevel, allFieldFactoryInfo, playersFieldFactory);
     }
 
-    public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfo() {
+    public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoIfPlayerLevelExist() {
+        if (getPlayer() != null) {
+            return playerService.findFieldFactoryInfoEntitiesByLevelLessThanEqual(getPlayer().getLevel());
+        }
         return playerService.findAvailableFieldFactoryInfo();
     }
 
-    public FieldFactoryEntity saveFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
-        return playerService.saveFieldFactory(fieldFactoryEntity, getPlayer());
+    public void saveFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
+        playerService.saveFieldFactory(fieldFactoryEntity, getPlayer());
     }
 
     public FieldFactoryEntity updateFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
@@ -123,6 +126,15 @@ public class PlayerViewPresenter {
 
     public PlayerEntity clearPlayerFieldFactory(PlayerEntity playerEntity) {
         return playerService.clearPlayerFieldFactory(playerEntity);
+    }
+
+    public @NonNull Map<FieldFactoryInfoEntity, Long> calcPlayerPropertiesCount(List<FieldFactoryEntity> playersFieldFactory) {
+        return playersFieldFactory.stream()
+                .collect(Collectors.groupingBy(
+                                FieldFactoryEntity::getFieldFactoryInfoEntity,
+                                Collectors.counting()
+                        )
+                );
     }
 
 }

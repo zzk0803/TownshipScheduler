@@ -30,7 +30,7 @@ class PlayerFieldFactoryArticle
 
     private final ListDataProvider<FieldFactoryEntity> fieldFactoryEntityListDataProvider = new ListDataProvider<>(fieldFactoryEntityForPlayer);
 
-    private Grid<FieldFactoryEntity> factoryEntityGrid;
+    private Grid<FieldFactoryEntity> fieldFactoryEntityGrid;
 
     public PlayerFieldFactoryArticle(PlayerViewPresenter playerViewPresenter) {
         this.playerViewPresenter = playerViewPresenter;
@@ -46,7 +46,7 @@ class PlayerFieldFactoryArticle
         loadPlayerFieldFactory();
 
         getContent().add(buildMenuBar());
-        getContent().addAndExpand(this.factoryEntityGrid = buildFieldFactoryGrid());
+        getContent().addAndExpand(this.fieldFactoryEntityGrid = buildFieldFactoryGrid());
     }
 
     private void loadPlayerFieldFactory() {
@@ -72,6 +72,7 @@ class PlayerFieldFactoryArticle
         factoryEntityGrid.addItemDoubleClickListener(event -> {
             PlayerFieldFactoryArticleForm playerFieldFactoryArticleForm = new PlayerFieldFactoryArticleForm(this.playerViewPresenter, event.getItem());
             Dialog dialog = new Dialog(playerFieldFactoryArticleForm);
+            dialog.setWidth(67.8F,Unit.VW);
             Dialog.DialogHeader header = dialog.getHeader();
             HorizontalLayout dialogHeaderWrapper = new HorizontalLayout();
             dialogHeaderWrapper.setWidthFull();
@@ -141,13 +142,14 @@ class PlayerFieldFactoryArticle
     private void reloadPlayerFieldFactory() {
         loadPlayerFieldFactory();
         getFieldFactoryEntityListDataProvider().refreshAll();
-        getFactoryEntityGrid().getDataProvider().refreshAll();
+        getFieldFactoryEntityGrid().getDataProvider().refreshAll();
     }
 
     private @NonNull ComponentEventListener<ClickEvent<MenuItem>> newFieldFactoryDialog() {
         return menuItemClickEvent -> {
             PlayerFieldFactoryArticleForm playerFieldFactoryArticleForm = new PlayerFieldFactoryArticleForm(this.playerViewPresenter);
             Dialog dialog = new Dialog(playerFieldFactoryArticleForm);
+            dialog.setWidth(67.8F,Unit.VW);
             Dialog.DialogHeader header = dialog.getHeader();
             HorizontalLayout dialogHeaderWrapper = new HorizontalLayout();
             dialogHeaderWrapper.setWidthFull();

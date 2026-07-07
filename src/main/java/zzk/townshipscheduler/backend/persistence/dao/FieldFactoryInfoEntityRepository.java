@@ -19,7 +19,7 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
 
     <T> Set<T> findBy(Class<T> projectionClass);
 
-    List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelLessThan(Integer level);
+    List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelLessThanEqual(Integer level);
 
     List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelBetween(Integer levelAfter, Integer levelBefore);
 

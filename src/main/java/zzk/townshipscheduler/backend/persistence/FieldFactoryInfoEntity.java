@@ -28,7 +28,7 @@ public class FieldFactoryInfoEntity {
 
     public static final FieldFactoryInfoEntity NULL_EMPTY_VALUE = new FieldFactoryInfoEntity() {{
         setId(-1L);
-        setCategory("NULL_EMPTY_VALUE");
+        setCategory("N/A");
         setLevel(-1);
     }};
 

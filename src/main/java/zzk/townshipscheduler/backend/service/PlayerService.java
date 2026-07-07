@@ -2,6 +2,7 @@ package zzk.townshipscheduler.backend.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,10 @@ public class PlayerService {
 
     private final TransactionTemplate transactionTemplate;
 
+    public List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelLessThanEqual(Integer level) {
+        return fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelLessThanEqual(level);
+    }
+
     @Transactional(readOnly = true)
     public List<PlayerEntity> findAllPlayer() {
         return playerEntityRepository.findBy(PlayerEntity.class);
@@ -66,13 +71,7 @@ public class PlayerService {
     }
 
     public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer(int playerLevel, Set<FieldFactoryInfoEntity> allFieldFactoryInfo, List<FieldFactoryEntity> playersFieldFactory) {
-        Map<FieldFactoryInfoEntity, Long> playerInfoHavingMap
-                = playersFieldFactory.stream()
-                .collect(Collectors.groupingBy(
-                                FieldFactoryEntity::getFieldFactoryInfoEntity,
-                                Collectors.counting()
-                        )
-                );
+        Map<FieldFactoryInfoEntity, Long> playerInfoHavingMap = calcPlayerPropertiesCount(playersFieldFactory);
 
         return allFieldFactoryInfo.stream()
                 .filter(fieldFactoryInfoEntity -> {
@@ -86,19 +85,32 @@ public class PlayerService {
                 .toList();
     }
 
+    private @NonNull Map<FieldFactoryInfoEntity, Long> calcPlayerPropertiesCount(List<FieldFactoryEntity> playersFieldFactory) {
+        return playersFieldFactory.stream()
+                .collect(Collectors.groupingBy(
+                                FieldFactoryEntity::getFieldFactoryInfoEntity,
+                                Collectors.counting()
+                        )
+                );
+    }
+
     @Transactional
-    public FieldFactoryEntity saveFieldFactory(FieldFactoryEntity fieldFactoryEntity, PlayerEntity playerEntity) {
-        playerEntity.addFieldFactory(fieldFactoryEntity);
-        PlayerEntity mergedPlayer = playerEntityRepository.save(playerEntity);
+    public void saveFieldFactory(FieldFactoryEntity fieldFactoryEntity, PlayerEntity playerEntity) {
+        if (checkInstanceValidation(fieldFactoryEntity, playerEntity)) {
+            playerEntity.addFieldFactory(fieldFactoryEntity);
+            playerEntityRepository.saveAndFlush(playerEntity);
+        }else {
+            throw new IllegalArgumentException("checkInstanceValidation failed");
+        }
+    }
+
+    private boolean checkInstanceValidation(FieldFactoryEntity fieldFactoryEntity, PlayerEntity mergedPlayer) {
         int alreadyHave = fieldFactoryEntityRepository.countByPlayerEntityAndFieldFactoryInfoEntity(
                 mergedPlayer,
                 fieldFactoryEntity.getFieldFactoryInfoEntity()
         );
-        if (alreadyHave < fieldFactoryEntity.getFieldFactoryInfoEntity().getMaxInstanceAmount()) {
-            return fieldFactoryEntityRepository.save(fieldFactoryEntity);
-        } else {
-            throw new RuntimeException("field factory amount exceed its max instance limit");
-        }
+
+        return alreadyHave < fieldFactoryEntity.getFieldFactoryInfoEntity().getMaxInstanceAmount();
     }
 
     @Transactional(readOnly = true)
@@ -106,7 +118,7 @@ public class PlayerService {
         return warehouseEntityRepository.findWarehouseEntityByPlayerEntity(playerEntity);
     }
 
-    public List<FieldFactoryEntity> playerLevelUpdateAndSetupRelatedFactories(PlayerEntity playerEntity) {
+    public List<FieldFactoryEntity> playerLevelUpAndSetupRelatedFactories(PlayerEntity playerEntity) {
 
         return transactionTemplate.execute(status -> {
             List<FieldFactoryInfoEntity> fieldFactoryInfoEntitiesByLevelBetween
@@ -151,7 +163,7 @@ public class PlayerService {
         playerEntityRepository.save(managedPlayer);
 
         List<FieldFactoryInfoEntity> availableFieldFactoryInfoAsList
-                = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelLessThan(managedPlayer.getLevel());
+                = fieldFactoryInfoEntityRepository.findFieldFactoryInfoEntitiesByLevelLessThanEqual(managedPlayer.getLevel());
         availableFieldFactoryInfoAsList.removeIf(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getCategory().equals("Crops"));
         availableFieldFactoryInfoAsList.removeIf(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getCategory().equals(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA));
 
