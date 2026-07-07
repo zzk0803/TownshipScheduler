@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.ui.pojo;
+package zzk.townshipscheduler.ui.pojo.scheduling;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

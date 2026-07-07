@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.ui.pojo;
+package zzk.townshipscheduler.ui.pojo.scheduling;
 
 import java.util.ArrayList;
 import java.util.Collection;

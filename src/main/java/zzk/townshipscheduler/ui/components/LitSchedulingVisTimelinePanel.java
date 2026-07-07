@@ -6,8 +6,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
-import zzk.townshipscheduler.ui.pojo.LitSchedulingProducingArrangementVO;
-import zzk.townshipscheduler.ui.pojo.TownshipSchedulingProblemViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 

@@ -6,7 +6,9 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Delegate;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
@@ -79,6 +81,10 @@ public class PlayerViewPresenter {
         return playerService.saveFieldFactory(fieldFactoryEntity, getPlayer());
     }
 
+    public FieldFactoryEntity updateFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
+        return playerService.updateFieldFactory(fieldFactoryEntity);
+    }
+
     public List<FieldFactoryEntity> findFieldFactoryEntityByPlayer() {
         return playerService.findFieldFactoryEntityByPlayer(getPlayer());
     }
@@ -113,6 +119,10 @@ public class PlayerViewPresenter {
 
     public PlayerEntity emergeAndUpdate(PlayerEntity player) {
         return playerService.emergeAndUpdate(player);
+    }
+
+    public PlayerEntity clearPlayerFieldFactory(PlayerEntity playerEntity) {
+        return playerService.clearPlayerFieldFactory(playerEntity);
     }
 
 }

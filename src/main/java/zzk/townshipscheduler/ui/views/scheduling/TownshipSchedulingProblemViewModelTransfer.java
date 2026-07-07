@@ -3,12 +3,15 @@ package zzk.townshipscheduler.ui.views.scheduling;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.copilot.shaded.helger.collection.commons.CommonsConcurrentHashMap;
+import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import com.vaadin.flow.spring.annotation.RouteScopeOwner;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.scheduling.model.*;
-import zzk.townshipscheduler.ui.pojo.*;
+import zzk.townshipscheduler.ui.pojo.scheduling.*;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveSchedulingProducingArrangementViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -20,34 +23,28 @@ import java.util.concurrent.atomic.AtomicReference;
 @SpringComponent
 @RouteScope
 @RouteScopeOwner(SchedulingView.class)
-public class TownshipSchedulingViewRecordComponent {
+public class TownshipSchedulingProblemViewModelTransfer {
 
-    private final Map<SchedulingProduct, SchedulingProductViewModel> schedulingProductSchedulingProductViewModelMap = new ConcurrentHashMap<>();
+    private final Map<SchedulingProduct, SchedulingProductViewModel> schedulingProductToViewModelMap = new ConcurrentHashMap<>();
 
-    private final Map<SchedulingFactoryInfo, SchedulingFactoryInfoViewModel> schedulingFactoryInfoSchedulingFactoryInfoViewModelMap = new CommonsConcurrentHashMap<>();
+    private final Map<SchedulingFactoryInfo, SchedulingFactoryInfoViewModel> schedulingFactoryInfoToViewModelMap = new CommonsConcurrentHashMap<>();
 
-    private final Map<SchedulingFactoryInstance, SchedulingFactoryInstanceViewModel> schedulingFactoryInstanceSchedulingFactoryInstanceViewModelMap = new ConcurrentHashMap<>();
+    private final Map<SchedulingFactoryInstance, SchedulingFactoryInstanceViewModel> schedulingFactoryInstanceToViewModelMap = new ConcurrentHashMap<>();
 
-    private final Map<SchedulingOrder, SchedulingOrderViewModel> schedulingOrderSchedulingOrderViewModelMap = new ConcurrentHashMap<>();
+    private final Map<SchedulingOrder, SchedulingOrderViewModel> schedulingOrderToViewModelMap = new ConcurrentHashMap<>();
 
-    private final Map<SchedulingProducingArrangement, SchedulingProducingArrangementViewModel> schedulingProducingArrangementSchedulingProducingArrangementViewModelMap = new ConcurrentHashMap<>();
+    private final Map<SchedulingProducingArrangement, SchedulingProducingArrangementViewModel> schedulingProducingArrangementToViewModelMap = new ConcurrentHashMap<>();
 
-    private final Map<SchedulingDateTimeSlot, SchedulingDateTimeSlotViewModel> schedulingDateTimeSlotSchedulingDateTimeSlotViewModelMap = new ConcurrentHashMap<>();
+    private final Map<SchedulingProducingArrangement, ReactiveSchedulingProducingArrangementViewModel> schedulingProducingArrangementToReactiveViewModelMap = new ConcurrentHashMap<>();
+
+    private final Map<SchedulingDateTimeSlot, SchedulingDateTimeSlotViewModel> schedulingDateTimeSlotToViewModelMap = new ConcurrentHashMap<>();
 
     private final AtomicReference<TownshipSchedulingProblem> townshipSchedulingProblemAtomicReference = new AtomicReference<>();
 
-    public TownshipSchedulingViewRecordComponent forOtherProblem(TownshipSchedulingProblem townshipSchedulingProblem) {
-        TownshipSchedulingViewRecordComponent schedulingViewRecordComponent = new TownshipSchedulingViewRecordComponent();
+    public TownshipSchedulingProblemViewModelTransfer forOtherProblem(TownshipSchedulingProblem townshipSchedulingProblem) {
+        TownshipSchedulingProblemViewModelTransfer schedulingViewRecordComponent = new TownshipSchedulingProblemViewModelTransfer();
         schedulingViewRecordComponent.townshipSchedulingProblemAtomicReference.set(townshipSchedulingProblem);
         return schedulingViewRecordComponent;
-    }
-
-    public TownshipSchedulingProblem getTownshipSchedulingProblem() {
-        return townshipSchedulingProblemAtomicReference.get();
-    }
-
-    public void setTownshipSchedulingProblem(TownshipSchedulingProblem newValue) {
-        townshipSchedulingProblemAtomicReference.set(newValue);
     }
 
     public TownshipSchedulingProblemViewModel mapAndGet() {
@@ -66,9 +63,38 @@ public class TownshipSchedulingViewRecordComponent {
                 mapAndGetSchedulingPlayerViewModel(),
                 getTownshipSchedulingProblem().getSolverStatus()
                         .name(),
-                Objects.isNull(score) ? "N/A" : score.toString(),
+                Objects.isNull(score)
+                        ? "N/A"
+                        : score.toString(),
                 Objects.nonNull(score) && score.isFeasible()
         );
+    }
+
+    public ReactiveTownshipSchedulingProblemViewModel updateAndGetReactiveViewModel(
+            TownshipSchedulingProblem townshipSchedulingProblem,
+            ReactiveTownshipSchedulingProblemViewModel reactiveTownshipSchedulingProblemViewModel
+    ) {
+        this.setTownshipSchedulingProblem(townshipSchedulingProblem);
+        Collection<ReactiveSchedulingProducingArrangementViewModel> reactiveSchedulingProducingArrangementViewModels = mapAndUpdateReactiveSchedulingProducingArrangementViewModel();
+        SolverStatus solverStatus = getTownshipSchedulingProblem().getSolverStatus();
+        HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
+        reactiveTownshipSchedulingProblemViewModel.solverStatus().set(solverStatus.name());
+        reactiveTownshipSchedulingProblemViewModel.score()
+                .set(
+                        Objects.isNull(score)
+                                ? "N/A"
+                                : score.toString()
+                );
+        reactiveTownshipSchedulingProblemViewModel.feasible().set(Objects.nonNull(score) && score.isFeasible());
+        return reactiveTownshipSchedulingProblemViewModel;
+    }
+
+    public TownshipSchedulingProblem getTownshipSchedulingProblem() {
+        return townshipSchedulingProblemAtomicReference.get();
+    }
+
+    public void setTownshipSchedulingProblem(TownshipSchedulingProblem newValue) {
+        townshipSchedulingProblemAtomicReference.set(newValue);
     }
 
     public TownshipSchedulingProblemViewModel updateAndGet(
@@ -81,7 +107,9 @@ public class TownshipSchedulingViewRecordComponent {
         return this.updateAndGet(
                 townshipSchedulingProblemViewModel,
                 solverStatus.name(),
-                Objects.isNull(score) ? "N/A" : score.toString(),
+                Objects.isNull(score)
+                        ? "N/A"
+                        : score.toString(),
                 Objects.nonNull(score) && score.isFeasible()
         );
     }
@@ -103,16 +131,93 @@ public class TownshipSchedulingViewRecordComponent {
         );
     }
 
+    public Collection<ReactiveSchedulingProducingArrangementViewModel> mapAndUpdateReactiveSchedulingProducingArrangementViewModel() {
+        NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangements = getTownshipSchedulingProblem().getSchedulingProducingArrangements();
+        for (SchedulingProducingArrangement schedulingProducingArrangement : schedulingProducingArrangements) {
+            mapAndUpdateSchedulingProducingArrangementViewModel(schedulingProducingArrangement);
+        }
+        return schedulingProducingArrangementToReactiveViewModelMap.values();
+    }
+
     public Collection<SchedulingProducingArrangementViewModel> mapAndGetSchedulingProducingArrangementViewModel() {
         NavigableSet<SchedulingProducingArrangement> schedulingProducingArrangements = getTownshipSchedulingProblem().getSchedulingProducingArrangements();
         for (SchedulingProducingArrangement schedulingProducingArrangement : schedulingProducingArrangements) {
             mapAndGetSchedulingProducingArrangementViewModel(schedulingProducingArrangement);
         }
-        return schedulingProducingArrangementSchedulingProducingArrangementViewModelMap.values();
+        return schedulingProducingArrangementToViewModelMap.values();
+    }
+
+    public ReactiveSchedulingProducingArrangementViewModel mapAndUpdateSchedulingProducingArrangementViewModel(SchedulingProducingArrangement schedulingProducingArrangement) {
+        return schedulingProducingArrangementToReactiveViewModelMap.compute(
+                schedulingProducingArrangement,
+                (arrangementInMap, viewInMap) -> {
+                    if (viewInMap == null) {
+                        Integer id = schedulingProducingArrangement.getId();
+                        String uuid = schedulingProducingArrangement.getUuid()
+                                .toString();
+                        ReactiveSchedulingProducingArrangementViewModel.ArrangementViewModelId modelId
+                                = ReactiveSchedulingProducingArrangementViewModel.ArrangementViewModelId.of(
+                                id,
+                                uuid
+                        );
+                        SchedulingProductViewModel product = buildOrGetSchedulingProductViewModel(schedulingProducingArrangement.getSchedulingProduct());
+                        SchedulingProductViewModel orderProduct = buildOrGetSchedulingProductViewModel(
+                                schedulingProducingArrangement.getSchedulingOrderProduct()
+                        );
+                        SchedulingOrderViewModel order = buildOrGetSchedulingOrderViewModel(schedulingProducingArrangement.getSchedulingOrder());
+                        ReactiveSchedulingProducingArrangementViewModel.ArrangementViewModelId orderProductArrangementId =
+                                ReactiveSchedulingProducingArrangementViewModel.ArrangementViewModelId.of(
+                                        schedulingProducingArrangement.getSupportOrderProducingArrangement()
+                                                .getId(),
+                                        schedulingProducingArrangement.getSupportOrderProducingArrangement()
+                                                .getUuid()
+                                                .toString()
+                                );
+                        boolean boolOrderDirect = schedulingProducingArrangement.boolOrderDirect();
+                        Duration producingDuration = schedulingProducingArrangement.getProducingDuration();
+                        Duration staticDeepPrerequisiteProducingDuration = schedulingProducingArrangement.getStaticDeepPrerequisiteProducingDuration();
+                        Duration staticDeepProducingDuration = schedulingProducingArrangement.getStaticDeepProducingDuration();
+                        SchedulingFactoryInstanceViewModel assignedFactoryInstance = buildOrGetSchedulingFactoryInstanceViewModel(
+                                schedulingProducingArrangement.getPlanningFactoryInstance()
+                        );
+                        LocalDateTime arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
+                        LocalDateTime producingDateTime = schedulingProducingArrangement.getProducingDateTime();
+                        LocalDateTime completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
+                        List<ReactiveSchedulingProducingArrangementViewModel.ArrangementViewModelId> prerequisiteProducingArrangements
+                                = schedulingProducingArrangement.getPrerequisiteProducingArrangements()
+                                .stream()
+                                .map(this::mapAndUpdateSchedulingProducingArrangementViewModel)
+                                .map(ReactiveSchedulingProducingArrangementViewModel::arrangementViewModelId)
+                                .toList();
+                        return new ReactiveSchedulingProducingArrangementViewModel(
+                                modelId,
+                                product,
+                                orderProduct,
+                                order,
+                                orderProductArrangementId,
+                                boolOrderDirect,
+                                prerequisiteProducingArrangements,
+                                producingDuration,
+                                staticDeepPrerequisiteProducingDuration,
+                                staticDeepProducingDuration,
+                                new ValueSignal<>(assignedFactoryInstance),
+                                new ValueSignal<>(arrangeDateTime),
+                                new ValueSignal<>(producingDateTime),
+                                new ValueSignal<>(completedDateTime)
+                        );
+                    } else {
+                        viewInMap.assignedFactoryInstance().set(buildOrGetSchedulingFactoryInstanceViewModel(schedulingProducingArrangement.getPlanningFactoryInstance()));
+                        viewInMap.arrangeDateTime().set(schedulingProducingArrangement.getArrangeDateTime());
+                        viewInMap.producingDateTime().set(schedulingProducingArrangement.getProducingDateTime());
+                        viewInMap.completedDateTime().set(schedulingProducingArrangement.getCompletedDateTime());
+                        return viewInMap;
+                    }
+                }
+        );
     }
 
     public SchedulingProducingArrangementViewModel mapAndGetSchedulingProducingArrangementViewModel(SchedulingProducingArrangement schedulingProducingArrangement) {
-        return schedulingProducingArrangementSchedulingProducingArrangementViewModelMap.compute(
+        return schedulingProducingArrangementToViewModelMap.compute(
                 schedulingProducingArrangement,
                 (arrangementInMap, viewInMap) -> {
                     if (viewInMap == null) {
@@ -186,11 +291,11 @@ public class TownshipSchedulingViewRecordComponent {
         for (SchedulingProduct schedulingProduct : schedulingProductList) {
             buildOrGetSchedulingProductViewModel(schedulingProduct);
         }
-        return schedulingProductSchedulingProductViewModelMap.values();
+        return schedulingProductToViewModelMap.values();
     }
 
     private SchedulingProductViewModel buildOrGetSchedulingProductViewModel(SchedulingProduct schedulingProduct) {
-        return schedulingProductSchedulingProductViewModelMap.computeIfAbsent(
+        return schedulingProductToViewModelMap.computeIfAbsent(
                 schedulingProduct,
                 productInMap -> {
                     return new SchedulingProductViewModel(
@@ -209,11 +314,11 @@ public class TownshipSchedulingViewRecordComponent {
         for (SchedulingFactoryInfo schedulingFactoryInfo : schedulingFactoryInfoList) {
             buildOrGetSchedulingFactoryInfoViewModel(schedulingFactoryInfo);
         }
-        return schedulingFactoryInfoSchedulingFactoryInfoViewModelMap.values();
+        return schedulingFactoryInfoToViewModelMap.values();
     }
 
     private SchedulingFactoryInfoViewModel buildOrGetSchedulingFactoryInfoViewModel(SchedulingFactoryInfo schedulingFactoryInfo) {
-        return this.schedulingFactoryInfoSchedulingFactoryInfoViewModelMap.computeIfAbsent(
+        return this.schedulingFactoryInfoToViewModelMap.computeIfAbsent(
                 schedulingFactoryInfo,
                 infoViewInMap -> {
                     List<SchedulingProductViewModel> schedulingProductViewModelList = schedulingFactoryInfo.getPortfolio()
@@ -244,7 +349,7 @@ public class TownshipSchedulingViewRecordComponent {
         for (SchedulingFactoryInstance schedulingFactoryInstance : schedulingFactoryInstanceList) {
             buildOrGetSchedulingFactoryInstanceViewModel(schedulingFactoryInstance);
         }
-        return schedulingFactoryInstanceSchedulingFactoryInstanceViewModelMap.values();
+        return schedulingFactoryInstanceToViewModelMap.values();
     }
 
     private SchedulingFactoryInstanceViewModel buildOrGetSchedulingFactoryInstanceViewModel(SchedulingFactoryInstance planningFactoryInstance) {
@@ -252,7 +357,7 @@ public class TownshipSchedulingViewRecordComponent {
             return null;
         }
 
-        return schedulingFactoryInstanceSchedulingFactoryInstanceViewModelMap.computeIfAbsent(
+        return schedulingFactoryInstanceToViewModelMap.computeIfAbsent(
                 planningFactoryInstance,
                 factoryInMap -> new SchedulingFactoryInstanceViewModel(
                         planningFactoryInstance.getId(),
@@ -274,7 +379,7 @@ public class TownshipSchedulingViewRecordComponent {
         for (SchedulingOrder schedulingOrder : schedulingOrderList) {
             buildOrGetSchedulingOrderViewModel(schedulingOrder);
         }
-        return this.schedulingOrderSchedulingOrderViewModelMap.values();
+        return this.schedulingOrderToViewModelMap.values();
     }
 
     private SchedulingOrderViewModel buildOrGetSchedulingOrderViewModel(SchedulingOrder schedulingOrder) {
@@ -290,7 +395,7 @@ public class TownshipSchedulingViewRecordComponent {
             );
             productAmountPairs.add(schedulingProductAmountPair);
         }
-        return schedulingOrderSchedulingOrderViewModelMap.computeIfAbsent(
+        return schedulingOrderToViewModelMap.computeIfAbsent(
                 schedulingOrder,
                 orderInMap -> {
                     return new SchedulingOrderViewModel(
@@ -309,11 +414,11 @@ public class TownshipSchedulingViewRecordComponent {
         for (SchedulingDateTimeSlot schedulingDateTimeSlot : schedulingDateTimeSlots) {
             buildOrGetSchedulingDateTimeSlotViewModel(schedulingDateTimeSlot);
         }
-        return schedulingDateTimeSlotSchedulingDateTimeSlotViewModelMap.values();
+        return schedulingDateTimeSlotToViewModelMap.values();
     }
 
     private SchedulingDateTimeSlotViewModel buildOrGetSchedulingDateTimeSlotViewModel(SchedulingDateTimeSlot schedulingDateTimeSlot) {
-        return this.schedulingDateTimeSlotSchedulingDateTimeSlotViewModelMap.computeIfAbsent(
+        return this.schedulingDateTimeSlotToViewModelMap.computeIfAbsent(
                 schedulingDateTimeSlot,
                 slotViewInMap -> {
                     return new SchedulingDateTimeSlotViewModel(

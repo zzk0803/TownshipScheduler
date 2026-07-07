@@ -2,7 +2,7 @@ package zzk.townshipscheduler.ui.views.scheduling;
 
 import com.vaadin.flow.data.provider.hierarchy.AbstractHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
-import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingProducingArrangementViewModel;
 
 import java.util.List;
 import java.util.stream.Stream;

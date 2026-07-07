@@ -193,14 +193,19 @@ class PlayerFieldFactoryArticleForm
     }
 
 
-    public boolean submit() {
+    public boolean submit(boolean update) {
         BinderValidationStatus<FieldFactoryEntity> result = this.binder.validate();
         if (result.hasErrors()) {
             return false;
         }
+
         boolean beanIfValid = this.binder.writeBeanIfValid(this.fieldFactoryEntity);
         if (beanIfValid) {
-            this.playerViewPresenter.saveFieldFactory(this.fieldFactoryEntity);
+            if (update) {
+                this.playerViewPresenter.updateFieldFactory(this.fieldFactoryEntity);
+            } else {
+                this.playerViewPresenter.saveFieldFactory(this.fieldFactoryEntity);
+            }
         }
         return beanIfValid;
     }

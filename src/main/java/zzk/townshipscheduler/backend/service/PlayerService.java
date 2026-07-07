@@ -131,6 +131,12 @@ public class PlayerService {
     }
 
     @Transactional
+    public PlayerEntity clearPlayerFieldFactory(PlayerEntity playerEntity) {
+        playerEntity.removeAllFieldFactory();
+        return playerEntityRepository.saveAndFlush(playerEntity);
+    }
+
+    @Transactional
     public PlayerEntity playerFactoryToCorrespondedLevelInBatch(PlayerEntity playerEntity) {
         playerEntity.removeAllFieldFactory();
         PlayerEntity managedPlayer = playerEntityRepository.saveAndFlush(playerEntity);
@@ -209,6 +215,10 @@ public class PlayerService {
                         "level"
                 )
         );
+    }
+
+    public FieldFactoryEntity updateFieldFactory(FieldFactoryEntity fieldFactoryEntity) {
+        return fieldFactoryEntityRepository.saveAndFlush(fieldFactoryEntity);
     }
 
 }

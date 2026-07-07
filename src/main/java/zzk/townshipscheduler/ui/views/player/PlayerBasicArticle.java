@@ -4,7 +4,6 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -22,7 +21,7 @@ class PlayerBasicArticle
 
     private final PlayerViewPresenter playerViewPresenter;
 
-    private  PlayerForm playerForm;
+    private PlayerForm playerForm;
 
     public PlayerBasicArticle(PlayerViewPresenter playerViewPresenter) {
         this.playerViewPresenter = playerViewPresenter;
@@ -48,7 +47,7 @@ class PlayerBasicArticle
             if (playerEntity != null) {
                 playerViewPresenter.emergeAndUpdate(playerEntity);
                 playerForm.reflash();
-            }else {
+            } else {
                 Notification.show("not success");
             }
         });
@@ -83,19 +82,19 @@ class PlayerBasicArticle
             );
             binder.forField(levelField)
                     .withValidator((integer, valueContext) -> integer > 0
-                                                              ? ValidationResult.ok()
-                                                              : ValidationResult.error("level number should >0")
+                            ? ValidationResult.ok()
+                            : ValidationResult.error("level number should >0")
                     )
                     .bind(PlayerEntity::getLevel, PlayerEntity::setLevel);
             binder.forField(fieldAmountField)
                     .withValidator((integer, valueContext) -> integer > 0
-                                                              ? ValidationResult.ok()
-                                                              : ValidationResult.error("field number should >0"))
+                            ? ValidationResult.ok()
+                            : ValidationResult.error("field number should >0"))
                     .bind(PlayerEntity::getFieldAmount, PlayerEntity::setFieldAmount);
             binder.forField(warehouseSizeField)
                     .withValidator((integer, valueContext) -> integer > 0
-                                                              ? ValidationResult.ok()
-                                                              : ValidationResult.error("field number should >0"))
+                            ? ValidationResult.ok()
+                            : ValidationResult.error("field number should >0"))
                     .bind(PlayerEntity::getWarehouseSize, PlayerEntity::setWarehouseSize);
 
             add(nameField);

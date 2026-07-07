@@ -44,7 +44,7 @@ import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayer;
 import zzk.townshipscheduler.backend.utility.ReportZipUtil;
 import zzk.townshipscheduler.ui.components.*;
-import zzk.townshipscheduler.ui.pojo.*;
+import zzk.townshipscheduler.ui.pojo.scheduling.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -92,35 +92,38 @@ public class SchedulingView
             = new ValueSignal<>(TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE);
 
     private Signal<Collection<SchedulingProducingArrangementViewModel>> SchedulingProducingArrangementsSignal
-            = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
-        if (townshipSchedulingProblemViewModel == null
-                || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
-        ) {
-            return List.of();
-        }
-        return townshipSchedulingProblemViewModel.schedulingProducingArrangementViewModels();
-    });
+            = townshipSchedulingProblemViewModelSignal.map(
+            townshipSchedulingProblemViewModel -> {
+                if (townshipSchedulingProblemViewModel == null
+                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+                ) {
+                    return List.of();
+                }
+                return townshipSchedulingProblemViewModel.schedulingProducingArrangementViewModels();
+            });
 
     private Signal<Collection<TownshipSchedulingProblemOrderBriefViewModel>> townshipSchedulingProblemOrderBriefSignal
-            = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
-        if (townshipSchedulingProblemViewModel == null
-                || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
-        ) {
-            return List.of();
-        }
-        return townshipSchedulingProblemViewModel.toTownshipSchedulingProblemOrderBriefViewModels();
+            = townshipSchedulingProblemViewModelSignal.map(
+            townshipSchedulingProblemViewModel -> {
+                if (townshipSchedulingProblemViewModel == null
+                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+                ) {
+                    return List.of();
+                }
+                return townshipSchedulingProblemViewModel.toTownshipSchedulingProblemOrderBriefViewModels();
 
-    });
+            });
 
     private Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal
-            = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
-        if (townshipSchedulingProblemViewModel == null
-                || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
-        ) {
-            return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
-        }
-        return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
-    });
+            = townshipSchedulingProblemViewModelSignal.map(
+            townshipSchedulingProblemViewModel -> {
+                if (townshipSchedulingProblemViewModel == null
+                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+                ) {
+                    return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
+                }
+                return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
+            });
 
     private Signal<String> scoreSignal = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
         if (townshipSchedulingProblemViewModel == null || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)) {
@@ -134,12 +137,12 @@ public class SchedulingView
     public SchedulingView(
             TownshipAuthenticationContext townshipAuthenticationContext,
             SchedulingViewPresenter schedulingViewPresenter,
-            TownshipSchedulingViewRecordComponent townshipSchedulingViewRecordComponent
+            TownshipSchedulingProblemViewModelTransfer townshipSchedulingProblemViewModelTransfer
     ) {
         this.schedulingViewPresenter = schedulingViewPresenter;
         this.schedulingViewPresenter.setSchedulingView(this);
         this.schedulingViewPresenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
-        this.schedulingViewPresenter.setTownshipSchedulingViewRecordComponent(townshipSchedulingViewRecordComponent);
+        this.schedulingViewPresenter.setTownshipSchedulingViewRecordComponent(townshipSchedulingProblemViewModelTransfer);
         this.setSizeFull();
         this.add(new H1("Scheduling View"));
     }
@@ -378,7 +381,7 @@ public class SchedulingView
         startButon.addClickListener(_ -> {
             stopButtonTimer.reset();
             stopButtonTimer.start();
-            this.schedulingViewPresenter.onStartButton();
+            this.schedulingViewPresenter.onSolverStartButton();
         });
         Button stopButton = new Button(stopButtonTimer);
         stopButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_LARGE);
@@ -386,7 +389,7 @@ public class SchedulingView
         stopButton.setSuffixComponent(VaadinIcon.STOP.create());
         stopButton.addClickListener(_ -> {
             stopButtonTimer.pause();
-            this.schedulingViewPresenter.onStopButton();
+            this.schedulingViewPresenter.onSolverStopButton();
         });
         this.triggerButton = new TriggerButton(
                 startButon,

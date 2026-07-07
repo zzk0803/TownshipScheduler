@@ -34,8 +34,8 @@ import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.TriggerButton;
-import zzk.townshipscheduler.ui.pojo.TownshipSchedulingProblemBriefViewModel;
-import zzk.townshipscheduler.ui.pojo.TownshipSchedulingProblemViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemBriefViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.io.File;
@@ -73,7 +73,7 @@ public class SchedulingViewPresenter {
 
     private SchedulingView schedulingView;
 
-    private TownshipSchedulingViewRecordComponent townshipSchedulingViewRecordComponent;
+    private TownshipSchedulingProblemViewModelTransfer townshipSchedulingViewRecordComponent;
 
     private TownshipAuthenticationContext townshipAuthenticationContext;
 
@@ -126,7 +126,7 @@ public class SchedulingViewPresenter {
         return this.getSchedulingView().getTownshipSchedulingProblemViewModelSignal();
     }
 
-    public void onStartButton() {
+    public void onSolverStartButton() {
         Consumer<TownshipSchedulingProblem> solutionConsumer = this::reflushAndGetCurrentProblem;
 
         SolverJob<TownshipSchedulingProblem> townshipSchedulingProblemSolverJob = schedulingService.scheduling(
@@ -193,7 +193,10 @@ public class SchedulingViewPresenter {
     public void reflushAndGetViewModel(TownshipSchedulingProblem townshipSchedulingProblem) {
         this.townshipSchedulingProblemViewModelAtomicReference.updateAndGet(
                 townshipSchedulingProblemViewModel -> this.townshipSchedulingViewRecordComponent.updateAndGet(
-                        reflushAndGetCurrentProblem(townshipSchedulingProblem), townshipSchedulingProblemViewModel));
+                        reflushAndGetCurrentProblem(townshipSchedulingProblem),
+                        townshipSchedulingProblemViewModel
+                )
+        );
     }
 
     public TownshipSchedulingProblem reflushAndGetCurrentProblem(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -213,7 +216,7 @@ public class SchedulingViewPresenter {
         this.reflushAndGetViewModel(townshipSchedulingProblem);
     }
 
-    public void onStopButton() {
+    public void onSolverStopButton() {
         if (solutionResultPushScheduledFuture != null) {
             solutionResultPushScheduledFuture.cancel(true);
         }
@@ -255,7 +258,7 @@ public class SchedulingViewPresenter {
     public Collection<TownshipSchedulingProblemBriefViewModel> toTownshipSchedulingProblemBriefViewModel(Collection<TownshipSchedulingProblem> townshipSchedulingProblemCollection) {
         return townshipSchedulingProblemCollection.stream().map(problem -> {
             String uuid = problem.getUuid();
-            TownshipSchedulingViewRecordComponent otherProblemViewRecordComponent = townshipSchedulingViewRecordComponent.forOtherProblem(problem);
+            TownshipSchedulingProblemViewModelTransfer otherProblemViewRecordComponent = townshipSchedulingViewRecordComponent.forOtherProblem(problem);
 
             return new TownshipSchedulingProblemBriefViewModel(
                     uuid, this.getSchedulingService().getProblemSolverStatus(uuid).name(),

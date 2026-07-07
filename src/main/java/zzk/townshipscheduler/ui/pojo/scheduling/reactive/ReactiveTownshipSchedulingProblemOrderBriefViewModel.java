@@ -1,21 +1,26 @@
-package zzk.townshipscheduler.ui.pojo;
+package zzk.townshipscheduler.ui.pojo.scheduling.reactive;
+
+import com.vaadin.flow.signals.local.AbstractLocalSignal;
+import zzk.townshipscheduler.ui.pojo.scheduling.ProductAmountBillViewModel;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-public record TownshipSchedulingProblemOrderBriefViewModel(
+public record ReactiveTownshipSchedulingProblemOrderBriefViewModel(
         int id,
         String orderType,
         LocalDateTime deadline,
         ProductAmountBillViewModel productAmountBill,
-        Collection<SchedulingProducingArrangementViewModel> arrangementViewModels
+        Collection<ReactiveSchedulingProducingArrangementViewModel> arrangementViewModels
 ) {
 
     public LocalDateTime calcCompletedDateTime() {
-        List<LocalDateTime> relatedArrangementsCompletedDateTime = arrangementViewModels.stream()
-                .map(SchedulingProducingArrangementViewModel::completedDateTime)
+        List<LocalDateTime> relatedArrangementsCompletedDateTime
+                = arrangementViewModels.stream()
+                .map(ReactiveSchedulingProducingArrangementViewModel::completedDateTime)
+                .map(AbstractLocalSignal::peek)
                 .toList();
         if (relatedArrangementsCompletedDateTime.stream()
                 .anyMatch(Objects::isNull)) {

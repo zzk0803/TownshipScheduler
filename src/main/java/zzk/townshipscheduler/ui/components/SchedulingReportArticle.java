@@ -15,10 +15,10 @@ import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.ui.pojo.ProductAmountBillViewModel;
-import zzk.townshipscheduler.ui.pojo.SchedulingReportArrangeDateTimeGroupViewModel;
-import zzk.townshipscheduler.ui.pojo.SchedulingReportFactoryGroupViewModel;
-import zzk.townshipscheduler.ui.pojo.SchedulingReportGroupsViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.ProductAmountBillViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportArrangeDateTimeGroupViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportFactoryGroupViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportGroupsViewModel;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.io.Serial;

@@ -1,9 +1,8 @@
 package zzk.townshipscheduler.ui.views.player;
 
-import com.vaadin.flow.component.AttachEvent;
-import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -12,9 +11,11 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
+import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,8 @@ class PlayerFieldFactoryArticle
     private final PlayerViewPresenter playerViewPresenter;
 
     private final List<FieldFactoryEntity> fieldFactoryEntityForPlayer = new ArrayList<>();
+
+    private final ListDataProvider<FieldFactoryEntity> fieldFactoryEntityListDataProvider = new ListDataProvider<>(fieldFactoryEntityForPlayer);
 
     private Grid<FieldFactoryEntity> factoryEntityGrid;
 
@@ -88,10 +91,10 @@ class PlayerFieldFactoryArticle
                     new Button(
                             "Ok",
                             okClickEvent -> {
-                                boolean submitted = playerFieldFactoryArticleForm.submit();
+                                boolean submitted = playerFieldFactoryArticleForm.submit(true);
                                 if (submitted) {
                                     dialog.close();
-                                    factoryEntityGrid.getDataProvider().refreshAll();
+                                    UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
                                 }
                             }
                     )
@@ -109,8 +112,40 @@ class PlayerFieldFactoryArticle
                 MenuBarVariant.LUMO_ICON, MenuBarVariant.LUMO_END_ALIGNED
         );
 
-        MenuItem menuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.PLUS.create());
-        menuItem.addSingleClickListener(menuItemClickEvent -> {
+        MenuItem menuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.ERASER.create());
+        menuItem.addClickListener(event -> {
+            ConfirmDialog confirmDialog = new ConfirmDialog(
+                    "Clear All FieldFactory", "text:Clear All FieldFactory", "confirmtext:Clear All FieldFactory", confirmClick -> {
+                PlayerEntity player = playerViewPresenter.getPlayer();
+                playerViewPresenter.clearPlayerFieldFactory(player);
+                UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
+            }
+            );
+            confirmDialog.open();
+        });
+        MenuItem newFieldFactoryDialogMenuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.PLUS.create());
+        newFieldFactoryDialogMenuItem.addSingleClickListener(newFieldFactoryDialog());
+        MenuItem toPlayerLevelPropertiesMenuItem = fieldFactoryGridMenuBar.addItem("One Key To My Level Properties");
+        toPlayerLevelPropertiesMenuItem.addClickListener(event -> {
+            ConfirmDialog confirmDialog = new ConfirmDialog(
+                    "ToCorrespondedLevelInBatch", "text:ToCorrespondedLevelInBatch", "confirmtext:ToCorrespondedLevelInBatch", confirmClick -> {
+                playerViewPresenter.playerFactoryToCorrespondedLevelInBatch();
+                UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
+            }
+            );
+            confirmDialog.open();
+        });
+        return fieldFactoryGridMenuBar;
+    }
+
+    private void reloadPlayerFieldFactory() {
+        loadPlayerFieldFactory();
+        getFieldFactoryEntityListDataProvider().refreshAll();
+        getFactoryEntityGrid().getDataProvider().refreshAll();
+    }
+
+    private @NonNull ComponentEventListener<ClickEvent<MenuItem>> newFieldFactoryDialog() {
+        return menuItemClickEvent -> {
             PlayerFieldFactoryArticleForm playerFieldFactoryArticleForm = new PlayerFieldFactoryArticleForm(this.playerViewPresenter);
             Dialog dialog = new Dialog(playerFieldFactoryArticleForm);
             Dialog.DialogHeader header = dialog.getHeader();
@@ -132,22 +167,17 @@ class PlayerFieldFactoryArticle
                     new Button(
                             "Ok",
                             okClickEvent -> {
-                                boolean submitted = playerFieldFactoryArticleForm.submit();
+                                boolean submitted = playerFieldFactoryArticleForm.submit(false);
                                 if (submitted) {
                                     dialog.close();
-                                    factoryEntityGrid.getDataProvider().refreshAll();
+                                    UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
                                 }
                             }
                     )
             );
 
             dialog.open();
-        });
-        MenuItem toPlayerLevelPropertiesMenuItem = fieldFactoryGridMenuBar.addItem("One Key To My Level Properties");
-        toPlayerLevelPropertiesMenuItem.addClickListener(event -> {
-            playerViewPresenter.playerFactoryToCorrespondedLevelInBatch();
-        });
-        return fieldFactoryGridMenuBar;
+        };
     }
 
 }
