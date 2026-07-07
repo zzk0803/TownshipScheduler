@@ -1,19 +1,26 @@
 package zzk.townshipscheduler.backend.service;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.persistence.dao.*;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Getter
 @Service
 @RequiredArgsConstructor
 public class PlayerService {
+
+    private final TownshipAuthenticationContext townshipAuthenticationContext;
 
     private final AppUserEntityRepository appUserEntityRepository;
 
@@ -22,6 +29,8 @@ public class PlayerService {
     private final FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository;
 
     private final FieldFactoryEntityRepository fieldFactoryEntityRepository;
+
+    private final OrderEntityRepository orderEntityRepository;
 
     private final WarehouseEntityRepository warehouseEntityRepository;
 
@@ -53,6 +62,10 @@ public class PlayerService {
                 = fieldFactoryInfoEntityRepository.findBy(FieldFactoryInfoEntity.class);
         List<FieldFactoryEntity> playersFieldFactory
                 = fieldFactoryEntityRepository.findFieldFactoryEntityByPlayerEntity(player);
+        return findAvailableFieldFactoryInfoByPlayer(player.getLevel(), allFieldFactoryInfo, playersFieldFactory);
+    }
+
+    public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer(int playerLevel, Set<FieldFactoryInfoEntity> allFieldFactoryInfo, List<FieldFactoryEntity> playersFieldFactory) {
         Map<FieldFactoryInfoEntity, Long> playerInfoHavingMap
                 = playersFieldFactory.stream()
                 .collect(Collectors.groupingBy(
@@ -63,7 +76,7 @@ public class PlayerService {
 
         return allFieldFactoryInfo.stream()
                 .filter(fieldFactoryInfoEntity -> {
-                    boolean levelFilterBool = fieldFactoryInfoEntity.getLevel() <= player.getLevel();
+                    boolean levelFilterBool = fieldFactoryInfoEntity.getLevel() <= playerLevel;
                     boolean amountFilterBool = playerInfoHavingMap.getOrDefault(
                             fieldFactoryInfoEntity,
                             0L
@@ -93,7 +106,7 @@ public class PlayerService {
         return warehouseEntityRepository.findWarehouseEntityByPlayerEntity(playerEntity);
     }
 
-    public List<FieldFactoryEntity> playerUpdate(PlayerEntity playerEntity) {
+    public List<FieldFactoryEntity> playerLevelUpdateAndSetupRelatedFactories(PlayerEntity playerEntity) {
 
         return transactionTemplate.execute(status -> {
             List<FieldFactoryInfoEntity> fieldFactoryInfoEntitiesByLevelBetween
@@ -156,15 +169,46 @@ public class PlayerService {
     }
 
     public WarehouseEntity updateWarehouseStock(
+            WarehouseEntity warehouseEntity,
+            Map<ProductEntity, Integer> productEntityIntegerMap
+    ) {
+        return transactionTemplate.execute(status -> {
+            warehouseEntity.changeProductAmount(productEntityIntegerMap);
+            return warehouseEntityRepository.saveAndFlush(warehouseEntity);
+        });
+    }
+
+    public WarehouseEntity updateWarehouseStock(
             WarehouseEntity playerWarehouse,
             ProductEntity productEntity,
             Integer amount
     ) {
         return transactionTemplate.execute(status -> {
-            WarehouseEntity mergedWarehouse = warehouseEntityRepository.save(playerWarehouse);
-            mergedWarehouse.doStockAction(productEntity, WarehouseEntity.WarehouseAction.SAVE, amount);
-            return mergedWarehouse;
+            playerWarehouse.doStockAction(productEntity, WarehouseEntity.WarehouseAction.SAVE, amount);
+            return warehouseEntityRepository.saveAndFlush(playerWarehouse);
         });
+    }
+
+    public Supplier<Collection<FieldFactoryInfoEntity>> calcFieldFactoryInfoCollectionSupplier() {
+        if (getTownshipAuthenticationContext() != null && getTownshipAuthenticationContext().getPlayerEntity().isPresent()) {
+            return calcFieldFactoryInfoCollectionSupplier(getTownshipAuthenticationContext().getPlayerEntity().get());
+        }
+        return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                Sort.by(
+                        Sort.Direction.ASC,
+                        "level"
+                )
+        );
+    }
+
+    public Supplier<Collection<FieldFactoryInfoEntity>> calcFieldFactoryInfoCollectionSupplier(PlayerEntity player) {
+        return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                player.getLevel(),
+                Sort.by(
+                        Sort.Direction.ASC,
+                        "level"
+                )
+        );
     }
 
 }

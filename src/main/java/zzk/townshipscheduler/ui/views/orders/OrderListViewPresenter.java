@@ -1,8 +1,8 @@
 package zzk.townshipscheduler.ui.views.orders;
 
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.dataview.GridListDataView;
+import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,6 +14,7 @@ import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.persistence.dao.OrderEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
 import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.service.PlayerService;
 
@@ -25,6 +26,7 @@ import java.util.function.Supplier;
 @Setter
 @Getter
 @SpringComponent
+@UIScope
 public class OrderListViewPresenter {
 
     private final OrderEntityRepository orderEntityRepository;
@@ -38,8 +40,6 @@ public class OrderListViewPresenter {
     private final TaskScheduler taskScheduler;
 
     private TownshipAuthenticationContext townshipAuthenticationContext;
-
-    private GridListDataView<OrderEntity> billDataView;
 
     private OrderListView view;
 
@@ -58,6 +58,22 @@ public class OrderListViewPresenter {
         this.taskScheduler = taskScheduler;
     }
 
+    public void removeOrder(OrderEntity orderEntity) {
+        Optional<PlayerEntity> optionalPlayerEntity = townshipAuthenticationContext.getPlayerEntity();
+        PlayerEntity playerEntity = optionalPlayerEntity.orElseThrow();
+        playerEntity.removeOrderEntity(orderEntity);
+        PlayerEntityRepository playerEntityRepository = playerService.getPlayerEntityRepository();
+        playerEntityRepository.saveAndFlush(playerEntity);
+        orderEntityRepository.deleteById(orderEntity.getId());
+    }
+
+    public void updateOrderListSignal() {
+        List<OrderEntity> orderEntities = queryBillList();
+        ListSignal<OrderEntity> viewOrdersSignal = getView().getOrderListSignal();
+        viewOrdersSignal.clear();
+        viewOrdersSignal.insertAllLast(orderEntities);
+    }
+
     OrderListView getView() {
         return view;
     }
@@ -66,27 +82,10 @@ public class OrderListViewPresenter {
         this.view = view;
     }
 
-    void onBillDeleteClick(OrderEntity orderEntity) {
-        orderEntityRepository.deleteById(orderEntity.getId());
-        billDataView.removeItem(orderEntity);
-        this.view.onBillDeleteDone();
-    }
-
-    public void fillGrid(Grid<OrderEntity> grid) {
-        List<OrderEntity> orderEntities = queryBillList();
-        billDataView = grid.setItems(orderEntities);
-    }
-
     private List<OrderEntity> queryBillList() {
         Optional<PlayerEntity> optionalPlayer = townshipAuthenticationContext.getPlayerEntity();
         PlayerEntity player = optionalPlayer.orElseThrow();
         return orderEntityRepository.queryForOrderListView(player);
-    }
-
-    public void updateOrderListSignal() {
-        List<OrderEntity> orderEntities = queryBillList();
-        getView().getOrderListSignal().clear();
-        getView().getOrderListSignal().insertAllLast(orderEntities);
     }
 
     public Supplier<Collection<FieldFactoryInfoEntity>> getCollectionSupplier() {

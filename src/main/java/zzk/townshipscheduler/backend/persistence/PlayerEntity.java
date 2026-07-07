@@ -47,6 +47,8 @@ public class PlayerEntity {
 
     private int fieldAmount;
 
+    private int warehouseSize;
+
     @OneToMany(
             targetEntity = FieldFactoryEntity.class,
             cascade = CascadeType.ALL,
@@ -59,6 +61,7 @@ public class PlayerEntity {
     @OneToMany(
             targetEntity = OrderEntity.class,
             mappedBy = "playerEntity",
+            cascade = CascadeType.ALL,
             orphanRemoval = true
     )
     @ToString.Exclude

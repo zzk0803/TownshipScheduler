@@ -34,6 +34,7 @@ import zzk.townshipscheduler.ui.utility.VaadinUiAccessUtil;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Layout
@@ -45,7 +46,6 @@ public class MainLayout
     private H1 viewTitle;
 
     private transient AuthenticationContext authenticationContext;
-
 
     public MainLayout(AuthenticationContext authenticationContext) {
         this.authenticationContext = authenticationContext;
@@ -62,6 +62,27 @@ public class MainLayout
         Scroller scroller = new Scroller(createNavigation());
 
         addToDrawer(header, scroller, createFooter());
+    }
+
+    private SideNav createNavigation() {
+        SideNav nav = new SideNav();
+
+        List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
+        menuEntries.stream().sorted(Comparator.comparing(MenuEntry::order)).forEach(entry -> {
+            if (entry.icon() != null) {
+                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
+            } else {
+                nav.addItem(new SideNavItem(entry.title(), entry.path()));
+            }
+        });
+
+        return nav;
+    }
+
+    private Footer createFooter() {
+        Footer footer = new Footer();
+
+        return footer;
     }
 
     private void addHeaderContent() {
@@ -155,38 +176,20 @@ public class MainLayout
         addToNavbar(true, toggle, headerWrapper);
     }
 
-    private SideNav createNavigation() {
-        SideNav nav = new SideNav();
-
-        List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
-        menuEntries.forEach(entry -> {
-            if (entry.icon() != null) {
-                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
-            } else {
-                nav.addItem(new SideNavItem(entry.title(), entry.path()));
-            }
-        });
-
-        return nav;
-    }
-
-    private Footer createFooter() {
-        Footer footer = new Footer();
-
-        return footer;
-    }
-
     protected void afterNavigation() {
         viewTitle.setText(getCurrentPageTitle());
     }
 
     private String getCurrentPageTitle() {
         PageTitle title = getContent().getClass().getAnnotation(PageTitle.class);
-        return title == null ? "" : title.value();
+        return title == null
+               ? ""
+               : title.value();
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext)
+            throws BeansException {
         this.authenticationContext = applicationContext.getBean(AuthenticationContext.class);
     }
 

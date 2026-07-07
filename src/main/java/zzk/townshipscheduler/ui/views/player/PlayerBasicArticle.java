@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views.player;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -21,15 +22,21 @@ class PlayerBasicArticle
 
     private final PlayerViewPresenter playerViewPresenter;
 
-    private final PlayerForm playerForm;
+    private  PlayerForm playerForm;
 
     public PlayerBasicArticle(PlayerViewPresenter playerViewPresenter) {
         this.playerViewPresenter = playerViewPresenter;
+        if (!this.playerViewPresenter.validate()) {
+            throw new IllegalStateException("player not exist");
+        }
+    }
 
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        getContent().removeAll();
         this.playerForm = new PlayerForm(this.playerViewPresenter.getPlayer());
 
         getContent().add(playerForm);
-
         getContent().add(buildUpdatePlayerButton());
     }
 
@@ -37,28 +44,13 @@ class PlayerBasicArticle
         Button button = new Button("Update");
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         button.addClickListener(clicked -> {
-            ConfirmDialog dialog = new ConfirmDialog();
-            dialog.setHeader("Extra Transaction");
-            dialog.setText(
-                    "shall we setup you ability to you corresponded level?"
-            );
-
-            dialog.setRejectable(true);
-            dialog.setRejectText("Discard");
-            dialog.addRejectListener(event -> dialog.close());
-
-            dialog.setConfirmText("OK");
-            dialog.addConfirmListener(event -> {
-                PlayerEntity playerEntity = this.playerForm.submitAndGet();
-                if (playerEntity != null) {
-                    playerViewPresenter.playerFactoryToCorrespondedLevelInBatch(playerEntity);
-                    playerForm.reflash();
-                }else {
-                    Notification.show("not success");
-                }
-            });
-
-            dialog.open();
+            PlayerEntity playerEntity = this.playerForm.submitAndGet();
+            if (playerEntity != null) {
+                playerViewPresenter.emergeAndUpdate(playerEntity);
+                playerForm.reflash();
+            }else {
+                Notification.show("not success");
+            }
         });
         return button;
     }
@@ -81,6 +73,7 @@ class PlayerBasicArticle
             var nameField = new TextField("Name");
             var levelField = new IntegerField("Level");
             var fieldAmountField = new IntegerField("Field Amount");
+            var warehouseSizeField = new IntegerField("Warehouse Size");
 
             binder.bindReadOnly(
                     nameField,
@@ -99,10 +92,16 @@ class PlayerBasicArticle
                                                               ? ValidationResult.ok()
                                                               : ValidationResult.error("field number should >0"))
                     .bind(PlayerEntity::getFieldAmount, PlayerEntity::setFieldAmount);
+            binder.forField(warehouseSizeField)
+                    .withValidator((integer, valueContext) -> integer > 0
+                                                              ? ValidationResult.ok()
+                                                              : ValidationResult.error("field number should >0"))
+                    .bind(PlayerEntity::getWarehouseSize, PlayerEntity::setWarehouseSize);
 
             add(nameField);
             add(levelField);
             add(fieldAmountField);
+            add(warehouseSizeField);
         }
 
         public PlayerEntity submitAndGet() {

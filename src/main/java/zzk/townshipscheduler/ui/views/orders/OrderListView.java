@@ -24,12 +24,10 @@ import lombok.Getter;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.ui.components.OrderGridItemsCard;
-import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.io.Serial;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Route("/orders")
@@ -42,19 +40,19 @@ public class OrderListView
     @Serial
     private static final long serialVersionUID = -1639218728062772870L;
 
-    private final OrderListViewPresenter presenter;
+    private final OrderListViewPresenter orderListViewPresenter;
 
     private final Grid<OrderEntity> grid;
 
     private final ListSignal<OrderEntity> orderListSignal = new ListSignal<>();
 
     public OrderListView(
-            OrderListViewPresenter presenter,
+            OrderListViewPresenter orderListViewPresenter,
             TownshipAuthenticationContext townshipAuthenticationContext
     ) {
-        this.presenter = presenter;
-        presenter.setView(this);
-        presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
+        this.orderListViewPresenter = orderListViewPresenter;
+        this.orderListViewPresenter.setView(this);
+        this.orderListViewPresenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
 
         style();
 
@@ -79,7 +77,7 @@ public class OrderListView
             Dialog dialog = new Dialog(
                     new OrderFormView(
                             this,
-                            this.presenter,
+                            this.orderListViewPresenter,
                             dialogReference
                     )
             );
@@ -97,34 +95,34 @@ public class OrderListView
         setMargin(false);
     }
 
-    public Component buildBillCard(OrderEntity orderView) {
+    public Component buildBillCard(OrderEntity orderEntity) {
         HorizontalLayout card = new HorizontalLayout();
         card.setDefaultVerticalComponentAlignment(Alignment.CENTER);
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
-        if (orderView.isBearDeadline()) {
-            LocalDateTime deadLine = orderView.getDeadLine();
+        if (orderEntity.isBearDeadline()) {
+            LocalDateTime deadLine = orderEntity.getDeadLine();
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
             dateTimePicker.setLabel("Dead Line");
             dateTimePicker.setReadOnly(true);
 
             card.add(
                     createCardInnerDiv(
-                            strAsSpan(orderView.getOrderType().name()),
+                            strAsSpan(orderEntity.getOrderType().name()),
                             dateTimePicker
                     )
             );
         } else {
             card.add(
                     createCardInnerDiv(
-                            strAsSpan(orderView.getOrderType().name()),
+                            strAsSpan(orderEntity.getOrderType().name()),
                             strAsSpan("No Deadline")
                     )
             );
         }
 
-        Scroller scroller = new Scroller(new OrderGridItemsCard(orderView));
+        Scroller scroller = new Scroller(new OrderGridItemsCard(orderEntity));
         scroller.setWidthFull();
         scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
         card.addAndExpand(scroller);
@@ -133,7 +131,8 @@ public class OrderListView
                 new Button(
                         VaadinIcon.CLOSE.create(),
                         click -> {
-                            presenter.onBillDeleteClick(orderView);
+                            this.orderListViewPresenter.removeOrder(orderEntity);
+                            this.orderListViewPresenter.updateOrderListSignal();
                         }
                 )
         );
@@ -157,15 +156,11 @@ public class OrderListView
         return new Span(content);
     }
 
-
-    public void onBillDeleteDone() {
-        grid.getDataProvider().refreshAll();
-        grid.getListDataView().refreshAll();
-    }
-
     @Override
     protected void onAttach(AttachEvent attachEvent) {
-        presenter.fillGrid(grid);
+        if (this.getOrderListViewPresenter() != null) {
+            this.getOrderListViewPresenter().updateOrderListSignal();
+        }
     }
 
 }

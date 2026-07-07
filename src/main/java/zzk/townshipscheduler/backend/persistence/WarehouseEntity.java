@@ -64,7 +64,7 @@ public class WarehouseEntity {
     )
     @MapKeyClass(ProductEntity.class)
     @Column(name = "amount")
-    private Map<ProductEntity, Integer> productAmountMap =new HashMap<>();
+    private Map<ProductEntity, Integer> productAmountMap = new HashMap<>();
 
 //    @OneToMany(
 //            targetEntity = WarehouseRecordEntity.class,
@@ -125,14 +125,6 @@ public class WarehouseEntity {
 //        }
 //    }
 
-    public Integer get(ProductEntity product) {
-        return productAmountMap.getOrDefault(product, 0);
-    }
-
-    public Integer setProductAmount(ProductEntity product, Integer value) {
-        return productAmountMap.put(product, value);
-    }
-
     public Integer doStockAction(ProductEntity product, WarehouseAction action, Integer amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("amount should more than 0");
@@ -141,38 +133,56 @@ public class WarehouseEntity {
         Integer amountInStock = get(product);
         switch (action) {
             case SAVE -> {
-                return setProductAmount(product, amountInStock + amount);
+                return changeProductAmount(product, amountInStock + amount);
             }
             case TAKE -> {
                 if (amountInStock <= 0) {
                     return 0;
                 }
 
-                return setProductAmount(product, amountInStock - amount);
+                return changeProductAmount(product, amountInStock - amount);
             }
 
             case null, default -> throw new IllegalArgumentException();
         }
     }
 
+    public Integer get(ProductEntity product) {
+        return productAmountMap.getOrDefault(product, 0);
+    }
+
+    public Integer changeProductAmount(ProductEntity product, Integer value) {
+        return productAmountMap.put(product, value);
+    }
+
+    public void changeProductAmount(Map<ProductEntity, Integer> productAmountMap) {
+        this.productAmountMap.clear();
+        this.productAmountMap.putAll(productAmountMap);
+    }
+
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
-                .getPersistentClass()
-                .hashCode() : getClass().hashCode();
+        return this instanceof HibernateProxy
+               ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                       .getPersistentClass()
+                       .hashCode()
+               : getClass().hashCode();
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
         Class<?> oEffectiveClass = o instanceof HibernateProxy
-                ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
-                : o.getClass();
+                                   ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
+                                   : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
-                : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+                                      ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                                      : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         WarehouseEntity that = (WarehouseEntity) o;
         return getId() != null && Objects.equals(getId(), that.getId());
     }

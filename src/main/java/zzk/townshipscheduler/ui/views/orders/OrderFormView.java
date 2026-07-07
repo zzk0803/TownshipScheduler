@@ -316,10 +316,7 @@ public class OrderFormView
                         .findFirst();
                 existingItem.ifPresent(
                         existing -> existing.update(
-                                itemInSignal -> {
-                                    BillItem updated = itemInSignal.update(amount);
-                                    return updated;
-                                }
+                                itemInSignal -> itemInSignal.update(amount)
                         )
                 );
             });

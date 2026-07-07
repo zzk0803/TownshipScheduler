@@ -70,8 +70,7 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
                     ,
                     warehouseTab,
                     new PlayerWarehouseArticle(
-                            this.playerViewPresenter,
-                            new ProductsCategoriesPanel(this.playerViewPresenter.fetchProducts())
+                            this.playerViewPresenter
                     )
             );
             Tabs articlesTabs = new Tabs();

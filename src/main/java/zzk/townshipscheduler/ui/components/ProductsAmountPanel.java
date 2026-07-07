@@ -1,9 +1,6 @@
 package zzk.townshipscheduler.ui.components;
 
-import com.vaadin.flow.component.AttachEvent;
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.Composite;
-import com.vaadin.flow.component.Unit;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -46,11 +43,20 @@ public class ProductsAmountPanel
 
     private final Consumer<Map<ProductEntity, Integer>> markedProductsConsumer;
 
-    private Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
+    private final Map<ProductEntity, Integer> markedProducts = new LinkedHashMap<>();
 
     private List<ProductEntity> productEntityList;
 
-    private Map<ProductEntity, Integer> markedProducts;
+    private RadioButtonGroup<RadioButtonGroupValues> productFilterRbg;
+
+    public ProductsAmountPanel(
+            Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier,
+            Consumer<Map<ProductEntity, Integer>> markedProductsConsumer,
+            Map<ProductEntity, Integer> itemAmountMap
+    ) {
+        this(factoryProductsSupplier, markedProductsConsumer);
+        this.markedProducts.putAll(itemAmountMap);
+    }
 
     public ProductsAmountPanel(
             Supplier<Collection<FieldFactoryInfoEntity>> factoryProductsSupplier,
@@ -77,13 +83,14 @@ public class ProductsAmountPanel
                 VaadinIcon.CLOSE_SMALL.create(),
                 clicked -> {
                     filterTextField.clear();
+                    productFilterRbg.setValue(RadioButtonGroupValues.EVERYTHING);
                     GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
                     dataView.removeFilters();
                     dataView.refreshAll();
                 }
         );
         textFieldSuffixButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
-        filterTextField.setSuffixComponent(textFieldSuffixButton);
+        filterTextField.setSuffixComponent(new HorizontalLayout(createFilterButton(), textFieldSuffixButton));
         VaadinUiEventBus.subscribe(
                 filterTextField,
                 ProductCardProductSpanClickedEvent.class,
@@ -100,8 +107,7 @@ public class ProductsAmountPanel
     }
 
     private Grid<FieldFactoryInfoEntity> createGrid() {
-        final Grid<FieldFactoryInfoEntity> grid;
-        grid = new Grid<>(FieldFactoryInfoEntity.class, false);
+        final Grid<FieldFactoryInfoEntity> grid = new Grid<>(FieldFactoryInfoEntity.class, false);
         grid.setId("goods-categories-selection-grid");
         grid.setSelectionMode(Grid.SelectionMode.NONE);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
@@ -118,25 +124,21 @@ public class ProductsAmountPanel
         return fieldFactoryInfoEntity -> {
             String factoryName = fieldFactoryInfoEntity.getCategory();
             return factoryName.contains(criteria)
-                    || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                    .anyMatch(productEntity -> {
-                        return productEntity.getName()
-                                .toLowerCase()
-                                .contains(criteria)
-                                || productEntity.getBomString()
-                                .toLowerCase()
-                                .contains(criteria);
-                    })
-                    || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                    .map(ProductEntity::getBomString)
-                    .anyMatch(productBomString -> {
-                        return productBomString.toLowerCase().contains(criteria);
-                    });
+                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                           .anyMatch(productEntity -> {
+                               return productEntity.getName()
+                                              .toLowerCase()
+                                              .contains(criteria)
+                                      || productEntity.getBomString()
+                                              .toLowerCase()
+                                              .contains(criteria);
+                           })
+                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                           .map(ProductEntity::getBomString)
+                           .anyMatch(productBomString -> {
+                               return productBomString.toLowerCase().contains(criteria);
+                           });
         };
-    }
-
-    public void consume() {
-        this.markedProductsConsumer.accept(markedProducts);
     }
 
     private Button createFilterButton() {
@@ -147,37 +149,42 @@ public class ProductsAmountPanel
         Popover popover = new Popover();
         popover.setTarget(button);
         popover.addThemeVariants(PopoverVariant.ARROW);
+        popover.setOpenOnHover(true);
 
-        RadioButtonGroup<RadioButtonGroupValues> productFilterRbg = new RadioButtonGroup<>();
+        productFilterRbg = new RadioButtonGroup<>();
         productFilterRbg.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         productFilterRbg.setItems(RadioButtonGroupValues.values());
         productFilterRbg.setValue(RadioButtonGroupValues.EVERYTHING);
         productFilterRbg.addValueChangeListener(changed -> {
-            this.factoryProductsGrid.getListDataView().removeFilters();
-            this.factoryProductsGrid.getListDataView()
-                    .addFilter(createTextFieldGridFilter(this.filterTextField.getValue()));
-            this.factoryProductsGrid.getListDataView().addFilter(fieldFactoryInfoEntity -> {
-                boolean result = false;
-                RadioButtonGroupValues value = changed.getValue();
-                switch (value) {
-                    case ATOMIC -> {
-                        result = isAtomicProductFilter(fieldFactoryInfoEntity);
-                    }
-                    case INTERMEDIATE -> {
-                        result = !isAtomicProductFilter(fieldFactoryInfoEntity)
-                                && !isFinalProductFilter(fieldFactoryInfoEntity);
-                    }
-                    case FINAL -> {
-                        result = isFinalProductFilter(fieldFactoryInfoEntity);
-                    }
-                    case EVERYTHING -> {
-                        return result = true;
-                    }
-                }
-                return result;
-            });
+            GridListDataView<FieldFactoryInfoEntity> listDataView = this.factoryProductsGrid.getListDataView();
+            listDataView.removeFilters();
+            listDataView
+                    .addFilter(
+                            createTextFieldGridFilter(this.filterTextField.getValue())
+                    );
+            listDataView.addFilter(
+                    fieldFactoryInfoEntity -> {
+                        boolean result = false;
+                        RadioButtonGroupValues value = changed.getValue();
+                        switch (value) {
+                            case ATOMIC -> {
+                                result = isAtomicProductFilter(fieldFactoryInfoEntity);
+                            }
+                            case INTERMEDIATE -> {
+                                result = !isAtomicProductFilter(fieldFactoryInfoEntity)
+                                         && !isFinalProductFilter(fieldFactoryInfoEntity);
+                            }
+                            case FINAL -> {
+                                result = isFinalProductFilter(fieldFactoryInfoEntity);
+                            }
+                            case EVERYTHING -> {
+                                return result = true;
+                            }
+                        }
+                        return result;
+                    });
 
-            this.factoryProductsGrid.getListDataView().refreshAll();
+            listDataView.refreshAll();
         });
         popover.add(productFilterRbg);
 
@@ -198,22 +205,34 @@ public class ProductsAmountPanel
         return result;
     }
 
-    private List<ProductEntity> subjectProductComposite(ProductEntity subjectProduct) {
+    private List<ProductEntity> subjectProductComposite(ProductEntity productInFactoryInfo) {
         return this.productEntityList.stream()
                 .filter(product -> {
                     return product.getManufactureInfoEntities().stream()
                             .flatMap(productManufactureInfoEntity -> productManufactureInfoEntity.getProductMaterialsRelations()
                                     .stream()
                             )
-                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(), subjectProduct));
+                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(), productInFactoryInfo));
                 })
                 .toList();
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        this.markedProducts.clear();
+    }
+
+    public synchronized void consume() {
+        this.markedProductsConsumer.accept(markedProducts);
+        this.markedProducts.clear();
     }
 
     @Override
     protected VerticalLayout initContent() {
         VerticalLayout verticalLayout = super.initContent();
         verticalLayout.setMargin(false);
+        verticalLayout.setMaxWidth(95, Unit.PERCENTAGE);
+        verticalLayout.setMinWidth(70, Unit.PERCENTAGE);
         return verticalLayout;
     }
 
@@ -221,12 +240,11 @@ public class ProductsAmountPanel
     protected void onAttach(AttachEvent attachEvent) {
         this.filterTextField.clear();
 
-        this.fieldFactoryInfoEntities = factoryProductsSupplier.get();
-        this.productEntityList = this.fieldFactoryInfoEntities.stream()
+        Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities = factoryProductsSupplier.get();
+        this.productEntityList = fieldFactoryInfoEntities.stream()
                 .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getPortfolioGoods().stream())
                 .toList();
         this.factoryProductsGrid.setItems(fieldFactoryInfoEntities);
-        this.markedProducts = new HashMap<>();
     }
 
     private enum RadioButtonGroupValues {
@@ -321,7 +339,9 @@ public class ProductsAmountPanel
         @Override
         protected VerticalLayout initContent() {
             VerticalLayout verticalLayout = super.initContent();
-            verticalLayout.setWidth(95.0f, Unit.VW);
+            verticalLayout.setMaxWidth(100, Unit.PERCENTAGE);
+            verticalLayout.setMinWidth(80, Unit.PERCENTAGE);
+            verticalLayout.setWrap(true);
             return verticalLayout;
         }
 
@@ -361,7 +381,7 @@ public class ProductsAmountPanel
         private IntegerField createAmountField(ProductEntity productEntity) {
             IntegerField amountField = new IntegerField();
             amountField.setPlaceholder("Amount");
-            amountField.setValue(0);
+            amountField.setValue(markedProducts.getOrDefault(productEntity, 0));
             amountField.setMin(0);
             amountField.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
             amountField.addValueChangeListener(valueChangeEvent -> {
@@ -373,6 +393,24 @@ public class ProductsAmountPanel
                 }
                 ProductsAmountPanel.this.markedProducts.put(productEntity, value);
             });
+            amountField.setPrefixComponent(
+                    new Button(VaadinIcon.MINUS.create()) {{
+                        addClickListener(minusClicked -> {
+                            Integer amount = amountField.getValue();
+                            if (amount < 0) {
+                                amountField.setValue(0);
+                                ProductsAmountPanel.this.markedProducts.remove(productEntity);
+                            }
+                            amountField.setValue(amount - 1);
+                        });
+                    }}
+            );
+            amountField.setSuffixComponent(new Button(VaadinIcon.PLUS.create()) {{
+                addClickListener(plusClicked -> {
+                    Integer amount = amountField.getValue();
+                    amountField.setValue(amount + 1);
+                });
+            }});
             return amountField;
         }
 

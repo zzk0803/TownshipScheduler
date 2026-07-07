@@ -3,6 +3,7 @@ package zzk.townshipscheduler.backend;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.VaadinSessionScope;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -66,7 +67,9 @@ public class TownshipAuthenticationContext {
 
         var cookie = new Cookie("remember-me", null);
         cookie.setMaxAge(0);
-        cookie.setPath(StringUtils.hasLength(request.getContextPath()) ? request.getContextPath() : "/");
+        cookie.setPath(StringUtils.hasLength(request.getContextPath())
+                       ? request.getContextPath()
+                       : "/");
 
         var response = (HttpServletResponse) VaadinResponse.getCurrent();
         response.addCookie(cookie);
