@@ -108,7 +108,7 @@ public class SchedulingView
 
             });
 
-    private ValueSignal<Boolean> solverRunningSignal=new ValueSignal<>(false);
+    private ValueSignal<Boolean> solverRunningSignal = new ValueSignal<>(false);
 
     public SchedulingView(
             TownshipAuthenticationContext townshipAuthenticationContext,
@@ -390,7 +390,7 @@ public class SchedulingView
                 reactiveTownshipSchedulingProblemViewModelValueSignal.map(reactiveTownshipSchedulingProblemViewModel -> {
                             if (reactiveTownshipSchedulingProblemViewModel != null) {
                                 return reactiveTownshipSchedulingProblemViewModel.score();
-                            }else {
+                            } else {
                                 return new ValueSignal<>("N/A");
                             }
                         })
@@ -421,6 +421,15 @@ public class SchedulingView
                 .setResizable(true)
                 .setHeader("Product")
         ;
+
+        reactiveArrangementTreeGrid.addColumn(ReactiveSchedulingProducingArrangementViewModel::producingDuration)
+                .setSortable(true)
+                .setSortable(true)
+                .setResizable(true)
+                .setAutoWidth(true)
+                .setHeader("Item Producing Duration")
+        ;
+
         reactiveArrangementTreeGrid.addColumn(ReactiveSchedulingProducingArrangementViewModel::order)
                 .setRenderer(new TextRenderer<>(schedulingProducingArrangement -> {
                     return schedulingProducingArrangement.order()
@@ -443,20 +452,14 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setHeader("Assign Factory")
         ;
-        reactiveArrangementTreeGrid.addColumn(ReactiveSchedulingProducingArrangementViewModel::producingDuration)
-                .setSortable(true)
-                .setSortable(true)
-                .setResizable(true)
-                .setAutoWidth(true)
-                .setHeader("Item Producing Duration")
-        ;
+
         reactiveArrangementTreeGrid.addComponentColumn(
                         reactiveSchedulingProducingArrangementViewModel -> {
                             Span span = new Span();
                             span.bindText(
                                     reactiveSchedulingProducingArrangementViewModel.arrangeDateTime()
                                             .map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
-                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                                                     : "N/A")
                             );
                             return span;
@@ -474,7 +477,7 @@ public class SchedulingView
                             span.bindText(
                                     reactiveSchedulingProducingArrangementViewModel.producingDateTime()
                                             .map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
-                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                                                     : "N/A")
                             );
                             return span;
@@ -491,7 +494,7 @@ public class SchedulingView
                             span.bindText(
                                     reactiveSchedulingProducingArrangementViewModel.completedDateTime()
                                             .map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
-                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                                                     : "N/A")
                             );
                             return span;
