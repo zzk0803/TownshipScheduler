@@ -16,10 +16,10 @@ public class TownshipSchedulingBenchmarkRequest {
     private BenchmarkSize benchmarkSize=BenchmarkSize.SELF;
 
     @Builder.Default
-    private BenchmarkStrategy benchmarkStrategy=BenchmarkStrategy.BUILTIN;
+    private BenchmarkStrategy benchmarkStrategy=BenchmarkStrategy.NIGHTLY_RESEARCH;
 
     public static enum BenchmarkSize {
-        SELF(1), SMALL(3), BIG(5), HUGE(7);
+        SELF(1), SMALL(3), BIG(5);
 
         private int problemSize;
 
@@ -33,6 +33,7 @@ public class TownshipSchedulingBenchmarkRequest {
     }
 
     public static enum BenchmarkStrategy {
+        NIGHTLY_RESEARCH,
         BUILTIN,
         CONSTRUCTION_HEURISTIC_WITH_AND_WITHOUT_LOCAL_SEARCH,
         EVERY_CONSTRUCTION_HEURISTIC_TYPE,

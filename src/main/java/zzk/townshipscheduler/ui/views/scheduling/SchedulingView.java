@@ -11,6 +11,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -762,6 +763,7 @@ public class SchedulingView
                     Text text = new Text("Benchmark is RUNNING...");
                     Optional<TownshipSchedulingProblemBriefViewModel> clickedItem = contextMenuItemClicked.getItem();
                     Dialog dialog = new Dialog();
+                    dialog.addClassNames("benchmark-dialog");
                     dialog.setModality(ModalityMode.STRICT);
                     dialog.setCloseOnEsc(false);
                     dialog.setCloseOnOutsideClick(false);
@@ -827,7 +829,10 @@ public class SchedulingView
                                                 () -> {
                                                     text.setText("Benchmark finished.");
                                                     timer.pause();
-                                                    dialogWrapper.remove(progressBar);
+                                                    Icon icon = VaadinIcon.CHECK_CIRCLE.create();
+                                                    icon.setSize("5rem");
+                                                    icon.getElement().getStyle().setColor("var(--lumo-success-color)");
+                                                    dialogWrapper.replace(progressBar,icon);
                                                     if (throwable != null) {
                                                         dialogWrapper.add(new Paragraph(throwable.toString()));
                                                     }
@@ -862,6 +867,7 @@ public class SchedulingView
                                                         downloadLink.getElement()
                                                                 .getThemeList()
                                                                 .add("primary");
+                                                        downloadLink.addClassNames("benchmark-result-link");
 
                                                         dialogWrapper.add(downloadLink);
                                                         dialogWrapper.setHorizontalComponentAlignment(
@@ -962,7 +968,7 @@ public class SchedulingView
             this.benchmarkStrategy.setItems(TownshipSchedulingBenchmarkRequest.BenchmarkStrategy.values());
 
             this.benchmarkSize.setValue(TownshipSchedulingBenchmarkRequest.BenchmarkSize.SELF);
-            this.benchmarkStrategy.setValue(TownshipSchedulingBenchmarkRequest.BenchmarkStrategy.BUILTIN);
+            this.benchmarkStrategy.setValue(TownshipSchedulingBenchmarkRequest.BenchmarkStrategy.NIGHTLY_RESEARCH);
 
             getContent().add(
                     problemId,

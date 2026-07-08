@@ -161,6 +161,12 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
                             .getClassLoader()
             );
 
+            case NIGHTLY_RESEARCH -> PlannerBenchmarkFactory.createFromXmlResource(
+                    "solverBenchmarkConfig_nightly_research.xml",
+                    this.getClass()
+                            .getClassLoader()
+            );
+
             case EVERY_CONSTRUCTION_HEURISTIC_TYPE_WITH_EVERY_LOCAL_SEARCH_TYPE -> PlannerBenchmarkFactory.createFromXmlResource(
                     "solverBenchmarkConfig_every_construction_heuristic_type_with_every_local_search_type.xml",
                     this.getClass()
