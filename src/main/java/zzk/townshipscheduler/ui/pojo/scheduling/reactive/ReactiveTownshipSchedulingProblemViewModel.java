@@ -72,11 +72,11 @@ public record ReactiveTownshipSchedulingProblemViewModel(
                 .collect(
                         Collectors.collectingAndThen(
                                 Collectors.groupingBy(
-                                        ReactiveSchedulingProducingArrangementViewModel::arrangeDateTime,
+                                        reactiveSchedulingProducingArrangementViewModel -> reactiveSchedulingProducingArrangementViewModel.arrangeDateTime().peek(),
                                         TreeMap::new,
                                         Collectors.collectingAndThen(
                                                 Collectors.groupingBy(
-                                                        ReactiveSchedulingProducingArrangementViewModel::assignedFactoryInstance,
+                                                        reactiveSchedulingProducingArrangementViewModel1 -> reactiveSchedulingProducingArrangementViewModel1.assignedFactoryInstance().peek(),
                                                         Collectors.collectingAndThen(
                                                                 Collectors.groupingBy(
                                                                         ReactiveSchedulingProducingArrangementViewModel::product,
@@ -103,7 +103,7 @@ public record ReactiveTownshipSchedulingProblemViewModel(
                                                             .stream()
                                                             .map(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry -> {
                                                                 return new SchedulingReportFactoryGroupViewModel(
-                                                                        schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getKey().peek(),
+                                                                        schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getKey(),
                                                                         schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getValue()
                                                                 );
                                                             })
@@ -113,7 +113,7 @@ public record ReactiveTownshipSchedulingProblemViewModel(
                                 ),
                                 localDateTimeCollectionTreeMap -> {
                                     return localDateTimeCollectionTreeMap.entrySet().stream().map(localDateTimeCollectionEntry -> {
-                                        LocalDateTime arrangeDateTime = localDateTimeCollectionEntry.getKey().peek();
+                                        LocalDateTime arrangeDateTime = localDateTimeCollectionEntry.getKey();
                                         Collection<SchedulingReportFactoryGroupViewModel> localDateTimeCollectionEntryValue = localDateTimeCollectionEntry.getValue();
                                         return new SchedulingReportArrangeDateTimeGroupViewModel(
                                                 arrangeDateTime,

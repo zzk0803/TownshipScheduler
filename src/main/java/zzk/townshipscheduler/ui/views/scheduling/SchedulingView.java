@@ -32,6 +32,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.AbstractLocalSignal;
 import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -385,7 +386,16 @@ public class SchedulingView
         layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
         layout.setJustifyContentMode(JustifyContentMode.START);
         scoreAnalysisParagraph = new Paragraph();
-        scoreAnalysisParagraph.bindText(reactiveTownshipSchedulingProblemViewModelValueSignal.get().score());
+        scoreAnalysisParagraph.bindText(
+                reactiveTownshipSchedulingProblemViewModelValueSignal.map(reactiveTownshipSchedulingProblemViewModel -> {
+                            if (reactiveTownshipSchedulingProblemViewModel != null) {
+                                return reactiveTownshipSchedulingProblemViewModel.score();
+                            }else {
+                                return new ValueSignal<>("N/A");
+                            }
+                        })
+                        .map(AbstractLocalSignal::get)
+        );
         layout.add(scoreAnalysisParagraph);
         return layout;
     }
@@ -428,6 +438,7 @@ public class SchedulingView
                             return span;
                         })
                 .setSortable(true)
+                .setComparator(Comparator.comparing(o -> o.assignedFactoryInstance().peek().factoryReadableIdentifier()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Assign Factory")
@@ -451,6 +462,7 @@ public class SchedulingView
                             return span;
                         })
                 .setSortable(true)
+                .setComparator(Comparator.comparing(o -> o.arrangeDateTime().peek()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setFlexGrow(1)
@@ -467,6 +479,8 @@ public class SchedulingView
                             );
                             return span;
                         })
+                .setSortable(true)
+                .setComparator(Comparator.comparing(o -> o.producingDateTime().peek()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Producing Date Time")
@@ -483,6 +497,7 @@ public class SchedulingView
                             return span;
                         })
                 .setSortable(true)
+                .setComparator(Comparator.comparing(o -> o.completedDateTime().peek()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Completed Date Time")

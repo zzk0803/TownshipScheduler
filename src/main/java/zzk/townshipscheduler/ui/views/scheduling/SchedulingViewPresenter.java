@@ -139,8 +139,8 @@ public class SchedulingViewPresenter {
                         String updatedString = getSchedulingView().getBriefText().getText() + "\r" + "solver approximate problem scale:" + problemSizeStatistics;
                         getSchedulingView().getBriefText().setText(updatedString);
                     });
-                }, solutionConsumer.andThen(this::reflushAndGetViewModel),
-                solutionConsumer.andThen(this::reflushAndGetViewModel)
+                }, solutionConsumer,
+                solutionConsumer
                         .andThen(_ -> solutionResultPushScheduledFuture.cancel(true))
                         .andThen(_ -> this.ui.access(() -> {
                             getSchedulingView().getTriggerButton().setToState1();
@@ -173,15 +173,18 @@ public class SchedulingViewPresenter {
     }
 
     private @NonNull Runnable pushSolverResult() {
-        return () -> this.ui.access(() -> {
-            if (!getSchedulingService().existSolvingJob(getTownshipSchedulingProblemId())) {
-                this.solutionResultPushScheduledFuture.cancel(true);
-                getSchedulingView().getTriggerButton().setToState1();
-                getSchedulingView().getSolverRunningSignal().set(false);
-            }
+        return () -> {
+            this.ui.access(() -> {
+                if (!getSchedulingService().existSolvingJob(getTownshipSchedulingProblemId())) {
+                    this.solutionResultPushScheduledFuture.cancel(true);
+                    getSchedulingView().getTriggerButton().setToState1();
+                    getSchedulingView().getSolverRunningSignal().set(false);
+                }
+            });
 
-            signalReactiveTownshipSchedulingProblemViewModel(this.getTownshipSchedulingProblemViewModel());
-        });
+            this.reflushAndGetViewModel();
+            this.signalReactiveTownshipSchedulingProblemViewModel(this.getTownshipSchedulingProblemViewModel());
+        };
     }
 
     public void signalReactiveTownshipSchedulingProblemViewModel(ReactiveTownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel) {

@@ -9,6 +9,7 @@ import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingProductViewModel;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 public record ReactiveSchedulingProducingArrangementViewModel(
@@ -26,7 +27,7 @@ public record ReactiveSchedulingProducingArrangementViewModel(
         ValueSignal<LocalDateTime> arrangeDateTime,
         ValueSignal<LocalDateTime> producingDateTime,
         ValueSignal<LocalDateTime> completedDateTime
-) {
+) implements Serializable{
 
     public boolean boolChild(ReactiveSchedulingProducingArrangementViewModel arrangement) {
         return prerequisiteProducingArrangements.contains(arrangement.arrangementViewModelId);

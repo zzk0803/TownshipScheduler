@@ -12,10 +12,13 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.AbstractLocalSignal;
+import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Setter;
 import zzk.townshipscheduler.ui.pojo.scheduling.*;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.io.Serial;
@@ -36,6 +39,8 @@ public class SchedulingReportArticle
 
     private final Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal;
 
+    private final Signal<String> solverResultSpanSignal;
+
     public SchedulingReportArticle(
             SchedulingView schedulingView,
             Function<String, Image> fetchImgByIdProvider
@@ -45,7 +50,9 @@ public class SchedulingReportArticle
         this.reportGroupsGrid = new SchedulingReportArrangeDateTimeGroupsGrid();
         this.reportGroupsGrid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
 
-        this.schedulingReportGroupsViewModelSignal = schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal().map(
+        ValueSignal<ReactiveTownshipSchedulingProblemViewModel> reactiveTownshipSchedulingProblemViewModelValueSignal
+                = schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal();
+        this.schedulingReportGroupsViewModelSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
                 townshipSchedulingProblemViewModel -> {
                     if (townshipSchedulingProblemViewModel == null
                         || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
@@ -54,18 +61,23 @@ public class SchedulingReportArticle
                     }
                     return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
                 });
+        this.solverResultSpanSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
+                townshipSchedulingProblemViewModel -> {
+                    if (townshipSchedulingProblemViewModel != null) {
+                        return townshipSchedulingProblemViewModel.feasible().get()
+                                ? "Feasible"
+                                : "Not Feasible";
+                    } else {
+                        return "Not Feasible";
+                    }
+                }
+        );
 
         Span span = new Span();
         span.getElement()
                 .getThemeList()
                 .add("badge");
-        span.bindText(
-                schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal().get()
-                        .feasible().map(value -> value
-                                ? "Eureka"
-                                : "Not Feasible"
-                        )
-        );
+        span.bindText(solverResultSpanSignal);
 
         this.getContent().
                 add(span);
