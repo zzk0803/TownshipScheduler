@@ -26,13 +26,13 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
@@ -46,6 +46,9 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayer;
 import zzk.townshipscheduler.backend.utility.ReportZipUtil;
 import zzk.townshipscheduler.ui.components.*;
 import zzk.townshipscheduler.ui.pojo.scheduling.*;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveSchedulingProducingArrangementViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemOrderBriefViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,30 +84,19 @@ public class SchedulingView
 
     private SchedulingReportArticle arrangementReportArticle;
 
-    private TreeGrid<SchedulingProducingArrangementViewModel> arrangementTreeGrid;
+    private TreeGrid<ReactiveSchedulingProducingArrangementViewModel> reactiveArrangementTreeGrid;
 
     private TabSheet tabSheet;
 
-    private Grid<TownshipSchedulingProblemOrderBriefViewModel> orderBriefGrid;
+    private Grid<ReactiveTownshipSchedulingProblemOrderBriefViewModel> reactiveOrderBriefGrid;
 
     private Paragraph briefText;
 
-    private ValueSignal<TownshipSchedulingProblemViewModel> townshipSchedulingProblemViewModelSignal
-            = new ValueSignal<>(TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE);
+    private ValueSignal<ReactiveTownshipSchedulingProblemViewModel> reactiveTownshipSchedulingProblemViewModelValueSignal
+            = new ValueSignal<>(ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE);
 
-    private Signal<Collection<SchedulingProducingArrangementViewModel>> SchedulingProducingArrangementsSignal
-            = townshipSchedulingProblemViewModelSignal.map(
-            townshipSchedulingProblemViewModel -> {
-                if (townshipSchedulingProblemViewModel == null
-                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
-                ) {
-                    return List.of();
-                }
-                return townshipSchedulingProblemViewModel.schedulingProducingArrangementViewModels();
-            });
-
-    private Signal<Collection<TownshipSchedulingProblemOrderBriefViewModel>> townshipSchedulingProblemOrderBriefSignal
-            = townshipSchedulingProblemViewModelSignal.map(
+    private Signal<Collection<ReactiveTownshipSchedulingProblemOrderBriefViewModel>> reactiveTownshipSchedulingProblemOrderBriefSignal
+            = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
             townshipSchedulingProblemViewModel -> {
                 if (townshipSchedulingProblemViewModel == null
                     || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
@@ -115,25 +107,7 @@ public class SchedulingView
 
             });
 
-    private Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal
-            = townshipSchedulingProblemViewModelSignal.map(
-            townshipSchedulingProblemViewModel -> {
-                if (townshipSchedulingProblemViewModel == null
-                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
-                ) {
-                    return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
-                }
-                return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
-            });
-
-    private Signal<String> scoreSignal = townshipSchedulingProblemViewModelSignal.map(townshipSchedulingProblemViewModel -> {
-        if (townshipSchedulingProblemViewModel == null || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)) {
-            return "N/A";
-        }
-        return townshipSchedulingProblemViewModel.score();
-    });
-
-    private ValueSignal<Boolean> solverRunningSignal;
+    private ValueSignal<Boolean> solverRunningSignal=new ValueSignal<>(false);
 
     public SchedulingView(
             TownshipAuthenticationContext townshipAuthenticationContext,
@@ -225,7 +199,7 @@ public class SchedulingView
         );
         schedulingContentLayout.addAndExpand(tabSheet);
 
-        this.schedulingViewPresenter.signalTownshipSchedulingProblemViewModel();
+        this.schedulingViewPresenter.signalReactiveTownshipSchedulingProblemViewModel();
     }
 
     private VerticalLayout buildBriefPanel() {
@@ -283,11 +257,11 @@ public class SchedulingView
         );
         panel.add(schedulingForm);
 
-        orderBriefGrid = new Grid<>(
-                TownshipSchedulingProblemOrderBriefViewModel.class,
+        reactiveOrderBriefGrid = new Grid<>(
+                ReactiveTownshipSchedulingProblemOrderBriefViewModel.class,
                 false
         );
-        orderBriefGrid.addColumn(new ComponentRenderer<>(
+        reactiveOrderBriefGrid.addColumn(new ComponentRenderer<>(
                         townshipSchedulingProblemOrderBriefViewModel -> {
                             return new Span(townshipSchedulingProblemOrderBriefViewModel.orderType() + "#" + townshipSchedulingProblemOrderBriefViewModel.id());
                         }))
@@ -295,7 +269,7 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setFlexGrow(0)
         ;
-        orderBriefGrid.addColumn(new ComponentRenderer<>(townshipSchedulingProblemOrderBriefViewModel1 -> {
+        reactiveOrderBriefGrid.addColumn(new ComponentRenderer<>(townshipSchedulingProblemOrderBriefViewModel1 -> {
                     Main layout = new Main();
                     layout.addClassNames(
                             LumoUtility.Display.FLEX,
@@ -332,7 +306,7 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setFlexGrow(1)
         ;
-        orderBriefGrid.addComponentColumn(townshipSchedulingProblemOrderBriefViewModel -> {
+        reactiveOrderBriefGrid.addComponentColumn(townshipSchedulingProblemOrderBriefViewModel -> {
                     LocalDateTime deadline = townshipSchedulingProblemOrderBriefViewModel.deadline();
                     DateTimePicker dateTimePicker = new DateTimePicker(deadline);
                     dateTimePicker.setReadOnly(true);
@@ -342,10 +316,10 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setFlexGrow(1)
         ;
-        orderBriefGrid.addComponentColumn(townshipSchedulingProblemOrderBriefViewModel -> {
-                    LocalDateTime deadline = townshipSchedulingProblemOrderBriefViewModel.calcCompletedDateTime();
-                    if (Objects.nonNull(deadline)) {
-                        DateTimePicker dateTimePicker = new DateTimePicker(deadline);
+        reactiveOrderBriefGrid.addComponentColumn(townshipSchedulingProblemOrderBriefViewModel -> {
+                    LocalDateTime completedDateTime = townshipSchedulingProblemOrderBriefViewModel.calcCompletedDateTime();
+                    if (Objects.nonNull(completedDateTime)) {
+                        DateTimePicker dateTimePicker = new DateTimePicker(completedDateTime);
                         dateTimePicker.setReadOnly(true);
                         return dateTimePicker;
                     } else {
@@ -356,12 +330,12 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setFlexGrow(1)
         ;
-        panel.addAndExpand(orderBriefGrid);
+        panel.addAndExpand(reactiveOrderBriefGrid);
 
         Signal.effect(
-                orderBriefGrid,
+                reactiveOrderBriefGrid,
                 () -> {
-                    orderBriefGrid.setItems(this.townshipSchedulingProblemOrderBriefSignal.get());
+                    reactiveOrderBriefGrid.setItems(this.reactiveTownshipSchedulingProblemOrderBriefSignal.get());
                 }
         );
 
@@ -411,19 +385,19 @@ public class SchedulingView
         layout.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
         layout.setJustifyContentMode(JustifyContentMode.START);
         scoreAnalysisParagraph = new Paragraph();
-        scoreAnalysisParagraph.bindText(scoreSignal);
+        scoreAnalysisParagraph.bindText(reactiveTownshipSchedulingProblemViewModelValueSignal.get().score());
         layout.add(scoreAnalysisParagraph);
         return layout;
     }
 
     private VerticalLayout buildProducingArrangementsGrid() {
         VerticalLayout gameActionArticle = new VerticalLayout();
-        arrangementTreeGrid = new TreeGrid<>(
-                SchedulingProducingArrangementViewModel.class,
+        reactiveArrangementTreeGrid = new TreeGrid<>(
+                ReactiveSchedulingProducingArrangementViewModel.class,
                 false
         );
-        arrangementTreeGrid.setMultiSort(true);
-        arrangementTreeGrid.addComponentHierarchyColumn(producingArrangement -> {
+        reactiveArrangementTreeGrid.setMultiSort(true);
+        reactiveArrangementTreeGrid.addComponentHierarchyColumn(producingArrangement -> {
                     HorizontalLayout horizontalLayout = new HorizontalLayout();
                     horizontalLayout.setSpacing(false);
                     horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
@@ -437,7 +411,7 @@ public class SchedulingView
                 .setResizable(true)
                 .setHeader("Product")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::order)
+        reactiveArrangementTreeGrid.addColumn(ReactiveSchedulingProducingArrangementViewModel::order)
                 .setRenderer(new TextRenderer<>(schedulingProducingArrangement -> {
                     return schedulingProducingArrangement.order()
                             .getReadable();
@@ -445,77 +419,109 @@ public class SchedulingView
                 .setResizable(true)
                 .setHeader("Order")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::assignedFactoryInstance)
-                .setRenderer(new TextRenderer<>(producingArrangement -> {
-                    return Optional.ofNullable(producingArrangement.assignedFactoryInstance())
-                            .map(SchedulingFactoryInstanceViewModel::factoryReadableIdentifier)
-                            .orElse("N/A");
-                }
-                ))
+        reactiveArrangementTreeGrid.addComponentColumn(
+                        reactiveSchedulingProducingArrangementViewModel -> {
+                            Span span = new Span();
+                            span.bindText(reactiveSchedulingProducingArrangementViewModel.assignedFactoryInstance().map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
+                                    ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
+                                    : "N/A"));
+                            return span;
+                        })
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Assign Factory")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::producingDuration)
+        reactiveArrangementTreeGrid.addColumn(ReactiveSchedulingProducingArrangementViewModel::producingDuration)
                 .setSortable(true)
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Item Producing Duration")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::arrangeDateTime)
-                .setRenderer(new LocalDateTimeRenderer<>(
-                        SchedulingProducingArrangementViewModel::arrangeDateTime,
-                        "yyyy-MM-dd HH:mm:ss"
-                ))
+        reactiveArrangementTreeGrid.addComponentColumn(
+                        reactiveSchedulingProducingArrangementViewModel -> {
+                            Span span = new Span();
+                            span.bindText(
+                                    reactiveSchedulingProducingArrangementViewModel.arrangeDateTime()
+                                            .map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
+                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    : "N/A")
+                            );
+                            return span;
+                        })
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setFlexGrow(1)
                 .setHeader("Arrange Date Time")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::producingDateTime)
-                .setRenderer(new LocalDateTimeRenderer<>(
-                        SchedulingProducingArrangementViewModel::producingDateTime,
-                        "yyyy-MM-dd HH:mm:ss"
-                ))
+        reactiveArrangementTreeGrid.addComponentColumn(
+                        reactiveSchedulingProducingArrangementViewModel -> {
+                            Span span = new Span();
+                            span.bindText(
+                                    reactiveSchedulingProducingArrangementViewModel.producingDateTime()
+                                            .map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
+                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    : "N/A")
+                            );
+                            return span;
+                        })
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Producing Date Time")
         ;
-        arrangementTreeGrid.addColumn(SchedulingProducingArrangementViewModel::completedDateTime)
-                .setRenderer(new LocalDateTimeRenderer<>(
-                        SchedulingProducingArrangementViewModel::completedDateTime,
-                        "yyyy-MM-dd HH:mm:ss"
-                ))
+        reactiveArrangementTreeGrid.addComponentColumn(
+                        reactiveSchedulingProducingArrangementViewModel -> {
+                            Span span = new Span();
+                            span.bindText(
+                                    reactiveSchedulingProducingArrangementViewModel.completedDateTime()
+                                            .map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
+                                                    ? schedulingFactoryInstanceViewModel.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    : "N/A")
+                            );
+                            return span;
+                        })
                 .setSortable(true)
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Completed Date Time")
         ;
 
-        arrangementTreeGrid.setSizeFull();
+        reactiveArrangementTreeGrid.setSizeFull();
 
+//        Signal.effect(
+//                arrangementTreeGrid,
+//                () -> {
+//                    Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangementViewModels
+//                            = SchedulingProducingArrangementsSignal.get();
+//                    TreeData<SchedulingProducingArrangementViewModel> arrangementTreeData = new TreeData<>();
+//                    arrangementTreeData.addItems(
+//                            schedulingProducingArrangementViewModels.stream()
+//                                    .filter(SchedulingProducingArrangementViewModel::boolDirectToOrder),
+//                            parentArrangement -> schedulingProducingArrangementViewModels.stream()
+//                                    .filter(parentArrangement::boolChild)
+//                    );
+//                    arrangementTreeGrid.setTreeData(arrangementTreeData);
+//                }
+//        );
         Signal.effect(
-                arrangementTreeGrid,
+                reactiveArrangementTreeGrid,
                 () -> {
-                    Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangementViewModels
-                            = SchedulingProducingArrangementsSignal.get();
-                    TreeData<SchedulingProducingArrangementViewModel> arrangementTreeData = new TreeData<>();
+                    TreeData<ReactiveSchedulingProducingArrangementViewModel> arrangementTreeData = new TreeData<>();
+                    ListSignal<ReactiveSchedulingProducingArrangementViewModel> reactiveSchedulingProducingArrangementViewModelListSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.get()
+                            .schedulingProducingArrangementReactiveViewModels();
                     arrangementTreeData.addItems(
-                            schedulingProducingArrangementViewModels.stream()
-                                    .filter(SchedulingProducingArrangementViewModel::boolDirectToOrder),
-                            parentArrangement -> schedulingProducingArrangementViewModels.stream()
+                            reactiveSchedulingProducingArrangementViewModelListSignal.getValues()
+                                    .filter(ReactiveSchedulingProducingArrangementViewModel::boolDirectToOrder),
+                            parentArrangement -> reactiveSchedulingProducingArrangementViewModelListSignal.getValues()
                                     .filter(parentArrangement::boolChild)
                     );
-                    arrangementTreeGrid.setTreeData(arrangementTreeData);
+                    reactiveArrangementTreeGrid.setTreeData(arrangementTreeData);
                 }
         );
 
-        gameActionArticle.addAndExpand(
-                arrangementTreeGrid
-        );
+        gameActionArticle.addAndExpand(reactiveArrangementTreeGrid);
         return gameActionArticle;
     }
 
@@ -832,7 +838,7 @@ public class SchedulingView
                                                     Icon icon = VaadinIcon.CHECK_CIRCLE.create();
                                                     icon.setSize("5rem");
                                                     icon.getElement().getStyle().setColor("var(--lumo-success-color)");
-                                                    dialogWrapper.replace(progressBar,icon);
+                                                    dialogWrapper.replace(progressBar, icon);
                                                     if (throwable != null) {
                                                         dialogWrapper.add(new Paragraph(throwable.toString()));
                                                     }

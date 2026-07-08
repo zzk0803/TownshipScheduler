@@ -67,27 +67,6 @@ public record TownshipSchedulingProblemViewModel(
         );
     }
 
-    public List<TownshipSchedulingProblemOrderBriefViewModel> toTownshipSchedulingProblemOrderBriefViewModels() {
-        return schedulingOrderViewModels.stream()
-                .map(
-                        schedulingOrder -> {
-                            LocalDateTime deadline = schedulingOrder.deadline() != null
-                                                     ? schedulingOrder.deadline()
-                                                     : schedulingWorkCalendar.endDateTime();
-                            return new TownshipSchedulingProblemOrderBriefViewModel(
-                                    Math.toIntExact(schedulingOrder.id()),
-                                    schedulingOrder.orderType(),
-                                    deadline,
-                                    schedulingOrder.productAmountBill(),
-                                    this.schedulingProducingArrangementViewModels.stream()
-                                            .filter(schedulingProducingArrangementViewModel -> schedulingProducingArrangementViewModel.order()
-                                                    .equals(schedulingOrder))
-                                            .toList()
-                            );
-                        })
-                .toList();
-    }
-
     public SchedulingReportGroupsViewModel toSchedulingReportGroupsViewModel() {
         ArrayList<SchedulingReportArrangeDateTimeGroupViewModel> schedulingReportArrangeDateTimeGroupViewModels = schedulingProducingArrangementViewModels.stream()
                 .filter(schedulingProducingArrangement -> Objects.nonNull(schedulingProducingArrangement.arrangeDateTime()))

@@ -15,10 +15,7 @@ import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.ui.pojo.scheduling.ProductAmountBillViewModel;
-import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportArrangeDateTimeGroupViewModel;
-import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportFactoryGroupViewModel;
-import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportGroupsViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.*;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.io.Serial;
@@ -33,9 +30,11 @@ import java.util.function.Function;
 public class SchedulingReportArticle
         extends Composite<VerticalLayout> {
 
-    private Function<String, Image> fetchImgByIdProvider;
+    private final Function<String, Image> fetchImgByIdProvider;
 
-    private SchedulingReportArrangeDateTimeGroupsGrid grid;
+    private final SchedulingReportArrangeDateTimeGroupsGrid reportGroupsGrid;
+
+    private final Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal;
 
     public SchedulingReportArticle(
             SchedulingView schedulingView,
@@ -43,45 +42,40 @@ public class SchedulingReportArticle
     ) {
         this.fetchImgByIdProvider = fetchImgByIdProvider;
 
-        grid = new SchedulingReportArrangeDateTimeGroupsGrid();
-        grid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
+        this.reportGroupsGrid = new SchedulingReportArrangeDateTimeGroupsGrid();
+        this.reportGroupsGrid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
 
-        //        if (getTownshipSchedulingProblemViewModel().feasible()) {
-        //            Span span = new Span("Eureka");
-        //            span.getElement()
-        //                    .getThemeList()
-        //                    .add("badge success");
-        //            contentLayout.add(span);
-        //        } else {
-        //            Span span = new Span("Not Feasible");
-        //            span.getElement()
-        //                    .getThemeList()
-        //                    .add("badge  error");
-        //            contentLayout.add(span);
-        //        }
+        this.schedulingReportGroupsViewModelSignal = schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal().map(
+                townshipSchedulingProblemViewModel -> {
+                    if (townshipSchedulingProblemViewModel == null
+                        || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+                    ) {
+                        return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
+                    }
+                    return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
+                });
 
         Span span = new Span();
         span.getElement()
                 .getThemeList()
                 .add("badge");
         span.bindText(
-                schedulingView.getTownshipSchedulingProblemViewModelSignal()
-                        .map(value -> value.feasible()
-                                      ? "Eureka"
-                                      : "Not Feasible")
+                schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal().get()
+                        .feasible().map(value -> value
+                                ? "Eureka"
+                                : "Not Feasible"
+                        )
         );
 
         this.getContent().
                 add(span);
         this.getContent().
-                addAndExpand(grid);
+                addAndExpand(reportGroupsGrid);
 
         Signal.effect(
-                grid,
+                reportGroupsGrid,
                 () -> {
-                    Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal = schedulingView.getSchedulingReportGroupsViewModelSignal();
-                    SchedulingReportGroupsViewModel schedulingReportGroupsViewModel = schedulingReportGroupsViewModelSignal.get();
-                    grid.setItems(schedulingReportGroupsViewModel.schedulingReportArrangeDateTimeGroupViewModels());
+                    reportGroupsGrid.setItems(this.schedulingReportGroupsViewModelSignal.get().schedulingReportArrangeDateTimeGroupViewModels());
                 }
         );
     }

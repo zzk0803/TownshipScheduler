@@ -3,6 +3,7 @@ package zzk.townshipscheduler.ui.pojo.scheduling.reactive;
 import com.vaadin.flow.signals.local.ValueSignal;
 import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingFactoryInstanceViewModel;
 import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingOrderViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingProducingArrangementViewModel;
 import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingProductViewModel;
 
 import java.io.Serializable;
@@ -26,6 +27,14 @@ public record ReactiveSchedulingProducingArrangementViewModel(
         ValueSignal<LocalDateTime> producingDateTime,
         ValueSignal<LocalDateTime> completedDateTime
 ) {
+
+    public boolean boolChild(ReactiveSchedulingProducingArrangementViewModel arrangement) {
+        return prerequisiteProducingArrangements.contains(arrangement.arrangementViewModelId);
+    }
+
+    public boolean boolParent(ReactiveSchedulingProducingArrangementViewModel arrangement) {
+        return arrangement.prerequisiteProducingArrangements.contains(this.arrangementViewModelId);
+    }
 
     public record ArrangementViewModelId(
             int id,

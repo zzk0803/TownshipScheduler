@@ -3,6 +3,7 @@ package zzk.townshipscheduler.ui.views.scheduling;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.copilot.shaded.helger.collection.commons.CommonsConcurrentHashMap;
+import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import com.vaadin.flow.spring.annotation.RouteScopeOwner;
@@ -47,6 +48,31 @@ public class TownshipSchedulingProblemViewModelTransfer {
         return schedulingViewRecordComponent;
     }
 
+    public ReactiveTownshipSchedulingProblemViewModel mapAndGetReactiveModel() {
+        HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
+        ListSignal<ReactiveSchedulingProducingArrangementViewModel> arrangementViewModelListSignal = new ListSignal<>();
+        arrangementViewModelListSignal.insertAllLast(mapAndUpdateReactiveSchedulingProducingArrangementViewModel());
+        return new ReactiveTownshipSchedulingProblemViewModel(
+                getTownshipSchedulingProblem().getUuid(),
+                mapAndGetSchedulingProductViewModel(),
+                mapAndGetSchedulingFactoryInfoViewModel(),
+                mapAndGetSchedulingOrderViewModel(),
+                mapAndGetSchedulingFactoryInstanceViewModel(),
+                mapAndGetSchedulingDateTimeSlotViewModel(),
+                arrangementViewModelListSignal,
+                mapAndGetSchedulingWorkCalendarViewModel(),
+                getTownshipSchedulingProblem().getDateTimeSlotSize()
+                        .getMinute(),
+                mapAndGetSchedulingPlayerViewModel(),
+                new ValueSignal<>(getTownshipSchedulingProblem().getSolverStatus()
+                        .name()),
+                new ValueSignal<>(Objects.isNull(score)
+                        ? "N/A"
+                        : score.toString()),
+                new ValueSignal<>(Objects.nonNull(score) && score.isFeasible())
+        );
+    }
+
     public TownshipSchedulingProblemViewModel mapAndGet() {
         HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
         return new TownshipSchedulingProblemViewModel(
@@ -75,16 +101,19 @@ public class TownshipSchedulingProblemViewModelTransfer {
             ReactiveTownshipSchedulingProblemViewModel reactiveTownshipSchedulingProblemViewModel
     ) {
         this.setTownshipSchedulingProblem(townshipSchedulingProblem);
+        if (reactiveTownshipSchedulingProblemViewModel == null) {
+            return mapAndGetReactiveModel();
+        }
+
         Collection<ReactiveSchedulingProducingArrangementViewModel> reactiveSchedulingProducingArrangementViewModels = mapAndUpdateReactiveSchedulingProducingArrangementViewModel();
         SolverStatus solverStatus = getTownshipSchedulingProblem().getSolverStatus();
         HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
         reactiveTownshipSchedulingProblemViewModel.solverStatus().set(solverStatus.name());
-        reactiveTownshipSchedulingProblemViewModel.score()
-                .set(
-                        Objects.isNull(score)
-                                ? "N/A"
-                                : score.toString()
-                );
+        reactiveTownshipSchedulingProblemViewModel.score().set(
+                Objects.isNull(score)
+                        ? "N/A"
+                        : score.toString()
+        );
         reactiveTownshipSchedulingProblemViewModel.feasible().set(Objects.nonNull(score) && score.isFeasible());
         return reactiveTownshipSchedulingProblemViewModel;
     }
