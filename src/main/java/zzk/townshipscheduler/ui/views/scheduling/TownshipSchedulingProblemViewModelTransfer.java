@@ -105,7 +105,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
             return mapAndGetReactiveModel();
         }
 
-        Collection<ReactiveSchedulingProducingArrangementViewModel> reactiveSchedulingProducingArrangementViewModels = mapAndUpdateReactiveSchedulingProducingArrangementViewModel();
+        Collection<ReactiveSchedulingProducingArrangementViewModel> reactiveSchedulingProducingArrangementViewModels
+                = mapAndUpdateReactiveSchedulingProducingArrangementViewModel();
         SolverStatus solverStatus = getTownshipSchedulingProblem().getSolverStatus();
         HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
         reactiveTownshipSchedulingProblemViewModel.solverStatus().set(solverStatus.name());
