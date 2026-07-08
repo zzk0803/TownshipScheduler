@@ -12,22 +12,21 @@ import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Gatherer;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @PlanningEntity
-public class SchedulingPlayer implements Serializable {
+public class SchedulingPlayer
+        implements Serializable {
 
     public static final LocalTime DEFAULT_SLEEP_START = LocalTime.MIN.minusHours(2);
 
@@ -37,6 +36,46 @@ public class SchedulingPlayer implements Serializable {
             = factoryProcessSequence -> Objects.nonNull(
             factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())
                                         && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
+
+    private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, ComputedDateTimePair>>> QUEUE_PROCESSOR_2
+            = stream -> stream.gather(
+            Gatherers.scan(
+                    () -> new Pair<>(
+                            FactoryProcessSequence.EMPTY_NULL_VALUE,
+                            ComputedDateTimePair.EMPTY_NULL_VALUE
+                    ),
+                    (previousPair, factoryProcessSequence) -> {
+                        LocalDateTime arrangeDateTime = factoryProcessSequence.getArrangeDateTime();
+                        Duration duration = factoryProcessSequence.getProducingDuration();
+                        ComputedDateTimePair previousComputedDateTimePair = previousPair.value1();
+                        if (previousComputedDateTimePair.equals(ComputedDateTimePair.EMPTY_NULL_VALUE)) {
+                            return new Pair<>(
+                                    factoryProcessSequence,
+                                    new ComputedDateTimePair(
+                                            arrangeDateTime,
+                                            arrangeDateTime.plus(duration)
+                                    )
+                            );
+                        } else {
+                            LocalDateTime previousCompletedDateTime = previousComputedDateTimePair.completedDateTime();
+                            LocalDateTime currentProducingDateTime =
+                                    (previousCompletedDateTime == null
+                                     || previousCompletedDateTime.isBefore(arrangeDateTime))
+                                            ? arrangeDateTime
+                                            : previousCompletedDateTime;
+
+                            LocalDateTime currentCompletedDateTime = currentProducingDateTime.plus(duration);
+                            return new Pair<>(
+                                    factoryProcessSequence,
+                                    new ComputedDateTimePair(
+                                            currentProducingDateTime,
+                                            currentCompletedDateTime
+                                    )
+                            );
+                        }
+                    }
+            )
+    );
 
     private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, ComputedDateTimePair>>> QUEUE_PROCESSOR
             = stream -> stream.gather(
@@ -121,7 +160,7 @@ public class SchedulingPlayer implements Serializable {
                                 ),
                                 buildSinglePassCollector(
                                         SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue,
-                                        QUEUE_PROCESSOR
+                                        QUEUE_PROCESSOR_2
                                 ),
                                 this::mergeFinalResults
                         )

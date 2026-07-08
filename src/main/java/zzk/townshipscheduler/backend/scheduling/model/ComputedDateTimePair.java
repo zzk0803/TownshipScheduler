@@ -10,6 +10,9 @@ public record ComputedDateTimePair(
 )
         implements Serializable, Comparable<ComputedDateTimePair> {
 
+    public static final ComputedDateTimePair EMPTY_NULL_VALUE
+            = new ComputedDateTimePair(LocalDateTime.MIN, LocalDateTime.MIN);
+
     @Override
     public int compareTo(ComputedDateTimePair that) {
         return Comparator.comparing(ComputedDateTimePair::producingDateTime)

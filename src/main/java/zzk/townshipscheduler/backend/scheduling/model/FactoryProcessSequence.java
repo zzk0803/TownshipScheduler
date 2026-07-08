@@ -15,6 +15,15 @@ import java.util.function.Function;
 public class FactoryProcessSequence
         implements Comparable<FactoryProcessSequence>, Serializable {
 
+    public static final FactoryProcessSequence EMPTY_NULL_VALUE =
+            new FactoryProcessSequence(
+                    LocalDateTime.MIN,
+                    Integer.MIN_VALUE,
+                    Integer.MIN_VALUE,
+                    null,
+                    Duration.ZERO
+            );
+
     public static final Function<SchedulingProducingArrangement, Integer> DEFAULT_SEQUENTIAL_ID_FUNCTION =
             SchedulingProducingArrangement::getId;
 
@@ -60,6 +69,15 @@ public class FactoryProcessSequence
                 .getFactoryReadableIdentifier();
         this.producingDuration = schedulingProducingArrangement.getProducingDuration();
         this.sequentialId = sequentialIdFunction.apply(schedulingProducingArrangement);
+    }
+
+    private FactoryProcessSequence(
+            LocalDateTime arrangeDateTime, Integer arrangementId, Integer sequentialId, FactoryReadableIdentifier schedulingFactoryInstanceReadableIdentifier, Duration producingDuration) {
+        this.arrangeDateTime = arrangeDateTime;
+        this.arrangementId = arrangementId;
+        this.sequentialId = sequentialId;
+        this.schedulingFactoryInstanceReadableIdentifier = schedulingFactoryInstanceReadableIdentifier;
+        this.producingDuration = producingDuration;
     }
 
     @Override
