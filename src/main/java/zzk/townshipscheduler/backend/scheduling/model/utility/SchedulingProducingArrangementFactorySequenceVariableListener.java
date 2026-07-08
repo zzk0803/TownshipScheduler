@@ -77,7 +77,7 @@
 //                                schedulingFactoryInstance.removeFactoryProcessSequence(oldFactoryProcessSequence);
 //                            });
 //                }
-//                Map<FactoryProcessSequence, FactoryComputedDateTimePair> affectedArrangementUpdatedDateTime
+//                Map<FactoryProcessSequence, ComputedDateTimePair> affectedArrangementUpdatedDateTime
 //                        = planningFactoryInstance.addFactoryProcessSequence(newFactoryProcessSequence);
 //                doShadowVariableUpdate(
 //                        scoreDirector,
@@ -159,7 +159,7 @@
 //    private void doUpdateDateTime(
 //            ScoreDirector<TownshipSchedulingProblem> scoreDirector,
 //            SchedulingProducingArrangement schedulingProducingArrangement,
-//            Map<FactoryProcessSequence, FactoryComputedDateTimePair> preparedProducingAndCompletedMap
+//            Map<FactoryProcessSequence, ComputedDateTimePair> preparedProducingAndCompletedMap
 //    ) {
 //        FactoryProcessSequence factoryProcessSequence = schedulingProducingArrangement.getShadowFactoryProcessSequence();
 //        LocalDateTime oldProducingDateTime = schedulingProducingArrangement.getProducingDateTime();
@@ -168,7 +168,7 @@
 //            return;
 //        }
 //
-//        FactoryComputedDateTimePair newDateTimePair
+//        ComputedDateTimePair newDateTimePair
 //                = preparedProducingAndCompletedMap.get(factoryProcessSequence);
 //        if (newDateTimePair == null) {
 //            return;

@@ -38,9 +38,9 @@ public class SchedulingPlayer implements Serializable {
             factoryProcessSequence.getSchedulingFactoryInstanceReadableIdentifier())
                                         && Objects.nonNull(factoryProcessSequence.getArrangeDateTime());
 
-    private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> QUEUE_PROCESSOR
+    private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, ComputedDateTimePair>>> QUEUE_PROCESSOR
             = stream -> stream.gather(
-            Gatherer.<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>ofSequential(
+            Gatherer.<FactoryProcessSequence, AtomicReference<LocalDateTime>, Pair<FactoryProcessSequence, ComputedDateTimePair>>ofSequential(
                     AtomicReference::new,
                     (previousCompletedDateTimeRef, sequence, downstream) -> {
                         LocalDateTime arrangeDateTime = sequence.getArrangeDateTime();
@@ -62,7 +62,7 @@ public class SchedulingPlayer implements Serializable {
                         return downstream.push(
                                 new Pair<>(
                                         sequence,
-                                        new FactoryComputedDateTimePair(
+                                        new ComputedDateTimePair(
                                                 currentProducingDateTime,
                                                 currentCompletedDateTime
                                         )
@@ -72,12 +72,12 @@ public class SchedulingPlayer implements Serializable {
             )
     );
 
-    private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> SLOT_PROCESSOR
+    private static final Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, ComputedDateTimePair>>> SLOT_PROCESSOR
             = stream -> stream.filter(factoryProcessSequence -> factoryProcessSequence.getArrangeDateTime() != null)
             .map(
                     factoryProcessSequence -> new Pair<>(
                             factoryProcessSequence,
-                            new FactoryComputedDateTimePair(
+                            new ComputedDateTimePair(
                                     factoryProcessSequence.getArrangeDateTime(),
                                     factoryProcessSequence.getArrangeDateTime()
                                             .plus(factoryProcessSequence.getProducingDuration())
@@ -106,10 +106,10 @@ public class SchedulingPlayer implements Serializable {
     @ToString.Include
     @DeepPlanningClone
     @ShadowVariable(supplierName = "supplierForShadowComputedMap")
-    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> shadowComputedMap = new LinkedHashMap<>();
+    private Map<FactoryProcessSequence, ComputedDateTimePair> shadowComputedMap = new LinkedHashMap<>();
 
     @ShadowSources(value = {"schedulingProducingArrangements[].factoryProcessSequence"})
-    public Map<FactoryProcessSequence, FactoryComputedDateTimePair> supplierForShadowComputedMap() {
+    public Map<FactoryProcessSequence, ComputedDateTimePair> supplierForShadowComputedMap() {
 
         return this.schedulingProducingArrangements.stream()
                 .filter(schedulingProducingArrangement -> schedulingProducingArrangement.boolPlanningAssigned() && schedulingProducingArrangement.getFactoryProcessSequence() != null)
@@ -128,9 +128,9 @@ public class SchedulingPlayer implements Serializable {
                 );
     }
 
-    private Collector<SchedulingProducingArrangement, ?, Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>>> buildSinglePassCollector(
+    private Collector<SchedulingProducingArrangement, ?, Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, ComputedDateTimePair>>> buildSinglePassCollector(
             Predicate<SchedulingProducingArrangement> factoryTypePredicate,
-            Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, FactoryComputedDateTimePair>>> processSequenceToComputedPairFunction
+            Function<Stream<FactoryProcessSequence>, Stream<Pair<FactoryProcessSequence, ComputedDateTimePair>>> processSequenceToComputedPairFunction
     ) {
 
         return Collectors.filtering(
@@ -166,30 +166,30 @@ public class SchedulingPlayer implements Serializable {
         );
     }
 
-    private Map<FactoryProcessSequence, FactoryComputedDateTimePair> mergeFinalResults(
-            Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> slotMap,
-            Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, FactoryComputedDateTimePair>> queueMap
+    private Map<FactoryProcessSequence, ComputedDateTimePair> mergeFinalResults(
+            Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, ComputedDateTimePair>> slotMap,
+            Map<FactoryReadableIdentifier, Map<FactoryProcessSequence, ComputedDateTimePair>> queueMap
     ) {
 
-        Map<FactoryProcessSequence, FactoryComputedDateTimePair> result = new LinkedHashMap<>();
+        Map<FactoryProcessSequence, ComputedDateTimePair> result = new LinkedHashMap<>();
         slotMap.values().forEach(result::putAll);
         queueMap.values().forEach(result::putAll);
         return result;
     }
 
     public LocalDateTime queryProducingDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
-        FactoryComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
+        ComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
         if (computedDateTimePair == null) {
             return null;
         }
         return computedDateTimePair.producingDateTime();
     }
 
-    public FactoryComputedDateTimePair query(SchedulingProducingArrangement schedulingProducingArrangement) {
+    public ComputedDateTimePair query(SchedulingProducingArrangement schedulingProducingArrangement) {
         return query(schedulingProducingArrangement.getFactoryProcessSequence());
     }
 
-    public FactoryComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
+    public ComputedDateTimePair query(FactoryProcessSequence factoryProcessSequence) {
         if (Objects.isNull(factoryProcessSequence)) {
             return null;
         }
@@ -198,7 +198,7 @@ public class SchedulingPlayer implements Serializable {
     }
 
     public LocalDateTime queryCompletedDateTime(SchedulingProducingArrangement schedulingProducingArrangement) {
-        FactoryComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
+        ComputedDateTimePair computedDateTimePair = query(schedulingProducingArrangement);
         if (computedDateTimePair == null) {
             return null;
         }
