@@ -86,8 +86,8 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(Predicate.not(SchedulingProducingArrangement::boolCompleted))
                 .penalize(
-                        HardMediumSoftScore.ofHard(1000),
-                        SchedulingProducingArrangement::getEvaluateFactor
+                        HardMediumSoftScore.ONE_HARD,
+                        schedulingProducingArrangement -> schedulingProducingArrangement.getEvaluateFactor() * schedulingProducingArrangement.getWorkCalendarSpan().toMinutes()
                 )
                 .asConstraint("shouldArrangementCompleted");
     }
@@ -103,6 +103,7 @@ public class TownshipSchedulingConstraintProvider
                                         Joiners.equal(SchedulingProducingArrangement::getSchedulingOrder, Function.identity())
                                 )
                 )
+                .filter(SchedulingProducingArrangement::boolCompleted)
                 .filter(SchedulingProducingArrangement::boolCompletedAfterDeadline)
                 .penalize(
                         HardMediumSoftScore.ofMedium(100L),
@@ -116,6 +117,7 @@ public class TownshipSchedulingConstraintProvider
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolOrderDirect)
+                .filter(SchedulingProducingArrangement::boolCompleted)
                 .filter(SchedulingProducingArrangement::boolCompletedAfterCalendarEnd)
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,

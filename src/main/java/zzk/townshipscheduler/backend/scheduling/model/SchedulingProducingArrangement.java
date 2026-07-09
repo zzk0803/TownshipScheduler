@@ -249,16 +249,6 @@ public class SchedulingProducingArrangement
         return getFactoryProcessSequence() != null && getComputedDateTimePair() != null;
     }
 
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getCompletedDateTime() {
-        return computedDateTimePair != null
-                ? computedDateTimePair.completedDateTime()
-                : null;
-    }
-
     public void elementarySetup(
             ArrangementIdRoller idRoller,
             SchedulingPlayer schedulingPlayer
@@ -358,7 +348,29 @@ public class SchedulingProducingArrangement
     }
 
     public boolean boolCompletedAfterCalendarEnd() {
-        return boolHasDeadline() && (getCompletedDateTime().isAfter(schedulingWorkCalendar.getEndDateTime()));
+        return boolHasDeadline() && (getCompletedDateTime().isAfter(getWorkCalendarEnd()));
+    }
+
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getCompletedDateTime() {
+        return computedDateTimePair != null
+                ? computedDateTimePair.completedDateTime()
+                : null;
+    }
+
+    public Duration getWorkCalendarSpan() {
+        return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());
+    }
+
+    public LocalDateTime getWorkCalendarStart() {
+        return getSchedulingWorkCalendar().getStartDateTime();
+    }
+
+    public LocalDateTime getWorkCalendarEnd() {
+        return getSchedulingWorkCalendar().getEndDateTime();
     }
 
     public boolean boolHasDeadline() {
@@ -397,7 +409,7 @@ public class SchedulingProducingArrangement
                 getSchedulingOrder().getDeadline(),
                 boolCompleted()
                         ? getCompletedDateTime()
-                        : getSchedulingWorkCalendar().getEndDateTime()
+                        : getWorkCalendarEnd()
         );
     }
 
@@ -406,7 +418,7 @@ public class SchedulingProducingArrangement
     }
 
     public Duration calcCalendarEndToCompletedDuration() {
-        LocalDateTime workCalendarEnd = getSchedulingWorkCalendar().getEndDateTime();
+        LocalDateTime workCalendarEnd = getWorkCalendarEnd();
         return Duration.between(workCalendarEnd, getCompletedDateTime());
     }
 
