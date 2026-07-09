@@ -6,13 +6,19 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.signals.Signal;
+import zzk.townshipscheduler.ui.pojo.scheduling.LitSchedulingProducingArrangementVO;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingFactoryInstanceViewModel;
 import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Tag("scheduling-vis-timeline-panel")
 @NpmPackage(value = "vis-timeline", version = "8.5.1")
@@ -29,6 +35,8 @@ public class LitSchedulingVisTimelinePanel
 
     private final SchedulingViewPresenter schedulingViewPresenter;
 
+    private final Signal<List<LitSchedulingProducingArrangementVO>> litSchedulingProducingArrangementVoListSignal;
+
     public LitSchedulingVisTimelinePanel(
             SchedulingView schedulingView,
             SchedulingViewPresenter schedulingViewPresenter
@@ -36,15 +44,43 @@ public class LitSchedulingVisTimelinePanel
         this.schedulingView = schedulingView;
         this.schedulingViewPresenter = schedulingViewPresenter;
 
-        getElement().bindProperty(
-                "schedulingProducingArrangements",
-                this.schedulingView.getTownshipSchedulingProblemViewModelSignal()
-                        .map(problem -> {
-                            if (problem == null || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(problem)) {
+        this.litSchedulingProducingArrangementVoListSignal = this.schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal()
+                .map(
+                        townshipSchedulingProblem -> {
+                            if (townshipSchedulingProblem != null) {
+                                return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels().getValues()
+                                        .map(schedulingProducingArrangement -> {
+                                            return new LitSchedulingProducingArrangementVO(
+                                                    schedulingProducingArrangement.arrangementViewModelId().id(),
+                                                    schedulingProducingArrangement.arrangementViewModelId()
+                                                            .uuid(),
+                                                    String.valueOf(schedulingProducingArrangement.order()
+                                                            .id()),
+                                                    schedulingProducingArrangement.product()
+                                                            .name(),
+                                                    schedulingProducingArrangement.orderProduct()
+                                                            .name(),
+                                                    schedulingProducingArrangement.orderProductArrangementId()
+                                                            .id(),
+                                                    schedulingProducingArrangement.boolDirectToOrder(),
+                                                    schedulingProducingArrangement.assignedFactoryInstance().get().factoryReadableIdentifier(),
+                                                    schedulingProducingArrangement.producingDuration()
+                                                            .toString(),
+                                                    schedulingProducingArrangement.arrangeDateTime().get(),
+                                                    schedulingProducingArrangement.producingDateTime().get(),
+                                                    schedulingProducingArrangement.completedDateTime().get()
+                                            );
+                                        })
+                                        .collect(Collectors.toCollection(ArrayList::new));
+                            } else {
                                 return List.of();
                             }
-                            return problem.toLitSchedulingProducingArrangementVoList();
-                        }),
+                        }
+                );
+
+        getElement().bindProperty(
+                "schedulingProducingArrangements",
+                this.litSchedulingProducingArrangementVoListSignal,
                 null
         );
     }
@@ -58,7 +94,7 @@ public class LitSchedulingVisTimelinePanel
         updateRemoteFull(this.schedulingViewPresenter.getTownshipSchedulingProblemViewModel());
     }
 
-    private void updateRemoteFull(TownshipSchedulingProblemViewModel problemViewModel) {
+    private void updateRemoteFull(ReactiveTownshipSchedulingProblemViewModel problemViewModel) {
         setPropertyObject(
                 "schedulingWorkCalendar",
                 problemViewModel.schedulingWorkCalendar()

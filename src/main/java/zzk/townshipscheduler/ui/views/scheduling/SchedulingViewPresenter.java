@@ -35,7 +35,7 @@ import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemBriefViewModel;
-import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.io.File;
@@ -84,7 +84,7 @@ public class SchedulingViewPresenter {
 
     private AtomicReference<TownshipSchedulingProblem> townshipSchedulingProblemAtomicReference = new AtomicReference<>();
 
-    private AtomicReference<TownshipSchedulingProblemViewModel> townshipSchedulingProblemViewModelAtomicReference = new AtomicReference<>();
+    private AtomicReference<ReactiveTownshipSchedulingProblemViewModel> townshipSchedulingProblemViewModelAtomicReference = new AtomicReference<>();
 
     private AtomicReference<SolverJob<TownshipSchedulingProblem>> townshipSchedulingProblemSolverJobAtomicReference = new AtomicReference<>();
 
@@ -122,37 +122,40 @@ public class SchedulingViewPresenter {
     //        grid.setItems(townshipSchedulingProblem.getSchedulingProducingArrangements());
     //    }
 
-    public ValueSignal<TownshipSchedulingProblemViewModel> getTownshipSchedulingProblemViewModelSignal() {
-        return this.getSchedulingView().getTownshipSchedulingProblemViewModelSignal();
+    public ValueSignal<ReactiveTownshipSchedulingProblemViewModel> getTownshipSchedulingProblemViewModelSignal() {
+        return this.getSchedulingView().getReactiveTownshipSchedulingProblemViewModelValueSignal();
     }
 
     public void onSolverStartButton() {
         Consumer<TownshipSchedulingProblem> solutionConsumer = this::reflushAndGetCurrentProblem;
 
         SolverJob<TownshipSchedulingProblem> townshipSchedulingProblemSolverJob = schedulingService.scheduling(
-                getTownshipSchedulingProblemId(), townshipSchedulingProblem -> {
+                getTownshipSchedulingProblemId(),
+                townshipSchedulingProblem -> {
                     this.ui.access(() -> {
                         solutionConsumer.accept(townshipSchedulingProblem);
                         getSchedulingView().getTriggerButton().setToState2();
-                        // getSchedulingView().getSolverRunningSignal().set(true);
+                        getSchedulingView().getSolverRunningSignal().set(true);
                         String problemSizeStatistics = getSchedulingService().getProblemSizeStatistics(getTownshipSchedulingProblemId());
                         String updatedString = getSchedulingView().getBriefText().getText() + "\r" + "solver approximate problem scale:" + problemSizeStatistics;
                         getSchedulingView().getBriefText().setText(updatedString);
                     });
-                }, solutionConsumer.andThen(this::reflushAndGetViewModel), solutionConsumer.andThen(this::reflushAndGetViewModel).andThen(_ -> {
-                    solutionResultPushScheduledFuture.cancel(true);
-                }).andThen(_ -> this.ui.access(() -> {
-                    getSchedulingView().getTriggerButton().setToState1();
-                    Notification notification = new Notification();
-                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                    notification.setText("Township Solver Finished");
-                    notification.setDuration(3000);
-                    notification.open();
-                    VaadinUiEventBus.publish(new SchedulingView.SchedulingProcessingEndComponentEvent(this.schedulingView, false, getTownshipSchedulingProblem().getUuid()));
-                })), (problemUuid, throwable) -> {
+                }, solutionConsumer.andThen(this::reflushAndGetViewModel),
+                solutionConsumer.andThen(this::reflushAndGetViewModel)
+                        .andThen(_ -> solutionResultPushScheduledFuture.cancel(true))
+                        .andThen(_ -> this.ui.access(() -> {
+                            getSchedulingView().getTriggerButton().setToState1();
+                            Notification notification = new Notification();
+                            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                            notification.setText("Township Solver Finished");
+                            notification.setDuration(3000);
+                            notification.open();
+                            VaadinUiEventBus.publish(new SchedulingView.SchedulingProcessingEndComponentEvent(this.schedulingView, false, getTownshipSchedulingProblem().getUuid()));
+                        })),
+                (problemUuid, throwable) -> {
                     this.ui.access(() -> {
                         getSchedulingView().getTriggerButton().setToState1();
-                        // getSchedulingView().getSolverRunningSignal().set(false);
+                        getSchedulingView().getSolverRunningSignal().set(false);
                         Dialog dialog = new Dialog("ERROR", new Paragraph(throwable.toString()));
                         dialog.open();
                     });
@@ -171,32 +174,15 @@ public class SchedulingViewPresenter {
     }
 
     private @NonNull Runnable pushSolverResult() {
-        return () -> this.ui.access(() -> {
-            if (!getSchedulingService().existSolvingJob(getTownshipSchedulingProblemId())) {
-                this.solutionResultPushScheduledFuture.cancel(true);
-                getSchedulingView().getTriggerButton().setToState1();
-                // getSchedulingView().getSolverRunningSignal().set(false);
-            }
-
-            signalTownshipSchedulingProblemViewModel(this.getTownshipSchedulingProblemViewModel());
-        });
-    }
-
-    public void signalTownshipSchedulingProblemViewModel(TownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel) {
-        getSchedulingView().getTownshipSchedulingProblemViewModelSignal().set(townshipSchedulingProblemViewModel);
-    }
-
-    public TownshipSchedulingProblemViewModel getTownshipSchedulingProblemViewModel() {
-        return this.townshipSchedulingProblemViewModelAtomicReference.get();
-    }
-
-    public void reflushAndGetViewModel(TownshipSchedulingProblem townshipSchedulingProblem) {
-        this.townshipSchedulingProblemViewModelAtomicReference.updateAndGet(
-                townshipSchedulingProblemViewModel -> this.townshipSchedulingViewRecordComponent.updateAndGet(
-                        reflushAndGetCurrentProblem(townshipSchedulingProblem),
-                        townshipSchedulingProblemViewModel
-                )
-        );
+        return () -> {
+            this.ui.access(() -> {
+                if (!getSchedulingService().existSolvingJob(getTownshipSchedulingProblemId())) {
+                    this.solutionResultPushScheduledFuture.cancel(true);
+                    getSchedulingView().getTriggerButton().setToState1();
+                    getSchedulingView().getSolverRunningSignal().set(false);
+                }
+            });
+        };
     }
 
     public TownshipSchedulingProblem reflushAndGetCurrentProblem(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -207,13 +193,30 @@ public class SchedulingViewPresenter {
         return this.townshipSchedulingProblemAtomicReference.get();
     }
 
-    public void signalTownshipSchedulingProblemViewModel() {
-        getSchedulingView().getTownshipSchedulingProblemViewModelSignal().set(getTownshipSchedulingProblemViewModel());
+    public void signalReactiveTownshipSchedulingProblemViewModel(ReactiveTownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel) {
+        getSchedulingView().getReactiveTownshipSchedulingProblemViewModelValueSignal().set(townshipSchedulingProblemViewModel);
+    }
+
+    public void signalReactiveTownshipSchedulingProblemViewModel() {
+        getSchedulingView().getReactiveTownshipSchedulingProblemViewModelValueSignal().set(getTownshipSchedulingProblemViewModel());
+    }
+
+    public ReactiveTownshipSchedulingProblemViewModel getTownshipSchedulingProblemViewModel() {
+        return this.townshipSchedulingProblemViewModelAtomicReference.get();
     }
 
     public void reflushAndGetViewModel() {
         TownshipSchedulingProblem townshipSchedulingProblem = getTownshipSchedulingProblem();
         this.reflushAndGetViewModel(townshipSchedulingProblem);
+    }
+
+    public void reflushAndGetViewModel(TownshipSchedulingProblem townshipSchedulingProblem) {
+        this.townshipSchedulingProblemViewModelAtomicReference.updateAndGet(
+                townshipSchedulingProblemViewModel -> this.townshipSchedulingViewRecordComponent.updateAndGetReactiveViewModel(
+                        reflushAndGetCurrentProblem(townshipSchedulingProblem),
+                        townshipSchedulingProblemViewModel
+                )
+        );
     }
 
     public void onSolverStopButton() {
