@@ -186,7 +186,7 @@ export class ByUnitTimelineComponents
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
                             group: groupId,
-                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id }</p>`,
+                            content: `<p class="h-auto w-auto text-center text-2xs"> ${"(" + arrangement?.factoryReadableIdentifier + ")" +arrangement?.product + "#" + arrangement.id }</p>`,
                             type: 'range',
                             start: arrangement?.producingDateTime,
                             end: arrangement?.completedDateTime,
