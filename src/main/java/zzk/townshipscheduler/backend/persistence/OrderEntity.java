@@ -68,7 +68,7 @@ public class OrderEntity {
     private OrderEntityScheduleState billScheduleState = OrderEntityScheduleState.NONE;
 
     @ManyToOne
-    @JoinColumn(name = "player_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "player_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private PlayerEntity playerEntity;
 
     @ElementCollection
@@ -87,7 +87,7 @@ public class OrderEntity {
     private LocalDateTime finishedDateTime;
 
     public void addItem(ProductEntity productEntity, Integer amount) {
-        this.productAmountMap.merge(productEntity, amount,Integer::sum );
+        this.productAmountMap.put(productEntity, amount);
     }
 
     @Override
@@ -99,15 +99,18 @@ public class OrderEntity {
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
         Class<?> oEffectiveClass = o instanceof HibernateProxy
                 ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
                 : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
                 ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
                 : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         OrderEntity orderEntity = (OrderEntity) o;
         return getId() != null && Objects.equals(getId(), orderEntity.getId());
     }

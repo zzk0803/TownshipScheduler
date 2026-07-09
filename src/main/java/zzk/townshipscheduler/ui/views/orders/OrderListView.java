@@ -133,7 +133,18 @@ public class OrderListView
                         new Button(
                                 VaadinIcon.EDIT.create(),
                                 click -> {
-                                    Notification.show("todo::edit order");
+                                    AtomicReference<Dialog> dialogReference = new AtomicReference<>();
+                                    Dialog dialog = new Dialog(
+                                            new OrderFormView(
+                                                    this,
+                                                    this.orderListViewPresenter,
+                                                    dialogReference,
+                                                    orderEntity
+                                            )
+                                    );
+                                    dialogReference.set(dialog);
+                                    dialog.setSizeFull();
+                                    dialog.open();
                                 }
                         ),
                         new Button(

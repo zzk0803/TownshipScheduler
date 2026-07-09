@@ -30,6 +30,7 @@ import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
+import org.jspecify.annotations.NonNull;
 import org.springframework.scheduling.TaskScheduler;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
@@ -46,10 +47,12 @@ import java.io.Serial;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 @Getter
 public class OrderFormView
@@ -89,24 +92,25 @@ public class OrderFormView
 
     private OrderEntity orderEntity;
 
+    private OrderEntity editModeOrderEntity;
+
     private ScheduledFuture<?> scheduledFuture;
 
     public OrderFormView(
             OrderListView orderListView,
             OrderListViewPresenter orderListViewPresenter,
-            AtomicReference<Dialog> dialogReference
+            AtomicReference<Dialog> dialogReference,
+            OrderEntity editModeOrderEntity
     ) {
         this.orderListView = orderListView;
         this.orderListViewPresenter = orderListViewPresenter;
+        this.editModeOrderEntity = editModeOrderEntity;
         this.productsAmountPanel = new ProductsAmountPanel(
                 this.orderListViewPresenter.getCollectionSupplier(),
-                productEntityIntegerMap -> {
-                    productEntityIntegerMap.forEach((productEntity, integer) -> {
-                        BillItem billItem = new BillItem(gridBillItemsCounter.getAndIncrement(), productEntity, integer);
-                        billItemListSignal.insertLast(billItem);
-                    });
-                }
+                billItemListSignalConsumer(),
+                this.getEditModeOrderEntity().getProductAmountMap()
         );
+        this.billItemListSignalConsumer().accept(this.getEditModeOrderEntity().getProductAmountMap());
 
         style();
         add(assembleBillForm());
@@ -114,6 +118,15 @@ public class OrderFormView
         add(assembleItemAppendBtn());
         add(assembleFooterPanel(dialogReference));
 
+    }
+
+    private @NonNull Consumer<Map<ProductEntity, Integer>> billItemListSignalConsumer() {
+        return productEntityIntegerMap -> {
+            productEntityIntegerMap.forEach((productEntity, integer) -> {
+                BillItem billItem = new BillItem(gridBillItemsCounter.getAndIncrement(), productEntity, integer);
+                billItemListSignal.insertLast(billItem);
+            });
+        };
     }
 
     private void style() {
@@ -216,6 +229,10 @@ public class OrderFormView
     }
 
     private void renewBinderAndObject() {
+        if (this.editModeOrderEntity != null) {
+            this.binder.readBean(this.orderEntity = this.editModeOrderEntity);
+            return;
+        }
         this.binder.readBean(this.orderEntity = new OrderEntity());
     }
 
@@ -306,20 +323,22 @@ public class OrderFormView
             integerField.setStep(1);
             integerField.setStepButtonsVisible(true);
             integerField.setMin(1);
-            integerField.addValueChangeListener(fieldChanged -> {
-                Integer amount = fieldChanged.getValue();
-                Optional<ValueSignal<BillItem>> existingItem = billItemListSignal.peek()
-                        .stream()
-                        .filter(signal -> signal.peek()
-                                .productEntity()
-                                .equals(item.productEntity()))
-                        .findFirst();
-                existingItem.ifPresent(
-                        existing -> existing.update(
-                                itemInSignal -> itemInSignal.update(amount)
-                        )
-                );
-            });
+            integerField.addValueChangeListener(
+                    fieldChanged -> {
+                        Integer amount = fieldChanged.getValue();
+                        Optional<ValueSignal<BillItem>> existingItem = billItemListSignal.peek()
+                                .stream()
+                                .filter(signal -> signal.peek()
+                                        .productEntity()
+                                        .equals(item.productEntity()))
+                                .findFirst();
+                        existingItem.ifPresent(
+                                existing -> existing.update(
+                                        itemInSignal -> itemInSignal.update(amount)
+                                )
+                        );
+                    }
+            );
             return integerField;
         };
     }
@@ -411,6 +430,26 @@ public class OrderFormView
             Notification.show(e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+
+    public OrderFormView(
+            OrderListView orderListView,
+            OrderListViewPresenter orderListViewPresenter,
+            AtomicReference<Dialog> dialogReference
+    ) {
+        this.orderListView = orderListView;
+        this.orderListViewPresenter = orderListViewPresenter;
+        this.productsAmountPanel = new ProductsAmountPanel(
+                this.orderListViewPresenter.getCollectionSupplier(),
+                billItemListSignalConsumer()
+        );
+
+        style();
+        add(assembleBillForm());
+        addAndExpand(this.billItemGrid = assembleBillItemGrid());
+        add(assembleItemAppendBtn());
+        add(assembleFooterPanel(dialogReference));
+
     }
 
     @Override
