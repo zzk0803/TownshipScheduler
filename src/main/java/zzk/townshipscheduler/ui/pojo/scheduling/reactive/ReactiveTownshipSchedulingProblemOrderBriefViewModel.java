@@ -20,15 +20,15 @@ public record ReactiveTownshipSchedulingProblemOrderBriefViewModel(
         List<LocalDateTime> relatedArrangementsCompletedDateTime
                 = arrangementViewModels.stream()
                 .map(ReactiveSchedulingProducingArrangementViewModel::completedDateTime)
-                .map(AbstractLocalSignal::peek)
+                .map(AbstractLocalSignal::get)
                 .toList();
         if (relatedArrangementsCompletedDateTime.stream()
                 .anyMatch(Objects::isNull)) {
-            return null;
+            return LocalDateTime.MAX;
         } else {
             return relatedArrangementsCompletedDateTime.stream()
                     .max(LocalDateTime::compareTo)
-                    .orElseThrow();
+                    .orElse(LocalDateTime.MAX);
         }
     }
 

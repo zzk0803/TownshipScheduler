@@ -51,7 +51,7 @@ public record ReactiveTownshipSchedulingProblemViewModel(
                                     ? schedulingOrder.deadline()
                                     : schedulingWorkCalendar.endDateTime();
                             List<ReactiveSchedulingProducingArrangementViewModel> list
-                                    = this.schedulingProducingArrangementReactiveViewModels.peekValues()
+                                    = this.schedulingProducingArrangementReactiveViewModels.getValues()
                                     .filter(reactiveSchedulingProducingArrangementViewModel -> reactiveSchedulingProducingArrangementViewModel.order()
                                             .equals(schedulingOrder))
                                     .toList();

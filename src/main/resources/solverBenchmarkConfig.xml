@@ -35,7 +35,7 @@
             </scoreDirectorFactory>
 
             <termination>
-                <minutesSpentLimit>5</minutesSpentLimit>
+                <minutesSpentLimit>10</minutesSpentLimit>
             </termination>
 
             <!--region constructionHeuristic-->
@@ -75,7 +75,7 @@
 
         </problemBenchmarks>
 
-        <subSingleCount>3</subSingleCount>
+        <subSingleCount>2</subSingleCount>
     </inheritedSolverBenchmark>
 
     <solverBenchmark>
@@ -84,8 +84,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -184,8 +184,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -284,8 +284,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -384,8 +384,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -484,8 +484,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -585,8 +585,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -683,8 +683,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -783,8 +783,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -883,8 +883,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -983,8 +983,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1076,8 +1076,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1174,8 +1174,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1270,8 +1270,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1366,8 +1366,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1462,8 +1462,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1559,8 +1559,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1656,8 +1656,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1752,8 +1752,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1849,8 +1849,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -1949,8 +1949,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2047,8 +2047,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2144,8 +2144,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2240,8 +2240,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2337,8 +2337,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2434,8 +2434,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2531,8 +2531,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2628,8 +2628,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2725,8 +2725,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2823,8 +2823,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -2920,8 +2920,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3017,8 +3017,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3115,8 +3115,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3212,8 +3212,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3309,8 +3309,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3407,8 +3407,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3506,8 +3506,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3602,8 +3602,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3698,8 +3698,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3795,8 +3795,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3891,8 +3891,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -3988,8 +3988,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -4084,8 +4084,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -4180,8 +4180,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 
@@ -4277,8 +4277,8 @@
             <localSearch>
                 <termination>
                     <diminishedReturns>
-                        <slidingWindowSeconds>10</slidingWindowSeconds>
-                        <minimumImprovementRatio>0.27</minimumImprovementRatio>
+                        <slidingWindowSeconds>30</slidingWindowSeconds>
+                        <minimumImprovementRatio>0.15</minimumImprovementRatio>
                     </diminishedReturns>
                 </termination>
 

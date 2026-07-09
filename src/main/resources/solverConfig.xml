@@ -59,12 +59,12 @@
     <localSearch>
 
         <termination>
-            <terminationCompositionStyle>OR</terminationCompositionStyle>
+<!--            <terminationCompositionStyle>OR</terminationCompositionStyle>-->
             <diminishedReturns>
                 <slidingWindowMinutes>1</slidingWindowMinutes>
                 <minimumImprovementRatio>0.05</minimumImprovementRatio>
             </diminishedReturns>
-            <minutesSpentLimit>5</minutesSpentLimit>
+<!--            <minutesSpentLimit>5</minutesSpentLimit>-->
         </termination>
 
         <unionMoveSelector>
@@ -146,7 +146,8 @@
         </unionMoveSelector>
 
         <acceptor>
-            <valueTabuSize>3</valueTabuSize>
+            <entityTabuRatio>0.19</entityTabuRatio>
+            <valueTabuSize>2</valueTabuSize>
             <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
         </acceptor>
         <forager>

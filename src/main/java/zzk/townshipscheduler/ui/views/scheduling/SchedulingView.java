@@ -36,6 +36,7 @@ import com.vaadin.flow.signals.local.AbstractLocalSignal;
 import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import io.arxila.javatuples.Pair;
 import jakarta.annotation.security.PermitAll;
 import lombok.Getter;
 import lombok.Setter;
@@ -63,6 +64,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 @Route("/scheduling/:schedulingId?")
@@ -107,6 +109,28 @@ public class SchedulingView
                 return townshipSchedulingProblemViewModel.toTownshipSchedulingProblemOrderBriefViewModels();
 
             });
+
+    private Signal<Map<ReactiveTownshipSchedulingProblemOrderBriefViewModel, LocalDateTime>> townshipSchedulingProblemOrderBriefCompletedDateTimeSignal
+            = reactiveTownshipSchedulingProblemOrderBriefSignal.map(
+            townshipSchedulingProblemOrderBriefViewModels -> townshipSchedulingProblemOrderBriefViewModels != null
+                    ? townshipSchedulingProblemOrderBriefViewModels.stream()
+                    .filter(Objects::nonNull)
+                    .map(reactiveTownshipSchedulingProblemOrderBriefViewModel -> {
+                                LocalDateTime completedDateTime = reactiveTownshipSchedulingProblemOrderBriefViewModel.calcCompletedDateTime();
+                        return completedDateTime != null
+                               ? new Pair<>(
+                                reactiveTownshipSchedulingProblemOrderBriefViewModel,
+                                completedDateTime
+                        )
+                                : new Pair<>(
+                                        reactiveTownshipSchedulingProblemOrderBriefViewModel,
+                                        LocalDateTime.MAX
+                                );
+                            }
+                    )
+                    .collect(Collectors.toMap(Pair::value0, Pair::value1))
+                    : new HashMap<>()
+    );
 
     private ValueSignal<Boolean> solverRunningSignal = new ValueSignal<>(false);
 
@@ -317,16 +341,21 @@ public class SchedulingView
                 .setAutoWidth(true)
                 .setFlexGrow(1)
         ;
-        reactiveOrderBriefGrid.addComponentColumn(townshipSchedulingProblemOrderBriefViewModel -> {
-                    LocalDateTime completedDateTime = townshipSchedulingProblemOrderBriefViewModel.calcCompletedDateTime();
-                    if (Objects.nonNull(completedDateTime)) {
-                        DateTimePicker dateTimePicker = new DateTimePicker(completedDateTime);
-                        dateTimePicker.setReadOnly(true);
-                        return dateTimePicker;
-                    } else {
-                        return new Text("N/A");
-                    }
-                })
+        reactiveOrderBriefGrid.addComponentColumn(
+                        townshipSchedulingProblemOrderBriefViewModel -> {
+                            DateTimePicker dateTimePicker = new DateTimePicker();
+                            dateTimePicker.setReadOnly(true);
+                            dateTimePicker.bindValue(
+                                    townshipSchedulingProblemOrderBriefCompletedDateTimeSignal.map(
+                                            computedSavedMap -> computedSavedMap != null
+                                                    ? computedSavedMap.getOrDefault(townshipSchedulingProblemOrderBriefViewModel, LocalDateTime.MAX)
+                                                    : LocalDateTime.MAX
+                                    ),
+                                    null
+                            );
+                            return dateTimePicker;
+                        }
+                )
                 .setHeader("Completed Date Time")
                 .setAutoWidth(true)
                 .setFlexGrow(1)
