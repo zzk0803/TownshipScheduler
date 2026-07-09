@@ -117,15 +117,15 @@ public class SchedulingView
                     .filter(Objects::nonNull)
                     .map(reactiveTownshipSchedulingProblemOrderBriefViewModel -> {
                                 LocalDateTime completedDateTime = reactiveTownshipSchedulingProblemOrderBriefViewModel.calcCompletedDateTime();
-                        return completedDateTime != null
-                               ? new Pair<>(
-                                reactiveTownshipSchedulingProblemOrderBriefViewModel,
-                                completedDateTime
-                        )
-                                : new Pair<>(
+                                return completedDateTime != null
+                                       ? new Pair<>(
                                         reactiveTownshipSchedulingProblemOrderBriefViewModel,
-                                        LocalDateTime.MAX
-                                );
+                                        completedDateTime
+                                )
+                                        : new Pair<>(
+                                                reactiveTownshipSchedulingProblemOrderBriefViewModel,
+                                                LocalDateTime.MAX
+                                        );
                             }
                     )
                     .collect(Collectors.toMap(Pair::value0, Pair::value1))
@@ -577,7 +577,7 @@ public class SchedulingView
         newSchedulingBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         newSchedulingBtn.addClickListener(clicked -> {
             Dialog dialog = new Dialog("Before Scheduler Start...");
-            dialog.setSizeFull();
+            dialog.setWidth(67.8F,Unit.VW);
 
             VerticalLayout dialogWrapper = new VerticalLayout();
             dialogWrapper.setWidthFull();

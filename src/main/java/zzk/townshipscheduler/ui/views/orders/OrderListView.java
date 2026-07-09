@@ -11,6 +11,7 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -128,12 +129,20 @@ public class OrderListView
         card.addAndExpand(scroller);
 
         card.add(
-                new Button(
-                        VaadinIcon.CLOSE.create(),
-                        click -> {
-                            this.orderListViewPresenter.removeOrder(orderEntity);
-                            this.orderListViewPresenter.updateOrderListSignal();
-                        }
+                new HorizontalLayout(
+                        new Button(
+                                VaadinIcon.EDIT.create(),
+                                click -> {
+                                    Notification.show("todo::edit order");
+                                }
+                        ),
+                        new Button(
+                                VaadinIcon.CLOSE.create(),
+                                click -> {
+                                    this.orderListViewPresenter.removeOrder(orderEntity);
+                                    this.orderListViewPresenter.updateOrderListSignal();
+                                }
+                        )
                 )
         );
 
