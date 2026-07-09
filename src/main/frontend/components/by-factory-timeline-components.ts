@@ -61,6 +61,8 @@ export class ByFactoryTimelineComponents
                     .datasets="${this.dataItems}"
                     .groups="${this.groups}"
                     .options="${{
+                        height: '72vh',
+                        verticalScroll: true,
                         timeAxis: {scale: 'minute', step: this.dateTimeSlotSizeInMinute},
                         orientation: {axis: 'top'},
                         zoomKey: 'ctrlKey',
@@ -148,7 +150,7 @@ export class ByFactoryTimelineComponents
                         dataSetItems.push({
                             id: arrangement?.uuid + '_in_game',
                             group: arrangement?.factoryReadableIdentifier,
-                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id }</p>`,
+                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id}</p>`,
                             start: producingDateTime,
                             end: completedDateTime,
                             type: 'range',

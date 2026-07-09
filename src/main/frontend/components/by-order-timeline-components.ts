@@ -4,12 +4,7 @@ import '@vaadin/vertical-layout';
 import {visStyles, visTownshipStyles} from './external-styles';
 // import {vaadinStyles, visStyles, visTownshipStyles} from './external-styles';
 import {DataGroup, DataItem} from 'vis-timeline';
-import {
-    SchedulingFactoryInstance,
-    SchedulingOrder,
-    SchedulingProducingArrangement,
-    SchedulingWorkCalendar
-} from './type';
+import {SchedulingFactoryInstance, SchedulingOrder, SchedulingProducingArrangement, SchedulingWorkCalendar} from './type';
 
 @customElement('by-order-timeline-components')
 export class ByOrderTimelineComponents
@@ -66,6 +61,8 @@ export class ByOrderTimelineComponents
                     .datasets="${this.dataItems}"
                     .groups="${this.groups}"
                     .options="${{
+                        height: '72vh',
+                        verticalScroll: true,
                         timeAxis: {scale: 'minute', step: this.dateTimeSlotSizeInMinute},
                         orientation: {axis: 'top'},
                         zoomKey: 'ctrlKey',
@@ -177,7 +174,7 @@ export class ByOrderTimelineComponents
                             id: arrangement?.uuid + '_in_game',
                             group: group,
                             type: 'range',
-                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id }</p>`,
+                            content: `<p class="h-auto w-auto text-center text-2xs"> ${arrangement?.product + "#" + arrangement.id}</p>`,
                             start: arrangement?.producingDateTime,
                             end: arrangement?.completedDateTime,
                             subgroup: arrangement?.uuid

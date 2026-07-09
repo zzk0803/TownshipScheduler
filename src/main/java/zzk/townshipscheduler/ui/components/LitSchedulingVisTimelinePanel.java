@@ -9,7 +9,6 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.signals.Signal;
 import zzk.townshipscheduler.ui.pojo.scheduling.LitSchedulingProducingArrangementVO;
 import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingFactoryInstanceViewModel;
-import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
@@ -50,6 +49,7 @@ public class LitSchedulingVisTimelinePanel
                             if (townshipSchedulingProblem != null) {
                                 return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels().getValues()
                                         .map(schedulingProducingArrangement -> {
+                                            SchedulingFactoryInstanceViewModel schedulingFactoryInstanceViewModel = schedulingProducingArrangement.assignedFactoryInstance().get();
                                             return new LitSchedulingProducingArrangementVO(
                                                     schedulingProducingArrangement.arrangementViewModelId().id(),
                                                     schedulingProducingArrangement.arrangementViewModelId()
@@ -63,7 +63,9 @@ public class LitSchedulingVisTimelinePanel
                                                     schedulingProducingArrangement.orderProductArrangementId()
                                                             .id(),
                                                     schedulingProducingArrangement.boolDirectToOrder(),
-                                                    schedulingProducingArrangement.assignedFactoryInstance().get().factoryReadableIdentifier(),
+                                                    schedulingFactoryInstanceViewModel != null
+                                                            ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
+                                                            : "N/A",
                                                     schedulingProducingArrangement.producingDuration()
                                                             .toString(),
                                                     schedulingProducingArrangement.arrangeDateTime().get(),

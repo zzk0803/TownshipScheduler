@@ -64,6 +64,8 @@ export class ByUnitTimelineComponents
                     .datasets="${this.dataItems}"
                     .groups="${this.groups}"
                     .options="${{
+                        height:'72vh',
+                        verticalScroll:true,
                         timeAxis: {scale: 'minute', step: this.dateTimeSlotSizeInMinute},
                         orientation: {axis: 'top'},
                         zoomKey: 'ctrlKey',
