@@ -67,16 +67,16 @@ public record ReactiveTownshipSchedulingProblemViewModel(
     }
 
     public SchedulingReportGroupsViewModel toSchedulingReportGroupsViewModel() {
-        ArrayList<SchedulingReportArrangeDateTimeGroupViewModel> schedulingReportArrangeDateTimeGroupViewModels = schedulingProducingArrangementReactiveViewModels.peekValues()
+        ArrayList<SchedulingReportArrangeDateTimeGroupViewModel> schedulingReportArrangeDateTimeGroupViewModels = schedulingProducingArrangementReactiveViewModels.getValues()
                 .filter(schedulingProducingArrangement -> Objects.nonNull(schedulingProducingArrangement.arrangeDateTime()))
                 .collect(
                         Collectors.collectingAndThen(
                                 Collectors.groupingBy(
-                                        reactiveSchedulingProducingArrangementViewModel -> reactiveSchedulingProducingArrangementViewModel.arrangeDateTime().peek(),
+                                        reactiveSchedulingProducingArrangementViewModel -> reactiveSchedulingProducingArrangementViewModel.arrangeDateTime().get(),
                                         TreeMap::new,
                                         Collectors.collectingAndThen(
                                                 Collectors.groupingBy(
-                                                        reactiveSchedulingProducingArrangementViewModel1 -> reactiveSchedulingProducingArrangementViewModel1.assignedFactoryInstance().peek(),
+                                                        reactiveSchedulingProducingArrangementViewModel1 -> reactiveSchedulingProducingArrangementViewModel1.assignedFactoryInstance().get(),
                                                         Collectors.collectingAndThen(
                                                                 Collectors.groupingBy(
                                                                         ReactiveSchedulingProducingArrangementViewModel::product,
@@ -98,29 +98,25 @@ public record ReactiveTownshipSchedulingProblemViewModel(
                                                                 }
                                                         )
                                                 ),
-                                                schedulingFactoryInstanceViewModelProductAmountBillViewModelMap -> {
-                                                    return schedulingFactoryInstanceViewModelProductAmountBillViewModelMap.entrySet()
-                                                            .stream()
-                                                            .map(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry -> {
-                                                                return new SchedulingReportFactoryGroupViewModel(
-                                                                        schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getKey(),
-                                                                        schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getValue()
-                                                                );
-                                                            })
-                                                            .collect(Collectors.toCollection(ArrayList::new));
-                                                }
+                                                schedulingFactoryInstanceViewModelProductAmountBillViewModelMap -> schedulingFactoryInstanceViewModelProductAmountBillViewModelMap.entrySet()
+                                                        .stream()
+                                                        .map(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry -> {
+                                                            return new SchedulingReportFactoryGroupViewModel(
+                                                                    schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getKey(),
+                                                                    schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getValue()
+                                                            );
+                                                        })
+                                                        .collect(Collectors.toCollection(ArrayList::new))
                                         )
                                 ),
-                                localDateTimeCollectionTreeMap -> {
-                                    return localDateTimeCollectionTreeMap.entrySet().stream().map(localDateTimeCollectionEntry -> {
-                                        LocalDateTime arrangeDateTime = localDateTimeCollectionEntry.getKey();
-                                        Collection<SchedulingReportFactoryGroupViewModel> localDateTimeCollectionEntryValue = localDateTimeCollectionEntry.getValue();
-                                        return new SchedulingReportArrangeDateTimeGroupViewModel(
-                                                arrangeDateTime,
-                                                localDateTimeCollectionEntryValue
-                                        );
-                                    });
-                                }
+                                localDateTimeCollectionTreeMap -> localDateTimeCollectionTreeMap.entrySet().stream().map(localDateTimeCollectionEntry -> {
+                                    LocalDateTime arrangeDateTime = localDateTimeCollectionEntry.getKey();
+                                    Collection<SchedulingReportFactoryGroupViewModel> localDateTimeCollectionEntryValue = localDateTimeCollectionEntry.getValue();
+                                    return new SchedulingReportArrangeDateTimeGroupViewModel(
+                                            arrangeDateTime,
+                                            localDateTimeCollectionEntryValue
+                                    );
+                                })
                         )
                 ).collect(Collectors.toCollection(ArrayList::new));
         return new SchedulingReportGroupsViewModel(schedulingReportArrangeDateTimeGroupViewModels);
