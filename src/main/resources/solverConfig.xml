@@ -59,12 +59,10 @@
     <localSearch>
 
         <termination>
-<!--            <terminationCompositionStyle>OR</terminationCompositionStyle>-->
             <diminishedReturns>
                 <slidingWindowMinutes>1</slidingWindowMinutes>
                 <minimumImprovementRatio>0.05</minimumImprovementRatio>
             </diminishedReturns>
-<!--            <minutesSpentLimit>5</minutesSpentLimit>-->
         </termination>
 
         <unionMoveSelector>
@@ -110,43 +108,10 @@
                 </variableNameIncludes>
             </swapMoveSelector>
 
-<!--            <pillarChangeMoveSelector>-->
-<!--                <pillarSelector>-->
-<!--                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">-->
-<!--                        <entityClass>-->
-<!--                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-<!--                        </entityClass>-->
-<!--                    </entitySelector>-->
-<!--                </pillarSelector>-->
-<!--                <valueSelector variableName="planningDateTimeSlot"-->
-<!--                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningDateTimeSlot">-->
-<!--                </valueSelector>-->
-<!--            </pillarChangeMoveSelector>-->
-
-<!--            <pillarSwapMoveSelector>-->
-<!--                <pillarSelector>-->
-<!--                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_p">-->
-<!--                        <entityClass>-->
-<!--                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-<!--                        </entityClass>-->
-<!--                    </entitySelector>-->
-<!--                </pillarSelector>-->
-<!--                <secondaryPillarSelector>-->
-<!--                    <entitySelector id="localSearch_pillarSwapMoveSelector_es_Arrangement_planningDateTimeSlot_q">-->
-<!--                        <entityClass>-->
-<!--                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-<!--                        </entityClass>-->
-<!--                    </entitySelector>-->
-<!--                </secondaryPillarSelector>-->
-<!--                <variableNameIncludes>-->
-<!--                    <variableNameInclude>planningDateTimeSlot</variableNameInclude>-->
-<!--                </variableNameIncludes>-->
-<!--            </pillarSwapMoveSelector>-->
-
         </unionMoveSelector>
 
         <acceptor>
-            <entityTabuRatio>0.19</entityTabuRatio>
+            <entityTabuRatio>0.05</entityTabuRatio>
             <valueTabuSize>2</valueTabuSize>
             <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
         </acceptor>

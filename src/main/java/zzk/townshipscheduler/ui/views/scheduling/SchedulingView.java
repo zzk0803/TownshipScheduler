@@ -910,7 +910,7 @@ public class SchedulingView
 
                                                         Anchor downloadLink = new Anchor(
                                                                 resource,
-                                                                "Download Benchmark Repost(zip)"
+                                                                "Download Benchmark Report(zip)"
                                                         );
                                                         downloadLink.getElement()
                                                                 .setAttribute(
