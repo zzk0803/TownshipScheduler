@@ -21,8 +21,7 @@ import java.util.List;
 public class SchedulingFactoryInstance
         implements Serializable, Comparable<SchedulingFactoryInstance> {
 
-    public static final Comparator<SchedulingFactoryInstance> COMPARATOR = Comparator.comparingLong(SchedulingFactoryInstance::getFieldFactoryId)
-            .thenComparingInt(SchedulingFactoryInstance::getProducingLength)
+    public static final Comparator<SchedulingFactoryInstance> COMPARATOR = Comparator.comparingInt(SchedulingFactoryInstance::getProducingLength)
             .thenComparingInt(SchedulingFactoryInstance::getReapWindowSize)
             .thenComparingInt(SchedulingFactoryInstance::getSeqNum);
 

@@ -45,19 +45,19 @@ public class TownshipSchedulingConstraintProvider
                                 )
                 )
                 .filter((left, right) -> left.boolPlanningAssigned() && right.boolPlanningAssigned())
-                .filter(
-                        (left, right) -> {
-                            LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
-                            LocalDateTime rightCompletedDateTime = right.getCompletedDateTime();
-                            LocalDateTime leftArrangeDateTime = left.getArrangeDateTime();
-                            boolean b1 = !rightArrangeDateTime.isAfter(leftArrangeDateTime);
-                            boolean b2 = rightCompletedDateTime.isAfter(leftArrangeDateTime);
-                            return b1 && b2;
-                        }
-                )
                 .groupBy(
-                        (current, other) -> current,
-                        ConstraintCollectors.countDistinct((current, other) -> other)
+                        (left, right) -> left,
+                        ConstraintCollectors.conditionally(
+                                (left, right) -> {
+                                    LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
+                                    LocalDateTime rightCompletedDateTime = right.getCompletedDateTime();
+                                    LocalDateTime leftArrangeDateTime = left.getArrangeDateTime();
+                                    boolean b1 = !rightArrangeDateTime.isAfter(leftArrangeDateTime);
+                                    boolean b2 = rightCompletedDateTime.isAfter(leftArrangeDateTime);
+                                    return b1 && b2;
+                                },
+                                ConstraintCollectors.countDistinct((left, right) -> right)
+                        )
                 )
                 .filter((current, queueSize) ->
                         queueSize > current.getPlanningFactoryInstance()
@@ -69,6 +69,39 @@ public class TownshipSchedulingConstraintProvider
                                 .getProducingLength()
                 )
                 .asConstraint("forbidBrokenFactoryAbility");
+
+//        return constraintFactory.precompute(precompute ->
+//                        precompute.forEachUnfiltered(SchedulingProducingArrangement.class)
+//                                .join(
+//                                        SchedulingProducingArrangement.class,
+//                                        Joiners.equal(SchedulingProducingArrangement::getRequiredFactoryInfo)
+//                                )
+//                )
+//                .filter((left, right) -> left.boolPlanningAssigned() && right.boolPlanningAssigned())
+//                .filter(
+//                        (left, right) -> {
+//                            LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
+//                            LocalDateTime rightCompletedDateTime = right.getCompletedDateTime();
+//                            LocalDateTime leftArrangeDateTime = left.getArrangeDateTime();
+//                            boolean b1 = !rightArrangeDateTime.isAfter(leftArrangeDateTime);
+//                            boolean b2 = rightCompletedDateTime.isAfter(leftArrangeDateTime);
+//                            return b1 && b2;
+//                        }
+//                )
+//                .groupBy(
+//                        (left, right) -> left,
+//                        ConstraintCollectors.countDistinct((current, other) -> other)
+//                )
+//                .filter((current, queueSize) ->
+//                        queueSize > current.getPlanningFactoryInstance()
+//                                .getProducingLength()
+//                )
+//                .penalize(
+//                        HardMediumSoftBigDecimalScore.ONE_HARD,
+//                        (current, queueSize) -> queueSize - current.getPlanningFactoryInstance()
+//                                .getProducingLength()
+//                )
+//                .asConstraint("forbidBrokenFactoryAbility");
     }
 
 //    private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
@@ -233,6 +266,7 @@ public class TownshipSchedulingConstraintProvider
 
     private Constraint preferLoadBalanceArrangementsInFactoryInstance(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo().getFactoryInstances().size() > 1)
                 .groupBy(
                         SchedulingProducingArrangement::getPlanningFactoryInstance,
                         ConstraintCollectors.count()

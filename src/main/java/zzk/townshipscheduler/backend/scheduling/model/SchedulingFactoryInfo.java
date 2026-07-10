@@ -25,10 +25,10 @@ public class SchedulingFactoryInfo
     private static final long serialVersionUID = -3411137456098907358L;
 
     @JsonUnwrapped
-//    @EqualsAndHashCode.Include
+    @EqualsAndHashCode.Include
     private Id id;
 
-    @EqualsAndHashCode.Include
+//    @EqualsAndHashCode.Include
     private String categoryName;
 
     private int level;

@@ -60,8 +60,8 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowMinutes>1</slidingWindowMinutes>
-                <minimumImprovementRatio>0.05</minimumImprovementRatio>
+                <slidingWindowMinutes>2</slidingWindowMinutes>
+                <minimumImprovementRatio>0.057</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 
@@ -72,9 +72,9 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
-                    </filterClass>
+                <!--                    <filterClass>-->
+                <!--                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter-->
+                <!--                    </filterClass>-->
                 </entitySelector>
                 <valueSelector variableName="planningFactoryInstance"
                                id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
