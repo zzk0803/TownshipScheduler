@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.copilot.shaded.helger.collection.commons.CommonsConcurrentHashMap;
@@ -49,7 +50,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
     }
 
     public ReactiveTownshipSchedulingProblemViewModel mapAndGetReactiveModel() {
-        HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
+        HardMediumSoftBigDecimalScore score = getTownshipSchedulingProblem().getScore();
         ListSignal<ReactiveSchedulingProducingArrangementViewModel> arrangementViewModelListSignal = new ListSignal<>();
         arrangementViewModelListSignal.insertAllLast(mapAndUpdateReactiveSchedulingProducingArrangementViewModel());
         return new ReactiveTownshipSchedulingProblemViewModel(
@@ -74,7 +75,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
     }
 
     public TownshipSchedulingProblemViewModel mapAndGet() {
-        HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
+        HardMediumSoftBigDecimalScore score = getTownshipSchedulingProblem().getScore();
         return new TownshipSchedulingProblemViewModel(
                 getTownshipSchedulingProblem().getUuid(),
                 mapAndGetSchedulingProductViewModel(),
@@ -108,7 +109,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
         Collection<ReactiveSchedulingProducingArrangementViewModel> reactiveSchedulingProducingArrangementViewModels
                 = mapAndUpdateReactiveSchedulingProducingArrangementViewModel();
         SolverStatus solverStatus = getTownshipSchedulingProblem().getSolverStatus();
-        HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
+        HardMediumSoftBigDecimalScore score = getTownshipSchedulingProblem().getScore();
         reactiveTownshipSchedulingProblemViewModel.solverStatus().set(solverStatus.name());
         reactiveTownshipSchedulingProblemViewModel.score().set(
                 Objects.isNull(score)
@@ -133,7 +134,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
     ) {
         this.setTownshipSchedulingProblem(townshipSchedulingProblem);
         SolverStatus solverStatus = getTownshipSchedulingProblem().getSolverStatus();
-        HardMediumSoftScore score = getTownshipSchedulingProblem().getScore();
+        HardMediumSoftBigDecimalScore score = getTownshipSchedulingProblem().getScore();
         return this.updateAndGet(
                 townshipSchedulingProblemViewModel,
                 solverStatus.name(),

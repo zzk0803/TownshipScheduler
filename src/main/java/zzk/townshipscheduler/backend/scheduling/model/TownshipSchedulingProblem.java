@@ -2,18 +2,16 @@ package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.NavigableSet;
-import java.util.TreeSet;
 
 @Data
 @NoArgsConstructor
@@ -56,7 +54,7 @@ public class TownshipSchedulingProblem implements Serializable {
     private SchedulingPlayer schedulingPlayer;
 
     @PlanningScore
-    private HardMediumSoftScore score;
+    private HardMediumSoftBigDecimalScore score;
 
     private DateTimeSlotSize dateTimeSlotSize;
 
@@ -73,7 +71,7 @@ public class TownshipSchedulingProblem implements Serializable {
             SchedulingWorkCalendar schedulingWorkCalendar,
             DateTimeSlotSize dateTimeSlotSize,
             SchedulingPlayer schedulingPlayer,
-            HardMediumSoftScore score,
+            HardMediumSoftBigDecimalScore score,
             SolverStatus solverStatus
     ) {
         this.uuid = uuid;
