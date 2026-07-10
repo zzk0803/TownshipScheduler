@@ -106,7 +106,7 @@ public class TownshipSchedulingConstraintProvider
                 .filter(SchedulingProducingArrangement::boolCompleted)
                 .filter(SchedulingProducingArrangement::boolCompletedAfterDeadline)
                 .penalize(
-                        HardMediumSoftScore.ofMedium(100L),
+                        HardMediumSoftScore.ONE_MEDIUM,
                         (schedulingProducingArrangement)
                                 -> schedulingProducingArrangement.calcDeadlineToCompletedDuration()
                                            .toMinutes() * calcFactor(schedulingProducingArrangement)
