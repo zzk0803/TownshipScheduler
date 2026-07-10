@@ -81,6 +81,18 @@
                 </valueSelector>
             </changeMoveSelector>
 
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningFactoryInstance">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector variableName="planningFactoryInstance"
+                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningFactoryInstance"/>
+            </pillarChangeMoveSelector>
+
             <changeMoveSelector>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
