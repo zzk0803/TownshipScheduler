@@ -37,9 +37,6 @@ public class SchedulingReportArticle
 
     private final SchedulingReportArrangeDateTimeGroupsGrid reportGroupsGrid;
 
-    private final Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal;
-
-    private final Signal<String> solverResultSpanSignal;
 
     public SchedulingReportArticle(
             SchedulingView schedulingView,
@@ -52,32 +49,12 @@ public class SchedulingReportArticle
 
         ValueSignal<ReactiveTownshipSchedulingProblemViewModel> reactiveTownshipSchedulingProblemViewModelValueSignal
                 = schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal();
-        this.schedulingReportGroupsViewModelSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
-                townshipSchedulingProblemViewModel -> {
-                    if (townshipSchedulingProblemViewModel == null
-                        || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
-                    ) {
-                        return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
-                    }
-                    return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
-                });
-        this.solverResultSpanSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
-                townshipSchedulingProblemViewModel -> {
-                    if (townshipSchedulingProblemViewModel != null) {
-                        return townshipSchedulingProblemViewModel.feasible().get()
-                                ? "Feasible"
-                                : "Not Feasible";
-                    } else {
-                        return "Not Feasible";
-                    }
-                }
-        );
 
         Span span = new Span();
         span.getElement()
                 .getThemeList()
                 .add("badge");
-        span.bindText(solverResultSpanSignal);
+        span.bindText(schedulingView.getSolverResultSpanSignal());
 
         this.getContent().
                 add(span);
@@ -87,7 +64,7 @@ public class SchedulingReportArticle
         Signal.effect(
                 reportGroupsGrid,
                 () -> {
-                    reportGroupsGrid.setItems(this.schedulingReportGroupsViewModelSignal.get().schedulingReportArrangeDateTimeGroupViewModels());
+                    reportGroupsGrid.setItems(schedulingView.getSchedulingReportGroupsViewModelSignal().get().schedulingReportArrangeDateTimeGroupViewModels());
                 }
         );
     }

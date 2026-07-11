@@ -132,6 +132,65 @@ public class SchedulingView
                     : new HashMap<>()
     );
 
+    private Signal<List<LitSchedulingProducingArrangementVO>> litSchedulingProducingArrangementVoListSignal = this.reactiveTownshipSchedulingProblemViewModelValueSignal
+            .map(townshipSchedulingProblem -> {
+                        if (townshipSchedulingProblem != null) {
+                            return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels().getValues()
+                                    .map(schedulingProducingArrangement -> {
+                                        SchedulingFactoryInstanceViewModel schedulingFactoryInstanceViewModel = schedulingProducingArrangement.assignedFactoryInstance().get();
+                                        return new LitSchedulingProducingArrangementVO(
+                                                schedulingProducingArrangement.arrangementViewModelId().id(),
+                                                schedulingProducingArrangement.arrangementViewModelId()
+                                                        .uuid(),
+                                                String.valueOf(schedulingProducingArrangement.order()
+                                                        .id()),
+                                                schedulingProducingArrangement.product()
+                                                        .name(),
+                                                schedulingProducingArrangement.orderProduct()
+                                                        .name(),
+                                                schedulingProducingArrangement.orderProductArrangementId()
+                                                        .id(),
+                                                schedulingProducingArrangement.boolDirectToOrder(),
+                                                schedulingFactoryInstanceViewModel != null
+                                                        ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
+                                                        : "N/A",
+                                                schedulingProducingArrangement.producingDuration()
+                                                        .toString(),
+                                                schedulingProducingArrangement.arrangeDateTime().get(),
+                                                schedulingProducingArrangement.producingDateTime().get(),
+                                                schedulingProducingArrangement.completedDateTime().get()
+                                        );
+                                    })
+                                    .collect(Collectors.toCollection(ArrayList::new));
+                        } else {
+                            return List.of();
+                        }
+                    }
+            );
+
+    private Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
+            townshipSchedulingProblemViewModel -> {
+                if (townshipSchedulingProblemViewModel == null
+                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+                ) {
+                    return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
+                }
+                return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
+            }
+    );
+
+    private Signal<String> solverResultSpanSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
+            townshipSchedulingProblemViewModel -> {
+                if (townshipSchedulingProblemViewModel != null) {
+                    return townshipSchedulingProblemViewModel.feasible().get()
+                            ? "Feasible"
+                            : "Not Feasible";
+                } else {
+                    return "Not Feasible";
+                }
+            }
+    );
+
     private ValueSignal<Boolean> solverRunningSignal = new ValueSignal<>(false);
 
     public SchedulingView(
@@ -577,7 +636,7 @@ public class SchedulingView
         newSchedulingBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         newSchedulingBtn.addClickListener(clicked -> {
             Dialog dialog = new Dialog("Before Scheduler Start...");
-            dialog.setWidth(67.8F,Unit.VW);
+            dialog.setWidth(67.8F, Unit.VW);
 
             VerticalLayout dialogWrapper = new VerticalLayout();
             dialogWrapper.setWidthFull();

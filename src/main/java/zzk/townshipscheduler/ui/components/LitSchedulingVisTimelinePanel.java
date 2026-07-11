@@ -34,61 +34,22 @@ public class LitSchedulingVisTimelinePanel
 
     private final SchedulingViewPresenter schedulingViewPresenter;
 
-    private final Signal<List<LitSchedulingProducingArrangementVO>> litSchedulingProducingArrangementVoListSignal;
-
     public LitSchedulingVisTimelinePanel(
             SchedulingView schedulingView,
             SchedulingViewPresenter schedulingViewPresenter
     ) {
         this.schedulingView = schedulingView;
         this.schedulingViewPresenter = schedulingViewPresenter;
-
-        this.litSchedulingProducingArrangementVoListSignal = this.schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal()
-                .map(
-                        townshipSchedulingProblem -> {
-                            if (townshipSchedulingProblem != null) {
-                                return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels().getValues()
-                                        .map(schedulingProducingArrangement -> {
-                                            SchedulingFactoryInstanceViewModel schedulingFactoryInstanceViewModel = schedulingProducingArrangement.assignedFactoryInstance().get();
-                                            return new LitSchedulingProducingArrangementVO(
-                                                    schedulingProducingArrangement.arrangementViewModelId().id(),
-                                                    schedulingProducingArrangement.arrangementViewModelId()
-                                                            .uuid(),
-                                                    String.valueOf(schedulingProducingArrangement.order()
-                                                            .id()),
-                                                    schedulingProducingArrangement.product()
-                                                            .name(),
-                                                    schedulingProducingArrangement.orderProduct()
-                                                            .name(),
-                                                    schedulingProducingArrangement.orderProductArrangementId()
-                                                            .id(),
-                                                    schedulingProducingArrangement.boolDirectToOrder(),
-                                                    schedulingFactoryInstanceViewModel != null
-                                                            ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
-                                                            : "N/A",
-                                                    schedulingProducingArrangement.producingDuration()
-                                                            .toString(),
-                                                    schedulingProducingArrangement.arrangeDateTime().get(),
-                                                    schedulingProducingArrangement.producingDateTime().get(),
-                                                    schedulingProducingArrangement.completedDateTime().get()
-                                            );
-                                        })
-                                        .collect(Collectors.toCollection(ArrayList::new));
-                            } else {
-                                return List.of();
-                            }
-                        }
-                );
-
-        getElement().bindProperty(
-                "schedulingProducingArrangements",
-                this.litSchedulingProducingArrangementVoListSignal,
-                null
-        );
     }
 
     @Override
     protected void onAttach(AttachEvent attachEvent) {
+        getElement().bindProperty(
+                "schedulingProducingArrangements",
+                this.schedulingView.getLitSchedulingProducingArrangementVoListSignal(),
+                null
+        );
+
         updateRemoteFull();
     }
 

@@ -93,9 +93,9 @@ public class SchedulingProducingArrangement
     @EqualsAndHashCode.Include
     private int deepPrerequisiteProducingArrangementsSize;
 
-//    @JsonIgnore
-//    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
-//    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
+    //    @JsonIgnore
+    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
+    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
 
     private Duration staticDeepPrerequisiteProducingDuration;
 
@@ -199,19 +199,39 @@ public class SchedulingProducingArrangement
         return new FactoryProcessSequence(this);
     }
 
-//    @ShadowSources(value = {"prerequisiteProducingArrangements[].completedDateTime"})
-//    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime(TownshipSchedulingProblem
-//    townshipSchedulingProblem) {
-//        if (this.prerequisiteProducingArrangements.stream()
-//                .anyMatch(schedulingProducingArrangement -> schedulingProducingArrangement.completedDateTime == null)) {
-//            return null;
-//        }
-//
-//        return this.prerequisiteProducingArrangements.stream()
-//                .map(SchedulingProducingArrangement::getCompletedDateTime)
-//                .max(LocalDateTime::compareTo)
-//                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
-//    }
+    @ShadowSources(value = {"prerequisiteProducingArrangements[].computedDateTimePair"})
+    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime(
+            TownshipSchedulingProblem
+                    townshipSchedulingProblem
+    ) {
+        if (this.prerequisiteProducingArrangements.stream()
+                .anyMatch(schedulingProducingArrangement -> schedulingProducingArrangement.getCompletedDateTime() == null)) {
+            return null;
+        }
+
+        return this.prerequisiteProducingArrangements.stream()
+                .map(SchedulingProducingArrangement::getCompletedDateTime)
+                .max(LocalDateTime::compareTo)
+                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
+    }
+
+    public Duration calcArrangeDateTimeToPrerequisiteDuration() {
+        if (getShadowPrerequisiteProducingArrangementsFinishedDateTime() == null) {
+            return getWorkCalendarSpan();
+        }
+
+        return Duration.between(getArrangeDateTime(), getShadowPrerequisiteProducingArrangementsFinishedDateTime());
+    }
+
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getCompletedDateTime() {
+        return computedDateTimePair != null
+                ? computedDateTimePair.completedDateTime()
+                : null;
+    }
 
     @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
     public ComputedDateTimePair supplierForComputedDateTimePair() {
@@ -351,14 +371,12 @@ public class SchedulingProducingArrangement
         return boolHasDeadline() && (getCompletedDateTime().isAfter(getWorkCalendarEnd()));
     }
 
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getCompletedDateTime() {
-        return computedDateTimePair != null
-                ? computedDateTimePair.completedDateTime()
-                : null;
+    public LocalDateTime getWorkCalendarEnd() {
+        return getSchedulingWorkCalendar().getEndDateTime();
+    }
+
+    public boolean boolHasDeadline() {
+        return getSchedulingOrder().boolHasDeadline();
     }
 
     public Duration getWorkCalendarSpan() {
@@ -367,14 +385,6 @@ public class SchedulingProducingArrangement
 
     public LocalDateTime getWorkCalendarStart() {
         return getSchedulingWorkCalendar().getStartDateTime();
-    }
-
-    public LocalDateTime getWorkCalendarEnd() {
-        return getSchedulingWorkCalendar().getEndDateTime();
-    }
-
-    public boolean boolHasDeadline() {
-        return getSchedulingOrder().boolHasDeadline();
     }
 
     public boolean boolCompletedAfterDeadline() {

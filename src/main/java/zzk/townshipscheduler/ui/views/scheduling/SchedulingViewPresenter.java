@@ -108,20 +108,6 @@ public class SchedulingViewPresenter {
         return bytes.orElse(null);
     }
 
-    //    public void setupArrangementsGrid(Grid<SchedulingProducingArrangement> grid) {
-    //        setupArrangementsGrid(
-    //                grid,
-    //                reflushAndGetCurrentProblem()
-    //        );
-    //    }
-    //
-    //    public void setupArrangementsGrid(
-    //            Grid<SchedulingProducingArrangement> grid,
-    //            TownshipSchedulingProblem townshipSchedulingProblem
-    //    ) {
-    //        grid.setItems(townshipSchedulingProblem.getSchedulingProducingArrangements());
-    //    }
-
     public ValueSignal<ReactiveTownshipSchedulingProblemViewModel> getTownshipSchedulingProblemViewModelSignal() {
         return this.getSchedulingView().getReactiveTownshipSchedulingProblemViewModelValueSignal();
     }
@@ -140,7 +126,7 @@ public class SchedulingViewPresenter {
                         String updatedString = getSchedulingView().getBriefText().getText() + "\r" + "solver approximate problem scale:" + problemSizeStatistics;
                         getSchedulingView().getBriefText().setText(updatedString);
                     });
-                }, solutionConsumer.andThen(this::reflushAndGetViewModel),
+                }, solutionConsumer,
                 solutionConsumer.andThen(this::reflushAndGetViewModel)
                         .andThen(_ -> solutionResultPushScheduledFuture.cancel(true))
                         .andThen(_ -> this.ui.access(() -> {
@@ -181,8 +167,14 @@ public class SchedulingViewPresenter {
                     getSchedulingView().getTriggerButton().setToState1();
                     getSchedulingView().getSolverRunningSignal().set(false);
                 }
+                this.reflushAndGetViewModel();
             });
         };
+    }
+
+    public void reflushAndGetViewModel() {
+        TownshipSchedulingProblem townshipSchedulingProblem = getTownshipSchedulingProblem();
+        this.reflushAndGetViewModel(townshipSchedulingProblem);
     }
 
     public TownshipSchedulingProblem reflushAndGetCurrentProblem(TownshipSchedulingProblem townshipSchedulingProblem) {
@@ -191,6 +183,15 @@ public class SchedulingViewPresenter {
 
     public TownshipSchedulingProblem getTownshipSchedulingProblem() {
         return this.townshipSchedulingProblemAtomicReference.get();
+    }
+
+    public void reflushAndGetViewModel(TownshipSchedulingProblem townshipSchedulingProblem) {
+        this.townshipSchedulingProblemViewModelAtomicReference.updateAndGet(
+                townshipSchedulingProblemViewModel -> this.townshipSchedulingViewRecordComponent.updateAndGetReactiveViewModel(
+                        reflushAndGetCurrentProblem(townshipSchedulingProblem),
+                        townshipSchedulingProblemViewModel
+                )
+        );
     }
 
     public void signalReactiveTownshipSchedulingProblemViewModel(ReactiveTownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel) {
@@ -203,20 +204,6 @@ public class SchedulingViewPresenter {
 
     public ReactiveTownshipSchedulingProblemViewModel getTownshipSchedulingProblemViewModel() {
         return this.townshipSchedulingProblemViewModelAtomicReference.get();
-    }
-
-    public void reflushAndGetViewModel() {
-        TownshipSchedulingProblem townshipSchedulingProblem = getTownshipSchedulingProblem();
-        this.reflushAndGetViewModel(townshipSchedulingProblem);
-    }
-
-    public void reflushAndGetViewModel(TownshipSchedulingProblem townshipSchedulingProblem) {
-        this.townshipSchedulingProblemViewModelAtomicReference.updateAndGet(
-                townshipSchedulingProblemViewModel -> this.townshipSchedulingViewRecordComponent.updateAndGetReactiveViewModel(
-                        reflushAndGetCurrentProblem(townshipSchedulingProblem),
-                        townshipSchedulingProblemViewModel
-                )
-        );
     }
 
     public void onSolverStopButton() {

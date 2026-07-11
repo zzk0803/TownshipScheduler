@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicStampedReference;
 
 @Slf4j
 @SpringComponent
@@ -102,14 +103,17 @@ public class TownshipSchedulingProblemViewModelTransfer {
             ReactiveTownshipSchedulingProblemViewModel reactiveTownshipSchedulingProblemViewModel
     ) {
         this.setTownshipSchedulingProblem(townshipSchedulingProblem);
-        if (reactiveTownshipSchedulingProblemViewModel == null) {
+        if (
+                reactiveTownshipSchedulingProblemViewModel == null
+                || ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(reactiveTownshipSchedulingProblemViewModel)
+        ) {
             return mapAndGetReactiveModel();
         }
 
-        Collection<ReactiveSchedulingProducingArrangementViewModel> reactiveSchedulingProducingArrangementViewModels
-                = mapAndUpdateReactiveSchedulingProducingArrangementViewModel();
-        SolverStatus solverStatus = getTownshipSchedulingProblem().getSolverStatus();
-        HardMediumSoftBigDecimalScore score = getTownshipSchedulingProblem().getScore();
+        mapAndUpdateReactiveSchedulingProducingArrangementViewModel();
+        TownshipSchedulingProblem currentSolverSolution = getTownshipSchedulingProblem();
+        SolverStatus solverStatus = currentSolverSolution.getSolverStatus();
+        HardMediumSoftBigDecimalScore score = currentSolverSolution.getScore();
         reactiveTownshipSchedulingProblemViewModel.solverStatus().set(solverStatus.name());
         reactiveTownshipSchedulingProblemViewModel.score().set(
                 Objects.isNull(score)

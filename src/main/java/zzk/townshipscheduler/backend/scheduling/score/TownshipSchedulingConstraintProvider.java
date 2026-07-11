@@ -30,7 +30,8 @@ public class TownshipSchedulingConstraintProvider
                 shouldNotBrokenCalendarEnd(constraintFactory),
                 preferNotArrangeInPlayerSleepTime(constraintFactory),
                 preferMinimizeCompletedDateTime(constraintFactory),
-                preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
+                preferMinimizeArrangeDateTimeToPrerequisiteDone(constraintFactory),
+                //preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
                 preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory),
                 preferLoadBalanceArrangementsInFactoryInstance(constraintFactory)
         };
@@ -128,7 +129,7 @@ public class TownshipSchedulingConstraintProvider
                                 .join(
                                         precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class),
                                         Joiners.containing(
-                                                SchedulingProducingArrangement::getDeepPrerequisiteProducingArrangements,
+                                                SchedulingProducingArrangement::getPrerequisiteProducingArrangements,
                                                 Function.identity()
                                         )
                                 )
@@ -232,6 +233,7 @@ public class TownshipSchedulingConstraintProvider
 
     private Constraint preferMinimizeCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(SchedulingProducingArrangement::boolOrderDirect)
                 .filter(SchedulingProducingArrangement::boolCompleted)
                 .penalize(
                         HardMediumSoftBigDecimalScore.ONE_SOFT,
@@ -239,16 +241,6 @@ public class TownshipSchedulingConstraintProvider
                                 .toMinutes()
                 )
                 .asConstraint("preferMinimizeCompletedDateTime");
-    }
-
-    private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .penalize(
-                        HardMediumSoftBigDecimalScore.ONE_SOFT,
-                        (arrangement) -> arrangement.calcCalendarStartToArrangedDuration().toMinutes() *
-                                         calcFactor(arrangement)
-                )
-                .asConstraint("preferArrangeDateTimeAsSoonAsPassible");
     }
 
     private Constraint preferMinimizeProductArrangeDateTimeSlotUsage(@NonNull ConstraintFactory constraintFactory) {
@@ -275,8 +267,28 @@ public class TownshipSchedulingConstraintProvider
                         (factoryInstance, arrangementCount) -> factoryInstance,
                         (factoryInstance, arrangementCount) -> arrangementCount
                 ))
-                .penalizeBigDecimal(HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(5000)), LoadBalance::unfairness)
+                .penalizeBigDecimal(HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(10000)), LoadBalance::unfairness)
                 .asConstraint("preferLoadBalanceArrangementsInFactoryInstance");
+    }
+
+    private Constraint preferMinimizeArrangeDateTimeToPrerequisiteDone(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
+                .penalize(
+                        HardMediumSoftBigDecimalScore.ONE_SOFT,
+                        arrangement -> arrangement.calcArrangeDateTimeToPrerequisiteDuration().abs().toMinutes()
+                )
+                .asConstraint("preferMinimizeArrangeDateTimeToPrerequisiteDone");
+    }
+
+    private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .penalize(
+                        HardMediumSoftBigDecimalScore.ONE_SOFT,
+                        (arrangement) -> arrangement.calcCalendarStartToArrangedDuration().toMinutes() *
+                                         calcFactor(arrangement)
+                )
+                .asConstraint("preferArrangeDateTimeAsSoonAsPassible");
     }
 
 }
