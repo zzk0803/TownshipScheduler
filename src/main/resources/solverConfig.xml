@@ -58,25 +58,21 @@
     <!--    endregion-->
 
     <!--region local search-->
-    <localSearch>
 
+    <localSearch>
         <termination>
-            <diminishedReturns>
-                <slidingWindowMinutes>2</slidingWindowMinutes>
-                <minimumImprovementRatio>0.057</minimumImprovementRatio>
-            </diminishedReturns>
+            <unimprovedSecondsSpentLimit>10</unimprovedSecondsSpentLimit>
         </termination>
 
         <unionMoveSelector>
-
             <changeMoveSelector>
                 <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                <!--                    <filterClass>-->
-                <!--                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter-->
-                <!--                    </filterClass>-->
+                    <filterClass>
+                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                    </filterClass>
                 </entitySelector>
                 <valueSelector variableName="planningFactoryInstance"
                                id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
@@ -89,6 +85,48 @@
                         <entityClass>
                             zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                         </entityClass>
+                        <filterClass>
+                            zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                        </filterClass>
+                    </entitySelector>
+                </pillarSelector>
+                <valueSelector variableName="planningFactoryInstance"
+                               id="localSearch_pillarChangeMoveSelector_vs_Arrangement_planningFactoryInstance"/>
+            </pillarChangeMoveSelector>
+        </unionMoveSelector>
+    </localSearch>
+
+    <localSearch>
+
+        <termination>
+            <unimprovedSecondsSpentLimit>30</unimprovedSecondsSpentLimit>
+        </termination>
+
+        <unionMoveSelector>
+
+            <changeMoveSelector>
+                <entitySelector id="localSearch_changeMoveSelector_es_Arrangement_planningFactory">
+                    <entityClass>
+                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                    </entityClass>
+                    <filterClass>
+                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                    </filterClass>
+                </entitySelector>
+                <valueSelector variableName="planningFactoryInstance"
+                               id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
+                </valueSelector>
+            </changeMoveSelector>
+
+            <pillarChangeMoveSelector>
+                <pillarSelector>
+                    <entitySelector id="localSearch_pillarChangeMoveSelector_es_Arrangement_planningFactoryInstance">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                        <filterClass>
+                            zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                        </filterClass>
                     </entitySelector>
                 </pillarSelector>
                 <valueSelector variableName="planningFactoryInstance"
@@ -157,11 +195,11 @@
         </unionMoveSelector>
 
         <acceptor>
-            <lateAcceptanceSize>9</lateAcceptanceSize>
+            <lateAcceptanceSize>20</lateAcceptanceSize>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>1</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>
