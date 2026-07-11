@@ -19,11 +19,11 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
 public class SchedulingFactoryInstance
-        implements Serializable, Comparable<SchedulingFactoryInstance> {
+        implements Serializable {
 
-    public static final Comparator<SchedulingFactoryInstance> COMPARATOR = Comparator.comparingInt(SchedulingFactoryInstance::getProducingLength)
-            .thenComparingInt(SchedulingFactoryInstance::getReapWindowSize)
-            .thenComparingInt(SchedulingFactoryInstance::getSeqNum);
+//    public static final Comparator<SchedulingFactoryInstance> COMPARATOR = Comparator.comparingInt(SchedulingFactoryInstance::getProducingLength)
+//            .thenComparingInt(SchedulingFactoryInstance::getReapWindowSize)
+//            .thenComparingInt(SchedulingFactoryInstance::getSeqNum);
 
     @Serial
     private static final long serialVersionUID = -7146926432206516227L;
@@ -84,9 +84,9 @@ public class SchedulingFactoryInstance
                 .typeEqual(that.getSchedulingFactoryInfo());
     }
 
-    @Override
-    public int compareTo(SchedulingFactoryInstance that) {
-        return COMPARATOR.compare(this,that);
-    }
+//    @Override
+//    public int compareTo(SchedulingFactoryInstance that) {
+//        return COMPARATOR.compare(this,that);
+//    }
 
 }

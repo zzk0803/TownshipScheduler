@@ -3,6 +3,7 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.score.stream.*;
+import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import ai.timefold.solver.core.api.score.stream.common.LoadBalance;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
@@ -38,84 +39,48 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
-                .join(
-                        constraintFactory.forEach(SchedulingProducingArrangement.class)
-                                .filter(SchedulingProducingArrangement::boolPlanningAssigned),
-                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance)
-                )
-                .groupBy(
-                        (left, right) -> left, ConstraintCollectors.conditionally(
-                                (left, right) -> {
-                                    LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
-                                    LocalDateTime rightCompletedDateTime = right.getCompletedDateTime();
-                                    LocalDateTime leftArrangeDateTime = left.getArrangeDateTime();
-                                    boolean b1 = !rightArrangeDateTime.isAfter(leftArrangeDateTime);
-                                    boolean b2 = rightCompletedDateTime.isAfter(leftArrangeDateTime);
-                                    return b1 && b2;
-                                }, ConstraintCollectors.countDistinct((left, right) -> right)
-                        )
-                )
-                .filter((current, queueSize) -> queueSize > current.getPlanningFactoryInstance().getProducingLength())
-                .penalize(
-                        HardMediumSoftBigDecimalScore.ONE_HARD,
-                        (current, queueSize) -> queueSize - current.getPlanningFactoryInstance().getProducingLength()
-                )
-                .asConstraint("forbidBrokenFactoryAbility");
-
-//        return constraintFactory.precompute(precompute ->
-//                        precompute.forEachUnfiltered(SchedulingProducingArrangement.class)
-//                                .join(
-//                                        SchedulingProducingArrangement.class,
-//                                        Joiners.equal(SchedulingProducingArrangement::getRequiredFactoryInfo)
-//                                )
-//                )
-//                .filter((left, right) -> left.boolPlanningAssigned() && right.boolPlanningAssigned())
-//                .filter(
-//                        (left, right) -> {
-//                            LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
-//                            LocalDateTime rightCompletedDateTime = right.getCompletedDateTime();
-//                            LocalDateTime leftArrangeDateTime = left.getArrangeDateTime();
-//                            boolean b1 = !rightArrangeDateTime.isAfter(leftArrangeDateTime);
-//                            boolean b2 = rightCompletedDateTime.isAfter(leftArrangeDateTime);
-//                            return b1 && b2;
-//                        }
-//                )
-//                .groupBy(
-//                        (left, right) -> left,
-//                        ConstraintCollectors.countDistinct((current, other) -> other)
-//                )
-//                .filter((current, queueSize) ->
-//                        queueSize > current.getPlanningFactoryInstance()
-//                                .getProducingLength()
-//                )
-//                .penalize(
-//                        HardMediumSoftBigDecimalScore.ONE_HARD,
-//                        (current, queueSize) -> queueSize - current.getPlanningFactoryInstance()
-//                                .getProducingLength()
-//                )
-//                .asConstraint("forbidBrokenFactoryAbility");
-    }
-
-//    private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
 //        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+//                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
+//                .join(
+//                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+//                                .filter(SchedulingProducingArrangement::boolPlanningAssigned),
+//                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance)
+//                )
 //                .groupBy(
-//                        SchedulingProducingArrangement::getPlanningFactoryInstance,
-//                        SchedulingProducingArrangement::getPlanningDateTimeSlot,
-//                        ConstraintCollectors.toConnectedTemporalRanges(
-//                                SchedulingProducingArrangement::getArrangeDateTime,
-//                                SchedulingProducingArrangement::getCompletedDateTime
+//                        (left, right) -> left, ConstraintCollectors.conditionally(
+//                                (left, right) -> {
+//                                    LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
+//                                    LocalDateTime rightCompletedDateTime = right.getCompletedDateTime();
+//                                    LocalDateTime leftArrangeDateTime = left.getArrangeDateTime();
+//                                    boolean b1 = !rightArrangeDateTime.isAfter(leftArrangeDateTime);
+//                                    boolean b2 = rightCompletedDateTime.isAfter(leftArrangeDateTime);
+//                                    return b1 && b2;
+//                                }, ConstraintCollectors.countDistinct((left, right) -> right)
 //                        )
 //                )
-//                .flattenLast(ConnectedRangeChain::getConnectedRanges)
-//                .filter((factoryInstance, dateTimeSlot, connectedRange) -> connectedRange.getContainedRangeCount() > factoryInstance.getProducingLength())
+//                .filter((current, queueSize) -> queueSize > current.getPlanningFactoryInstance().getProducingLength())
 //                .penalize(
 //                        HardMediumSoftBigDecimalScore.ONE_HARD,
-//                        (factoryInstance, dateTimeSlot, connectedRange) -> connectedRange.getContainedRangeCount() - factoryInstance.getProducingLength()
+//                        (current, queueSize) -> queueSize - current.getPlanningFactoryInstance().getProducingLength()
 //                )
 //                .asConstraint("forbidBrokenFactoryAbility");
-//    }
+
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .groupBy(
+                        SchedulingProducingArrangement::getPlanningFactoryInstance,
+                        ConstraintCollectors.toConnectedTemporalRanges(
+                                SchedulingProducingArrangement::getArrangeDateTime,
+                                SchedulingProducingArrangement::getCompletedDateTime
+                        )
+                )
+                .flattenLast(ConnectedRangeChain::getConnectedRanges)
+                .filter((factoryInstance, connectedRange) -> connectedRange.getContainedRangeCount() > factoryInstance.getProducingLength())
+                .penalize(
+                        HardMediumSoftBigDecimalScore.ONE_HARD,
+                        (factoryInstance, connectedRange) -> connectedRange.getContainedRangeCount() - factoryInstance.getProducingLength()
+                )
+                .asConstraint("forbidBrokenFactoryAbility");
+    }
 
     private Constraint forbidBrokenPrerequisiteArrangement(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.precompute(precomputeFactory -> precomputeFactory.forEachUnfiltered(
@@ -232,6 +197,16 @@ public class TownshipSchedulingConstraintProvider
                 .asConstraint("preferMinimizeCompletedDateTime");
     }
 
+    private Constraint preferMinimizeArrangeDateTimeToPrerequisiteDone(@NonNull ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
+                .penalize(
+                        HardMediumSoftBigDecimalScore.ONE_SOFT,
+                        arrangement -> arrangement.calcArrangeDateTimeToPrerequisiteDuration().abs().toMinutes()
+                )
+                .asConstraint("preferMinimizeArrangeDateTimeToPrerequisiteDone");
+    }
+
     private Constraint preferLoadBalanceArrangementsInFactoryInstance(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .groupBy(
@@ -245,16 +220,6 @@ public class TownshipSchedulingConstraintProvider
                 ))
                 .penalizeBigDecimal(HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(10000)), LoadBalance::unfairness)
                 .asConstraint("preferLoadBalanceArrangementsInFactoryInstance");
-    }
-
-    private Constraint preferMinimizeArrangeDateTimeToPrerequisiteDone(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
-                .penalize(
-                        HardMediumSoftBigDecimalScore.ONE_SOFT,
-                        arrangement -> arrangement.calcArrangeDateTimeToPrerequisiteDuration().abs().toMinutes()
-                )
-                .asConstraint("preferMinimizeArrangeDateTimeToPrerequisiteDone");
     }
 
     private Constraint preferMinimizeProductArrangeDateTimeSlotUsage(@NonNull ConstraintFactory constraintFactory) {

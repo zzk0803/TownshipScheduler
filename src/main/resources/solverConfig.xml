@@ -3,7 +3,7 @@
         xmlns="https://timefold.ai/xsd/solver"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd"
 >
-    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>
+    <!--    <enablePreviewFeature>DIVERSIFIED_LATE_ACCEPTANCE</enablePreviewFeature>-->
 
     <environmentMode>PHASE_ASSERT</environmentMode>
 
@@ -195,11 +195,11 @@
         </unionMoveSelector>
 
         <acceptor>
-            <lateAcceptanceSize>20</lateAcceptanceSize>
+            <simulatedAnnealingStartingTemperature>1hard/1medium/1soft</simulatedAnnealingStartingTemperature>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>2</acceptedCountLimit>
+            <acceptedCountLimit>4</acceptedCountLimit>
         </forager>
 
     </localSearch>
