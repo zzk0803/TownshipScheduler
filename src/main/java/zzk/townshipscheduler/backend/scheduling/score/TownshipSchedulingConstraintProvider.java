@@ -37,14 +37,13 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
-        return constraintFactory.precompute(precompute ->
-                        precompute.forEachUnfiltered(SchedulingProducingArrangement.class)
-                                .join(
-                                        SchedulingProducingArrangement.class,
-                                        Joiners.equal(SchedulingProducingArrangement::getRequiredFactoryInfo)
-                                )
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
+                .join(
+                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+                                .filter(SchedulingProducingArrangement::boolPlanningAssigned),
+                        Joiners.equal(SchedulingProducingArrangement::getPlanningFactoryInstance)
                 )
-                .filter((left, right) -> left.boolPlanningAssigned() && right.boolPlanningAssigned())
                 .groupBy(
                         (left, right) -> left,
                         ConstraintCollectors.conditionally(
@@ -259,14 +258,14 @@ public class TownshipSchedulingConstraintProvider
                         ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                 )
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(5000)), (factoryInstance, slotAmount) -> slotAmount - 1
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(5000)),
+                        (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }
 
     private Constraint preferLoadBalanceArrangementsInFactoryInstance(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(schedulingProducingArrangement -> schedulingProducingArrangement.getRequiredFactoryInfo().getFactoryInstances().size() > 1)
                 .groupBy(
                         SchedulingProducingArrangement::getPlanningFactoryInstance,
                         ConstraintCollectors.count()
@@ -276,7 +275,7 @@ public class TownshipSchedulingConstraintProvider
                         (factoryInstance, arrangementCount) -> factoryInstance,
                         (factoryInstance, arrangementCount) -> arrangementCount
                 ))
-                .penalizeBigDecimal(HardMediumSoftBigDecimalScore.ONE_SOFT, LoadBalance::unfairness)
+                .penalizeBigDecimal(HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(5000)), LoadBalance::unfairness)
                 .asConstraint("preferLoadBalanceArrangementsInFactoryInstance");
     }
 
