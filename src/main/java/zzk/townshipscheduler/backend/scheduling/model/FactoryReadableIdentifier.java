@@ -9,10 +9,14 @@ import java.util.Comparator;
 import java.util.stream.IntStream;
 
 @EqualsAndHashCode
-public final class FactoryReadableIdentifier implements CharSequence, Comparable<FactoryReadableIdentifier>, Serializable {
+public final class FactoryReadableIdentifier
+        implements CharSequence, Comparable<FactoryReadableIdentifier>, Serializable {
 
     @Serial
     private static final long serialVersionUID = -3940474169751457218L;
+
+    public static final Comparator<FactoryReadableIdentifier> COMPARATOR = Comparator.comparing(FactoryReadableIdentifier::getFactoryCategory)
+            .thenComparingInt(FactoryReadableIdentifier::getSeqNum);
 
     private final String factoryCategory;
 
@@ -61,9 +65,7 @@ public final class FactoryReadableIdentifier implements CharSequence, Comparable
 
     @Override
     public int compareTo(FactoryReadableIdentifier that) {
-        return Comparator.comparing(FactoryReadableIdentifier::getFactoryCategory)
-                .thenComparingInt(FactoryReadableIdentifier::getSeqNum)
-                .compare(this, that);
+        return COMPARATOR.compare(this, that);
     }
 
     public String getFactoryCategory() {

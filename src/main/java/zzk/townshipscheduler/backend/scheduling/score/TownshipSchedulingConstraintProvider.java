@@ -38,6 +38,37 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(SchedulingFactoryInstance.class)
+//                .join(SchedulingProducingArrangement.class, Joiners.equal(Function.identity(), SchedulingProducingArrangement::getPlanningFactoryInstance))
+//                .join(
+//                        SchedulingProducingArrangement.class,
+//                        Joiners.equal((factory, formerArrange) -> factory, SchedulingProducingArrangement::getPlanningFactoryInstance)
+//                )
+//                .groupBy(
+//                        (factory, left, right) -> factory,
+//                        (factory, left, right) -> left,
+//                        ConstraintCollectors.conditionally(
+//                                (factory, left, right) -> {
+//                                    if (factory != left.getPlanningFactoryInstance() && factory != right.getPlanningFactoryInstance() && left.getPlanningFactoryInstance() != right.getPlanningFactoryInstance()) {
+//                                        return false;
+//                                    }
+//                                    LocalDateTime rightArrangeDateTime = right.getArrangeDateTime();
+//                                    LocalDateTime rightCompletedDateTime = right.getCompletedDateTime();
+//                                    LocalDateTime leftArrangeDateTime = left.getArrangeDateTime();
+//                                    boolean b1 = !rightArrangeDateTime.isAfter(leftArrangeDateTime);
+//                                    boolean b2 = rightCompletedDateTime.isAfter(leftArrangeDateTime);
+//                                    return b1 && b2;
+//                                },
+//                                ConstraintCollectors.countDistinct((factory, left, right) -> right)
+//                        )
+//                )
+//                .filter((factory, current, queueSize) -> queueSize > factory.getProducingLength())
+//                .penalize(
+//                        HardMediumSoftBigDecimalScore.ONE_HARD,
+//                        (factory, current, queueSize) -> queueSize - factory.getProducingLength()
+//                )
+//                .asConstraint("forbidBrokenFactoryAbility");
+
 //        return constraintFactory.forEach(SchedulingProducingArrangement.class)
 //                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
 //                .join(
@@ -202,7 +233,8 @@ public class TownshipSchedulingConstraintProvider
                         HardMediumSoftBigDecimalScore.ofSoft(
                                 BigDecimal.valueOf(10000)
                         ),
-                        LoadBalance::unfairness)
+                        LoadBalance::unfairness
+                )
                 .asConstraint("preferLoadBalanceArrangementsInFactoryInstance");
     }
 

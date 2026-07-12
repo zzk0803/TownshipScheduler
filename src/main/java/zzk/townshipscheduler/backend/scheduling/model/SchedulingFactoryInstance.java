@@ -12,26 +12,19 @@ import lombok.Setter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @PlanningEntity
 public class SchedulingFactoryInstance
-        implements Serializable {
-
-//    public static final Comparator<SchedulingFactoryInstance> COMPARATOR = Comparator.comparingInt(SchedulingFactoryInstance::getProducingLength)
-//            .thenComparingInt(SchedulingFactoryInstance::getReapWindowSize)
-//            .thenComparingInt(SchedulingFactoryInstance::getSeqNum);
+        implements Serializable, Comparable<SchedulingFactoryInstance> {
 
     @Serial
     private static final long serialVersionUID = -7146926432206516227L;
 
-    @EqualsAndHashCode.Include
     private int id;
 
-    @EqualsAndHashCode.Include
     private long fieldFactoryId;
 
     @JsonIgnore
@@ -75,8 +68,8 @@ public class SchedulingFactoryInstance
     @Override
     public String toString() {
         return "SchedulingFactoryInstance{" + "readableIdentifier='" + factoryReadableIdentifier + '\'' + ", producingLength=" + producingLength +
-                ", " +
-                "reapWindowSize=" + reapWindowSize + '}';
+               ", " +
+               "reapWindowSize=" + reapWindowSize + '}';
     }
 
     public boolean typeEqual(SchedulingFactoryInstance that) {
@@ -84,9 +77,9 @@ public class SchedulingFactoryInstance
                 .typeEqual(that.getSchedulingFactoryInfo());
     }
 
-//    @Override
-//    public int compareTo(SchedulingFactoryInstance that) {
-//        return COMPARATOR.compare(this,that);
-//    }
+    @Override
+    public int compareTo(SchedulingFactoryInstance that) {
+        return FactoryReadableIdentifier.COMPARATOR.compare(this.getFactoryReadableIdentifier(), that.getFactoryReadableIdentifier());
+    }
 
 }
