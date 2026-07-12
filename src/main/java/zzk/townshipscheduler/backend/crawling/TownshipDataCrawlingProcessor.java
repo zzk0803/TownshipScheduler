@@ -13,8 +13,8 @@ import org.springframework.core.retry.RetryException;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
+import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 
 import java.io.IOException;
 import java.net.URI;
@@ -73,10 +73,27 @@ class TownshipDataCrawlingProcessor {
         this.httpClient.close();
     }
 
-    public CompletableFuture<CrawledResult> process() {
+    public CompletableFuture<CrawledResult> processFromUploadedHtml(Document uploadedDocument) {
+        logger.info("Processing from uploaded HTML document");
+        persistDocument(uploadedDocument);
+        Elements articleTableElements = uploadedDocument.getElementsByClass("article-table");
+        return doProcessTables(articleTableElements);
+    }
+
+    public CompletableFuture<CrawledResult> processFromOfficialWiki() {
         Document document = loadDocument(true);
         Elements articleTableElements = document.getElementsByClass("article-table");
 
+        return doProcessTables(articleTableElements);
+    }
+
+    /**
+     * Common logic for processing table elements.
+     *
+     * @param articleTableElements The table elements to process
+     * @return CompletableFuture with CrawledResult
+     */
+    private CompletableFuture<CrawledResult> doProcessTables(Elements articleTableElements) {
         for (int i = 0; i < articleTableElements.size(); i++) {
             int tableNum = 1 + i;
 
@@ -89,7 +106,7 @@ class TownshipDataCrawlingProcessor {
             doTableParse(currentTable, tableNum, tableZoneString);
         }
 
-        logger.info(" do mending and fire image downloading");
+        logger.info("do mending and fire image downloading");
         CompletableFuture.supplyAsync(
                 this::fireImageDownloadAsync,
                 townshipExecutorService
@@ -98,80 +115,6 @@ class TownshipDataCrawlingProcessor {
                 crawledDataMemory::completeAndMend,
                 townshipExecutorService
         );
-    }
-
-    private String findTableZoneString(Element currentTable) {
-        Optional<String> tableZone = currentTable.parents()
-                .stream()
-                .filter(element -> element.hasClass("mw-collapsible-content"))
-                .findFirst()
-                .map(element -> {
-                    Element mwHeadlineElement = element.previousElementSibling();
-                    return Objects.isNull(mwHeadlineElement)
-                            ? ""
-                            : mwHeadlineElement.select("span.mw-headline")
-                                    .first()
-                                    .text();
-                })
-                ;
-        return tableZone.orElse("");
-    }
-
-    private boolean checkAbandonZone(String tableZoneString) {
-        return Arrays.stream(ABANDON_ZONE)
-                .anyMatch(tableZoneString::equalsIgnoreCase);
-    }
-
-    private Document loadDocument(boolean mandatory) {
-        Document document = null;
-        if (mandatory) {
-            logger.info("mandatory mode,force fetch");
-            try {
-                document = fetchDocument();
-            }
-            catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
-            persistDocument(document);
-        } else {
-            logger.info("get crawled html in db");
-            WikiCrawledEntity wikiCrawledEntity = null;
-            Optional<WikiCrawledEntity> crawledOptional = wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1();
-            if (crawledOptional.isPresent()) {
-                wikiCrawledEntity = crawledOptional.get();
-                document = Jsoup.parse(wikiCrawledEntity.getHtml());
-            } else {
-                logger.warn("not found in db");
-                try {
-                    document = fetchDocument();
-                }
-                catch (Throwable e) {
-                    throw new RuntimeException(e);
-                }
-                persistDocument(document);
-            }
-        }
-        return document;
-    }
-
-    private Document fetchDocument() throws Throwable {
-        return retryTemplate.execute(
-                () -> {
-                    logger.info(
-                            "try to establish connection to fandom wiki .."
-                    );
-                    Connection connect = Jsoup.connect(TOWNSHIP_FANDOM_GOODS);
-                    return connect.get();
-                }
-        );
-    }
-
-    private void persistDocument(Document document) {
-        WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
-        wikiCrawledEntity.setType(WikiCrawledEntity.Type.HTML);
-        wikiCrawledEntity.setHtml(document.html());
-        logger.info("persist document");
-        wikiCrawledEntityRepository.save(wikiCrawledEntity);
     }
 
     private void doTableParse(Element currentTable, int tableNum, String tableZoneString) {
@@ -210,10 +153,11 @@ class TownshipDataCrawlingProcessor {
                         .text(text)
                         .anchorList(anchorList)
                         .imgList(imgList)
-                        .type(currentColumnsSize == 1 ? CrawledDataCell.Type.HEAD : CrawledDataCell.Type.CELL)
+                        .type(currentColumnsSize == 1
+                                ? CrawledDataCell.Type.HEAD
+                                : CrawledDataCell.Type.CELL)
                         .span(new CrawledDataCell.CellSpan(rowSpan, colSpan))
-                        .build()
-                        ;
+                        .build();
 
                 registerSpanFixIfNeed(currentCoord, currentCell, rowSpan, colSpan);
 
@@ -258,12 +202,16 @@ class TownshipDataCrawlingProcessor {
 
     private int doParseUnitIntoRowSpanInt(Element currentThOrTd) {
         String rowspan = currentThOrTd.attr("rowspan");
-        return rowspan.isBlank() ? 0 : Integer.parseInt(rowspan);
+        return rowspan.isBlank()
+                ? 0
+                : Integer.parseInt(rowspan);
     }
 
     private int doParseUnitIntoColSpanInt(Element currentThOrTd) {
         String colspan = currentThOrTd.attr("colspan");
-        return colspan.isBlank() ? 0 : Integer.parseInt(colspan);
+        return colspan.isBlank()
+                ? 0
+                : Integer.parseInt(colspan);
     }
 
     private void registerSpanFixIfNeed(
@@ -337,8 +285,7 @@ class TownshipDataCrawlingProcessor {
                     wikiCrawledEntity = wikiCrawledEntityRepository.save(wikiCrawledEntity);
                     return new Pair<>(img, wikiCrawledEntity);
                 })
-                .toList()
-                ;
+                .toList();
 
         List<CompletableFuture<WikiCrawledEntity>> downloadFutures
                 = pairList.stream()
@@ -380,8 +327,7 @@ class TownshipDataCrawlingProcessor {
                                         )
                         )
                 )
-                .toList()
-                ;
+                .toList();
 
 
         return CompletableFuture.allOf(downloadFutures.toArray(CompletableFuture[]::new))
@@ -404,7 +350,7 @@ class TownshipDataCrawlingProcessor {
                                             .header(
                                                     "User-Agent",
                                                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537" +
-                                                            ".36 Edg/143.0.0.0"
+                                                    ".36 Edg/143.0.0.0"
                                             )
                                             .timeout(Duration.ofSeconds(5))
                                             .GET()
@@ -412,19 +358,115 @@ class TownshipDataCrawlingProcessor {
                                     HttpResponse.BodyHandlers.ofByteArray()
                             );
                             return httpResponse.body();
-                        }
-                        catch (IOException | InterruptedException e) {
+                        } catch (IOException | InterruptedException e) {
                             throw new RuntimeException(e);
                         }
 
                     }
             );
-        }
-        catch (RetryException e) {
+        } catch (RetryException e) {
             return null;
         }
     }
 
+    private boolean checkAbandonZone(String tableZoneString) {
+        return Arrays.stream(ABANDON_ZONE)
+                .anyMatch(tableZoneString::equalsIgnoreCase);
+    }
+
+    private String findTableZoneString(Element currentTable) {
+        Optional<String> tableZone = currentTable.parents()
+                .stream()
+                .filter(element -> element.hasClass("mw-collapsible-content"))
+                .findFirst()
+                .map(element -> {
+                    Element mwHeadlineElement = element.previousElementSibling();
+                    return Objects.isNull(mwHeadlineElement)
+                            ? ""
+                            : mwHeadlineElement.select("span.mw-headline")
+                                    .first()
+                                    .text();
+                });
+        return tableZone.orElse("");
+    }
+
+    private Document loadDocument(boolean mandatory) {
+        Document document = null;
+        if (mandatory) {
+            logger.info("mandatory mode,force fetch");
+            try {
+                document = fetchDocument();
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+            persistDocument(document);
+        } else {
+            logger.info("get crawled html in db");
+            WikiCrawledEntity wikiCrawledEntity = null;
+            Optional<WikiCrawledEntity> crawledOptional = wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1();
+            if (crawledOptional.isPresent()) {
+                wikiCrawledEntity = crawledOptional.get();
+                document = Jsoup.parse(wikiCrawledEntity.getHtml());
+            } else {
+                logger.warn("not found in db");
+                try {
+                    document = fetchDocument();
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+                persistDocument(document);
+            }
+        }
+        return document;
+    }
+
+    private Document fetchDocument()
+            throws Throwable {
+        return retryTemplate.execute(
+                () -> {
+                    logger.info(
+                            "try to establish connection to fandom wiki .."
+                    );
+                    Connection connect = Jsoup.connect(TOWNSHIP_FANDOM_GOODS);
+                    return connect.get();
+                }
+        );
+    }
+
+    private void persistDocument(Document document) {
+        WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
+        wikiCrawledEntity.setType(WikiCrawledEntity.Type.HTML);
+        wikiCrawledEntity.setHtml(document.html());
+        logger.info("persist document");
+        wikiCrawledEntityRepository.save(wikiCrawledEntity);
+    }
+
+    public CompletableFuture<CrawledResult> process() {
+        Document document = loadDocument(true);
+        Elements articleTableElements = document.getElementsByClass("article-table");
+
+        for (int i = 0; i < articleTableElements.size(); i++) {
+            int tableNum = 1 + i;
+
+            Element currentTable = articleTableElements.get(i);
+            String tableZoneString = findTableZoneString(currentTable);
+            if (checkAbandonZone(tableZoneString)) {
+                continue;
+            }
+
+            doTableParse(currentTable, tableNum, tableZoneString);
+        }
+
+        logger.info(" do mending and fire image downloading");
+        CompletableFuture.supplyAsync(
+                this::fireImageDownloadAsync,
+                townshipExecutorService
+        );
+        return CompletableFuture.supplyAsync(
+                crawledDataMemory::completeAndMend,
+                townshipExecutorService
+        );
+    }
 
 }
 
