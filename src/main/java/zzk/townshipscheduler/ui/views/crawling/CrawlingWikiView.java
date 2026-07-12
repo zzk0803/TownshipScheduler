@@ -137,7 +137,8 @@ public class CrawlingWikiView
                 new Paragraph("2. Press Ctrl+S Save it"),
                 new Paragraph("3. select \"MHTML  (*.mhtml;*.mht)\""),
                 new Paragraph("4. file name should be \"Goods _ Township Wiki _ Fandom.mhtml\""),
-                new Paragraph("5. Upload MHTML")
+                new Paragraph("5. Change To .txt"),
+                new Paragraph("5. Upload The File")
         );
 
         // Download example button
@@ -189,9 +190,7 @@ public class CrawlingWikiView
                             })
                     ;
                 }));
-        upload.setAcceptedFileTypes("message/rfc822", ".mhtml", ".mht");
-//        upload.setAcceptedMimeTypes("message/rfc822","application/mhtml");
-//        upload.setAcceptedFileExtensions(".mhtml", ".mht");
+        upload.setAcceptedFileExtensions(".txt");
         upload.addFileRejectedListener(event -> {
             Notification.show("failed：" + event.getFileName(), 5000, Notification.Position.BOTTOM_CENTER);
         });
