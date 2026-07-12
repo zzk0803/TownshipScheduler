@@ -88,10 +88,7 @@
             <localSearch>
 
                 <termination>
-                    <diminishedReturns>
-                        <slidingWindowMinutes>1</slidingWindowMinutes>
-                        <minimumImprovementRatio>0.25</minimumImprovementRatio>
-                    </diminishedReturns>
+                    <secondsSpentLimit>30</secondsSpentLimit>
                 </termination>
 
                 <unionMoveSelector>

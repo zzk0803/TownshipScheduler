@@ -29,8 +29,9 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.DownloadResponse;
 import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.signals.local.AbstractLocalSignal;
 import com.vaadin.flow.signals.local.ListSignal;
@@ -959,16 +960,26 @@ public class SchedulingView
                                                                 .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
                                                         String zipFileName = "Report_" + timestamp + ".zip";
 
-                                                        StreamResource resource = new StreamResource(
-                                                                zipFileName,
-                                                                () -> createZipInputStream(
-                                                                        "BenchmarkReport",
-                                                                        mayNullFile
-                                                                )
-                                                        );
+//                                                        StreamResource resource = new StreamResource(
+//                                                                zipFileName,
+//                                                                () -> createZipInputStream(
+//                                                                        "BenchmarkReport",
+//                                                                        mayNullFile
+//                                                                )
+//                                                        );
 
                                                         Anchor downloadLink = new Anchor(
-                                                                resource,
+                                                                DownloadHandler.fromInputStream(downloadEvent -> {
+                                                                    return new DownloadResponse(
+                                                                            createZipInputStream(
+                                                                                    "BenchmarkReport",
+                                                                                    mayNullFile
+                                                                            ),
+                                                                            zipFileName,
+                                                                            "octet-stream",
+                                                                            -1
+                                                                    );
+                                                                }),
                                                                 "Download Benchmark Report(zip)"
                                                         );
                                                         downloadLink.getElement()

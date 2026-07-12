@@ -175,8 +175,7 @@ public class SchedulingPlayer
         return Collectors.filtering(
                 factoryTypePredicate,
                 Collectors.groupingBy(
-                        schedulingProducingArrangement -> schedulingProducingArrangement.getPlanningFactoryInstance()
-                                .getFactoryReadableIdentifier(),
+                        SchedulingProducingArrangement::getPlanningFactoryInstanceReadableIdentifier,
                         LinkedHashMap::new,
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
