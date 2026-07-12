@@ -26,11 +26,18 @@ import java.util.function.Supplier;
 )
 public class FieldFactoryInfoEntity {
 
+    public static final FieldFactoryInfoEntity NULL_EMPTY_VALUE = new FieldFactoryInfoEntity() {{
+        setId(-1L);
+        setCategory("N/A");
+        setLevel(-1);
+    }};
+
     public static final String FIELD_CATEGORY_CRITERIA = "Field";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
 
     private String category;
 
@@ -38,6 +45,7 @@ public class FieldFactoryInfoEntity {
 
     private Integer level;
 
+    @Builder.Default
     @OneToMany(
             cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH},
             targetEntity = ProductEntity.class,
@@ -46,19 +54,26 @@ public class FieldFactoryInfoEntity {
     @ToString.Exclude
     private Set<ProductEntity> portfolioGoods = new HashSet<>();
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private ProducingStructureType producingType = ProducingStructureType.QUEUE;
 
+    @Builder.Default
     private Integer defaultInstanceAmount = 1;
 
+    @Builder.Default
     private Integer defaultProducingCapacity = 3;
 
+    @Builder.Default
     private Integer defaultReapWindowCapacity = 6;
 
+    @Builder.Default
     private Integer maxProducingCapacity = 7;
 
+    @Builder.Default
     private Integer maxReapWindowCapacity = 8;
 
+    @Builder.Default
     private Integer maxInstanceAmount = 1;
 
     public void attacheProductEntity(ProductEntity productEntity) {

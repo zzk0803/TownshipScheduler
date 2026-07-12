@@ -72,13 +72,14 @@ public class OrderEntity {
     private PlayerEntity playerEntity;
 
     @ElementCollection
-    @Column(name = "amount")
+    @CollectionTable
     @MapKeyJoinColumn(
             name = "product_id",
             referencedColumnName = "id",
             foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     @MapKeyClass(ProductEntity.class)
+    @Column(name = "amount")
     private Map<ProductEntity, Integer> productAmountMap = new HashMap<>();
 
     private boolean boolFinished;

@@ -56,13 +56,14 @@ public class WarehouseEntity {
     private PlayerEntity playerEntity;
 
     @ElementCollection
-    @Column(name = "amount")
+    @CollectionTable
     @MapKeyJoinColumn(
             name = "product_id",
             referencedColumnName = "id",
             foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
     )
     @MapKeyClass(ProductEntity.class)
+    @Column(name = "amount")
     private Map<ProductEntity, Integer> productAmountMap =new HashMap<>();
 
 //    @OneToMany(
@@ -124,13 +125,6 @@ public class WarehouseEntity {
 //        }
 //    }
 
-    public Integer get(ProductEntity product) {
-        return productAmountMap.getOrDefault(product, 0);
-    }
-
-    public Integer setProductAmount(ProductEntity product, Integer value) {
-        return productAmountMap.put(product, value);
-    }
 
     public Integer doStockAction(ProductEntity product, WarehouseAction action, Integer amount) {
         if (amount <= 0) {
@@ -140,20 +134,32 @@ public class WarehouseEntity {
         Integer amountInStock = get(product);
         switch (action) {
             case SAVE -> {
-                return setProductAmount(product, amountInStock + amount);
+                return changeProductAmount(product, amountInStock + amount);
             }
             case TAKE -> {
                 if (amountInStock <= 0) {
                     return 0;
                 }
 
-                return setProductAmount(product, amountInStock - amount);
+                return changeProductAmount(product, amountInStock - amount);
             }
 
             case null, default -> throw new IllegalArgumentException();
         }
     }
 
+    public Integer get(ProductEntity product) {
+        return productAmountMap.getOrDefault(product, 0);
+    }
+
+    public Integer changeProductAmount(ProductEntity product, Integer value) {
+        return productAmountMap.put(product, value);
+    }
+
+    public void changeProductAmount(Map<ProductEntity, Integer> productAmountMap) {
+        this.productAmountMap.clear();
+        this.productAmountMap.putAll(productAmountMap);
+    }
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
