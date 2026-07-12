@@ -121,7 +121,7 @@ class ProblemTransferProcess {
                 SchedulingProduct.Id.of(product),
                 id -> {
                     SchedulingProduct schedulingProduct = new SchedulingProduct();
-                    schedulingProduct.setId(id);
+                    schedulingProduct.setId(id.getValue());
                     schedulingProduct.setName(product.getName());
                     schedulingProduct.setLevel(product.getLevel());
                     schedulingProduct.setGainWhenCompleted(product.getDefaultAmountWhenCreated());
@@ -194,7 +194,7 @@ class ProblemTransferProcess {
                 SchedulingFactoryInfo.Id.of(fieldFactoryInfoEntity),
                 id -> {
                     SchedulingFactoryInfo info = new SchedulingFactoryInfo();
-                    info.setId(id);
+                    info.setId(id.getValue());
                     info.setCategoryName(fieldFactoryInfoEntity.getCategory());
                     info.setLevel(fieldFactoryInfoEntity.getLevel());
                     return info;

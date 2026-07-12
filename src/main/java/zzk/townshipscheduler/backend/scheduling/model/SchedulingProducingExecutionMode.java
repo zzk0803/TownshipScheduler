@@ -21,9 +21,9 @@ public class SchedulingProducingExecutionMode implements Serializable {
 
     @EqualsAndHashCode.Include
     @ToString.Include
-    private Integer id;
+    private int id;
 
-    private Long productManufactureInfoId;
+    private long productManufactureInfoId;
 
     private SchedulingProduct product;
 

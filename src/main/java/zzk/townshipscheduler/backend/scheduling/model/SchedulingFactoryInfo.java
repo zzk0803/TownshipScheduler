@@ -26,9 +26,9 @@ public class SchedulingFactoryInfo
 
     @JsonUnwrapped
     @EqualsAndHashCode.Include
-    private Id id;
+    private long id;
 
-//    @EqualsAndHashCode.Include
+    @EqualsAndHashCode.Include
     private String categoryName;
 
     private int level;

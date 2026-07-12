@@ -53,7 +53,7 @@ public class SchedulingProducingArrangement
 
     @ToString.Include
     @EqualsAndHashCode.Include
-    private Integer id;
+    private int id;
 
     @PlanningId
     @EqualsAndHashCode.Include
@@ -225,7 +225,7 @@ public class SchedulingProducingArrangement
             return getWorkCalendarSpan();
         }
 
-        return Duration.between(getArrangeDateTime(), getShadowPrerequisiteProducingArrangementsFinishedDateTime());
+        return Duration.between(getShadowPrerequisiteProducingArrangementsFinishedDateTime(),getArrangeDateTime());
     }
 
     @JsonProperty("completedDateTime")

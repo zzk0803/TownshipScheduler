@@ -13,7 +13,6 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrange
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -33,7 +32,7 @@ public class TownshipSchedulingConstraintProvider
                 preferMinimizeCompletedDateTime(constraintFactory),
                 preferMinimizeArrangeDateTimeToPrerequisiteDone(constraintFactory),
                 //preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
-                //preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory),
+                preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory),
                 preferLoadBalanceArrangementsInFactoryInstance(constraintFactory)
         };
     }
@@ -135,28 +134,9 @@ public class TownshipSchedulingConstraintProvider
                 .penalize(
                         HardMediumSoftBigDecimalScore.ONE_MEDIUM,
                         (schedulingProducingArrangement) -> schedulingProducingArrangement.calcDeadlineToCompletedDuration()
-                                                                    .toMinutes() * calcFactor(
-                                schedulingProducingArrangement)
+                                                                    .toMinutes() * schedulingProducingArrangement.getEvaluateFactor()
                 )
                 .asConstraint("shouldNotBrokenDeadlineOrder");
-    }
-
-    public int calcFactor(SchedulingProducingArrangement arrangement) {
-        int factor = arrangement.getDeadline() != null
-                ? 100
-                : 1;
-        if (arrangement.getSchedulingOrder() != null) {
-            OrderType orderType = arrangement.getSchedulingOrder().getOrderType();
-            switch (orderType) {
-                case TRAIN -> {
-                    factor *= 10;
-                }
-                case AIRPLANE -> {
-                    factor *= 100;
-                }
-            }
-        }
-        return factor;
     }
 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
@@ -178,7 +158,7 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolArrangeDateTimeInPlayerSleepTime)
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(10)),
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(50)),
                         schedulingProducingArrangement -> schedulingProducingArrangement.calcSleepArrangeDateTimeToNextAvailableDuration()
                                 .toMinutes()
                 )
@@ -191,7 +171,7 @@ public class TownshipSchedulingConstraintProvider
                 .filter(SchedulingProducingArrangement::boolCompleted)
                 .penalize(
                         HardMediumSoftBigDecimalScore.ONE_SOFT,
-                        (arrangement) -> calcFactor(arrangement) * arrangement.calcCalendarStartToCompletedDuration()
+                        (arrangement) -> arrangement.getEvaluateFactor() * arrangement.calcCalendarStartToCompletedDuration()
                                 .toMinutes()
                 )
                 .asConstraint("preferMinimizeCompletedDateTime");
@@ -218,7 +198,11 @@ public class TownshipSchedulingConstraintProvider
                         (factoryInstance, arrangementCount) -> factoryInstance,
                         (factoryInstance, arrangementCount) -> arrangementCount
                 ))
-                .penalizeBigDecimal(HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(10000)), LoadBalance::unfairness)
+                .penalizeBigDecimal(
+                        HardMediumSoftBigDecimalScore.ofSoft(
+                                BigDecimal.valueOf(10000)
+                        ),
+                        LoadBalance::unfairness)
                 .asConstraint("preferLoadBalanceArrangementsInFactoryInstance");
     }
 
@@ -235,12 +219,29 @@ public class TownshipSchedulingConstraintProvider
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
     }
 
+    public int calcFactor(SchedulingProducingArrangement arrangement) {
+        int factor = arrangement.getDeadline() != null
+                ? 100
+                : 1;
+        if (arrangement.getSchedulingOrder() != null) {
+            OrderType orderType = arrangement.getSchedulingOrder().getOrderType();
+            switch (orderType) {
+                case TRAIN -> {
+                    factor *= 10;
+                }
+                case AIRPLANE -> {
+                    factor *= 100;
+                }
+            }
+        }
+        return factor;
+    }
+
     private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .penalize(
                         HardMediumSoftBigDecimalScore.ONE_SOFT,
-                        (arrangement) -> arrangement.calcCalendarStartToArrangedDuration().toMinutes() * calcFactor(
-                                arrangement)
+                        (arrangement) -> arrangement.calcCalendarStartToArrangedDuration().toMinutes() * arrangement.getEvaluateFactor()
                 )
                 .asConstraint("preferArrangeDateTimeAsSoonAsPassible");
     }

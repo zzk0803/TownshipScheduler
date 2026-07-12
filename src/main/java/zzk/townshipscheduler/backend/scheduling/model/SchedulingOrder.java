@@ -19,7 +19,7 @@ public final class SchedulingOrder implements IGameArrangeObject, Serializable {
     private static final long serialVersionUID = 8878075265837510157L;
 
     @EqualsAndHashCode.Include
-    private Long id;
+    private long id;
 
     private ProductAmountBill productAmountBill;
 

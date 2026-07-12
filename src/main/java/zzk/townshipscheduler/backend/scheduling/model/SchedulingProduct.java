@@ -23,7 +23,7 @@ public final class SchedulingProduct implements IGameArrangeObject, Serializable
 
     @JsonUnwrapped
     @EqualsAndHashCode.Include
-    private Id id;
+    private long id;
 
     @EqualsAndHashCode.Include
     @ToString.Include
@@ -48,7 +48,7 @@ public final class SchedulingProduct implements IGameArrangeObject, Serializable
             SchedulingFactoryInfo requireFactory,
             Set<SchedulingProducingExecutionMode> executionModeSet
     ) {
-        this.id = id;
+        this.id = id.getValue();
         this.name = name;
         this.level = level;
         this.requireFactory = requireFactory;
@@ -57,7 +57,7 @@ public final class SchedulingProduct implements IGameArrangeObject, Serializable
 
     @Override
     public Long longIdentity() {
-        return getId().getValue();
+        return getId();
     }
 
     @Override

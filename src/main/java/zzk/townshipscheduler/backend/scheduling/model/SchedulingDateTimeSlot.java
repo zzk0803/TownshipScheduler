@@ -26,7 +26,7 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
     private static final long serialVersionUID = -36055068413393349L;
 
     @EqualsAndHashCode.Include
-    private Integer id;
+    private int id;
 
     private LocalDateTime start;
 

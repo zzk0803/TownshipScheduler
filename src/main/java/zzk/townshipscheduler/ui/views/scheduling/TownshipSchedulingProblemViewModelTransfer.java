@@ -334,8 +334,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 schedulingProduct,
                 productInMap -> {
                     return new SchedulingProductViewModel(
-                            SchedulingProductViewModel.SchedulingProductViewModelId.of(schedulingProduct.getId()
-                                    .getValue()),
+                            SchedulingProductViewModel.SchedulingProductViewModelId.of(schedulingProduct.getId()),
                             schedulingProduct.getName(),
                             schedulingProduct.getLevel(),
                             schedulingProduct.getGainWhenCompleted()
@@ -361,8 +360,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
                             .map(this::buildOrGetSchedulingProductViewModel)
                             .toList();
                     return new SchedulingFactoryInfoViewModel(
-                            schedulingFactoryInfo.getId()
-                                    .getValue(),
+                            schedulingFactoryInfo.getId(),
                             schedulingFactoryInfo.getCategoryName(),
                             schedulingFactoryInfo.getLevel(),
                             schedulingFactoryInfo.getProducingStructureType()

@@ -28,15 +28,13 @@ public class SchedulingFactoryInstance
     @Serial
     private static final long serialVersionUID = -7146926432206516227L;
 
-    @PlanningId
     @EqualsAndHashCode.Include
-    private Integer id;
+    private int id;
 
     @EqualsAndHashCode.Include
-    private Long fieldFactoryId;
+    private long fieldFactoryId;
 
     @JsonIgnore
-    @EqualsAndHashCode.Include
     private SchedulingFactoryInfo schedulingFactoryInfo;
 
     private int seqNum;
@@ -45,6 +43,8 @@ public class SchedulingFactoryInstance
 
     private int reapWindowSize;
 
+    @PlanningId
+    @EqualsAndHashCode.Include
     @Setter(AccessLevel.PRIVATE)
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
