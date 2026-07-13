@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 @Getter
 public class SchedulingViewPresenter {
 
-    public static final int UPDATE_FREQUENCY_IN_SECONDS = 3;
+    public static final int UPDATE_FREQUENCY_IN_SECONDS = 1;
 
     private final OrderEntityRepository orderEntityRepository;
 
@@ -126,7 +126,8 @@ public class SchedulingViewPresenter {
                         String updatedString = getSchedulingView().getBriefText().getText() + "\r" + "solver approximate problem scale:" + problemSizeStatistics;
                         getSchedulingView().getBriefText().setText(updatedString);
                     });
-                }, solutionConsumer,
+                },
+                solutionConsumer,
                 solutionConsumer.andThen(this::reflushAndGetViewModel)
                         .andThen(_ -> solutionResultPushScheduledFuture.cancel(true))
                         .andThen(_ -> this.ui.access(() -> {

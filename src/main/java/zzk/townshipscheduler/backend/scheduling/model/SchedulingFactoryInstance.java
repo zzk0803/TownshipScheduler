@@ -12,6 +12,7 @@ import lombok.Setter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Data
@@ -23,6 +24,8 @@ public class SchedulingFactoryInstance
     @Serial
     private static final long serialVersionUID = -7146926432206516227L;
 
+    @PlanningId
+    @EqualsAndHashCode.Include
     private int id;
 
     private long fieldFactoryId;
@@ -30,14 +33,13 @@ public class SchedulingFactoryInstance
     @JsonIgnore
     private SchedulingFactoryInfo schedulingFactoryInfo;
 
+    @EqualsAndHashCode.Include
     private int seqNum;
 
     private int producingLength;
 
     private int reapWindowSize;
 
-    @PlanningId
-    @EqualsAndHashCode.Include
     @Setter(AccessLevel.PRIVATE)
     private FactoryReadableIdentifier factoryReadableIdentifier;
 
@@ -46,12 +48,16 @@ public class SchedulingFactoryInstance
     private List<SchedulingProducingArrangement> planningArrangementsSequence = new ArrayList<>();
 
     public void setupFactoryReadableIdentifier() {
-        setFactoryReadableIdentifier(new FactoryReadableIdentifier(
-                getCategoryName(),
-                getSeqNum()
-        ));
+        setFactoryReadableIdentifier(
+                new FactoryReadableIdentifier(
+                        this.getSchedulingFactoryInfo().getId(),
+                        getCategoryName(),
+                        getSeqNum()
+                )
+        );
     }
 
+    @EqualsAndHashCode.Include
     public String getCategoryName() {
         return schedulingFactoryInfo.getCategoryName();
     }
@@ -79,7 +85,9 @@ public class SchedulingFactoryInstance
 
     @Override
     public int compareTo(SchedulingFactoryInstance that) {
-        return FactoryReadableIdentifier.COMPARATOR.compare(this.getFactoryReadableIdentifier(), that.getFactoryReadableIdentifier());
+        return Comparator.comparing(SchedulingFactoryInstance::getCategoryName)
+                .thenComparingInt(SchedulingFactoryInstance::getSeqNum)
+                .thenComparingInt(SchedulingFactoryInstance::getId).compare(this, that);
     }
 
 }

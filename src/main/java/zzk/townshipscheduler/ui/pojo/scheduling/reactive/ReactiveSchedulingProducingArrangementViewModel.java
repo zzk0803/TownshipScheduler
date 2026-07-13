@@ -23,6 +23,7 @@ public record ReactiveSchedulingProducingArrangementViewModel(
         Duration producingDuration,
         Duration staticDeepPrerequisiteProducingDuration,
         Duration staticDeepProducingDuration,
+        String factoryType,
         ValueSignal<SchedulingFactoryInstanceViewModel> assignedFactoryInstance,
         ValueSignal<LocalDateTime> arrangeDateTime,
         ValueSignal<LocalDateTime> producingDateTime,

@@ -70,7 +70,10 @@ import java.util.zip.ZipOutputStream;
 
 @Route("/scheduling/:schedulingId?")
 @PreserveOnRefresh
-@Menu(title = "Scheduling", order = 6.00d)
+@Menu(
+        title = "Scheduling",
+        order = 6.00d
+)
 @PermitAll
 @Setter
 @Getter
@@ -137,31 +140,7 @@ public class SchedulingView
             .map(townshipSchedulingProblem -> {
                         if (townshipSchedulingProblem != null) {
                             return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels().getValues()
-                                    .map(schedulingProducingArrangement -> {
-                                        SchedulingFactoryInstanceViewModel schedulingFactoryInstanceViewModel = schedulingProducingArrangement.assignedFactoryInstance().get();
-                                        return new LitSchedulingProducingArrangementVO(
-                                                schedulingProducingArrangement.arrangementViewModelId().id(),
-                                                schedulingProducingArrangement.arrangementViewModelId()
-                                                        .uuid(),
-                                                String.valueOf(schedulingProducingArrangement.order()
-                                                        .id()),
-                                                schedulingProducingArrangement.product()
-                                                        .name(),
-                                                schedulingProducingArrangement.orderProduct()
-                                                        .name(),
-                                                schedulingProducingArrangement.orderProductArrangementId()
-                                                        .id(),
-                                                schedulingProducingArrangement.boolDirectToOrder(),
-                                                schedulingFactoryInstanceViewModel != null
-                                                        ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
-                                                        : "N/A",
-                                                schedulingProducingArrangement.producingDuration()
-                                                        .toString(),
-                                                schedulingProducingArrangement.arrangeDateTime().get(),
-                                                schedulingProducingArrangement.producingDateTime().get(),
-                                                schedulingProducingArrangement.completedDateTime().get()
-                                        );
-                                    })
+                                    .map(schedulingProducingArrangement -> LitSchedulingProducingArrangementVO.of(schedulingProducingArrangement, true))
                                     .collect(Collectors.toCollection(ArrayList::new));
                         } else {
                             return List.of();
@@ -513,9 +492,7 @@ public class SchedulingView
 
         reactiveArrangementTreeGrid.addColumn(ReactiveSchedulingProducingArrangementViewModel::producingDuration)
                 .setSortable(true)
-                .setSortable(true)
                 .setResizable(true)
-                .setAutoWidth(true)
                 .setHeader("Item Producing Duration")
         ;
 
@@ -527,6 +504,11 @@ public class SchedulingView
                 .setResizable(true)
                 .setHeader("Order")
         ;
+
+        reactiveArrangementTreeGrid.addColumn(ReactiveSchedulingProducingArrangementViewModel::factoryType)
+                .setResizable(true)
+                .setHeader("Product Factory Type");
+
         reactiveArrangementTreeGrid.addComponentColumn(
                         reactiveSchedulingProducingArrangementViewModel -> {
                             Span span = new Span();
@@ -557,7 +539,6 @@ public class SchedulingView
                 .setComparator(Comparator.comparing(o -> o.arrangeDateTime().peek()))
                 .setResizable(true)
                 .setAutoWidth(true)
-                .setFlexGrow(1)
                 .setHeader("Arrange Date Time")
         ;
         reactiveArrangementTreeGrid.addComponentColumn(
@@ -661,7 +642,7 @@ public class SchedulingView
             slotSizeSelect.setLabel("Scheduling Time Slot");
             slotSizeSelect.setNoVerticalOverlap(true);
             slotSizeSelect.setItems(DateTimeSlotSize.values());
-            slotSizeSelect.setValue(DateTimeSlotSize.HOUR);
+            slotSizeSelect.setValue(DateTimeSlotSize.HALF_HOUR);
             schedulingForm.add(
                     slotSizeSelect,
                     2

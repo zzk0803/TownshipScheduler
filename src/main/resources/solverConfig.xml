@@ -131,6 +131,14 @@
                 </variableNameIncludes>
             </pillarSwapMoveSelector>
         </unionMoveSelector>
+
+        <acceptor>
+            <lateAcceptanceSize>9</lateAcceptanceSize>
+        </acceptor>
+
+        <forager>
+            <acceptedCountLimit>1</acceptedCountLimit>
+        </forager>
     </localSearch>
 
     <localSearch>
@@ -268,11 +276,11 @@
         </unionMoveSelector>
 
         <acceptor>
-            <lateAcceptanceSize>7</lateAcceptanceSize>
+            <lateAcceptanceSize>19</lateAcceptanceSize>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>1</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
 
     </localSearch>

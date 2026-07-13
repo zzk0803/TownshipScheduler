@@ -31,7 +31,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService {
+public class TownshipSchedulingServiceImpl
+        implements ITownshipSchedulingService {
 
     private final SolverManager<TownshipSchedulingProblem> solverManager;
 
@@ -72,6 +73,37 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
     @Override
     public boolean existProblem(String problemId) {
         return this.idProblemMap.containsKey(problemId) || this.townshipProblemEntityRepository.existsById(problemId);
+    }
+
+    public Path searchFile(Path startDir, String targetFileName)
+            throws IOException {
+        AtomicReference<Path> foundFile = new AtomicReference<>(null);
+
+        Files.walkFileTree(
+                startDir, new SimpleFileVisitor<>() {
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        if (file.getFileName()
+                                .toString()
+                                .equalsIgnoreCase(targetFileName)) {
+                            foundFile.set(file);
+                            return FileVisitResult.TERMINATE;
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                        if (exc instanceof AccessDeniedException) {
+                            return FileVisitResult.CONTINUE;
+                        }
+                        throw new RuntimeException("visitFileFailed: " + file, exc);
+                    }
+                }
+        );
+
+        return foundFile.get();
     }
 
     @Override
@@ -223,7 +255,8 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         return benchmarkProblems;
     }
 
-    private Optional<File> findMostRecentBenchmarkFile(File parentDir) throws IOException {
+    private Optional<File> findMostRecentBenchmarkFile(File parentDir)
+            throws IOException {
         File[] directories = parentDir.listFiles(File::isDirectory);
         if (directories == null || directories.length == 0) {
             throw new RuntimeException("No benchmark directories found in " + parentDir.getAbsolutePath());
@@ -245,35 +278,6 @@ public class TownshipSchedulingServiceImpl implements ITownshipSchedulingService
         return process.buildProblem();
     }
 
-    public Path searchFile(Path startDir, String targetFileName) throws IOException {
-        AtomicReference<Path> foundFile = new AtomicReference<>(null);
-
-        Files.walkFileTree(
-                startDir, new SimpleFileVisitor<>() {
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        if (file.getFileName()
-                                .toString()
-                                .equalsIgnoreCase(targetFileName)) {
-                            foundFile.set(file);
-                            return FileVisitResult.TERMINATE;
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                        if (exc instanceof AccessDeniedException) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        throw new RuntimeException("visitFileFailed: " + file, exc);
-                    }
-                }
-        );
-
-        return foundFile.get();
-    }
 
     @Override
     public boolean checkWeatherReadyToSolve(String uuid) {

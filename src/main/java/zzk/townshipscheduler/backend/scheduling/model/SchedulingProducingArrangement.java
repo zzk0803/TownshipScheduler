@@ -120,7 +120,7 @@ public class SchedulingProducingArrangement
     @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
     private FactoryProcessSequence factoryProcessSequence;
 
-    private FactoryProcessSequence _factoryProcessSequence;
+//    private FactoryProcessSequence _factoryProcessSequence;
 
     @ShadowVariable(supplierName = "supplierForComputedDateTimePair")
     private ComputedDateTimePair computedDateTimePair;
@@ -196,7 +196,7 @@ public class SchedulingProducingArrangement
         if (planningFactoryInstance == null || planningDateTimeSlot == null) {
             return null;
         }
-        this._factoryProcessSequence = this.factoryProcessSequence;
+//        this._factoryProcessSequence = this.factoryProcessSequence;
         return toFactoryProcessSequence();
     }
 
@@ -220,14 +220,6 @@ public class SchedulingProducingArrangement
                 .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
     }
 
-    public Duration calcArrangeDateTimeToPrerequisiteDuration() {
-        if (getShadowPrerequisiteProducingArrangementsFinishedDateTime() == null) {
-            return getWorkCalendarSpan();
-        }
-
-        return Duration.between(getShadowPrerequisiteProducingArrangementsFinishedDateTime(),getArrangeDateTime());
-    }
-
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -235,6 +227,36 @@ public class SchedulingProducingArrangement
     public LocalDateTime getCompletedDateTime() {
         return computedDateTimePair != null
                 ? computedDateTimePair.completedDateTime()
+                : null;
+    }
+
+    public Duration calcArrangeDateTimeToPrerequisiteDuration() {
+        if (getShadowPrerequisiteProducingArrangementsFinishedDateTime() == null) {
+            return getWorkCalendarSpan();
+        }
+
+        return Duration.between(getShadowPrerequisiteProducingArrangementsFinishedDateTime(), getArrangeDateTime());
+    }
+
+    public Duration getWorkCalendarSpan() {
+        return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());
+    }
+
+    public LocalDateTime getWorkCalendarEnd() {
+        return getSchedulingWorkCalendar().getEndDateTime();
+    }
+
+    public LocalDateTime getWorkCalendarStart() {
+        return getSchedulingWorkCalendar().getStartDateTime();
+    }
+
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getArrangeDateTime() {
+        return this.planningDateTimeSlot != null
+                ? this.planningDateTimeSlot.getStart()
                 : null;
     }
 
@@ -376,20 +398,8 @@ public class SchedulingProducingArrangement
         return boolHasDeadline() && (getCompletedDateTime().isAfter(getWorkCalendarEnd()));
     }
 
-    public LocalDateTime getWorkCalendarEnd() {
-        return getSchedulingWorkCalendar().getEndDateTime();
-    }
-
     public boolean boolHasDeadline() {
         return getSchedulingOrder().boolHasDeadline();
-    }
-
-    public Duration getWorkCalendarSpan() {
-        return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());
-    }
-
-    public LocalDateTime getWorkCalendarStart() {
-        return getSchedulingWorkCalendar().getStartDateTime();
     }
 
     public boolean boolCompletedAfterDeadline() {
@@ -440,16 +450,6 @@ public class SchedulingProducingArrangement
     public Duration calcCalendarStartToArrangedDuration() {
         LocalDateTime workCalendarStart = getSchedulingWorkCalendar().getStartDateTime();
         return Duration.between(workCalendarStart, getArrangeDateTime());
-    }
-
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getArrangeDateTime() {
-        return this.planningDateTimeSlot != null
-                ? this.planningDateTimeSlot.getStart()
-                : null;
     }
 
     public Duration calcCalendarStartToCompletedDuration() {

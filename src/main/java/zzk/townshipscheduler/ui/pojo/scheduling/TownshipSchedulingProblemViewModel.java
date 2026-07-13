@@ -162,7 +162,7 @@ public record TownshipSchedulingProblemViewModel(
 
     public List<LitSchedulingProducingArrangementVO> toLitSchedulingProducingArrangementVoList() {
         return schedulingProducingArrangementViewModels.stream()
-                .map(LitSchedulingProducingArrangementVO::new)
+                .map(LitSchedulingProducingArrangementVO::of)
                 .toList();
     }
 

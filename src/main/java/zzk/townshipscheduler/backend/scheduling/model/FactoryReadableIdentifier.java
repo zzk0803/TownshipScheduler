@@ -8,24 +8,18 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.stream.IntStream;
 
-@EqualsAndHashCode
-public final class FactoryReadableIdentifier
+public record FactoryReadableIdentifier(
+        @EqualsAndHashCode.Include long categoryId,
+        String categoryName,
+        @EqualsAndHashCode.Include int seqNum
+)
         implements CharSequence, Comparable<FactoryReadableIdentifier>, Serializable {
 
     @Serial
     private static final long serialVersionUID = -3940474169751457218L;
 
-    public static final Comparator<FactoryReadableIdentifier> COMPARATOR = Comparator.comparing(FactoryReadableIdentifier::getFactoryCategory)
-            .thenComparingInt(FactoryReadableIdentifier::getSeqNum);
-
-    private final String factoryCategory;
-
-    private final int seqNum;
-
     @JsonCreator
-    public FactoryReadableIdentifier(String factoryCategory, int seqNum) {
-        this.factoryCategory = factoryCategory;
-        this.seqNum = seqNum;
+    public FactoryReadableIdentifier {
     }
 
     @Override
@@ -35,7 +29,7 @@ public final class FactoryReadableIdentifier
 
     @Override
     public String toString() {
-        return factoryCategory + "#" + seqNum;
+        return categoryName + "#" + seqNum;
     }
 
     @Override
@@ -65,15 +59,8 @@ public final class FactoryReadableIdentifier
 
     @Override
     public int compareTo(FactoryReadableIdentifier that) {
-        return COMPARATOR.compare(this, that);
-    }
-
-    public String getFactoryCategory() {
-        return factoryCategory;
-    }
-
-    public int getSeqNum() {
-        return seqNum;
+        return Comparator.comparingLong(FactoryReadableIdentifier::categoryId)
+                .thenComparingInt(FactoryReadableIdentifier::seqNum).compare(this, that);
     }
 
 }

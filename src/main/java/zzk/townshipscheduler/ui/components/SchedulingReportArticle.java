@@ -47,9 +47,6 @@ public class SchedulingReportArticle
         this.reportGroupsGrid = new SchedulingReportArrangeDateTimeGroupsGrid();
         this.reportGroupsGrid.addComponentColumn(DateTimeFactoryArrangementsCard::new);
 
-        ValueSignal<ReactiveTownshipSchedulingProblemViewModel> reactiveTownshipSchedulingProblemViewModelValueSignal
-                = schedulingView.getReactiveTownshipSchedulingProblemViewModelValueSignal();
-
         Span span = new Span();
         span.getElement()
                 .getThemeList()

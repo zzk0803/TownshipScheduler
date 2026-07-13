@@ -1,7 +1,6 @@
 package zzk.townshipscheduler.ui.views.scheduling;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 import com.vaadin.copilot.shaded.helger.collection.commons.CommonsConcurrentHashMap;
 import com.vaadin.flow.signals.local.ListSignal;
@@ -20,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicStampedReference;
 
 @Slf4j
 @SpringComponent
@@ -187,7 +185,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 schedulingProducingArrangement,
                 (arrangementInMap, viewInMap) -> {
                     if (viewInMap == null) {
-                        Integer id = schedulingProducingArrangement.getId();
+                        int id = schedulingProducingArrangement.getId();
                         String uuid = schedulingProducingArrangement.getUuid()
                                 .toString();
                         ReactiveSchedulingProducingArrangementViewModel.ArrangementViewModelId modelId
@@ -235,6 +233,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
                                 producingDuration,
                                 staticDeepPrerequisiteProducingDuration,
                                 staticDeepProducingDuration,
+                                schedulingProducingArrangement.getFactoryProducingType().name(),
                                 new ValueSignal<>(assignedFactoryInstance),
                                 new ValueSignal<>(arrangeDateTime),
                                 new ValueSignal<>(producingDateTime),

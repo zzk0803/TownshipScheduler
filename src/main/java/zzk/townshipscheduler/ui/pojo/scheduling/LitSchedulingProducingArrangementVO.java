@@ -2,100 +2,182 @@ package zzk.townshipscheduler.ui.pojo.scheduling;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Value;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveSchedulingProducingArrangementViewModel;
 
 import java.time.LocalDateTime;
 
 
-@Value
-@AllArgsConstructor
-public class LitSchedulingProducingArrangementVO {
+public record LitSchedulingProducingArrangementVO(
+        int id,
+        String uuid,
+        String order,
+        String product,
+        String orderProduct,
+        int orderProductArrangementId,
+        boolean boolDirectToOrder,
+        String factoryReadableIdentifier,
+        String producingDuration,
+        @JsonInclude @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime arrangeDateTime,
+        @JsonInclude @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime producingDateTime,
+        @JsonInclude @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime completedDateTime
+) {
 
-    int id;
-
-    String uuid;
-
-    String order;
-
-    String product;
-
-    String orderProduct;
-
-    int orderProductArrangementId;
-
-    boolean boolDirectToOrder;
-
-    String factoryReadableIdentifier;
-
-    String producingDuration;
-
-    @JsonInclude
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime arrangeDateTime;
-
-    @JsonInclude
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime producingDateTime;
-
-    @JsonInclude
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime completedDateTime;
-
-    public LitSchedulingProducingArrangementVO(
-            SchedulingProducingArrangementViewModel schedulingProducingArrangement
+    public LitSchedulingProducingArrangementVO update(
+            String factoryReadableIdentifier,
+            LocalDateTime arrangeDateTime,
+            LocalDateTime producingDateTime,
+            LocalDateTime completedDateTime
     ) {
-        this.id = schedulingProducingArrangement.arrangementViewModelId()
-                .id();
-        this.uuid = schedulingProducingArrangement.arrangementViewModelId()
-                .uuid();
-        this.order = String.valueOf(schedulingProducingArrangement.order()
-                .id());
-        this.product = schedulingProducingArrangement.product()
-                .name();
-        this.orderProduct = schedulingProducingArrangement.orderProduct()
-                .name();
-        this.orderProductArrangementId = schedulingProducingArrangement.orderProductArrangementId()
-                .id();
-        this.boolDirectToOrder = schedulingProducingArrangement.boolDirectToOrder();
-        SchedulingFactoryInstanceViewModel assignedFactoryInstance = schedulingProducingArrangement.assignedFactoryInstance();
-        this.factoryReadableIdentifier = assignedFactoryInstance != null
-                                         ? assignedFactoryInstance.factoryReadableIdentifier()
-                                         : null;
-        this.producingDuration = schedulingProducingArrangement.producingDuration()
-                .toString();
-        this.arrangeDateTime = schedulingProducingArrangement.arrangeDateTime();
-        this.producingDateTime = schedulingProducingArrangement.producingDateTime();
-        this.completedDateTime = schedulingProducingArrangement.completedDateTime();
+        return new LitSchedulingProducingArrangementVO(
+                id,
+                uuid,
+                order,
+                product,
+                orderProduct,
+                orderProductArrangementId,
+                boolDirectToOrder,
+                factoryReadableIdentifier,
+                producingDuration,
+                arrangeDateTime,
+                producingDateTime,
+                completedDateTime
+        );
     }
 
-    public LitSchedulingProducingArrangementVO(
+    public static LitSchedulingProducingArrangementVO of(ReactiveSchedulingProducingArrangementViewModel schedulingProducingArrangement, boolean signalMode) {
+        if (signalMode) {
+            SchedulingFactoryInstanceViewModel schedulingFactoryInstanceViewModel = schedulingProducingArrangement.assignedFactoryInstance().get();
+            return new LitSchedulingProducingArrangementVO(
+                    schedulingProducingArrangement.arrangementViewModelId().id(),
+                    schedulingProducingArrangement.arrangementViewModelId()
+                            .uuid(),
+                    String.valueOf(schedulingProducingArrangement.order()
+                            .id()),
+                    schedulingProducingArrangement.product()
+                            .name(),
+                    schedulingProducingArrangement.orderProduct()
+                            .name(),
+                    schedulingProducingArrangement.orderProductArrangementId()
+                            .id(),
+                    schedulingProducingArrangement.boolDirectToOrder(),
+                    schedulingFactoryInstanceViewModel != null
+                            ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
+                            : "N/A",
+                    schedulingProducingArrangement.producingDuration()
+                            .toString(),
+                    schedulingProducingArrangement.arrangeDateTime().get(),
+                    schedulingProducingArrangement.producingDateTime().get(),
+                    schedulingProducingArrangement.completedDateTime().get()
+            );
+        }else {
+            SchedulingFactoryInstanceViewModel schedulingFactoryInstanceViewModel = schedulingProducingArrangement.assignedFactoryInstance().peek();
+            return new LitSchedulingProducingArrangementVO(
+                    schedulingProducingArrangement.arrangementViewModelId().id(),
+                    schedulingProducingArrangement.arrangementViewModelId()
+                            .uuid(),
+                    String.valueOf(schedulingProducingArrangement.order()
+                            .id()),
+                    schedulingProducingArrangement.product()
+                            .name(),
+                    schedulingProducingArrangement.orderProduct()
+                            .name(),
+                    schedulingProducingArrangement.orderProductArrangementId()
+                            .id(),
+                    schedulingProducingArrangement.boolDirectToOrder(),
+                    schedulingFactoryInstanceViewModel != null
+                            ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
+                            : "N/A",
+                    schedulingProducingArrangement.producingDuration()
+                            .toString(),
+                    schedulingProducingArrangement.arrangeDateTime().peek(),
+                    schedulingProducingArrangement.producingDateTime().peek(),
+                    schedulingProducingArrangement.completedDateTime().peek()
+            );
+        }
+    }
+
+        public static LitSchedulingProducingArrangementVO of(
+            SchedulingProducingArrangementViewModel schedulingProducingArrangement
+    ) {
+        var id = schedulingProducingArrangement.arrangementViewModelId()
+                .id();
+        var uuid = schedulingProducingArrangement.arrangementViewModelId()
+                .uuid();
+        var order = String.valueOf(schedulingProducingArrangement.order()
+                .id());
+        var product = schedulingProducingArrangement.product()
+                .name();
+        var orderProduct = schedulingProducingArrangement.orderProduct()
+                .name();
+        var orderProductArrangementId = schedulingProducingArrangement.orderProductArrangementId()
+                .id();
+        var boolDirectToOrder = schedulingProducingArrangement.boolDirectToOrder();
+        SchedulingFactoryInstanceViewModel assignedFactoryInstance = schedulingProducingArrangement.assignedFactoryInstance();
+        var factoryReadableIdentifier = assignedFactoryInstance != null
+                                         ? assignedFactoryInstance.factoryReadableIdentifier()
+                                         : null;
+        var producingDuration = schedulingProducingArrangement.producingDuration()
+                .toString();
+        var arrangeDateTime = schedulingProducingArrangement.arrangeDateTime();
+        var producingDateTime = schedulingProducingArrangement.producingDateTime();
+        var completedDateTime = schedulingProducingArrangement.completedDateTime();
+            return new LitSchedulingProducingArrangementVO(
+                    id,
+                    uuid,
+                    order,
+                    product,
+                    orderProduct,
+                    orderProductArrangementId,
+                    boolDirectToOrder,
+                    factoryReadableIdentifier,
+                    producingDuration,
+                    arrangeDateTime,
+                    producingDateTime,
+                    completedDateTime
+            );
+    }
+
+    public static LitSchedulingProducingArrangementVO of(
             SchedulingProducingArrangement schedulingProducingArrangement
     ) {
         SchedulingFactoryInstance planningFactoryInstance = schedulingProducingArrangement.getPlanningFactoryInstance();
-        this.id = schedulingProducingArrangement.getId();
-        this.uuid = schedulingProducingArrangement.getUuid()
+        var id = schedulingProducingArrangement.getId();
+        var uuid = schedulingProducingArrangement.getUuid()
                 .toString();
-        this.order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder()
+        var order = String.valueOf(schedulingProducingArrangement.getSchedulingOrder()
                 .getId());
-        this.product = schedulingProducingArrangement.getSchedulingProduct()
+        var product = schedulingProducingArrangement.getSchedulingProduct()
                 .getName();
-        this.orderProduct = schedulingProducingArrangement.getSchedulingOrderProduct()
+        var orderProduct = schedulingProducingArrangement.getSchedulingOrderProduct()
                 .getName();
-        this.orderProductArrangementId = schedulingProducingArrangement.getSupportOrderProducingArrangement()
+        var orderProductArrangementId = schedulingProducingArrangement.getSupportOrderProducingArrangement()
                 .getId();
-        this.boolDirectToOrder = schedulingProducingArrangement.boolOrderDirect();
-        this.factoryReadableIdentifier = planningFactoryInstance != null
+        var boolDirectToOrder = schedulingProducingArrangement.boolOrderDirect();
+        var factoryReadableIdentifier = planningFactoryInstance != null
                                          ? planningFactoryInstance.getFactoryReadableIdentifier()
                                                  .toString()
                                          : null;
-        this.producingDuration = schedulingProducingArrangement.getProducingDuration()
+        var producingDuration = schedulingProducingArrangement.getProducingDuration()
                 .toString();
-        this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
-        this.producingDateTime = schedulingProducingArrangement.getProducingDateTime();
-        this.completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
+        var arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
+        var producingDateTime = schedulingProducingArrangement.getProducingDateTime();
+        var completedDateTime = schedulingProducingArrangement.getCompletedDateTime();
+        return new LitSchedulingProducingArrangementVO(
+                id,
+                uuid,
+                order,
+                product,
+                orderProduct,
+                orderProductArrangementId,
+                boolDirectToOrder,
+                factoryReadableIdentifier,
+                producingDuration,
+                arrangeDateTime,
+                producingDateTime,
+                completedDateTime
+        );
     }
 
 }

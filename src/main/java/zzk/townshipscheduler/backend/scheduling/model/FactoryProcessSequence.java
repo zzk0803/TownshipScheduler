@@ -63,12 +63,13 @@ public class FactoryProcessSequence
             SchedulingProducingArrangement schedulingProducingArrangement,
             Function<SchedulingProducingArrangement, Integer> sequentialIdFunction
     ) {
-        this.arrangementId = schedulingProducingArrangement.getId();
-        this.arrangeDateTime = schedulingProducingArrangement.getArrangeDateTime();
-        this.schedulingFactoryInstanceReadableIdentifier = schedulingProducingArrangement.getPlanningFactoryInstance()
-                .getFactoryReadableIdentifier();
-        this.producingDuration = schedulingProducingArrangement.getProducingDuration();
-        this.sequentialId = sequentialIdFunction.apply(schedulingProducingArrangement);
+        this(
+                schedulingProducingArrangement.getArrangeDateTime(),
+                schedulingProducingArrangement.getId(),
+                sequentialIdFunction.apply(schedulingProducingArrangement),
+                schedulingProducingArrangement.getPlanningFactoryInstanceReadableIdentifier(),
+                schedulingProducingArrangement.getProducingDuration()
+        );
     }
 
     private FactoryProcessSequence(
