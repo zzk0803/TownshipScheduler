@@ -93,8 +93,8 @@ public class SchedulingProducingArrangement
     private int deepPrerequisiteProducingArrangementsSize;
 
     //    @JsonIgnore
-    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
-    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
+//    @ShadowVariable(supplierName = "supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime")
+//    private LocalDateTime shadowPrerequisiteProducingArrangementsFinishedDateTime;
 
     private Duration staticDeepPrerequisiteProducingDuration;
 
@@ -204,21 +204,21 @@ public class SchedulingProducingArrangement
         return new FactoryProcessSequence(this);
     }
 
-    @ShadowSources(value = {"prerequisiteProducingArrangements[].computedDateTimePair"})
-    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime(
-            TownshipSchedulingProblem
-                    townshipSchedulingProblem
-    ) {
-        if (this.prerequisiteProducingArrangements.stream()
-                .anyMatch(schedulingProducingArrangement -> schedulingProducingArrangement.getCompletedDateTime() == null)) {
-            return null;
-        }
-
-        return this.prerequisiteProducingArrangements.stream()
-                .map(SchedulingProducingArrangement::getCompletedDateTime)
-                .max(LocalDateTime::compareTo)
-                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
-    }
+//    @ShadowSources(value = {"prerequisiteProducingArrangements[].computedDateTimePair"})
+//    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime(
+//            TownshipSchedulingProblem
+//                    townshipSchedulingProblem
+//    ) {
+//        if (this.prerequisiteProducingArrangements.stream()
+//                .anyMatch(schedulingProducingArrangement -> schedulingProducingArrangement.getCompletedDateTime() == null)) {
+//            return null;
+//        }
+//
+//        return this.prerequisiteProducingArrangements.stream()
+//                .map(SchedulingProducingArrangement::getCompletedDateTime)
+//                .max(LocalDateTime::compareTo)
+//                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
+//    }
 
     @JsonProperty("completedDateTime")
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -230,13 +230,13 @@ public class SchedulingProducingArrangement
                 : null;
     }
 
-    public Duration calcArrangeDateTimeToPrerequisiteDuration() {
-        if (getShadowPrerequisiteProducingArrangementsFinishedDateTime() == null) {
-            return getWorkCalendarSpan();
-        }
-
-        return Duration.between(getShadowPrerequisiteProducingArrangementsFinishedDateTime(), getArrangeDateTime());
-    }
+//    public Duration calcArrangeDateTimeToPrerequisiteDuration() {
+//        if (getShadowPrerequisiteProducingArrangementsFinishedDateTime() == null) {
+//            return getWorkCalendarSpan();
+//        }
+//
+//        return Duration.between(getShadowPrerequisiteProducingArrangementsFinishedDateTime(), getArrangeDateTime());
+//    }
 
     public Duration getWorkCalendarSpan() {
         return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());

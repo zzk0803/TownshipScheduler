@@ -442,9 +442,9 @@ public class TownshipSchedulingProblemViewModelTransfer {
 
     private SchedulingReportGroupsViewModel buildSchedulingReportGroupsViewModel() {
         TownshipSchedulingProblem townshipSchedulingProblem = getTownshipSchedulingProblem();
-        Set<SchedulingDateTimeSlot> schedulingDateTimeSlots = townshipSchedulingProblem.getSchedulingDateTimeSlots();
+        NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots = townshipSchedulingProblem.getSchedulingDateTimeSlots();
         return new SchedulingReportGroupsViewModel(
-                schedulingDateTimeSlots.stream()
+                Collections.synchronizedNavigableSet(schedulingDateTimeSlots).stream()
                         .filter(schedulingDateTimeSlot -> schedulingDateTimeSlot.getPlanningArrangementsSequence() != null && !schedulingDateTimeSlot.getPlanningArrangementsSequence().isEmpty())
                         .map(this::buildSchedulingReportFactoryGroupViewModel)
                         .collect(Collectors.toCollection(TreeSet::new))
