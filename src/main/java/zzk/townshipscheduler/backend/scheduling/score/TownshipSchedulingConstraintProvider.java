@@ -33,6 +33,7 @@ public class TownshipSchedulingConstraintProvider
                 preferMinimizeArrangeDateTimeToPrerequisiteDone(constraintFactory),
                 //preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
                 preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory),
+                preferConcurrentFactoryUsage(constraintFactory),
                 preferLoadBalanceArrangementsInFactoryInstance(constraintFactory)
         };
     }
@@ -249,6 +250,19 @@ public class TownshipSchedulingConstraintProvider
                         (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
+    }
+
+    private Constraint preferConcurrentFactoryUsage(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+                .groupBy(
+                        SchedulingProducingArrangement::getPlanningDateTimeSlot,
+                        ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningFactoryInstance)
+                )
+                .reward(
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(4900)),
+                        (slot, factoryCount) -> factoryCount > 1 ? factoryCount - 1 : 0
+                )
+                .asConstraint("preferConcurrentFactoryUsage");
     }
 
     public int calcFactor(SchedulingProducingArrangement arrangement) {

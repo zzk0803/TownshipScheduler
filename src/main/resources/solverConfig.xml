@@ -71,9 +71,6 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
-                    </filterClass>
                 </entitySelector>
                 <valueSelector variableName="planningFactoryInstance"
                                id="localSearch1_changeMoveSelector_vs_Arrangement_planningFactory">
@@ -154,9 +151,6 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
-                    </filterClass>
                 </entitySelector>
                 <valueSelector variableName="planningFactoryInstance"
                                id="localSearch2_changeMoveSelector_vs_Arrangement_planningFactory">
@@ -215,6 +209,7 @@
             </pillarSwapMoveSelector>
 
             <changeMoveSelector>
+                <fixedProbabilityWeight>2.0</fixedProbabilityWeight>
                 <entitySelector id="localSearch2_changeMoveSelector_es_Arrangement_planningDateTimeSlot">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
@@ -242,6 +237,7 @@
             </swapMoveSelector>
 
             <pillarChangeMoveSelector>
+                <fixedProbabilityWeight>2.0</fixedProbabilityWeight>
                 <pillarSelector>
                     <entitySelector id="localSearch2_pillarChangeMoveSelector_es_Arrangement_planningDateTimeSlot">
                         <entityClass>

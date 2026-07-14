@@ -22,7 +22,8 @@ public record ReactiveTownshipSchedulingProblemViewModel(
         SchedulingPlayerViewModel schedulingPlayer,
         ValueSignal<String> solverStatus,
         ValueSignal<String> score,
-        ValueSignal<Boolean> feasible
+        ValueSignal<Boolean> feasible,
+        ValueSignal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModel
 )
         implements Serializable {
 
@@ -40,7 +41,8 @@ public record ReactiveTownshipSchedulingProblemViewModel(
             null,
             new ValueSignal<>("N/A"),
             new ValueSignal<>("N/A"),
-            new ValueSignal<>(false)
+            new ValueSignal<>(false),
+            new ValueSignal<>(SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE)
     );
 
     public Collection<ReactiveTownshipSchedulingProblemOrderBriefViewModel> toTownshipSchedulingProblemOrderBriefViewModels() {

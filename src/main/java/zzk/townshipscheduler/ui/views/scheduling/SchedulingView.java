@@ -150,12 +150,9 @@ public class SchedulingView
 
     private Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
             townshipSchedulingProblemViewModel -> {
-                if (townshipSchedulingProblemViewModel == null
-                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
-                ) {
-                    return SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
-                }
-                return townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel();
+                return townshipSchedulingProblemViewModel != null
+                        ? townshipSchedulingProblemViewModel.schedulingReportGroupsViewModel().get()
+                        : SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
             }
     );
 

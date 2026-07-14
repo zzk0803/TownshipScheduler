@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Slf4j
 @SpringComponent
@@ -69,7 +70,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 new ValueSignal<>(Objects.isNull(score)
                         ? "N/A"
                         : score.toString()),
-                new ValueSignal<>(Objects.nonNull(score) && score.isFeasible())
+                new ValueSignal<>(Objects.nonNull(score) && score.isFeasible()),
+                new ValueSignal<>(SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE)
         );
     }
 
@@ -92,7 +94,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 Objects.isNull(score)
                         ? "N/A"
                         : score.toString(),
-                Objects.nonNull(score) && score.isFeasible()
+                Objects.nonNull(score) && score.isFeasible(),
+                SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE
         );
     }
 
@@ -119,15 +122,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
                         : score.toString()
         );
         reactiveTownshipSchedulingProblemViewModel.feasible().set(Objects.nonNull(score) && score.isFeasible());
+        reactiveTownshipSchedulingProblemViewModel.schedulingReportGroupsViewModel().set(buildSchedulingReportGroupsViewModel());
         return reactiveTownshipSchedulingProblemViewModel;
-    }
-
-    public TownshipSchedulingProblem getTownshipSchedulingProblem() {
-        return townshipSchedulingProblemAtomicReference.get();
-    }
-
-    public void setTownshipSchedulingProblem(TownshipSchedulingProblem newValue) {
-        townshipSchedulingProblemAtomicReference.set(newValue);
     }
 
     public TownshipSchedulingProblemViewModel updateAndGet(
@@ -160,7 +156,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 mapAndGetSchedulingProducingArrangementViewModel(),
                 solverStatus,
                 score,
-                feasible
+                feasible,
+                buildSchedulingReportGroupsViewModel()
         );
     }
 
@@ -328,20 +325,6 @@ public class TownshipSchedulingProblemViewModelTransfer {
         return schedulingProductToViewModelMap.values();
     }
 
-    private SchedulingProductViewModel buildOrGetSchedulingProductViewModel(SchedulingProduct schedulingProduct) {
-        return schedulingProductToViewModelMap.computeIfAbsent(
-                schedulingProduct,
-                productInMap -> {
-                    return new SchedulingProductViewModel(
-                            SchedulingProductViewModel.SchedulingProductViewModelId.of(schedulingProduct.getId()),
-                            schedulingProduct.getName(),
-                            schedulingProduct.getLevel(),
-                            schedulingProduct.getGainWhenCompleted()
-                    );
-                }
-        );
-    }
-
     public Collection<SchedulingFactoryInfoViewModel> mapAndGetSchedulingFactoryInfoViewModel() {
         List<SchedulingFactoryInfo> schedulingFactoryInfoList = getTownshipSchedulingProblem().getSchedulingFactoryInfoList();
         for (SchedulingFactoryInfo schedulingFactoryInfo : schedulingFactoryInfoList) {
@@ -382,28 +365,6 @@ public class TownshipSchedulingProblemViewModelTransfer {
             buildOrGetSchedulingFactoryInstanceViewModel(schedulingFactoryInstance);
         }
         return schedulingFactoryInstanceToViewModelMap.values();
-    }
-
-    private SchedulingFactoryInstanceViewModel buildOrGetSchedulingFactoryInstanceViewModel(SchedulingFactoryInstance planningFactoryInstance) {
-        if (planningFactoryInstance == null) {
-            return null;
-        }
-
-        return schedulingFactoryInstanceToViewModelMap.computeIfAbsent(
-                planningFactoryInstance,
-                factoryInMap -> new SchedulingFactoryInstanceViewModel(
-                        planningFactoryInstance.getId(),
-                        planningFactoryInstance.getFieldFactoryId(),
-                        planningFactoryInstance.getSchedulingFactoryInfo()
-                                .getLevel(),
-                        planningFactoryInstance.getCategoryName(),
-                        planningFactoryInstance.getSeqNum(),
-                        planningFactoryInstance.getProducingLength(),
-                        planningFactoryInstance.getReapWindowSize(),
-                        planningFactoryInstance.getFactoryReadableIdentifier()
-                                .toString()
-                )
-        );
     }
 
     public Collection<SchedulingOrderViewModel> mapAndGetSchedulingOrderViewModel() {
@@ -476,6 +437,104 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 schedulingPlayer.getId(),
                 schedulingPlayer.getSleepStart(),
                 schedulingPlayer.getSleepEnd()
+        );
+    }
+
+    private SchedulingReportGroupsViewModel buildSchedulingReportGroupsViewModel() {
+        TownshipSchedulingProblem townshipSchedulingProblem = getTownshipSchedulingProblem();
+        Set<SchedulingDateTimeSlot> schedulingDateTimeSlots = townshipSchedulingProblem.getSchedulingDateTimeSlots();
+        return new SchedulingReportGroupsViewModel(
+                schedulingDateTimeSlots.stream()
+                        .filter(schedulingDateTimeSlot -> schedulingDateTimeSlot.getPlanningArrangementsSequence() != null && !schedulingDateTimeSlot.getPlanningArrangementsSequence().isEmpty())
+                        .map(this::buildSchedulingReportFactoryGroupViewModel)
+                        .collect(Collectors.toCollection(TreeSet::new))
+        );
+    }
+
+    public TownshipSchedulingProblem getTownshipSchedulingProblem() {
+        return townshipSchedulingProblemAtomicReference.get();
+    }
+
+    public void setTownshipSchedulingProblem(TownshipSchedulingProblem newValue) {
+        townshipSchedulingProblemAtomicReference.set(newValue);
+    }
+
+    private SchedulingReportArrangeDateTimeGroupViewModel buildSchedulingReportFactoryGroupViewModel(SchedulingDateTimeSlot schedulingDateTimeSlot) {
+        LocalDateTime localDateTime = schedulingDateTimeSlot.getStart();
+        List<SchedulingProducingArrangement> planningArrangementsSequence = schedulingDateTimeSlot.getPlanningArrangementsSequence();
+        return new SchedulingReportArrangeDateTimeGroupViewModel(
+                localDateTime,
+                planningArrangementsSequence.stream()
+                        .collect(Collectors.collectingAndThen(
+                        Collectors.groupingByConcurrent(
+                                SchedulingProducingArrangement::getPlanningFactoryInstance,
+                                Collectors.collectingAndThen(
+                                        Collectors.groupingByConcurrent(
+                                                SchedulingProducingArrangement::getSchedulingProduct,
+                                                Collectors.counting()
+                                        ),
+                                        schedulingProductViewModelLongMap -> {
+                                            Collection<SchedulingProductAmountPair> schedulingProductAmountPairs
+                                                    = schedulingProductViewModelLongMap.entrySet()
+                                                    .stream()
+                                                    .map(
+                                                            schedulingProductViewModelLongEntry -> {
+                                                                return new SchedulingProductAmountPair(
+                                                                        buildOrGetSchedulingProductViewModel(schedulingProductViewModelLongEntry.getKey()),
+                                                                        Math.toIntExact(schedulingProductViewModelLongEntry.getValue())
+                                                                );
+                                                            })
+                                                    .collect(Collectors.toCollection(ArrayList::new));
+                                            return new ProductAmountBillViewModel(schedulingProductAmountPairs);
+                                        }
+                                )
+                        ),
+                        schedulingFactoryInstanceViewModelProductAmountBillViewModelMap -> schedulingFactoryInstanceViewModelProductAmountBillViewModelMap.entrySet()
+                                .stream()
+                                .map(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry -> {
+                                    return new SchedulingReportFactoryGroupViewModel(
+                                            buildOrGetSchedulingFactoryInstanceViewModel(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getKey()),
+                                            schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getValue()
+                                    );
+                                })
+                                .collect(Collectors.toCollection(ArrayList::new))
+                ))
+        );
+    }
+
+    private SchedulingProductViewModel buildOrGetSchedulingProductViewModel(SchedulingProduct schedulingProduct) {
+        return schedulingProductToViewModelMap.computeIfAbsent(
+                schedulingProduct,
+                productInMap -> {
+                    return new SchedulingProductViewModel(
+                            SchedulingProductViewModel.SchedulingProductViewModelId.of(schedulingProduct.getId()),
+                            schedulingProduct.getName(),
+                            schedulingProduct.getLevel(),
+                            schedulingProduct.getGainWhenCompleted()
+                    );
+                }
+        );
+    }
+
+    private SchedulingFactoryInstanceViewModel buildOrGetSchedulingFactoryInstanceViewModel(SchedulingFactoryInstance planningFactoryInstance) {
+        if (planningFactoryInstance == null) {
+            return null;
+        }
+
+        return schedulingFactoryInstanceToViewModelMap.computeIfAbsent(
+                planningFactoryInstance,
+                factoryInMap -> new SchedulingFactoryInstanceViewModel(
+                        planningFactoryInstance.getId(),
+                        planningFactoryInstance.getFieldFactoryId(),
+                        planningFactoryInstance.getSchedulingFactoryInfo()
+                                .getLevel(),
+                        planningFactoryInstance.getCategoryName(),
+                        planningFactoryInstance.getSeqNum(),
+                        planningFactoryInstance.getProducingLength(),
+                        planningFactoryInstance.getReapWindowSize(),
+                        planningFactoryInstance.getFactoryReadableIdentifier()
+                                .toString()
+                )
         );
     }
 

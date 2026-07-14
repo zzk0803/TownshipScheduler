@@ -160,7 +160,7 @@ public class SchedulingPlayer
                                 ),
                                 buildSinglePassCollector(
                                         SchedulingProducingArrangement::weatherFactoryProducingTypeIsQueue,
-                                        QUEUE_PROCESSOR_2
+                                        QUEUE_PROCESSOR
                                 ),
                                 this::mergeFinalResults
                         )
