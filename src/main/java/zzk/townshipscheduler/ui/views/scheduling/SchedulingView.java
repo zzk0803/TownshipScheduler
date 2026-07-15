@@ -100,12 +100,7 @@ public class SchedulingView
     private Paragraph briefText;
 
     private ValueSignal<ReactiveTownshipSchedulingProblemViewModel> reactiveTownshipSchedulingProblemViewModelValueSignal
-            = new ValueSignal<>(
-            ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE,
-            (former, latter) -> former.uuid().equals(latter.uuid())
-                                && former.score().get().equals(latter.score().get())
-                                && former.timestampValueSignal().get().isEqual(latter.timestampValueSignal().get())
-    );
+            = new ValueSignal<>(ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE);
 
     private Signal<Collection<ReactiveTownshipSchedulingProblemOrderBriefViewModel>> reactiveTownshipSchedulingProblemOrderBriefSignal
             = reactiveTownshipSchedulingProblemViewModelValueSignal.map(

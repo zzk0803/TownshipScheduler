@@ -6,7 +6,6 @@ import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import ai.timefold.solver.core.api.score.stream.common.LoadBalance;
 import org.jspecify.annotations.NonNull;
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
@@ -34,7 +33,6 @@ public class TownshipSchedulingConstraintProvider
                 preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
                 //rewardOrderCompletedInWorkCalendar(constraintFactory),
                 preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory),
-                // preferConcurrentFactoryUsage(constraintFactory),
                 preferLoadBalanceArrangementsInFactoryInstance(constraintFactory)
         };
     }
@@ -125,6 +123,7 @@ public class TownshipSchedulingConstraintProvider
 
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .groupBy(
+                        SchedulingProducingArrangement::getRequiredFactoryInfo,
                         SchedulingProducingArrangement::getPlanningFactoryInstance,
                         ConstraintCollectors.toConnectedTemporalRanges(
                                 SchedulingProducingArrangement::getArrangeDateTime,
@@ -132,10 +131,10 @@ public class TownshipSchedulingConstraintProvider
                         )
                 )
                 .flattenLast(ConnectedRangeChain::getConnectedRanges)
-                .filter((factoryInstance, connectedRange) -> connectedRange.getContainedRangeCount() > factoryInstance.getProducingLength())
+                .filter((factoryType, factoryInstance, connectedRange) -> connectedRange.getContainedRangeCount() > factoryInstance.getProducingLength())
                 .penalize(
                         HardMediumSoftBigDecimalScore.ONE_HARD,
-                        (factoryInstance, connectedRange) -> connectedRange.getContainedRangeCount() - factoryInstance.getProducingLength()
+                        (factoryType, factoryInstance, connectedRange) -> connectedRange.getContainedRangeCount() - factoryInstance.getProducingLength()
                 )
                 .asConstraint("forbidBrokenFactoryAbility");
     }
@@ -199,8 +198,10 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint shouldNotBrokenCalendarEnd(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .filter(SchedulingProducingArrangement::boolOrderDirect)
+        return constraintFactory.precompute(precomputeFactory -> precomputeFactory.forEachUnfiltered(
+                                SchedulingProducingArrangement.class)
+                        .filter(SchedulingProducingArrangement::boolOrderDirect)
+                )
                 .filter(SchedulingProducingArrangement::boolCompleted)
                 .filter(SchedulingProducingArrangement::boolCompletedAfterCalendarEnd)
                 .penalize(
@@ -217,7 +218,7 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolArrangeDateTimeInPlayerSleepTime)
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(50)),
+                        HardMediumSoftBigDecimalScore.ONE_MEDIUM,
                         schedulingProducingArrangement -> schedulingProducingArrangement.calcSleepArrangeDateTimeToNextAvailableDuration()
                                 .toMinutes()
                 )
@@ -265,11 +266,11 @@ public class TownshipSchedulingConstraintProvider
     private Constraint preferMinimizeProductArrangeDateTimeSlotUsage(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .groupBy(
-                        SchedulingProducingArrangement::getFactoryProducingType,
+                        SchedulingProducingArrangement::getPlanningFactoryInstance,
                         ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                 )
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(2200)),
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(1999)),
                         (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");

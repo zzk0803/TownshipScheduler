@@ -155,6 +155,7 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
+                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
                 </entitySelector>
                 <valueSelector variableName="planningFactoryInstance"
                                id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
@@ -166,11 +167,13 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
+                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
                 </entitySelector>
                 <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningFactoryInstance_q">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
+                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
                 </secondaryEntitySelector>
                 <variableNameIncludes>
                     <variableNameInclude>planningFactoryInstance</variableNameInclude>
@@ -236,16 +239,35 @@
                 </variableNameIncludes>
             </pillarSwapMoveSelector>
 
+            <!--            <ruinRecreateMoveSelector>-->
+            <!--                <fixedProbabilityWeight>0.05</fixedProbabilityWeight>-->
+            <!--                <minimumRuinedPercentage>5</minimumRuinedPercentage>-->
+            <!--                <maximumRuinedPercentage>33</maximumRuinedPercentage>-->
+            <!--                <entitySelector>-->
+            <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.ArrangementRuinRecreateMoveSelectorEntitySelectionFilter</filterClass>-->
+            <!--                </entitySelector>-->
+            <!--                <variableName>planningDateTimeSlot</variableName>-->
+            <!--            </ruinRecreateMoveSelector>-->
+
         </unionMoveSelector>
 
+        <!--        <acceptor>-->
+        <!--            <entityTabuRatio>0.05</entityTabuRatio>-->
+        <!--            <valueTabuSize>1</valueTabuSize>-->
+        <!--            <simulatedAnnealingStartingTemperature>10hard/200medium/3000soft</simulatedAnnealingStartingTemperature>-->
+        <!--        </acceptor>-->
+
+        <!--        <forager>-->
+        <!--            <acceptedCountLimit>6</acceptedCountLimit>-->
+        <!--        </forager>-->
+
         <acceptor>
-            <entityTabuRatio>0.125</entityTabuRatio>
-            <valueTabuSize>2</valueTabuSize>
-            <simulatedAnnealingStartingTemperature>5hard/200medium/1000soft</simulatedAnnealingStartingTemperature>
+            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>
+            <lateAcceptanceSize>9</lateAcceptanceSize>
         </acceptor>
 
         <forager>
-            <acceptedCountLimit>4</acceptedCountLimit>
+            <acceptedCountLimit>1</acceptedCountLimit>
         </forager>
 
     </localSearch>
