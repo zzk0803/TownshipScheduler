@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @PlanningEntity
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot>, Serializable {
 
-    public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR = Comparator.comparing(SchedulingDateTimeSlot::getStart);
+    public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR = Comparator.comparing(SchedulingDateTimeSlot::getId);
 
     @Serial
     private static final long serialVersionUID = -36055068413393349L;

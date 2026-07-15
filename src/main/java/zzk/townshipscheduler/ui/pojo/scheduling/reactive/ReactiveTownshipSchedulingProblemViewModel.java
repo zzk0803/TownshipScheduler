@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 public record ReactiveTownshipSchedulingProblemViewModel(
         String uuid,
+        ValueSignal<LocalDateTime> timestampValueSignal,
         Collection<SchedulingProductViewModel> schedulingProductViewModels,
         Collection<SchedulingFactoryInfoViewModel> schedulingFactoryInfoViewModels,
         Collection<SchedulingOrderViewModel> schedulingOrderViewModels,
@@ -22,14 +23,15 @@ public record ReactiveTownshipSchedulingProblemViewModel(
         SchedulingPlayerViewModel schedulingPlayer,
         ValueSignal<String> solverStatus,
         ValueSignal<String> score,
-        ValueSignal<Boolean> feasible,
-        ValueSignal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModel
+        ValueSignal<Boolean> feasible
+//        ValueSignal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModel
 )
         implements Serializable {
 
     public static final ReactiveTownshipSchedulingProblemViewModel EMPTY_NULL_VALUE
             = new ReactiveTownshipSchedulingProblemViewModel(
             "0",
+            new ValueSignal<>(LocalDateTime.now()),
             Set.of(),
             Set.of(),
             Set.of(),
@@ -41,8 +43,8 @@ public record ReactiveTownshipSchedulingProblemViewModel(
             null,
             new ValueSignal<>("N/A"),
             new ValueSignal<>("N/A"),
-            new ValueSignal<>(false),
-            new ValueSignal<>(SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE)
+            new ValueSignal<>(false)
+//            new ValueSignal<>(SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE)
     );
 
     public Collection<ReactiveTownshipSchedulingProblemOrderBriefViewModel> toTownshipSchedulingProblemOrderBriefViewModels() {

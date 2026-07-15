@@ -100,7 +100,12 @@ public class SchedulingView
     private Paragraph briefText;
 
     private ValueSignal<ReactiveTownshipSchedulingProblemViewModel> reactiveTownshipSchedulingProblemViewModelValueSignal
-            = new ValueSignal<>(ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE);
+            = new ValueSignal<>(
+            ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE,
+            (former, latter) -> former.uuid().equals(latter.uuid())
+                                && former.score().get().equals(latter.score().get())
+                                && former.timestampValueSignal().get().isEqual(latter.timestampValueSignal().get())
+    );
 
     private Signal<Collection<ReactiveTownshipSchedulingProblemOrderBriefViewModel>> reactiveTownshipSchedulingProblemOrderBriefSignal
             = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
@@ -136,7 +141,8 @@ public class SchedulingView
                     : new HashMap<>()
     );
 
-    private Signal<List<LitSchedulingProducingArrangementVO>> litSchedulingProducingArrangementVoListSignal = this.reactiveTownshipSchedulingProblemViewModelValueSignal
+    private Signal<List<LitSchedulingProducingArrangementVO>> litSchedulingProducingArrangementVoListSignal
+            = this.reactiveTownshipSchedulingProblemViewModelValueSignal
             .map(townshipSchedulingProblem -> {
                         if (townshipSchedulingProblem != null) {
                             return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels().getValues()
@@ -148,12 +154,11 @@ public class SchedulingView
                     }
             );
 
-    private Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
-            townshipSchedulingProblemViewModel -> {
-                return townshipSchedulingProblemViewModel != null
-                        ? townshipSchedulingProblemViewModel.schedulingReportGroupsViewModel().get()
-                        : SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE;
-            }
+    private Signal<SchedulingReportGroupsViewModel> schedulingReportGroupsViewModelSignal
+            = this.reactiveTownshipSchedulingProblemViewModelValueSignal.map(
+            townshipSchedulingProblemViewModel -> townshipSchedulingProblemViewModel != null
+                    ? townshipSchedulingProblemViewModel.toSchedulingReportGroupsViewModel()
+                    : SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE
     );
 
     private Signal<String> solverResultSpanSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(

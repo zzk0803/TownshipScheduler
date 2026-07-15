@@ -21,7 +21,10 @@ public class ProducingArrangementPlanningFactoryConstructionHeuristicChangeMoveS
     ) {
         SchedulingProducingArrangement entity = (SchedulingProducingArrangement) selection.getEntity();
         SchedulingDateTimeSlot toPlanningValue = (SchedulingDateTimeSlot) selection.getToPlanningValue();
-        return toPlanningValue != null && !(toPlanningValue.getStart().isBefore(entity.calcStaticIdealArrangeDateTime()));
+        if (toPlanningValue == null)
+            return false;
+        LocalDateTime arrangeDateTime = toPlanningValue.getStart();
+        return !(arrangeDateTime.isBefore(entity.calcStaticIdealArrangeDateTime()));
     }
 
 }

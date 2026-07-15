@@ -23,8 +23,8 @@ public record TownshipSchedulingProblemViewModel(
         SchedulingPlayerViewModel schedulingPlayer,
         String solverStatus,
         String score,
-        boolean feasible,
-        SchedulingReportGroupsViewModel schedulingReportGroupsViewModel
+        boolean feasible
+//        SchedulingReportGroupsViewModel schedulingReportGroupsViewModel
 )
         implements Serializable {
 
@@ -42,16 +42,16 @@ public record TownshipSchedulingProblemViewModel(
             null,
             "N/A",
             "N/A",
-            false,
-            SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE
+            false
+//            SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE
     );
 
     public TownshipSchedulingProblemViewModel update(
             Collection<SchedulingProducingArrangementViewModel> schedulingProducingArrangements,
             String solverStatus,
             String score,
-            boolean feasible,
-            SchedulingReportGroupsViewModel schedulingReportGroupsViewModel
+            boolean feasible
+//            SchedulingReportGroupsViewModel schedulingReportGroupsViewModel
     ) {
         return new TownshipSchedulingProblemViewModel(
                 this.uuid,
@@ -66,8 +66,8 @@ public record TownshipSchedulingProblemViewModel(
                 this.schedulingPlayer,
                 solverStatus,
                 score,
-                feasible,
-                schedulingReportGroupsViewModel
+                feasible
+//                schedulingReportGroupsViewModel
         );
     }
 

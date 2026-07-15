@@ -6,6 +6,8 @@ import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import ai.timefold.solver.core.api.score.stream.common.LoadBalance;
 import org.jspecify.annotations.NonNull;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInfo;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingOrder;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 
@@ -30,6 +32,7 @@ public class TownshipSchedulingConstraintProvider
                 preferMinimizeCompletedDateTime(constraintFactory),
                 //preferMinimizeArrangeDateTimeToPrerequisiteDone(constraintFactory),
                 preferArrangeDateTimeAsSoonAsPassible(constraintFactory),
+                //rewardOrderCompletedInWorkCalendar(constraintFactory),
                 preferMinimizeProductArrangeDateTimeSlotUsage(constraintFactory),
                 // preferConcurrentFactoryUsage(constraintFactory),
                 preferLoadBalanceArrangementsInFactoryInstance(constraintFactory)
@@ -37,6 +40,32 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenFactoryAbility(ConstraintFactory constraintFactory) {
+//        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+//                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null)
+//                .join(
+//                        constraintFactory.forEach(SchedulingProducingArrangement.class)
+//                                .filter(arrangement -> arrangement.getArrangeDateTime() != null && arrangement.getCompletedDateTime() != null),
+//                        Joiners.equal(
+//                                SchedulingProducingArrangement::getPlanningFactoryInstance,
+//                                SchedulingProducingArrangement::getPlanningFactoryInstance
+//                        ),
+//                        Joiners.lessThanOrEqual(
+//                                SchedulingProducingArrangement::getArrangeDateTime,
+//                                SchedulingProducingArrangement::getArrangeDateTime
+//                        ),
+//                        Joiners.greaterThan(
+//                                SchedulingProducingArrangement::getCompletedDateTime,
+//                                SchedulingProducingArrangement::getArrangeDateTime
+//                        )
+//                )
+//                .groupBy((x, y) -> x, ConstraintCollectors.countBi())
+//                .filter((x, count) -> count > x.getPlanningFactoryInstance().getProducingLength())
+//                .penalize(
+//                        HardMediumSoftBigDecimalScore.ONE_HARD,
+//                        (x, count) -> count - x.getPlanningFactoryInstance().getProducingLength()
+//                )
+//                .asConstraint("forbidBrokenFactoryAbility");
+
 //        return constraintFactory.forEach(SchedulingFactoryInstance.class)
 //                .join(SchedulingProducingArrangement.class, Joiners.equal(Function.identity(), SchedulingProducingArrangement::getPlanningFactoryInstance))
 //                .join(
@@ -218,31 +247,20 @@ public class TownshipSchedulingConstraintProvider
     private Constraint preferLoadBalanceArrangementsInFactoryInstance(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .groupBy(
-                        SchedulingProducingArrangement::getRequiredFactoryInfo,
                         SchedulingProducingArrangement::getPlanningFactoryInstance,
                         ConstraintCollectors.count()
                 )
+                .complement(SchedulingFactoryInstance.class, factory -> 0L)
                 .groupBy(ConstraintCollectors.loadBalance(
-                        (arrangeFactoryType, factoryInstance, arrangementCount) -> factoryInstance,
-                        (arrangeFactoryType, factoryInstance, arrangementCount) -> arrangementCount,
-                        (arrangeFactoryType, factoryInstance, arrangementCount) -> 0L
+                        (factoryInstance, arrangementCount) -> factoryInstance,
+                        (factoryInstance, arrangementCount) -> arrangementCount
                 ))
                 .penalizeBigDecimal(
-                        HardMediumSoftBigDecimalScore.ONE_SOFT,
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(2000)),
                         LoadBalance::unfairness
                 )
                 .asConstraint("preferLoadBalanceArrangementsInFactoryInstance");
     }
-
-//    private Constraint preferMinimizeArrangeDateTimeToPrerequisiteDone(@NonNull ConstraintFactory constraintFactory) {
-//        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-//                .filter(SchedulingProducingArrangement::boolPlanningAssigned)
-//                .penalize(
-//                        HardMediumSoftBigDecimalScore.ONE_SOFT,
-//                        arrangement -> arrangement.calcArrangeDateTimeToPrerequisiteDuration().abs().toMinutes()
-//                )
-//                .asConstraint("preferMinimizeArrangeDateTimeToPrerequisiteDone");
-//    }
 
     private Constraint preferMinimizeProductArrangeDateTimeSlotUsage(@NonNull ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
@@ -251,25 +269,10 @@ public class TownshipSchedulingConstraintProvider
                         ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                 )
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(500)),
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(2200)),
                         (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");
-    }
-
-    private Constraint preferConcurrentFactoryUsage(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-                .groupBy(
-                        SchedulingProducingArrangement::getPlanningDateTimeSlot,
-                        ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningFactoryInstance)
-                )
-                .reward(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(2300)),
-                        (slot, factoryCount) -> factoryCount > 1
-                                ? factoryCount - 1
-                                : 0
-                )
-                .asConstraint("preferConcurrentFactoryUsage");
     }
 
 }

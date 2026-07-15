@@ -61,7 +61,8 @@ public class SchedulingReportArticle
         Signal.effect(
                 reportGroupsGrid,
                 () -> {
-                    reportGroupsGrid.setItems(schedulingView.getSchedulingReportGroupsViewModelSignal().get().schedulingReportArrangeDateTimeGroupViewModels());
+                    SchedulingReportGroupsViewModel schedulingReportGroupsViewModel = schedulingView.getSchedulingReportGroupsViewModelSignal().get();
+                    reportGroupsGrid.setItems(schedulingReportGroupsViewModel.schedulingReportArrangeDateTimeGroupViewModels());
                 }
         );
     }

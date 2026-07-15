@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 @Slf4j
 @SpringComponent
@@ -55,6 +54,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
         arrangementViewModelListSignal.insertAllLast(mapAndUpdateReactiveSchedulingProducingArrangementViewModel());
         return new ReactiveTownshipSchedulingProblemViewModel(
                 getTownshipSchedulingProblem().getUuid(),
+                new ValueSignal<>(LocalDateTime.now()),
                 mapAndGetSchedulingProductViewModel(),
                 mapAndGetSchedulingFactoryInfoViewModel(),
                 mapAndGetSchedulingOrderViewModel(),
@@ -70,8 +70,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 new ValueSignal<>(Objects.isNull(score)
                         ? "N/A"
                         : score.toString()),
-                new ValueSignal<>(Objects.nonNull(score) && score.isFeasible()),
-                new ValueSignal<>(SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE)
+                new ValueSignal<>(Objects.nonNull(score) && score.isFeasible())
+//                new ValueSignal<>(SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE)
         );
     }
 
@@ -94,8 +94,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 Objects.isNull(score)
                         ? "N/A"
                         : score.toString(),
-                Objects.nonNull(score) && score.isFeasible(),
-                SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE
+                Objects.nonNull(score) && score.isFeasible()
+//                SchedulingReportGroupsViewModel.EMPTY_NULL_VALUE
         );
     }
 
@@ -115,6 +115,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
         TownshipSchedulingProblem currentSolverSolution = getTownshipSchedulingProblem();
         SolverStatus solverStatus = currentSolverSolution.getSolverStatus();
         HardMediumSoftBigDecimalScore score = currentSolverSolution.getScore();
+        reactiveTownshipSchedulingProblemViewModel.timestampValueSignal().set(LocalDateTime.now());
         reactiveTownshipSchedulingProblemViewModel.solverStatus().set(solverStatus.name());
         reactiveTownshipSchedulingProblemViewModel.score().set(
                 Objects.isNull(score)
@@ -122,7 +123,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
                         : score.toString()
         );
         reactiveTownshipSchedulingProblemViewModel.feasible().set(Objects.nonNull(score) && score.isFeasible());
-        reactiveTownshipSchedulingProblemViewModel.schedulingReportGroupsViewModel().set(buildSchedulingReportGroupsViewModel());
+//        reactiveTownshipSchedulingProblemViewModel.schedulingReportGroupsViewModel().set(buildSchedulingReportGroupsViewModel());
         return reactiveTownshipSchedulingProblemViewModel;
     }
 
@@ -156,8 +157,8 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 mapAndGetSchedulingProducingArrangementViewModel(),
                 solverStatus,
                 score,
-                feasible,
-                buildSchedulingReportGroupsViewModel()
+                feasible
+//                buildSchedulingReportGroupsViewModel()
         );
     }
 
@@ -252,7 +253,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
                 schedulingProducingArrangement,
                 (arrangementInMap, viewInMap) -> {
                     if (viewInMap == null) {
-                        Integer id = schedulingProducingArrangement.getId();
+                        int id = schedulingProducingArrangement.getId();
                         String uuid = schedulingProducingArrangement.getUuid()
                                 .toString();
                         SchedulingProducingArrangementViewModel.SchedulingProducingArrangementViewModelId modelId
@@ -440,16 +441,15 @@ public class TownshipSchedulingProblemViewModelTransfer {
         );
     }
 
-    private SchedulingReportGroupsViewModel buildSchedulingReportGroupsViewModel() {
-        TownshipSchedulingProblem townshipSchedulingProblem = getTownshipSchedulingProblem();
-        NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots = townshipSchedulingProblem.getSchedulingDateTimeSlots();
-        return new SchedulingReportGroupsViewModel(
-                Collections.synchronizedNavigableSet(schedulingDateTimeSlots).stream()
-                        .filter(schedulingDateTimeSlot -> schedulingDateTimeSlot.getPlanningArrangementsSequence() != null && !schedulingDateTimeSlot.getPlanningArrangementsSequence().isEmpty())
-                        .map(this::buildSchedulingReportFactoryGroupViewModel)
-                        .collect(Collectors.toCollection(TreeSet::new))
-        );
-    }
+//    private SchedulingReportGroupsViewModel buildSchedulingReportGroupsViewModel() {
+//        TownshipSchedulingProblem townshipSchedulingProblem = getTownshipSchedulingProblem();
+//        TreeSet<SchedulingReportArrangeDateTimeGroupViewModel> schedulingReportArrangeDateTimeGroupViewModels =
+//                townshipSchedulingProblem.getSchedulingDateTimeSlots().stream()
+//                        .filter(schedulingDateTimeSlot -> schedulingDateTimeSlot.getPlanningArrangementsSequence() != null && !schedulingDateTimeSlot.getPlanningArrangementsSequence().isEmpty())
+//                        .map(this::buildSchedulingReportFactoryGroupViewModel)
+//                        .collect(Collectors.toCollection(TreeSet::new));
+//        return new SchedulingReportGroupsViewModel(schedulingReportArrangeDateTimeGroupViewModels);
+//    }
 
     public TownshipSchedulingProblem getTownshipSchedulingProblem() {
         return townshipSchedulingProblemAtomicReference.get();
@@ -459,48 +459,45 @@ public class TownshipSchedulingProblemViewModelTransfer {
         townshipSchedulingProblemAtomicReference.set(newValue);
     }
 
-    private SchedulingReportArrangeDateTimeGroupViewModel buildSchedulingReportFactoryGroupViewModel(SchedulingDateTimeSlot schedulingDateTimeSlot) {
-        LocalDateTime localDateTime = schedulingDateTimeSlot.getStart();
-        List<SchedulingProducingArrangement> planningArrangementsSequence = schedulingDateTimeSlot.getPlanningArrangementsSequence();
-        return new SchedulingReportArrangeDateTimeGroupViewModel(
-                localDateTime,
-                planningArrangementsSequence.stream()
-                        .collect(Collectors.collectingAndThen(
-                        Collectors.groupingByConcurrent(
-                                SchedulingProducingArrangement::getPlanningFactoryInstance,
-                                Collectors.collectingAndThen(
-                                        Collectors.groupingByConcurrent(
-                                                SchedulingProducingArrangement::getSchedulingProduct,
-                                                Collectors.counting()
-                                        ),
-                                        schedulingProductViewModelLongMap -> {
-                                            Collection<SchedulingProductAmountPair> schedulingProductAmountPairs
-                                                    = schedulingProductViewModelLongMap.entrySet()
-                                                    .stream()
-                                                    .map(
-                                                            schedulingProductViewModelLongEntry -> {
-                                                                return new SchedulingProductAmountPair(
-                                                                        buildOrGetSchedulingProductViewModel(schedulingProductViewModelLongEntry.getKey()),
-                                                                        Math.toIntExact(schedulingProductViewModelLongEntry.getValue())
-                                                                );
-                                                            })
-                                                    .collect(Collectors.toCollection(ArrayList::new));
-                                            return new ProductAmountBillViewModel(schedulingProductAmountPairs);
-                                        }
-                                )
-                        ),
-                        schedulingFactoryInstanceViewModelProductAmountBillViewModelMap -> schedulingFactoryInstanceViewModelProductAmountBillViewModelMap.entrySet()
-                                .stream()
-                                .map(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry -> {
-                                    return new SchedulingReportFactoryGroupViewModel(
-                                            buildOrGetSchedulingFactoryInstanceViewModel(schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getKey()),
-                                            schedulingFactoryInstanceViewModelProductAmountBillViewModelEntry.getValue()
-                                    );
-                                })
-                                .collect(Collectors.toCollection(ArrayList::new))
-                ))
-        );
-    }
+//    private SchedulingReportArrangeDateTimeGroupViewModel buildSchedulingReportFactoryGroupViewModel(SchedulingDateTimeSlot schedulingDateTimeSlot) {
+//        LocalDateTime localDateTime = schedulingDateTimeSlot.getStart();
+//        List<SchedulingProducingArrangement> planningArrangementsSequence = schedulingDateTimeSlot.getPlanningArrangementsSequence();
+//        return new SchedulingReportArrangeDateTimeGroupViewModel(
+//                localDateTime,
+//                planningArrangementsSequence.stream()
+//                        .collect(Collectors.collectingAndThen(
+//                                Collectors.groupingByConcurrent(
+//                                        SchedulingProducingArrangement::getPlanningFactoryInstance,
+//                                        Collectors.collectingAndThen(
+//                                                Collectors.groupingByConcurrent(
+//                                                        SchedulingProducingArrangement::getSchedulingProduct,
+//                                                        Collectors.counting()
+//                                                ),
+//                                                schedulingProductViewModelLongMap -> {
+//                                                    Collection<SchedulingProductAmountPair> schedulingProductAmountPairs
+//                                                            = schedulingProductViewModelLongMap.entrySet()
+//                                                            .stream()
+//                                                            .map(
+//                                                                    schedulingProductViewModelLongEntry -> new SchedulingProductAmountPair(
+//                                                                            buildOrGetSchedulingProductViewModel(schedulingProductViewModelLongEntry.getKey()),
+//                                                                            Math.toIntExact(schedulingProductViewModelLongEntry.getValue())
+//                                                                    )
+//                                                            )
+//                                                            .collect(Collectors.toCollection(ArrayList::new));
+//                                                    return new ProductAmountBillViewModel(schedulingProductAmountPairs);
+//                                                }
+//                                        )
+//                                ),
+//                                schedulingFactoryInstanceViewModelProductAmountBillViewModelMap -> schedulingFactoryInstanceViewModelProductAmountBillViewModelMap.entrySet()
+//                                        .stream()
+//                                        .map(factoryInstanceProductAmountBillViewModelEntry -> new SchedulingReportFactoryGroupViewModel(
+//                                                buildOrGetSchedulingFactoryInstanceViewModel(factoryInstanceProductAmountBillViewModelEntry.getKey()),
+//                                                factoryInstanceProductAmountBillViewModelEntry.getValue()
+//                                        ))
+//                                        .collect(Collectors.toCollection(ArrayList::new))
+//                        ))
+//        );
+//    }
 
     private SchedulingProductViewModel buildOrGetSchedulingProductViewModel(SchedulingProduct schedulingProduct) {
         return schedulingProductToViewModelMap.computeIfAbsent(

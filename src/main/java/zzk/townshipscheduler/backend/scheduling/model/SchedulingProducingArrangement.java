@@ -220,14 +220,8 @@ public class SchedulingProducingArrangement
 //                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
 //    }
 
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getCompletedDateTime() {
-        return computedDateTimePair != null
-                ? computedDateTimePair.completedDateTime()
-                : null;
+    public Duration getWorkCalendarSpan() {
+        return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());
     }
 
 //    public Duration calcArrangeDateTimeToPrerequisiteDuration() {
@@ -238,26 +232,12 @@ public class SchedulingProducingArrangement
 //        return Duration.between(getShadowPrerequisiteProducingArrangementsFinishedDateTime(), getArrangeDateTime());
 //    }
 
-    public Duration getWorkCalendarSpan() {
-        return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());
-    }
-
     public LocalDateTime getWorkCalendarEnd() {
         return getSchedulingWorkCalendar().getEndDateTime();
     }
 
     public LocalDateTime getWorkCalendarStart() {
         return getSchedulingWorkCalendar().getStartDateTime();
-    }
-
-    @JsonProperty("arrangeDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getArrangeDateTime() {
-        return this.planningDateTimeSlot != null
-                ? this.planningDateTimeSlot.getStart()
-                : null;
     }
 
     @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
@@ -269,12 +249,12 @@ public class SchedulingProducingArrangement
         return getFactoryProducingType() == ProducingStructureType.SLOT;
     }
 
-    public ProducingStructureType getFactoryProducingType() {
-        return getRequiredFactoryInfo().getProducingStructureType();
-    }
-
     public boolean weatherFactoryProducingTypeIsQueue() {
         return getFactoryProducingType() == ProducingStructureType.QUEUE;
+    }
+
+    public ProducingStructureType getFactoryProducingType() {
+        return getRequiredFactoryInfo().getProducingStructureType();
     }
 
     @JsonProperty("producingDuration")
@@ -398,6 +378,16 @@ public class SchedulingProducingArrangement
         return boolHasDeadline() && (getCompletedDateTime().isAfter(getWorkCalendarEnd()));
     }
 
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getCompletedDateTime() {
+        return computedDateTimePair != null
+                ? computedDateTimePair.completedDateTime()
+                : null;
+    }
+
     public boolean boolHasDeadline() {
         return getSchedulingOrder().boolHasDeadline();
     }
@@ -414,6 +404,10 @@ public class SchedulingProducingArrangement
         int factor = getDeadline() != null
                 ? 100
                 : 1;
+
+        if (weatherFactoryProducingTypeIsSlot() || getRequiredFactoryInfo().getFactoryInstances().size() > 1) {
+            factor *= 67;
+        }
 
         if (this.getSchedulingOrder() != null) {
             OrderType orderType = this.getSchedulingOrder().getOrderType();
@@ -442,6 +436,21 @@ public class SchedulingProducingArrangement
         return getCompletedDateTime() != null;
     }
 
+    public boolean boolCompletedInWorkCalendarOrDeadline() {
+        if (!boolCompleted()) {
+            return false;
+        }
+
+        LocalDateTime completedDateTime = getCompletedDateTime();
+        LocalDateTime workCalendarEnd = getWorkCalendarEnd();
+        LocalDateTime deadline = getDeadline();
+        if (boolHasDeadline()) {
+            return completedDateTime.isBefore(deadline);
+        } else {
+            return completedDateTime.isBefore(workCalendarEnd);
+        }
+    }
+
     public Duration calcCalendarEndToCompletedDuration() {
         LocalDateTime workCalendarEnd = getWorkCalendarEnd();
         return Duration.between(workCalendarEnd, getCompletedDateTime());
@@ -452,9 +461,29 @@ public class SchedulingProducingArrangement
         return Duration.between(workCalendarStart, getArrangeDateTime());
     }
 
+    @JsonProperty("arrangeDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getArrangeDateTime() {
+        return this.planningDateTimeSlot != null
+                ? this.planningDateTimeSlot.getStart()
+                : null;
+    }
+
     public Duration calcCalendarStartToCompletedDuration() {
         LocalDateTime workCalendarStart = getSchedulingWorkCalendar().getStartDateTime();
         return Duration.between(workCalendarStart, getCompletedDateTime());
+    }
+
+    public Duration calcCompletedDateTimeToCalendarEndDuration() {
+        LocalDateTime endDateTime = getSchedulingWorkCalendar().getEndDateTime();
+        return Duration.between(getCompletedDateTime(), endDateTime);
+    }
+
+    public Duration calcCompletedDateTimeToDeadline() {
+        LocalDateTime deadline = getDeadline();
+        return Duration.between(getCompletedDateTime(), deadline);
     }
 
     public Duration calcSleepArrangeDateTimeToNextAvailableDuration() {
