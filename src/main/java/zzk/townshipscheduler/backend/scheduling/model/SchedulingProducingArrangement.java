@@ -384,7 +384,7 @@ public class SchedulingProducingArrangement
     }
 
     public boolean boolCompletedAfterCalendarEnd() {
-        return boolHasDeadline() && (getCompletedDateTime().isAfter(getWorkCalendarEnd()));
+        return getCompletedDateTime().isAfter(getWorkCalendarEnd());
     }
 
     public boolean boolHasDeadline() {

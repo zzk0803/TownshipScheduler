@@ -218,7 +218,7 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolArrangeDateTimeInPlayerSleepTime)
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ONE_MEDIUM,
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(4000)),
                         schedulingProducingArrangement -> schedulingProducingArrangement.calcSleepArrangeDateTimeToNextAvailableDuration()
                                 .toMinutes()
                 )
@@ -237,7 +237,11 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(SchedulingProducingArrangement.class)
+        return constraintFactory.precompute(
+                precomputeFactory -> precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
+                        .filter(SchedulingProducingArrangement::boolOrderDirect)
+                )
+                .filter(SchedulingProducingArrangement::boolPlanningShadowVariableComputed)
                 .penalize(
                         HardMediumSoftBigDecimalScore.ONE_SOFT,
                         (arrangement) -> arrangement.calcCalendarStartToArrangedDuration().toMinutes() * arrangement.getEvaluateFactor()
@@ -270,7 +274,7 @@ public class TownshipSchedulingConstraintProvider
                         ConstraintCollectors.countDistinct(SchedulingProducingArrangement::getPlanningDateTimeSlot)
                 )
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(1999)),
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(2000)),
                         (factoryInstance, slotAmount) -> slotAmount - 1
                 )
                 .asConstraint("preferMinimizeProductArrangeDateTimeSlotUsage");

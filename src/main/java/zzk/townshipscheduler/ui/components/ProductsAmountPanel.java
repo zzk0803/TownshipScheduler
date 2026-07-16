@@ -1,8 +1,10 @@
 package zzk.townshipscheduler.ui.components;
 
 import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
@@ -22,6 +24,9 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.function.SerializablePredicate;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ValueSignal;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
@@ -43,7 +48,9 @@ public class ProductsAmountPanel
 
     private final Consumer<Map<ProductEntity, Integer>> markedProductsConsumer;
 
-    private final Map<ProductEntity, Integer> markedProducts = new LinkedHashMap<>();
+//    private final Map<ProductEntity, Integer> markedProducts = new LinkedHashMap<>();
+
+    private final ValueSignal<Map<ProductEntity, Integer>> markedProductsSignals = new ValueSignal<>(new LinkedHashMap<>());
 
     private List<ProductEntity> productEntityList;
 
@@ -55,7 +62,14 @@ public class ProductsAmountPanel
             Map<ProductEntity, Integer> itemAmountMap
     ) {
         this(factoryProductsSupplier, markedProductsConsumer);
-        this.markedProducts.putAll(itemAmountMap);
+//        this.markedProducts.putAll(itemAmountMap);
+        this.markedProductsSignals.modify(mapInSignal -> {
+            if (mapInSignal == null) {
+                this.markedProductsSignals.set(new LinkedHashMap<>(itemAmountMap));
+                return;
+            }
+            mapInSignal.putAll(itemAmountMap);
+        });
     }
 
     public ProductsAmountPanel(
@@ -217,14 +231,16 @@ public class ProductsAmountPanel
                 .toList();
     }
 
-    @Override
-    protected void onDetach(DetachEvent detachEvent) {
-        this.markedProducts.clear();
-    }
-
     public synchronized void consume() {
-        this.markedProductsConsumer.accept(markedProducts);
-        this.markedProducts.clear();
+        this.markedProductsConsumer.accept(this.markedProductsSignals.peek());
+        this.markedProductsSignals.modify(map -> {
+            if (map == null) {
+                this.markedProductsSignals.set(new LinkedHashMap<>());
+                return;
+            }
+            map.clear();
+        });
+//        this.markedProducts.clear();
     }
 
     @Override
@@ -245,6 +261,17 @@ public class ProductsAmountPanel
                 .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getPortfolioGoods().stream())
                 .toList();
         this.factoryProductsGrid.setItems(fieldFactoryInfoEntities);
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        this.markedProductsSignals.modify(map -> {
+            if (map == null) {
+                this.markedProductsSignals.set(new LinkedHashMap<>());
+                return;
+            }
+            map.clear();
+        });
     }
 
     private enum RadioButtonGroupValues {
@@ -323,8 +350,37 @@ public class ProductsAmountPanel
         public FactoryProductsCard(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
             HorizontalLayout factoryHeaderLayout = new HorizontalLayout();
             Element category = ElementFactory.createHeading2(fieldFactoryInfoEntity.getCategory());
+            category.getStyle().bind(
+                    "color",
+                    () -> {
+                        Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
+                        if (fieldFactoryInfoEntity.getPortfolioGoods()
+                                .stream()
+                                .anyMatch(productEntity -> productEntityIntegerMap.containsKey(productEntity) && productEntityIntegerMap.get(productEntity) > 0)) {
+                            return "var(--lumo-primary-color)";
+                        } else {
+                            return "var(--lumo-header-text-color)";
+                        }
+                    }
+            );
             Element level = ElementFactory.createSpan(String.valueOf(fieldFactoryInfoEntity.getLevel()));
             factoryHeaderLayout.getElement().appendChild(category, level);
+
+            AvatarGroup avatarGroup = new AvatarGroup(
+                    fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                            .map(productEntity -> {
+                                String name = productEntity.getName();
+                                WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
+                                return ProductImages.productImageDownloadHandler(name, crawledAsImage);
+                            })
+                            .map(downloadHandler -> {
+                                AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem();
+                                avatarGroupItem.setImageHandler(downloadHandler);
+                                return avatarGroupItem;
+                            })
+                            .toList()
+            );
+            factoryHeaderLayout.getElement().appendChild(avatarGroup.getElement());
 
             HorizontalLayout productsGridLayout = new HorizontalLayout();
             productsGridLayout.setWrap(true);
@@ -333,7 +389,21 @@ public class ProductsAmountPanel
                     .map(ProductCard::new)
                     .forEachOrdered(productsGridLayout::add);
 
-            getContent().add(factoryHeaderLayout, productsGridLayout);
+            Details factoryHeaderDetails = new Details(factoryHeaderLayout, productsGridLayout);
+            factoryHeaderDetails.setWidthFull();
+
+            Signal.effect(
+                    factoryHeaderDetails,
+                    () -> {
+                        Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
+                        if (fieldFactoryInfoEntity.getPortfolioGoods().stream().anyMatch(productEntityIntegerMap::containsKey)) {
+                            factoryHeaderDetails.setOpened(true);
+                        }
+                    }
+            );
+
+            getContent().add(factoryHeaderDetails);
+
         }
 
         @Override
@@ -362,7 +432,7 @@ public class ProductsAmountPanel
                         );
                     }
             );
-            getContent().add(createImage(productEntity));
+            getContent().add(createProductImage(productEntity));
             getContent().getElement()
                     .appendChild(nameSpan);
             getContent().getElement()
@@ -370,7 +440,7 @@ public class ProductsAmountPanel
             getContent().add(createAmountField(productEntity));
         }
 
-        private Image createImage(ProductEntity productEntity) {
+        private Image createProductImage(ProductEntity productEntity) {
             WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
             return ProductImages.productImage(
                     productEntity.getName(),
@@ -381,25 +451,54 @@ public class ProductsAmountPanel
         private IntegerField createAmountField(ProductEntity productEntity) {
             IntegerField amountField = new IntegerField();
             amountField.setPlaceholder("Amount");
-            amountField.setValue(markedProducts.getOrDefault(productEntity, 0));
+//            amountField.setValue(markedProducts.getOrDefault(productEntity, 0));
+            amountField.bindValue(
+                    () -> ProductsAmountPanel.this.markedProductsSignals.get().getOrDefault(productEntity, 0),
+                    integer -> {
+                        if (integer <= 0) {
+                            amountField.setValue(0);
+                            ProductsAmountPanel.this.markedProductsSignals.modify(map -> {
+                                if (map == null) {
+                                    ProductsAmountPanel.this.markedProductsSignals.set(new LinkedHashMap<>());
+                                    return;
+                                }
+                                map.remove(productEntity);
+                            });
+                            return;
+                        }
+                        ProductsAmountPanel.this.markedProductsSignals.modify(map -> {
+                            if (map == null) {
+                                ProductsAmountPanel.this.markedProductsSignals.set(new LinkedHashMap<>());
+                                return;
+                            }
+                            map.put(productEntity, integer);
+                        });
+                    }
+            );
             amountField.setMin(0);
             amountField.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
-            amountField.addValueChangeListener(valueChangeEvent -> {
-                Integer value = valueChangeEvent.getValue();
-                if (value < 0) {
-                    amountField.setValue(0);
-                    ProductsAmountPanel.this.markedProducts.remove(productEntity);
-                    return;
-                }
-                ProductsAmountPanel.this.markedProducts.put(productEntity, value);
-            });
+//            amountField.addValueChangeListener(valueChangeEvent -> {
+//                Integer value = valueChangeEvent.getValue();
+//                if (value < 0) {
+//                    amountField.setValue(0);
+//                    ProductsAmountPanel.this.markedProducts.remove(productEntity);
+//                    return;
+//                }
+//                ProductsAmountPanel.this.markedProducts.put(productEntity, value);
+//            });
             amountField.setPrefixComponent(
                     new Button(VaadinIcon.MINUS.create()) {{
                         addClickListener(minusClicked -> {
                             Integer amount = amountField.getValue();
                             if (amount < 0) {
                                 amountField.setValue(0);
-                                ProductsAmountPanel.this.markedProducts.remove(productEntity);
+                                ProductsAmountPanel.this.markedProductsSignals.modify(map -> {
+                                    if (map == null) {
+                                        ProductsAmountPanel.this.markedProductsSignals.set(new LinkedHashMap<>());
+                                        return;
+                                    }
+                                    map.remove(productEntity);
+                                });
                             }
                             amountField.setValue(amount - 1);
                         });
@@ -414,6 +513,11 @@ public class ProductsAmountPanel
             return amountField;
         }
 
+        private DownloadHandler createProductImageDownloadHandler(ProductEntity productEntity) {
+            return ProductImages.productImageDownloadHandler(
+                    productEntity.getName(), productEntity.getCrawledAsImage()
+            );
+        }
 
         @Override
         protected VerticalLayout initContent() {
