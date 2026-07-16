@@ -17,26 +17,23 @@ public class SchedulingProducingArrangementDifficultyComparator
     ) {
         return new CompareToBuilder()
                 .append(
-                        former.hasMultipleLevelPrerequisiteArrangements(),
-                        latter.hasMultipleLevelPrerequisiteArrangements()
-                )
-                .append(
                         former.getDeepPrerequisiteProducingArrangementsSize(),
                         latter.getDeepPrerequisiteProducingArrangementsSize()
                 )
                 .append(
-                        former.boolBearSuccessorProducingArrangement(),
-                        latter.boolBearSuccessorProducingArrangement()
+                        former.getPrerequisiteProducingArrangementsSize(),
+                        latter.getPrerequisiteProducingArrangementsSize()
                 )
                 .append(
-                        former.getStaticDeepPrerequisiteProducingDuration(),
-                        latter.getStaticDeepPrerequisiteProducingDuration()
+                        former.getRequiredFactoryInfo().getFactoryInstances().size() == 1,
+                        latter.getRequiredFactoryInfo().getFactoryInstances().size() == 1
                 )
                 .append(
-                        former.getUuid(),
-                        latter.getUuid()
+                        former.weatherFactoryProducingTypeIsQueue(),
+                        latter.weatherFactoryProducingTypeIsQueue()
                 )
-                .toComparison();
+                .append(former.getId(), latter.getId())
+                .build();
     }
 
 }

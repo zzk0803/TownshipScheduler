@@ -26,7 +26,6 @@
         <constraintProviderClass>
             zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider
         </constraintProviderClass>
-        <!--        <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>-->
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
@@ -261,14 +260,14 @@
             <acceptedCountLimit>4</acceptedCountLimit>
         </forager>
 
-<!--        <acceptor>-->
-<!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
-<!--            <lateAcceptanceSize>9</lateAcceptanceSize>-->
-<!--        </acceptor>-->
+        <!--        <acceptor>-->
+        <!--            <acceptorType>DIVERSIFIED_LATE_ACCEPTANCE</acceptorType>-->
+        <!--            <lateAcceptanceSize>9</lateAcceptanceSize>-->
+        <!--        </acceptor>-->
 
-<!--        <forager>-->
-<!--            <acceptedCountLimit>1</acceptedCountLimit>-->
-<!--        </forager>-->
+        <!--        <forager>-->
+        <!--            <acceptedCountLimit>1</acceptedCountLimit>-->
+        <!--        </forager>-->
 
     </localSearch>
     <!--endregion-->

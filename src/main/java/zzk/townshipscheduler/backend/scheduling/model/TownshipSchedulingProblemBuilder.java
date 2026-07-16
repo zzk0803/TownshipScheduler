@@ -202,7 +202,6 @@ public class TownshipSchedulingProblemBuilder {
 
         }
 
-        resultArrangementList.sort(SchedulingProducingArrangementDifficultyComparator.INSTANCE);
         return resultArrangementList;
     }
 
