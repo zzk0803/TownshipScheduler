@@ -131,7 +131,9 @@ public class SchedulingPlayer
     @ToString.Include
     private String id = "test";
 
-    private Map<SchedulingProduct, Integer> productAmountMap;
+//    private Map<SchedulingProduct, Integer> productAmountMap;
+
+    private ProductAmountBill productAmountMap;
 
     @JsonFormat(pattern = "HH:mm")
     private LocalTime sleepStart = DEFAULT_SLEEP_START;

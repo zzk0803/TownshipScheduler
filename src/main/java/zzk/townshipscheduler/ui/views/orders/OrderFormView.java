@@ -90,6 +90,8 @@ public class OrderFormView
 
     private final Grid<BillItem> billItemGrid;
 
+    private final boolean editMode;
+
     private OrderEntity orderEntity;
 
     private OrderEntity editModeOrderEntity;
@@ -105,6 +107,7 @@ public class OrderFormView
         this.orderListView = orderListView;
         this.orderListViewPresenter = orderListViewPresenter;
         this.editModeOrderEntity = editModeOrderEntity;
+        this.editMode = true;
         this.productsAmountPanel = new ProductsAmountPanel(
                 this.orderListViewPresenter.getCollectionSupplier(),
                 billItemListSignalConsumer(),
@@ -121,6 +124,15 @@ public class OrderFormView
     }
 
     private @NonNull Consumer<Map<ProductEntity, Integer>> billItemListSignalConsumer() {
+        if (editMode) {
+            return productEntityIntegerMap -> {
+                billItemListSignal.clear();
+                productEntityIntegerMap.forEach((productEntity, integer) -> {
+                    BillItem billItem = new BillItem(gridBillItemsCounter.getAndIncrement(), productEntity, integer);
+                    billItemListSignal.insertLast(billItem);
+                });
+            };
+        }
         return productEntityIntegerMap -> {
             productEntityIntegerMap.forEach((productEntity, integer) -> {
                 BillItem billItem = new BillItem(gridBillItemsCounter.getAndIncrement(), productEntity, integer);
@@ -443,6 +455,7 @@ public class OrderFormView
                 this.orderListViewPresenter.getCollectionSupplier(),
                 billItemListSignalConsumer()
         );
+        this.editMode = false;
 
         style();
         add(assembleBillForm());
@@ -453,11 +466,6 @@ public class OrderFormView
     }
 
     @Override
-    protected void onDetach(DetachEvent detachEvent) {
-        scheduledFuture.cancel(true);
-    }
-
-    @Override
     protected void onAttach(AttachEvent attachEvent) {
         TaskScheduler taskScheduler = this.getOrderListViewPresenter().getTaskScheduler();
         scheduledFuture = taskScheduler.scheduleAtFixedRate(
@@ -465,6 +473,11 @@ public class OrderFormView
                     orderReleaseDateTime.set(LocalDateTime.now());
                 }, Duration.ofSeconds(1)
         );
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        scheduledFuture.cancel(true);
     }
 
 }

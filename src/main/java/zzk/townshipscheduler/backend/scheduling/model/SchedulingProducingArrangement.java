@@ -287,9 +287,11 @@ public class SchedulingProducingArrangement
 
     public void elementarySetup(
             ArrangementIdRoller idRoller,
+            SchedulingWorkCalendar schedulingWorkCalendar,
             SchedulingPlayer schedulingPlayer
     ) {
         idRoller.setup(this);
+        this.schedulingWorkCalendar = schedulingWorkCalendar;
         this.schedulingPlayer = schedulingPlayer;
     }
 
@@ -298,6 +300,7 @@ public class SchedulingProducingArrangement
         Objects.requireNonNull(getId());
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
+        Objects.requireNonNull(getSchedulingWorkCalendar());
         setDeepPrerequisiteProducingArrangements(calcDeepPrerequisiteProducingArrangements());
         setDeepPrerequisiteProducingArrangementsSize(getDeepPrerequisiteProducingArrangements().size());
         setStaticDeepProducingDuration(calcStaticProducingDuration());

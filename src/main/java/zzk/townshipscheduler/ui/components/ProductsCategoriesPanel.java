@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Getter
 @Setter
@@ -45,8 +46,8 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
 
     private ProductEntity currentSelectProduct;
 
-    public ProductsCategoriesPanel(Set<ProductEntity> productEntities) {
-        setProductEntities(productEntities);
+    public ProductsCategoriesPanel(Supplier<Set<ProductEntity>> productsSupplier) {
+        setProductEntities(productsSupplier.get());
         setFactoryList(
                 getProductEntities().stream()
                         .map(ProductEntity::getFieldFactoryInfo)

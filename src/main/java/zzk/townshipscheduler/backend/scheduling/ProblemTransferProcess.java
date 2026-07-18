@@ -1,11 +1,11 @@
 package zzk.townshipscheduler.backend.scheduling;
 
-import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.model.*;
+import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -146,7 +146,7 @@ class ProblemTransferProcess {
                 executionMode.setProduct(schedulingProduct);
                 Duration producingDuration = productManufactureInfo.getProducingDuration();
                 executionMode.setExecuteDuration(producingDuration != null ? producingDuration : Duration.ZERO);
-                ProductAmountBill productAmountBill = new ProductAmountBill();
+                ProductAmountBill  productAmountBill = new ProductAmountBill();
                 executionMode.setMaterials(productAmountBill);
                 Set<ProductMaterialsRelation> productMaterialsRelations = productManufactureInfo.getProductMaterialsRelations();
                 if (productMaterialsRelations != null && !productMaterialsRelations.isEmpty()) {

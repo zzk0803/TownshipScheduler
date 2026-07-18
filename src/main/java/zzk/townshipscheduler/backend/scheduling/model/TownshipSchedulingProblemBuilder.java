@@ -1,11 +1,8 @@
 package zzk.townshipscheduler.backend.scheduling.model;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
-import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
-import zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementDifficultyComparator;
 import zzk.townshipscheduler.backend.scheduling.ArrangementIdRoller;
 import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
@@ -106,11 +103,12 @@ public class TownshipSchedulingProblemBuilder {
     }
 
     public TownshipSchedulingProblem build() {
+        this.setupWorkCalendarStart();
         this.setupProducingArrangements();
         this.trimUnrelatedObject();
-        this.setupWorkCalendar();
-        this.setupDateTimeSlot();
         this.setupPlayerAsGlobalState();
+        this.setupWorkCalendarEnd();
+        this.setupDateTimeSlot();
 
         int orderSize = this.schedulingOrderList.size();
         long orderItemProducingArrangementCount =
@@ -146,8 +144,9 @@ public class TownshipSchedulingProblemBuilder {
         );
     }
 
-    private void setupPlayerAsGlobalState() {
-        this.schedulingPlayer.setSchedulingProducingArrangements(this.schedulingProducingArrangements);
+    private void setupWorkCalendarStart() {
+        this.schedulingWorkCalendar = new SchedulingWorkCalendar(this.schedulingWorkCalendarStart);
+
     }
 
     public void setupProducingArrangements() {
@@ -176,7 +175,7 @@ public class TownshipSchedulingProblemBuilder {
             SchedulingProducingArrangement iteratingArrangement = dealingChain.removeFirst();
             iteratingArrangement.elementarySetup(
                     idRoller,
-//                    this.schedulingWorkCalendar,
+                    this.schedulingWorkCalendar,
                     this.schedulingPlayer
             );
             resultArrangementList.add(iteratingArrangement);
@@ -239,7 +238,7 @@ public class TownshipSchedulingProblemBuilder {
         });
     }
 
-    private void setupWorkCalendar() {
+    private void setupWorkCalendarEnd() {
         Map<SchedulingFactoryInfo, Duration> factoryTypeAndMaxPrerequisiteDurationMap =
                 this.schedulingProducingArrangements.stream()
                         .collect(Collectors.groupingBy(
@@ -283,12 +282,10 @@ public class TownshipSchedulingProblemBuilder {
                         .plusDays(WORK_CALENDAR_END_OFFSET_DAYS)
         );
 
-        this.schedulingWorkCalendar =
-                new SchedulingWorkCalendar(
-                        workCalendarStart,
-                        deadlineOptional.filter(deadline -> deadline.isAfter(computedCalendarEnd))
-                                .orElse(computedCalendarEnd)
-                );
+        this.schedulingWorkCalendar.setEndDateTime(
+                deadlineOptional.filter(deadline -> deadline.isAfter(computedCalendarEnd))
+                        .orElse(computedCalendarEnd)
+        );
 
         for (SchedulingProducingArrangement schedulingProducingArrangement : this.schedulingProducingArrangements) {
             schedulingProducingArrangement.setSchedulingWorkCalendar(this.schedulingWorkCalendar);
@@ -306,6 +303,10 @@ public class TownshipSchedulingProblemBuilder {
     private TownshipSchedulingProblemBuilder schedulingDateTimeSlots(TreeSet<SchedulingDateTimeSlot> schedulingDateTimeSlots) {
         this.schedulingDateTimeSlots = schedulingDateTimeSlots;
         return this;
+    }
+
+    private void setupPlayerAsGlobalState() {
+        this.schedulingPlayer.setSchedulingProducingArrangements(this.schedulingProducingArrangements);
     }
 
     public String toString() {
