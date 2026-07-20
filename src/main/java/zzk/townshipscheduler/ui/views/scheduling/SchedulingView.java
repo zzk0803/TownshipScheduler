@@ -33,7 +33,6 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.server.streams.DownloadResponse;
 import com.vaadin.flow.signals.Signal;
-import com.vaadin.flow.signals.local.AbstractLocalSignal;
 import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -79,7 +78,7 @@ import java.util.zip.ZipOutputStream;
 @Getter
 public class SchedulingView
         extends VerticalLayout
-        implements BeforeEnterObserver {
+        implements BeforeEnterObserver, BeforeLeaveObserver {
 
     private final SchedulingViewPresenter schedulingViewPresenter;
 
@@ -98,6 +97,8 @@ public class SchedulingView
     private Grid<ReactiveTownshipSchedulingProblemOrderBriefViewModel> reactiveOrderBriefGrid;
 
     private Paragraph briefText;
+
+    private ValueSignal<Status> statusValueSignal = new ValueSignal<>(Status.EMPTY);
 
     private ValueSignal<ReactiveTownshipSchedulingProblemViewModel> reactiveTownshipSchedulingProblemViewModelValueSignal
             = new ValueSignal<>(ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE);
@@ -122,7 +123,7 @@ public class SchedulingView
                     .map(reactiveTownshipSchedulingProblemOrderBriefViewModel -> {
                                 LocalDateTime completedDateTime = reactiveTownshipSchedulingProblemOrderBriefViewModel.calcCompletedDateTime();
                                 return completedDateTime != null
-                                       ? new Pair<>(
+                                        ? new Pair<>(
                                         reactiveTownshipSchedulingProblemOrderBriefViewModel,
                                         completedDateTime
                                 )
@@ -452,14 +453,36 @@ public class SchedulingView
         layout.setJustifyContentMode(JustifyContentMode.START);
         scoreAnalysisParagraph = new Paragraph();
         scoreAnalysisParagraph.bindText(
-                reactiveTownshipSchedulingProblemViewModelValueSignal.map(reactiveTownshipSchedulingProblemViewModel -> {
-                            if (reactiveTownshipSchedulingProblemViewModel != null) {
-                                return reactiveTownshipSchedulingProblemViewModel.score();
-                            } else {
-                                return new ValueSignal<>("N/A");
+                Signal.computed(
+                        () -> {
+                            Status status = statusValueSignal.get();
+                            switch (status) {
+                                case EMPTY -> {
+                                    return "N/A";
+                                }
+
+                                case READY -> {
+                                    return "Ready To Start...";
+                                }
+
+                                case INIT -> {
+                                    return "First Solution Initializing...";
+                                }
+
+                                case SOLVING, FINISHED -> {
+                                    ReactiveTownshipSchedulingProblemViewModel reactiveTownshipSchedulingProblemViewModel = reactiveTownshipSchedulingProblemViewModelValueSignal.get();
+                                    if (reactiveTownshipSchedulingProblemViewModel != null) {
+                                        return reactiveTownshipSchedulingProblemViewModel.score().get();
+                                    } else {
+                                        return "N/A";
+                                    }
+                                }
+
+                                case null, default -> {
+                                    return "ERROR";
+                                }
                             }
                         })
-                        .map(AbstractLocalSignal::get)
         );
         layout.add(scoreAnalysisParagraph);
         return layout;
@@ -1030,6 +1053,25 @@ public class SchedulingView
         }
     }
 
+    @Override
+    public void beforeLeave(BeforeLeaveEvent event) {
+        Status status = getStatusValueSignal().peek();
+        if (status == Status.INIT || status == Status.SOLVING) {
+            BeforeLeaveEvent.ContinueNavigationAction navigationAction = event.postpone();
+            ConfirmDialog confirmDialog = new ConfirmDialog();
+            confirmDialog.setHeader("Leaving Before Solver Finished...");
+            confirmDialog.setText("Solver Task Shall Still Remain Running You Leaving...But Advice Stay For Prevent Passible Malfunction");
+            confirmDialog.setCancelable(true);
+            confirmDialog.addConfirmListener(_ -> navigationAction.proceed());
+            confirmDialog.addCancelListener(_ -> navigationAction.cancel());
+            confirmDialog.open();
+        }
+    }
+
+    public enum Status {
+        EMPTY, READY, INIT, SOLVING, FINISHED
+    }
+
     public static class TownshipSchedulingBenchmarkRequestFormLayout
             extends Composite<VerticalLayout> {
 
@@ -1092,7 +1134,6 @@ public class SchedulingView
         }
 
     }
-
 
     public static class SchedulingProcessingStartComponentEvent
             extends ComponentEvent<SchedulingView> {

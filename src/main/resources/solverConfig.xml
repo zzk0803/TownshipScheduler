@@ -30,7 +30,9 @@
 
     <!--region constructionHeuristic-->
     <constructionHeuristic>
+        <constructionHeuristicType>ALLOCATE_ENTITY_FROM_QUEUE</constructionHeuristicType>
         <entitySorterManner>NONE</entitySorterManner>
+        <valueSorterManner>NONE</valueSorterManner>
         <changeMoveSelector>
             <valueSelector variableName="planningFactoryInstance"
                            id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">
@@ -39,6 +41,7 @@
     </constructionHeuristic>
 
     <constructionHeuristic>
+        <constructionHeuristicType>ALLOCATE_ENTITY_FROM_QUEUE</constructionHeuristicType>
         <entitySorterManner>NONE</entitySorterManner>
         <valueSorterManner>ASCENDING</valueSorterManner>
         <changeMoveSelector>
@@ -238,22 +241,22 @@
                 </variableNameIncludes>
             </pillarSwapMoveSelector>
 
-            <!--            <ruinRecreateMoveSelector>-->
-            <!--                <fixedProbabilityWeight>0.05</fixedProbabilityWeight>-->
-            <!--                <minimumRuinedPercentage>5</minimumRuinedPercentage>-->
-            <!--                <maximumRuinedPercentage>33</maximumRuinedPercentage>-->
-            <!--                <entitySelector>-->
-            <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.ArrangementRuinRecreateMoveSelectorEntitySelectionFilter</filterClass>-->
-            <!--                </entitySelector>-->
-            <!--                <variableName>planningDateTimeSlot</variableName>-->
-            <!--            </ruinRecreateMoveSelector>-->
+            <ruinRecreateMoveSelector>
+                <fixedProbabilityWeight>0.01</fixedProbabilityWeight>
+                <minimumRuinedPercentage>5</minimumRuinedPercentage>
+                <maximumRuinedPercentage>10</maximumRuinedPercentage>
+                <!--                <entitySelector>-->
+                <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.ArrangementRuinRecreateMoveSelectorEntitySelectionFilter</filterClass>-->
+                <!--                </entitySelector>-->
+                <variableName>planningDateTimeSlot</variableName>
+            </ruinRecreateMoveSelector>
 
         </unionMoveSelector>
 
         <acceptor>
             <entityTabuRatio>0.05</entityTabuRatio>
             <valueTabuSize>2</valueTabuSize>
-            <simulatedAnnealingStartingTemperature>5hard/100medium/3600soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>5hard/100medium/5000soft</simulatedAnnealingStartingTemperature>
         </acceptor>
 
         <forager>

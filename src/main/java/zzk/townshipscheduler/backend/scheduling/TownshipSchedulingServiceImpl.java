@@ -121,6 +121,7 @@ public class TownshipSchedulingServiceImpl
     public SolverJob<TownshipSchedulingProblem> scheduling(
             String problemId,
             Consumer<TownshipSchedulingProblem> solverJobStartedEventConsumer,
+            Consumer<TownshipSchedulingProblem> firstInitializedSolutionConsumer,
             Consumer<TownshipSchedulingProblem> bestSolutionEventConsumer,
             Consumer<TownshipSchedulingProblem> finalBestSolutionEventConsumer,
             BiConsumer<Object, Throwable> exceptionHandler
@@ -131,6 +132,10 @@ public class TownshipSchedulingServiceImpl
                 .withSolverJobStartedEventConsumer(solverJobStartedEvent -> {
                     TownshipSchedulingProblem solution = solverJobStartedEvent.solution();
                     solverJobStartedEventConsumer.accept(solution);
+                })
+                .withFirstInitializedSolutionEventConsumer(firstInitializedSolutionEvent -> {
+                    TownshipSchedulingProblem townshipSchedulingProblem = firstInitializedSolutionEvent.solution();
+                    firstInitializedSolutionConsumer.andThen(defaultConsumer).accept(townshipSchedulingProblem);
                 })
                 .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
                     TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();

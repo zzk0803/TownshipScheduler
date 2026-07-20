@@ -219,14 +219,8 @@ public class SchedulingProducingArrangement
 //                .orElse(townshipSchedulingProblem.getSchedulingWorkCalendar().getStartDateTime());
 //    }
 
-    @JsonProperty("completedDateTime")
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @ToString.Include
-    public LocalDateTime getCompletedDateTime() {
-        return computedDateTimePair != null
-                ? computedDateTimePair.completedDateTime()
-                : null;
+    public Duration getWorkCalendarSpan() {
+        return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());
     }
 
 //    public Duration calcArrangeDateTimeToPrerequisiteDuration() {
@@ -237,16 +231,12 @@ public class SchedulingProducingArrangement
 //        return Duration.between(getShadowPrerequisiteProducingArrangementsFinishedDateTime(), getArrangeDateTime());
 //    }
 
-    public Duration getWorkCalendarSpan() {
-        return Duration.between(getWorkCalendarStart(), getWorkCalendarEnd());
+    public LocalDateTime getWorkCalendarStart() {
+        return getSchedulingWorkCalendar().getStartDateTime();
     }
 
     public LocalDateTime getWorkCalendarEnd() {
         return getSchedulingWorkCalendar().getEndDateTime();
-    }
-
-    public LocalDateTime getWorkCalendarStart() {
-        return getSchedulingWorkCalendar().getStartDateTime();
     }
 
     @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
@@ -387,19 +377,33 @@ public class SchedulingProducingArrangement
     }
 
     public boolean boolCompletedAfterCalendarEnd() {
-        return getCompletedDateTime().isAfter(getWorkCalendarEnd());
+        return boolCompleted() && getCompletedDateTime().isAfter(getWorkCalendarEnd());
     }
 
-    public boolean boolHasDeadline() {
-        return getSchedulingOrder().boolHasDeadline();
+    public boolean boolCompleted() {
+        return getCompletedDateTime() != null;
+    }
+
+    @JsonProperty("completedDateTime")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ToString.Include
+    public LocalDateTime getCompletedDateTime() {
+        return computedDateTimePair != null
+                ? computedDateTimePair.completedDateTime()
+                : null;
+    }
+
+    public LocalDateTime getDeadline() {
+        return getSchedulingOrder().getDeadline();
     }
 
     public boolean boolCompletedAfterDeadline() {
         return boolHasDeadline() && (getCompletedDateTime().isAfter(getDeadline()));
     }
 
-    public LocalDateTime getDeadline() {
-        return getSchedulingOrder().getDeadline();
+    public boolean boolHasDeadline() {
+        return getSchedulingOrder().boolHasDeadline();
     }
 
     public int getEvaluateFactor() {
@@ -440,10 +444,6 @@ public class SchedulingProducingArrangement
                         ? getCompletedDateTime()
                         : getWorkCalendarEnd()
         );
-    }
-
-    public boolean boolCompleted() {
-        return getCompletedDateTime() != null;
     }
 
     public boolean boolCompletedInWorkCalendarOrDeadline() {

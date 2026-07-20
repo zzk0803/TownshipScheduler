@@ -30,6 +30,7 @@ public interface ITownshipSchedulingService {
     SolverJob<TownshipSchedulingProblem> scheduling(
             String problemId,
             Consumer<TownshipSchedulingProblem> solverJobStartedEventConsumer,
+            Consumer<TownshipSchedulingProblem> firstInitializedSolutionConsumer,
             Consumer<TownshipSchedulingProblem> bestSolutionEventConsumer,
             Consumer<TownshipSchedulingProblem> finalBestSolutionEventConsumer,
             BiConsumer<Object, Throwable> exceptionHandler

@@ -7,8 +7,6 @@ import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.signals.local.ValueSignal;
@@ -125,24 +123,35 @@ public class SchedulingViewPresenter {
                         String problemSizeStatistics = getSchedulingService().getProblemSizeStatistics(getTownshipSchedulingProblemId());
                         String updatedString = getSchedulingView().getBriefText().getText() + "\r" + "solver approximate problem scale:" + problemSizeStatistics;
                         getSchedulingView().getBriefText().setText(updatedString);
+                        getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.INIT);
                     });
                 },
+                solutionConsumer.andThen(_ -> {
+                    SchedulingViewPresenter.this.solutionResultPushScheduledFuture = SchedulingViewPresenter.this.taskScheduler.scheduleAtFixedRate(
+                            pushSolverResult(),
+                            Instant.now().plusSeconds(1),
+                            Duration.ofSeconds(UPDATE_FREQUENCY_IN_SECONDS)
+                    );
+                    getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.SOLVING);
+                }),
                 solutionConsumer,
                 solutionConsumer.andThen(this::reflushAndGetViewModel)
                         .andThen(_ -> solutionResultPushScheduledFuture.cancel(true))
                         .andThen(_ -> this.ui.access(() -> {
                             getSchedulingView().getTriggerButton().setToState1();
-                            Notification notification = new Notification();
-                            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                            notification.setText("Township Solver Finished");
-                            notification.setDuration(3000);
-                            notification.open();
-                            VaadinUiEventBus.publish(new SchedulingView.SchedulingProcessingEndComponentEvent(this.schedulingView, false, getTownshipSchedulingProblem().getUuid()));
+                            getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.FINISHED);
+                            VaadinUiEventBus.publish(new SchedulingView.SchedulingProcessingEndComponentEvent(
+                                            this.schedulingView,
+                                            false,
+                                            getTownshipSchedulingProblem().getUuid()
+                                    )
+                            );
                         })),
                 (problemUuid, throwable) -> {
                     this.ui.access(() -> {
                         getSchedulingView().getTriggerButton().setToState1();
                         getSchedulingView().getSolverRunningSignal().set(false);
+                        getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.FINISHED);
                         Dialog dialog = new Dialog("ERROR", new Paragraph(throwable.toString()));
                         dialog.open();
                     });
@@ -150,12 +159,6 @@ public class SchedulingViewPresenter {
                 }
         );
         this.townshipSchedulingProblemSolverJobAtomicReference.set(townshipSchedulingProblemSolverJob);
-
-        this.solutionResultPushScheduledFuture = taskScheduler.scheduleAtFixedRate(
-                pushSolverResult(),
-                Instant.now().plusSeconds(1),
-                Duration.ofSeconds(UPDATE_FREQUENCY_IN_SECONDS)
-        );
 
         VaadinUiEventBus.publish(new SchedulingView.SchedulingProcessingStartComponentEvent(schedulingView, false));
     }
@@ -201,6 +204,7 @@ public class SchedulingViewPresenter {
 
     public void signalReactiveTownshipSchedulingProblemViewModel() {
         getSchedulingView().getReactiveTownshipSchedulingProblemViewModelValueSignal().set(getTownshipSchedulingProblemViewModel());
+        getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.READY);
     }
 
     public ReactiveTownshipSchedulingProblemViewModel getTownshipSchedulingProblemViewModel() {
