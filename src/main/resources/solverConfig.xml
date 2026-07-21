@@ -29,29 +29,33 @@
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
-    <constructionHeuristic>
-        <constructionHeuristicType>ALLOCATE_ENTITY_FROM_QUEUE</constructionHeuristicType>
-        <entitySorterManner>NONE</entitySorterManner>
-        <valueSorterManner>NONE</valueSorterManner>
-        <changeMoveSelector>
-            <valueSelector variableName="planningFactoryInstance"
-                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">
-            </valueSelector>
-        </changeMoveSelector>
-    </constructionHeuristic>
+    <!--    <constructionHeuristic>-->
+    <!--        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>-->
+    <!--        <entitySorterManner>NONE</entitySorterManner>-->
+    <!--        <valueSorterManner>NONE</valueSorterManner>-->
+    <!--        <changeMoveSelector>-->
+    <!--            <valueSelector variableName="planningFactoryInstance"-->
+    <!--                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">-->
+    <!--            </valueSelector>-->
+    <!--        </changeMoveSelector>-->
+    <!--    </constructionHeuristic>-->
 
     <constructionHeuristic>
-        <constructionHeuristicType>ALLOCATE_ENTITY_FROM_QUEUE</constructionHeuristicType>
+        <constructionHeuristicType>WEAKEST_FIT</constructionHeuristicType>
         <entitySorterManner>NONE</entitySorterManner>
         <valueSorterManner>ASCENDING</valueSorterManner>
-        <changeMoveSelector>
-            <filterClass>
-                zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryConstructionHeuristicChangeMoveSelectionFilter
-            </filterClass>
-            <valueSelector variableName="planningDateTimeSlot"
-                           id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
-            </valueSelector>
-        </changeMoveSelector>
+        <cartesianProductMoveSelector>
+            <changeMoveSelector>
+                <valueSelector variableName="planningDateTimeSlot"
+                               id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot">
+                </valueSelector>
+            </changeMoveSelector>
+            <changeMoveSelector>
+                <valueSelector variableName="planningFactoryInstance"
+                               id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory">
+                </valueSelector>
+            </changeMoveSelector>
+        </cartesianProductMoveSelector>
     </constructionHeuristic>
     <!--endregion-->
 
@@ -66,83 +70,83 @@
     <!--region local search-->
     <!--    former::load-balanced for factory-->
     <!--    latter::global optimize-->
-    <!--    <localSearch>-->
-    <!--        <termination>-->
-    <!--            <unimprovedSecondsSpentLimit>15</unimprovedSecondsSpentLimit>-->
-    <!--        </termination>-->
+        <localSearch>
+            <termination>
+                <secondsSpentLimit>10</secondsSpentLimit>
+            </termination>
 
-    <!--        <unionMoveSelector>-->
-    <!--            <changeMoveSelector>-->
-    <!--                <entitySelector id="localSearch1_changeMoveSelector_es_Arrangement_planningFactory">-->
-    <!--                    <entityClass>-->
-    <!--                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-    <!--                    </entityClass>-->
-    <!--                </entitySelector>-->
-    <!--                <valueSelector variableName="planningFactoryInstance"-->
-    <!--                               id="localSearch1_changeMoveSelector_vs_Arrangement_planningFactory">-->
-    <!--                </valueSelector>-->
-    <!--            </changeMoveSelector>-->
+            <unionMoveSelector>
+                <changeMoveSelector>
+                    <entitySelector id="localSearch1_changeMoveSelector_es_Arrangement_planningFactory">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                    <valueSelector variableName="planningFactoryInstance"
+                                   id="localSearch1_changeMoveSelector_vs_Arrangement_planningFactory">
+                    </valueSelector>
+                </changeMoveSelector>
 
-    <!--            <swapMoveSelector>-->
-    <!--                <entitySelector id="localSearch1_swapMoveSelector_es_Arrangement_planningFactoryInstance_p">-->
-    <!--                    <entityClass>-->
-    <!--                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-    <!--                    </entityClass>-->
-    <!--                </entitySelector>-->
-    <!--                <secondaryEntitySelector id="localSearch1_swapMoveSelector_es_Arrangement_planningFactoryInstance_q">-->
-    <!--                    <entityClass>-->
-    <!--                        zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-    <!--                    </entityClass>-->
-    <!--                </secondaryEntitySelector>-->
-    <!--                <variableNameIncludes>-->
-    <!--                    <variableNameInclude>planningFactoryInstance</variableNameInclude>-->
-    <!--                </variableNameIncludes>-->
-    <!--            </swapMoveSelector>-->
+                <swapMoveSelector>
+                    <entitySelector id="localSearch1_swapMoveSelector_es_Arrangement_planningFactoryInstance_p">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </entitySelector>
+                    <secondaryEntitySelector id="localSearch1_swapMoveSelector_es_Arrangement_planningFactoryInstance_q">
+                        <entityClass>
+                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                        </entityClass>
+                    </secondaryEntitySelector>
+                    <variableNameIncludes>
+                        <variableNameInclude>planningFactoryInstance</variableNameInclude>
+                    </variableNameIncludes>
+                </swapMoveSelector>
 
-    <!--            <pillarChangeMoveSelector>-->
-    <!--                <pillarSelector>-->
-    <!--                    <entitySelector id="localSearch1_pillarChangeMoveSelector_es_Arrangement_planningFactoryInstance">-->
-    <!--                        <entityClass>-->
-    <!--                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-    <!--                        </entityClass>-->
-    <!--                        <filterClass>-->
-    <!--                            zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter-->
-    <!--                        </filterClass>-->
-    <!--                    </entitySelector>-->
-    <!--                </pillarSelector>-->
-    <!--                <valueSelector variableName="planningFactoryInstance"-->
-    <!--                               id="localSearch1_pillarChangeMoveSelector_vs_Arrangement_planningFactoryInstance"/>-->
-    <!--            </pillarChangeMoveSelector>-->
+                <pillarChangeMoveSelector>
+                    <pillarSelector>
+                        <entitySelector id="localSearch1_pillarChangeMoveSelector_es_Arrangement_planningFactoryInstance">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                            <filterClass>
+                                zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter
+                            </filterClass>
+                        </entitySelector>
+                    </pillarSelector>
+                    <valueSelector variableName="planningFactoryInstance"
+                                   id="localSearch1_pillarChangeMoveSelector_vs_Arrangement_planningFactoryInstance"/>
+                </pillarChangeMoveSelector>
 
-    <!--            <pillarSwapMoveSelector>-->
-    <!--                <pillarSelector>-->
-    <!--                    <entitySelector id="localSearch1_pillarSwapMoveSelector_es_Arrangement_planningFactortInstance_p">-->
-    <!--                        <entityClass>-->
-    <!--                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-    <!--                        </entityClass>-->
-    <!--                    </entitySelector>-->
-    <!--                </pillarSelector>-->
-    <!--                <secondaryPillarSelector>-->
-    <!--                    <entitySelector id="localSearch1_pillarSwapMoveSelector_es_Arrangement_planningFactortInstance_q">-->
-    <!--                        <entityClass>-->
-    <!--                            zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement-->
-    <!--                        </entityClass>-->
-    <!--                    </entitySelector>-->
-    <!--                </secondaryPillarSelector>-->
-    <!--                <variableNameIncludes>-->
-    <!--                    <variableNameInclude>planningFactoryInstance</variableNameInclude>-->
-    <!--                </variableNameIncludes>-->
-    <!--            </pillarSwapMoveSelector>-->
-    <!--        </unionMoveSelector>-->
+                <pillarSwapMoveSelector>
+                    <pillarSelector>
+                        <entitySelector id="localSearch1_pillarSwapMoveSelector_es_Arrangement_planningFactortInstance_p">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                    </pillarSelector>
+                    <secondaryPillarSelector>
+                        <entitySelector id="localSearch1_pillarSwapMoveSelector_es_Arrangement_planningFactortInstance_q">
+                            <entityClass>
+                                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+                            </entityClass>
+                        </entitySelector>
+                    </secondaryPillarSelector>
+                    <variableNameIncludes>
+                        <variableNameInclude>planningFactoryInstance</variableNameInclude>
+                    </variableNameIncludes>
+                </pillarSwapMoveSelector>
+            </unionMoveSelector>
 
-    <!--        <acceptor>-->
-    <!--            <lateAcceptanceSize>9</lateAcceptanceSize>-->
-    <!--        </acceptor>-->
+            <acceptor>
+                <lateAcceptanceSize>9</lateAcceptanceSize>
+            </acceptor>
 
-    <!--        <forager>-->
-    <!--            <acceptedCountLimit>1</acceptedCountLimit>-->
-    <!--        </forager>-->
-    <!--    </localSearch>-->
+            <forager>
+                <acceptedCountLimit>1</acceptedCountLimit>
+            </forager>
+        </localSearch>
 
     <localSearch>
 
