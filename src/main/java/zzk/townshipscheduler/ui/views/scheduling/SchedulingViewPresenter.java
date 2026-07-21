@@ -203,8 +203,13 @@ public class SchedulingViewPresenter {
     }
 
     public void signalReactiveTownshipSchedulingProblemViewModel() {
-        getSchedulingView().getReactiveTownshipSchedulingProblemViewModelValueSignal().set(getTownshipSchedulingProblemViewModel());
-        getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.READY);
+        ReactiveTownshipSchedulingProblemViewModel townshipSchedulingProblemViewModel = getTownshipSchedulingProblemViewModel();
+        getSchedulingView().getReactiveTownshipSchedulingProblemViewModelValueSignal().set(townshipSchedulingProblemViewModel);
+        if (townshipSchedulingProblemViewModel.feasible().peek()) {
+            getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.FINISHED);
+        } else {
+            getSchedulingView().getStatusValueSignal().set(SchedulingView.Status.READY);
+        }
     }
 
     public ReactiveTownshipSchedulingProblemViewModel getTownshipSchedulingProblemViewModel() {

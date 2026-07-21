@@ -10,6 +10,8 @@ public class SchedulingProducingArrangementDifficultyComparator
 
     public static final Comparator<SchedulingProducingArrangement> INSTANCE = new SchedulingProducingArrangementDifficultyComparator();
 
+    public static final Comparator<SchedulingProducingArrangement> REVERSED = INSTANCE.reversed();
+
     @Override
     public int compare(
             SchedulingProducingArrangement former,
@@ -21,16 +23,16 @@ public class SchedulingProducingArrangementDifficultyComparator
                         latter.getDeepPrerequisiteProducingArrangementsSize()
                 )
                 .append(
-                        former.calcStaticIdealCompleteDateTime(),
-                        latter.calcStaticIdealCompleteDateTime()
-                )
-                .append(
                         former.getRequiredFactoryInfo().getFactoryInstances().size() == 1,
                         latter.getRequiredFactoryInfo().getFactoryInstances().size() == 1
                 )
                 .append(
                         former.weatherFactoryProducingTypeIsQueue(),
                         latter.weatherFactoryProducingTypeIsQueue()
+                )
+                .append(
+                        former.calcStaticIdealCompleteDateTime(),
+                        latter.calcStaticIdealCompleteDateTime()
                 )
                 .append(former.getId(), latter.getId())
                 .build();

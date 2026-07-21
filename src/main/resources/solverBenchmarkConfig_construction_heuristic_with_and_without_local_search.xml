@@ -37,23 +37,6 @@
             <termination>
                 <minutesSpentLimit>5</minutesSpentLimit>
             </termination>
-
-            <!--region constructionHeuristic-->
-            <constructionHeuristic>
-                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
-                <valueSorterManner>ASCENDING</valueSorterManner>
-                <changeMoveSelector>
-                    <valueSelector variableName="planningFactoryInstance"
-                                   id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningFactory"/>
-                </changeMoveSelector>
-                <changeMoveSelector>
-                    <filterClass>
-                        zzk.townshipscheduler.backend.scheduling.algorithm.ProducingArrangementPlanningFactoryConstructionHeuristicChangeMoveSelectionFilter
-                    </filterClass>
-                    <valueSelector variableName="planningDateTimeSlot"
-                                   id="constructionHeuristic_changeMoveSelector_vs_Arrangement_planningDateTimeSlot"/>
-                </changeMoveSelector>
-            </constructionHeuristic>
             <!--endregion-->
 
         </solver>

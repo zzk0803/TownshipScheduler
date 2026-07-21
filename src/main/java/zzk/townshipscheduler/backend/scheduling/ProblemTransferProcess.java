@@ -19,6 +19,8 @@ class ProblemTransferProcess {
 
     public static final int MINUTE_GRAIN = 5;
 
+    public static final Duration WORK_CALENDAR_START_OFFSET_DURATION =Duration.ofMinutes(20);
+
     private final TownshipSchedulingRequest townshipSchedulingRequest;
 
     private final Map<SchedulingProduct.Id, SchedulingProduct> idProductMap;
@@ -88,7 +90,7 @@ class ProblemTransferProcess {
                 .schedulingOrderList(new ArrayList<>(this.schedulingOrders))
                 .schedulingFactoryInstanceList(new ArrayList<>(this.schedulingFactoryInstances))
                 .schedulingPlayer(this.schedulingPlayer)
-                .schedulingWorkCalendarStart(workCalendarStart)
+                .schedulingWorkCalendarStart(this.workCalendarStart.plus(WORK_CALENDAR_START_OFFSET_DURATION))
                 .dateTimeSlotSize(this.dateTimeSlotSize)
                 .build();
     }

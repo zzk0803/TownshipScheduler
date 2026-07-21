@@ -26,6 +26,7 @@
         <constraintProviderClass>
             zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider
         </constraintProviderClass>
+        <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
@@ -72,8 +73,8 @@
 
         <termination>
             <diminishedReturns>
-                <slidingWindowSeconds>45</slidingWindowSeconds>
-                <minimumImprovementRatio>0.05</minimumImprovementRatio>
+                <slidingWindowMinutes>3</slidingWindowMinutes>
+                <minimumImprovementRatio>0.055</minimumImprovementRatio>
             </diminishedReturns>
         </termination>
 

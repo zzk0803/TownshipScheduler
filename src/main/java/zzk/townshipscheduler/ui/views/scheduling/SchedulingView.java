@@ -466,7 +466,7 @@ public class SchedulingView
                                 }
 
                                 case INIT -> {
-                                    return "First Solution Initializing...";
+                                    return "First Solution Initializing...More Scale You Have,More Time Initializing Process Take";
                                 }
 
                                 case SOLVING, FINISHED -> {

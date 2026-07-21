@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.scheduling.ArrangementIdRoller;
@@ -287,7 +288,6 @@ public class SchedulingProducingArrangement
 
     public void advancedSetupOrThrow() {
         Objects.requireNonNull(this.getCurrentActionObject());
-        Objects.requireNonNull(getId());
         Objects.requireNonNull(getUuid());
         Objects.requireNonNull(getSchedulingPlayer());
         Objects.requireNonNull(getSchedulingWorkCalendar());
@@ -371,9 +371,23 @@ public class SchedulingProducingArrangement
         return getTargetActionObject() instanceof SchedulingOrder;
     }
 
+    public boolean boolSameProductType(SchedulingProducingArrangement schedulingProducingArrangement) {
+        if (Objects.isNull(schedulingProducingArrangement)) {
+            return false;
+        }
+
+        return this.getSchedulingProduct().equals(schedulingProducingArrangement.getSchedulingProduct());
+    }
+
     @Override
-    public int compareTo(SchedulingProducingArrangement that) {
-        return SchedulingProducingArrangementDifficultyComparator.INSTANCE.compare(this, that);
+    public int compareTo(@NonNull SchedulingProducingArrangement that) {
+        Comparator<SchedulingProducingArrangement> arrangementComparator = SchedulingProducingArrangementDifficultyComparator.INSTANCE;
+        return arrangementComparator.compare(this, that);
+    }
+
+    public int reversedComparatorToCompare(@NonNull SchedulingProducingArrangement that) {
+        Comparator<SchedulingProducingArrangement> arrangementComparator = SchedulingProducingArrangementDifficultyComparator.REVERSED;
+        return arrangementComparator.compare(this, that);
     }
 
     public boolean boolCompletedAfterCalendarEnd() {

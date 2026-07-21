@@ -110,7 +110,7 @@ public class TownshipSchedulingServiceImpl
     public String getProblemSizeStatistics(String problemId) {
         SolverJob<TownshipSchedulingProblem> solverJob = this.idSolverJobMap.get(problemId);
         if (solverJob == null) {
-            return "";
+            return "N/A";
         } else {
             return solverJob.getProblemSizeStatistics()
                     .approximateProblemScaleAsFormattedString();
