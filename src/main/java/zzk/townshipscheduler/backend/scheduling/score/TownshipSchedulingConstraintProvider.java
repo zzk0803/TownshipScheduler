@@ -3,7 +3,6 @@ package zzk.townshipscheduler.backend.scheduling.score;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.score.stream.*;
-import ai.timefold.solver.core.api.score.stream.common.ConnectedRangeChain;
 import ai.timefold.solver.core.api.score.stream.common.LoadBalance;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
@@ -139,14 +138,16 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint forbidBrokenPrerequisiteArrangement(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.precompute(precomputeFactory -> precomputeFactory.forEachUnfiltered(
-                        SchedulingProducingArrangement.class).join(
-                        precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class),
-                        Joiners.containing(
-                                SchedulingProducingArrangement::getPrerequisiteProducingArrangements,
-                                Function.identity()
-                        )
-                ))
+        return constraintFactory.precompute(precomputeFactory ->
+                        precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
+                                .join(
+                                        precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class),
+                                        Joiners.containing(
+                                                SchedulingProducingArrangement::getDeepPrerequisiteProducingArrangements,
+                                                Function.identity()
+                                        )
+                                )
+                )
                 .filter((whole, partial) -> whole.boolCompleted() && partial.boolCompleted())
                 .groupBy(
                         (whole, partial) -> whole,
@@ -170,7 +171,7 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(Predicate.not(SchedulingProducingArrangement::boolCompleted))
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ONE_HARD,
+                        HardMediumSoftBigDecimalScore.ofHard(BigDecimal.valueOf(1000)),
                         schedulingProducingArrangement -> schedulingProducingArrangement.getEvaluateFactor() * schedulingProducingArrangement.getWorkCalendarSpan()
                                 .toMinutes()
                 )
@@ -178,18 +179,18 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint shouldNotBrokenDeadlineOrder(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.precompute(precomputeFactory -> precomputeFactory.forEachUnfiltered(
-                                SchedulingProducingArrangement.class)
-                        .filter(SchedulingProducingArrangement::boolOrderDirect)
-                        .ifExists(
-                                precomputeFactory.forEachUnfiltered(SchedulingOrder.class)
-                                        .filter(SchedulingOrder::boolHasDeadline),
-                                Joiners.equal(SchedulingProducingArrangement::getSchedulingOrder, Function.identity())
-                        ))
-                .filter(SchedulingProducingArrangement::boolCompleted)
+        return constraintFactory.precompute(precomputeFactory ->
+                        precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
+                                .filter(SchedulingProducingArrangement::boolOrderDirect)
+                                .ifExists(
+                                        precomputeFactory.forEachUnfiltered(SchedulingOrder.class)
+                                                .filter(SchedulingOrder::boolHasDeadline),
+                                        Joiners.equal(SchedulingProducingArrangement::getSchedulingOrder, Function.identity())
+                                )
+                )
                 .filter(SchedulingProducingArrangement::boolCompletedAfterDeadline)
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ONE_MEDIUM,
+                        HardMediumSoftBigDecimalScore.ofMedium(BigDecimal.valueOf(200)),
                         (schedulingProducingArrangement) -> schedulingProducingArrangement.calcDeadlineToCompletedDuration()
                                                                     .toMinutes() * schedulingProducingArrangement.getEvaluateFactor()
                 )
@@ -203,7 +204,7 @@ public class TownshipSchedulingConstraintProvider
                 )
                 .filter(SchedulingProducingArrangement::boolCompletedAfterCalendarEnd)
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ONE_MEDIUM,
+                        HardMediumSoftBigDecimalScore.ofMedium(BigDecimal.valueOf(100)),
                         (schedulingProducingArrangement) -> schedulingProducingArrangement.calcCalendarEndToCompletedDuration()
                                 .toMinutes()
                 )
@@ -216,7 +217,7 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(SchedulingProducingArrangement::boolArrangeDateTimeInPlayerSleepTime)
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(4000)),
+                        HardMediumSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(300)),
                         schedulingProducingArrangement -> schedulingProducingArrangement.calcSleepArrangeDateTimeToNextAvailableDuration()
                                 .toMinutes()
                 )
@@ -224,7 +225,8 @@ public class TownshipSchedulingConstraintProvider
     }
 
     private Constraint preferMinimizeCompletedDateTime(@NonNull ConstraintFactory constraintFactory) {
-        return constraintFactory.precompute(precomputeFactory -> precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
+        return constraintFactory.precompute(
+                precomputeFactory -> precomputeFactory.forEachUnfiltered(SchedulingProducingArrangement.class)
                         .filter(SchedulingProducingArrangement::boolOrderDirect)
                 )
                 .filter(SchedulingProducingArrangement::boolCompleted)
@@ -234,14 +236,6 @@ public class TownshipSchedulingConstraintProvider
                                 .toMinutes()
                 )
                 .asConstraint("preferMinimizeCompletedDateTime");
-//        return constraintFactory.forEach(SchedulingProducingArrangement.class)
-//                .filter(SchedulingProducingArrangement::boolCompleted)
-//                .penalize(
-//                        HardMediumSoftBigDecimalScore.ONE_SOFT,
-//                        (arrangement) -> arrangement.getEvaluateFactor() * arrangement.calcCalendarStartToCompletedDuration()
-//                                .toMinutes()
-//                )
-//                .asConstraint("preferMinimizeCompletedDateTime");
     }
 
     private Constraint preferArrangeDateTimeAsSoonAsPassible(@NonNull ConstraintFactory constraintFactory) {

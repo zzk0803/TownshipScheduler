@@ -254,9 +254,8 @@
         </unionMoveSelector>
 
         <acceptor>
-            <entityTabuRatio>0.05</entityTabuRatio>
             <valueTabuSize>2</valueTabuSize>
-            <simulatedAnnealingStartingTemperature>5hard/100medium/5000soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>5hard/200medium/1000soft</simulatedAnnealingStartingTemperature>
         </acceptor>
 
         <forager>

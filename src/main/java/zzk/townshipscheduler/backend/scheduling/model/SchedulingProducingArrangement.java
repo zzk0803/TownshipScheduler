@@ -399,7 +399,7 @@ public class SchedulingProducingArrangement
     }
 
     public boolean boolCompletedAfterDeadline() {
-        return boolHasDeadline() && (getCompletedDateTime().isAfter(getDeadline()));
+        return boolHasDeadline() && boolCompleted() && (getCompletedDateTime().isAfter(getDeadline()));
     }
 
     public boolean boolHasDeadline() {
