@@ -20,7 +20,6 @@ import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.server.streams.InMemoryUploadHandler;
 import com.vaadin.flow.server.streams.UploadHandler;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,7 +28,10 @@ import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntit
 
 @Slf4j
 @Route(value = "crawling")
-@Menu(title = "Wiki Crawling", order = 2.00d)
+@Menu(
+        title = "Wiki Crawling",
+        order = 2.00d
+)
 @AnonymousAllowed
 public class CrawlingWikiView
         extends VerticalLayout {
@@ -58,27 +60,7 @@ public class CrawlingWikiView
         add(modeSelector);
 
         // Create crawl button
-        actionButton = new Button("Start Crawling And Process", VaadinIcon.PLAY.create());
-        actionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        actionButton.setDisableOnClick(true);
-        actionButton.addClickListener(click -> {
-            presenter.asyncProcess()
-                    .whenComplete((unused, throwable) -> {
-                                getCurrentUi().access(() -> add(prepareCoordCellGrid()));
-                            }
-                    )
-                    .exceptionally(throwable -> {
-                        currentUi.access(() -> {
-                            Notification notification = new Notification("Error occur when get data from fandom wiki");
-                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                            notification.setPosition(Notification.Position.MIDDLE);
-                            notification.open();
-                            actionButton.setDisableOnClick(false);
-                        });
-                        return null;
-                    })
-            ;
-        });
+        actionButton = createCrawlButton();
 
         // Create upload panel
         uploadPanel = createUploadPanel();
@@ -117,6 +99,36 @@ public class CrawlingWikiView
         return radioGroup;
     }
 
+    private Button createCrawlButton() {
+        final Button actionButton;
+        actionButton = new Button("Start Crawling And Process", VaadinIcon.PLAY.create());
+        actionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        actionButton.setDisableOnClick(true);
+        actionButton.addClickListener(click -> {
+            presenter.asyncProcess().whenComplete((unused, throwable) -> {
+                getCurrentUi().access(() -> add(prepareCoordCellGrid()));
+            }).exceptionally(throwable -> {
+                currentUi.access(() -> {
+                    Notification notification = new Notification("Error occur when get data from fandom wiki");
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    notification.setPosition(Notification.Position.MIDDLE);
+                    notification.open();
+                    actionButton.setDisableOnClick(false);
+                });
+                return null;
+            });
+        });
+        return actionButton;
+    }
+
+    private Grid<WikiCrawledParsedCoordCellEntity> prepareCoordCellGrid() {
+        Grid<WikiCrawledParsedCoordCellEntity> grid = new Grid<>(WikiCrawledParsedCoordCellEntity.class);
+        grid.setItemDetailsRenderer(new TextRenderer<>(WikiCrawledParsedCoordCellEntity::getHtml));
+        grid.setWidthFull();
+        presenter.setupTownshipCoordCellGrid(grid);
+        return grid;
+    }
+
     private VerticalLayout createUploadPanel() {
         VerticalLayout panel = new VerticalLayout();
         panel.setSizeFull();
@@ -128,10 +140,7 @@ public class CrawlingWikiView
         VerticalLayout instructionsLayout = new VerticalLayout();
         instructionsLayout.setPadding(false);
         instructionsLayout.add(
-                new HorizontalLayout(
-                        new Paragraph("1. Open Page :: Township Wiki Goods :"),
-                        createLink("https://township.fandom.com/wiki/Goods", "Township Wiki Goods")
-                ) {{
+                new HorizontalLayout(new Paragraph("1. Open Page :: Township Wiki Goods :"), createLink("https://township.fandom.com/wiki/Goods", "Township Wiki Goods")) {{
                     setAlignItems(Alignment.BASELINE);
                 }},
                 new Paragraph("2. Press Ctrl+S Save it"),
@@ -145,51 +154,42 @@ public class CrawlingWikiView
         Button downloadExampleBtn = new Button("Download Explanation", VaadinIcon.DOWNLOAD.create());
         downloadExampleBtn.addClickListener(e -> {
             var instructionsText = createInstructionsText();
-            downloadExampleBtn.getElement().setAttribute(
-                    "href",
-                    "data:text/plain;charset=utf-8," + java.net.URLEncoder.encode(instructionsText, java.nio.charset.StandardCharsets.UTF_8)
-            );
+            downloadExampleBtn.getElement().setAttribute("href", "data:text/plain;charset=utf-8," + java.net.URLEncoder.encode(instructionsText, java.nio.charset.StandardCharsets.UTF_8));
             downloadExampleBtn.getElement().setAttribute("download", "mhtml_upload_instructions.txt");
         });
 
-        Upload upload = new Upload(
-                UploadHandler.inMemory((metadata, data) -> {
-                    // Get other information about the file.
-                    String fileName = metadata.fileName();
-                    String mimeType = metadata.contentType();
-                    long contentLength = metadata.contentLength();
+        Upload upload = new Upload(UploadHandler.inMemory((metadata, data) -> {
+            // Get other information about the file.
+            String fileName = metadata.fileName();
+            String mimeType = metadata.contentType();
+            long contentLength = metadata.contentLength();
 
-                    getCurrentUi().access(() -> {
-                        Notification.show("File Received！Processing...", 3000, Notification.Position.TOP_CENTER);
+            getCurrentUi().access(() -> {
+                Notification.show("File Received！Processing...", 3000, Notification.Position.TOP_CENTER);
+            });
+
+            // Do something with the file data...
+            this.presenter.handleUploadSuccess(data, fileName)
+                    .whenComplete((unused, throwable) -> {
+                        getCurrentUi().access(() -> {
+                            if (throwable == null) {
+                                add(prepareCoordCellGrid());
+                                Notification.show("Done!", 5000, Notification.Position.BOTTOM_CENTER);
+                            } else {
+                                Notification.show("Fail!" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
+                            }
+                        });
+                    }).exceptionally(throwable -> {
+                        currentUi.access(() -> {
+                            Notification notification = new Notification("Error occur when get data from fandom wiki");
+                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            notification.setPosition(Notification.Position.MIDDLE);
+                            notification.open();
+                            actionButton.setDisableOnClick(false);
+                        });
+                        return null;
                     });
-
-                    // Do something with the file data...
-                    this.presenter.handleUploadSuccess(data, fileName)
-                            .whenComplete(
-                                    (unused, throwable) -> {
-                                        getCurrentUi().access(
-                                                () -> {
-                                                    if (throwable == null) {
-                                                        add(prepareCoordCellGrid());
-                                                        Notification.show("Done!", 5000, Notification.Position.BOTTOM_CENTER);
-                                                    } else {
-                                                        Notification.show("Fail!" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
-                                                    }
-                                                });
-                                    }
-                            )
-                            .exceptionally(throwable -> {
-                                currentUi.access(() -> {
-                                    Notification notification = new Notification("Error occur when get data from fandom wiki");
-                                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                                    notification.setPosition(Notification.Position.MIDDLE);
-                                    notification.open();
-                                    actionButton.setDisableOnClick(false);
-                                });
-                                return null;
-                            })
-                    ;
-                }));
+        }));
         upload.setAcceptedFileExtensions(".txt");
         upload.addFileRejectedListener(event -> {
             Notification.show("failed：" + event.getFileName(), 5000, Notification.Position.BOTTOM_CENTER);
@@ -234,14 +234,6 @@ public class CrawlingWikiView
                """;
     }
 
-    private Grid<WikiCrawledParsedCoordCellEntity> prepareCoordCellGrid() {
-        Grid<WikiCrawledParsedCoordCellEntity> grid = new Grid<>(WikiCrawledParsedCoordCellEntity.class);
-        grid.setItemDetailsRenderer(new TextRenderer<>(WikiCrawledParsedCoordCellEntity::getHtml));
-        grid.setWidthFull();
-        presenter.setupTownshipCoordCellGrid(grid);
-        return grid;
-    }
-
     public void onActionDone() {
         actionButton.setEnabled(true);
     }
@@ -257,8 +249,7 @@ public class CrawlingWikiView
     }
 
     private enum CrawlingMode {
-        AUTO_CRAWL,
-        MANUAL_UPLOAD
+        AUTO_CRAWL, MANUAL_UPLOAD
     }
 
 }

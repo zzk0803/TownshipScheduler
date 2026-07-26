@@ -20,6 +20,7 @@ import java.util.Set;
 @DynamicInsert
 @NamedEntityGraph(
         name = "products.g.full",
+        includeAllAttributes = true,
         attributeNodes = {
                 @NamedAttributeNode(
                         value = "crawledAsImage",

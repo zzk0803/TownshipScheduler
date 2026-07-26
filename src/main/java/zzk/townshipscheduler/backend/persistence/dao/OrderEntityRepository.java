@@ -12,7 +12,10 @@ import java.util.List;
 public interface OrderEntityRepository
         extends JpaRepository<OrderEntity, Long> {
 
-    @EntityGraph(attributePaths = {"productAmountMap"},type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(
+            value = "order.items",
+            type = EntityGraph.EntityGraphType.LOAD
+    )
     @Query("select oe from OrderEntity as oe where oe.playerEntity=:player")
     List<OrderEntity> queryForOrderListView(@Param("player") PlayerEntity player);
 

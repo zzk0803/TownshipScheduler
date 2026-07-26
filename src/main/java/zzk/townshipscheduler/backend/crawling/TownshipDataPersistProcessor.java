@@ -1,6 +1,7 @@
 package zzk.townshipscheduler.backend.crawling;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -10,18 +11,20 @@ import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
 import zzk.townshipscheduler.backend.persistence.dao.*;
-import zzk.townshipscheduler.backend.service.ProductService;
+import zzk.townshipscheduler.backend.service.ProductHierarchyAndGraphComponent;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-class TownshipDataPersistProcessor {
-
-    public static final Logger logger = LoggerFactory.getLogger(TownshipDataPersistProcessor.class);
+ class TownshipDataPersistProcessor {
 
     private final ProductEntityRepository productEntityRepository;
 
@@ -33,63 +36,27 @@ class TownshipDataPersistProcessor {
 
     private final WikiCrawledParsedCoordCellEntityRepository wikiCrawledParsedCoordCellEntityRepository;
 
-    private final ProductService productService;
+    private final ProductHierarchyAndGraphComponent productHierarchyAndGraphComponent;
 
     private final TransactionTemplate transactionTemplate;
 
     public void process(CrawledResult crawledResult) {
-        logger.info(" persist TownshipCoordCell and TownshipCrawled");
+        log.info(" persist TownshipCoordCell and TownshipCrawled");
         TreeMap<CrawledDataCoordinate, CrawledDataCell> crawledResultMap = crawledResult.crawledDataCellTreeMap();
         crawledResultMap.forEach((coordinate, cell) -> {
             wikiCrawledParsedCoordCellEntityRepository.save(new WikiCrawledParsedCoordCellEntity(coordinate, cell));
         });
     }
 
-    public void process(TransferResult transferResult) {
+    public PersistResult process(TransferResult transferResult) {
         List<ProductEntity> savedProductEntities = transactionTemplate.execute(_ -> {
-            logger.info("going to persist goods");
+            log.info("going to persist goods");
             List<ProductEntity> productEntityArrayList = transferResult.productEntityArrayList();
             List<ProductEntity> savedProductList = productEntityRepository.saveAll(productEntityArrayList);
-            logger.info("persist goods......done");
-
-            logger.info("bonus...map to factory info and persist");
-            Objects.requireNonNull(savedProductList)
-                    .stream()
-                    .collect(Collectors.groupingBy(ProductEntity::getCategory))
-                    .forEach((category, productEntities) -> {
-                        FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
-                        fieldFactoryInfo.setCategory(category);
-                        fieldFactoryInfo.setLevel(
-                                productEntities.stream()
-                                        .map(ProductEntity::getLevel)
-                                        .min(Integer::compareTo)
-                                        .orElseThrow()
-                        );
-                        transactionTemplate.executeWithoutResult(
-                                _ -> {
-                                    FieldFactoryInfoEntity savedFieldFactoryInfo
-                                            = fieldFactoryInfoEntityRepository.save(fieldFactoryInfo);
-                                    savedFieldFactoryInfo.attacheProductEntities(productEntities);
-                                }
-                        );
-                    });
-            logger.info("bonus...map to factory info and persist.....done");
-
-            logger.info("bonus...calc product manufacture info");
-            productService.calcGoodsHierarchies();//warm data
-            savedProductList.forEach(productEntity -> {
-                transactionTemplate.executeWithoutResult(_ -> {
-                    List<ProductManufactureInfoEntity> manufactureInfoEntities
-                            = productManufactureInfoEntityRepository.saveAll(productService.calcManufactureInfoSet(productEntity)
-                    );
-                    for (ProductManufactureInfoEntity manufactureInfoEntity : manufactureInfoEntities) {
-                        productEntity.attacheProductManufactureInfo(manufactureInfoEntity);
-                    }
-                });
-            });
-            logger.info("bonus...calc product manufacture info......done");
+            log.info("persist goods......done");
             return savedProductList;
         });
+        return new PersistResult(savedProductEntities);
     }
 
 }

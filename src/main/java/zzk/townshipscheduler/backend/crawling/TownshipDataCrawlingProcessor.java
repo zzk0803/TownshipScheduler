@@ -1,21 +1,25 @@
 package zzk.townshipscheduler.backend.crawling;
 
 import io.arxila.javatuples.Pair;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import org.jsoup.Connection;
+import jakarta.mail.Multipart;
+import jakarta.mail.internet.MimeMultipart;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.retry.RetryException;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledParsedCoordCellEntityRepository;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -26,16 +30,18 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Gatherers;
 
+@Slf4j
 @Component
 class TownshipDataCrawlingProcessor {
-
-    public static final Logger logger = LoggerFactory.getLogger(TownshipDataCrawlingProcessor.class);
 
     public static final String[] ABANDON_ZONE = {"Gems", "Construction Materials"};
 
     public static final String TOWNSHIP_FANDOM_GOODS = "https://township.fandom.com/wiki/Goods#All_Goods_List";
+
+    public static final URI TOWNSHIP_FANDOM_GOODS_URI = URI.create(TOWNSHIP_FANDOM_GOODS);
 
     private final Set<CrawledDataCell.Img> imageToDownload;
 
@@ -43,17 +49,29 @@ class TownshipDataCrawlingProcessor {
 
     private final WikiCrawledEntityRepository wikiCrawledEntityRepository;
 
+    private final WikiCrawledParsedCoordCellEntityRepository wikiCrawledParsedCoordCellEntityRepository;
+
+    private final MhtmlImageExtractor mhtmlImageExtractor;
+
+    private final MhtmlProcessComponent mhtmlProcessComponent;
+
     private final ExecutorService townshipExecutorService;
 
     private final RetryTemplate retryTemplate;
 
-    private final TransactionTemplate transactionTemplate;
+//    private final TransactionTemplate transactionTemplate;
 
     private final HttpClient httpClient;
+
+    @Value("classpath:Goods _ Township Wiki _ Fandom.txt")
+    private File townshipOfflineWikiFile;
 
     public TownshipDataCrawlingProcessor(
             CrawledDataMemory crawledDataMemory,
             WikiCrawledEntityRepository wikiCrawledEntityRepository,
+            WikiCrawledParsedCoordCellEntityRepository wikiCrawledParsedCoordCellEntityRepository,
+            MhtmlImageExtractor mhtmlImageExtractor,
+            MhtmlProcessComponent mhtmlProcessComponent,
             ExecutorService townshipExecutorService,
             RetryTemplate retryTemplate,
             TransactionTemplate transactionTemplate,
@@ -61,11 +79,19 @@ class TownshipDataCrawlingProcessor {
     ) {
         this.crawledDataMemory = crawledDataMemory;
         this.wikiCrawledEntityRepository = wikiCrawledEntityRepository;
+        this.wikiCrawledParsedCoordCellEntityRepository = wikiCrawledParsedCoordCellEntityRepository;
+        this.mhtmlImageExtractor = mhtmlImageExtractor;
+        this.mhtmlProcessComponent = mhtmlProcessComponent;
         this.townshipExecutorService = townshipExecutorService;
         this.retryTemplate = retryTemplate;
-        this.transactionTemplate = transactionTemplate;
+//        this.transactionTemplate = transactionTemplate;
         this.imageToDownload = new LinkedHashSet<>();
         this.httpClient = httpClient;
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info(townshipOfflineWikiFile.toString());
     }
 
     @PreDestroy
@@ -73,18 +99,34 @@ class TownshipDataCrawlingProcessor {
         this.httpClient.close();
     }
 
-    public CompletableFuture<CrawledResult> processFromUploadedHtml(Document uploadedDocument) {
-        logger.info("Processing from uploaded HTML document");
-        persistDocument(uploadedDocument);
-        Elements articleTableElements = uploadedDocument.getElementsByClass("article-table");
-        return doProcessTables(articleTableElements);
+    public CompletableFuture<CrawledResult> processFromUploadedHtml(MhtmlProcessComponent.Result mhtmlResult) {
+        Document document = loadDocument(mhtmlResult.document());
+        Elements articleTableElements = document.getElementsByClass("article-table");
+        CompletableFuture<CrawledResult> completableFuture = doProcessTables(articleTableElements);
+        log.info("do mending and fire image downloading");
+        CompletableFuture.supplyAsync(
+                () -> this.fireImageDownloadFromMhtmlAsync(mhtmlResult.multipart()),
+                townshipExecutorService
+        );
+        return completableFuture;
     }
 
-    public CompletableFuture<CrawledResult> processFromOfficialWiki() {
-        Document document = loadDocument(true);
-        Elements articleTableElements = document.getElementsByClass("article-table");
+    private Document loadDocument(Document providedDocument) {
+        log.info("clear fetched document");
+        wikiCrawledEntityRepository.deleteAll();
+        wikiCrawledParsedCoordCellEntityRepository.deleteAll();
 
-        return doProcessTables(articleTableElements);
+        persistDocument(providedDocument);
+
+        return providedDocument;
+    }
+
+    private void persistDocument(Document document) {
+        WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
+        wikiCrawledEntity.setType(WikiCrawledEntity.Type.HTML);
+        wikiCrawledEntity.setHtml(document.html());
+        log.info("persist document");
+        wikiCrawledEntityRepository.save(wikiCrawledEntity);
     }
 
     /**
@@ -103,21 +145,45 @@ class TownshipDataCrawlingProcessor {
                 continue;
             }
 
-            doTableParse(currentTable, tableNum, tableZoneString);
+            doTableParse(
+                    currentTable,
+                    tableNum,
+                    tableZoneString
+            );
         }
 
-        logger.info("do mending and fire image downloading");
-        CompletableFuture.supplyAsync(
-                this::fireImageDownloadAsync,
-                townshipExecutorService
-        );
         return CompletableFuture.supplyAsync(
                 crawledDataMemory::completeAndMend,
                 townshipExecutorService
         );
     }
 
-    private void doTableParse(Element currentTable, int tableNum, String tableZoneString) {
+    private String findTableZoneString(Element currentTable) {
+        Optional<String> tableZone = currentTable.parents()
+                .stream()
+                .filter(element -> element.hasClass("mw-collapsible-content"))
+                .findFirst()
+                .map(element -> {
+                    Element mwHeadlineElement = element.previousElementSibling();
+                    return Objects.isNull(mwHeadlineElement)
+                            ? ""
+                            : mwHeadlineElement.select("span.mw-headline")
+                                    .first()
+                                    .text();
+                });
+        return tableZone.orElse("");
+    }
+
+    private boolean checkAbandonZone(String tableZoneString) {
+        return Arrays.stream(ABANDON_ZONE)
+                .anyMatch(tableZoneString::equalsIgnoreCase);
+    }
+
+    private void doTableParse(
+            Element currentTable,
+            int tableNum,
+            String tableZoneString
+    ) {
         Elements trElements = currentTable.getElementsByTag("tr");
         int currentRowsSize = trElements.size();
 
@@ -156,12 +222,23 @@ class TownshipDataCrawlingProcessor {
                         .type(currentColumnsSize == 1
                                 ? CrawledDataCell.Type.HEAD
                                 : CrawledDataCell.Type.CELL)
-                        .span(new CrawledDataCell.CellSpan(rowSpan, colSpan))
+                        .span(new CrawledDataCell.CellSpan(
+                                rowSpan,
+                                colSpan
+                        ))
                         .build();
 
-                registerSpanFixIfNeed(currentCoord, currentCell, rowSpan, colSpan);
+                registerSpanFixIfNeed(
+                        currentCoord,
+                        currentCell,
+                        rowSpan,
+                        colSpan
+                );
 
-                putIntoMemory(currentCoord, currentCell);
+                putIntoMemory(
+                        currentCoord,
+                        currentCell
+                );
             }
             crawledCoordPrototype = crawledCoordPrototype.cloneAndResetColumn();
         }
@@ -221,12 +298,24 @@ class TownshipDataCrawlingProcessor {
             int colSpan
     ) {
         if (currentCell.getType() == CrawledDataCell.Type.CELL) {
-            registerRowSpanFix(rowSpan, currentCell, currentCoordinate);
-            registerColSpanFix(colSpan, currentCell, currentCoordinate);
+            registerRowSpanFix(
+                    rowSpan,
+                    currentCell,
+                    currentCoordinate
+            );
+            registerColSpanFix(
+                    colSpan,
+                    currentCell,
+                    currentCoordinate
+            );
         }
     }
 
-    private void registerRowSpanFix(int rowSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoordinate) {
+    private void registerRowSpanFix(
+            int rowSpan,
+            CrawledDataCell currentCell,
+            CrawledDataCoordinate currentCoordinate
+    ) {
         if (rowSpan > CrawledDataCell.CellSpan.NA_EFFECT) {
             CrawledDataCell.CellSpan fixedSpan = new CrawledDataCell.CellSpan(
                     CrawledDataCell.CellSpan.REGULAR,
@@ -238,18 +327,31 @@ class TownshipDataCrawlingProcessor {
             int fixSize = rowSpan - 1;
             CrawledDataCoordinate mendedCoord = currentCoordinate.cloneAndNextRow();
             while (fixSize > 0) {
-                hintIntoMemory(mendedCoord, cellFixed);
+                hintIntoMemory(
+                        mendedCoord,
+                        cellFixed
+                );
                 fixSize -= 1;
                 mendedCoord = mendedCoord.cloneAndNextRow();
             }
         }
     }
 
-    private void hintIntoMemory(CrawledDataCoordinate currentCoordinate, CrawledDataCell fixCell) {
-        crawledDataMemory.putForMend(currentCoordinate, fixCell);
+    private void hintIntoMemory(
+            CrawledDataCoordinate currentCoordinate,
+            CrawledDataCell fixCell
+    ) {
+        crawledDataMemory.putForMend(
+                currentCoordinate,
+                fixCell
+        );
     }
 
-    private void registerColSpanFix(int colSpan, CrawledDataCell currentCell, CrawledDataCoordinate currentCoordinate) {
+    private void registerColSpanFix(
+            int colSpan,
+            CrawledDataCell currentCell,
+            CrawledDataCoordinate currentCoordinate
+    ) {
         if (colSpan > CrawledDataCell.CellSpan.NA_EFFECT) {
             CrawledDataCell.CellSpan fixedSpan = new CrawledDataCell.CellSpan(
                     CrawledDataCell.CellSpan.REGULAR,
@@ -263,17 +365,26 @@ class TownshipDataCrawlingProcessor {
                 CrawledDataCell fixCellToSave = cellFixed.clone();
                 fixCellToSave.setText(fixCellToSave.reasonableText() + "[colspan:" + (i + 1) + "]");
                 CrawledDataCoordinate mendedCoord = currentCoordinate.cloneAndNextColumn();
-                hintIntoMemory(mendedCoord, fixCellToSave);
+                hintIntoMemory(
+                        mendedCoord,
+                        fixCellToSave
+                );
             }
         }
     }
 
-    private void putIntoMemory(CrawledDataCoordinate currentCoordinate, CrawledDataCell currentCell) {
-        crawledDataMemory.putForSave(currentCoordinate, currentCell);
+    private void putIntoMemory(
+            CrawledDataCoordinate currentCoordinate,
+            CrawledDataCell currentCell
+    ) {
+        crawledDataMemory.putForSave(
+                currentCoordinate,
+                currentCell
+        );
     }
 
     private CompletableFuture<Void> fireImageDownloadAsync() {
-        logger.info("image downloader start...");
+        log.info("image downloader start...");
 
         List<Pair<CrawledDataCell.Img, WikiCrawledEntity>> pairList = imageToDownload.stream()
                 .distinct()
@@ -283,7 +394,10 @@ class TownshipDataCrawlingProcessor {
                     wikiCrawledEntity.setHtml(img.getSrc());
                     wikiCrawledEntity.setText(img.getAlt());
                     wikiCrawledEntity = wikiCrawledEntityRepository.save(wikiCrawledEntity);
-                    return new Pair<>(img, wikiCrawledEntity);
+                    return new Pair<>(
+                            img,
+                            wikiCrawledEntity
+                    );
                 })
                 .toList();
 
@@ -302,28 +416,34 @@ class TownshipDataCrawlingProcessor {
                                                                     )
                                                             );
                                                     return wikiCrawledEntityRepository.save(pair.value1());
-                                                }, townshipExecutorService
+                                                },
+                                                townshipExecutorService
                                         )
-                                        .orTimeout(30, TimeUnit.SECONDS)
+                                        .orTimeout(
+                                                30,
+                                                TimeUnit.SECONDS
+                                        )
                                         .thenApplyAsync(
                                                 crawledEntity -> {
-                                                    logger.info(
+                                                    log.info(
                                                             "{} image download completed",
                                                             pair.value0()
                                                                     .getSrc()
                                                     );
                                                     return crawledEntity;
-                                                }, townshipExecutorService
+                                                },
+                                                townshipExecutorService
                                         )
                                         .exceptionallyAsync(
                                                 _ -> {
-                                                    logger.warn(
+                                                    log.warn(
                                                             "Failed to download image: {}",
                                                             pair.value0()
                                                                     .getSrc()
                                                     );
                                                     return null;
-                                                }, townshipExecutorService
+                                                },
+                                                townshipExecutorService
                                         )
                         )
                 )
@@ -333,14 +453,21 @@ class TownshipDataCrawlingProcessor {
         return CompletableFuture.allOf(downloadFutures.toArray(CompletableFuture[]::new))
                 .thenRunAsync(
                         () -> {
-                            logger.info("All image downloads completed. Count: {}", downloadFutures.size());
+                            log.info(
+                                    "All image downloads completed. Count: {}",
+                                    downloadFutures.size()
+                            );
                             imageToDownload.clear();
-                        }, townshipExecutorService
+                        },
+                        townshipExecutorService
                 );
     }
 
     byte[] downloadImage(String url) {
-        logger.info("start download image {}", url);
+        log.info(
+                "start download image {}",
+                url
+        );
         try {
             return this.retryTemplate.execute(
                     () -> {
@@ -369,31 +496,96 @@ class TownshipDataCrawlingProcessor {
         }
     }
 
-    private boolean checkAbandonZone(String tableZoneString) {
-        return Arrays.stream(ABANDON_ZONE)
-                .anyMatch(tableZoneString::equalsIgnoreCase);
+    private CompletableFuture<Void> fireImageDownloadFromMhtmlAsync(MimeMultipart multipart) {
+        log.info("image downloader start...");
+        try {
+            List<MhtmlImageExtractor.ImageData> imageDataList = mhtmlImageExtractor.processMultipart(multipart);
+            var urlBytesMap = imageDataList.stream()
+                    .collect(Collectors.toMap(
+                            MhtmlImageExtractor.ImageData::getContentLocation,
+                            MhtmlImageExtractor.ImageData::getData
+                    ));
+            log.info("mhtml parsed {}", urlBytesMap.keySet());
+
+            List<Pair<CrawledDataCell.Img, WikiCrawledEntity>> pairList = imageToDownload.stream()
+                    .distinct()
+                    .filter(img -> !wikiCrawledEntityRepository.existsByHtml(img.getSrc()))
+                    .map(img -> {
+                        WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
+                        wikiCrawledEntity.setHtml(img.getSrc());
+                        wikiCrawledEntity.setText(img.getAlt());
+                        wikiCrawledEntity = wikiCrawledEntityRepository.save(wikiCrawledEntity);
+                        return new Pair<>(
+                                img,
+                                wikiCrawledEntity
+                        );
+                    })
+                    .toList();
+
+            List<WikiCrawledEntity> downloadFutures
+                    = pairList.stream()
+                    .map(pair -> {
+                        String url = pair.value0().getSrc();
+                        pair.value1()
+                                .setImageBytes(
+                                        urlBytesMap.get(url)
+                                );
+                        return wikiCrawledEntityRepository.save(pair.value1());
+                    })
+                    .toList();
+
+
+            return CompletableFuture.completedFuture(Void.TYPE.newInstance());
+        } catch (Exception e) {
+            log.error(e.toString());
+            return CompletableFuture.failedFuture(e);
+        }
+
     }
 
-    private String findTableZoneString(Element currentTable) {
-        Optional<String> tableZone = currentTable.parents()
-                .stream()
-                .filter(element -> element.hasClass("mw-collapsible-content"))
-                .findFirst()
-                .map(element -> {
-                    Element mwHeadlineElement = element.previousElementSibling();
-                    return Objects.isNull(mwHeadlineElement)
-                            ? ""
-                            : mwHeadlineElement.select("span.mw-headline")
-                                    .first()
-                                    .text();
-                });
-        return tableZone.orElse("");
+    private Document fetchDocument(URI documentUri)
+            throws Throwable {
+        return retryTemplate.execute(
+                () -> {
+                    log.info(
+                            "try to establish connection to fandom wiki {} ..",
+                            documentUri
+                    );
+//                    Connection connect = Jsoup.connect(TOWNSHIP_FANDOM_GOODS);
+                    try {
+                        return Jsoup.parse(
+                                documentUri.toURL(),
+                                10000
+                        );
+                    } catch (IOException e) {
+                        log.error(e.toString());
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+    }
+
+    public CompletableFuture<CrawledResult> process() {
+        Document document = loadDocument(true);
+        Elements articleTableElements = document.getElementsByClass("article-table");
+        CompletableFuture<CrawledResult> completableFuture = doProcessTables(articleTableElements);
+
+        log.info("do mending and fire image downloading");
+        CompletableFuture.supplyAsync(
+                this::fireImageDownloadAsync,
+                townshipExecutorService
+        );
+        return completableFuture;
     }
 
     private Document loadDocument(boolean mandatory) {
         Document document = null;
         if (mandatory) {
-            logger.info("mandatory mode,force fetch");
+            log.info("clear fetched document");
+            wikiCrawledEntityRepository.deleteAll();
+            wikiCrawledParsedCoordCellEntityRepository.deleteAll();
+
+            log.info("mandatory mode,force fetch");
             try {
                 document = fetchDocument();
             } catch (Throwable e) {
@@ -401,14 +593,14 @@ class TownshipDataCrawlingProcessor {
             }
             persistDocument(document);
         } else {
-            logger.info("get crawled html in db");
+            log.info("get crawled html in db");
             WikiCrawledEntity wikiCrawledEntity = null;
             Optional<WikiCrawledEntity> crawledOptional = wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1();
             if (crawledOptional.isPresent()) {
                 wikiCrawledEntity = crawledOptional.get();
                 document = Jsoup.parse(wikiCrawledEntity.getHtml());
             } else {
-                logger.warn("not found in db");
+                log.warn("not found in db");
                 try {
                     document = fetchDocument();
                 } catch (Throwable e) {
@@ -424,47 +616,15 @@ class TownshipDataCrawlingProcessor {
             throws Throwable {
         return retryTemplate.execute(
                 () -> {
-                    logger.info(
+                    log.info(
                             "try to establish connection to fandom wiki .."
                     );
-                    Connection connect = Jsoup.connect(TOWNSHIP_FANDOM_GOODS);
-                    return connect.get();
+//                    Connection connect = Jsoup.connect(TOWNSHIP_FANDOM_GOODS);
+                    return Jsoup.parse(
+                            TOWNSHIP_FANDOM_GOODS_URI.toURL(),
+                            10000
+                    );
                 }
-        );
-    }
-
-    private void persistDocument(Document document) {
-        WikiCrawledEntity wikiCrawledEntity = new WikiCrawledEntity();
-        wikiCrawledEntity.setType(WikiCrawledEntity.Type.HTML);
-        wikiCrawledEntity.setHtml(document.html());
-        logger.info("persist document");
-        wikiCrawledEntityRepository.save(wikiCrawledEntity);
-    }
-
-    public CompletableFuture<CrawledResult> process() {
-        Document document = loadDocument(true);
-        Elements articleTableElements = document.getElementsByClass("article-table");
-
-        for (int i = 0; i < articleTableElements.size(); i++) {
-            int tableNum = 1 + i;
-
-            Element currentTable = articleTableElements.get(i);
-            String tableZoneString = findTableZoneString(currentTable);
-            if (checkAbandonZone(tableZoneString)) {
-                continue;
-            }
-
-            doTableParse(currentTable, tableNum, tableZoneString);
-        }
-
-        logger.info(" do mending and fire image downloading");
-        CompletableFuture.supplyAsync(
-                this::fireImageDownloadAsync,
-                townshipExecutorService
-        );
-        return CompletableFuture.supplyAsync(
-                crawledDataMemory::completeAndMend,
-                townshipExecutorService
         );
     }
 

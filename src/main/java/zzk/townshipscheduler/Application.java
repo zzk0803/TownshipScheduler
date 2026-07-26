@@ -93,7 +93,7 @@ public class Application {
     public RetryTemplate retryTemplate() {
         return new RetryTemplate(
                 RetryPolicy.builder()
-                        .backOff(new FixedBackOff())
+                        .backOff(new FixedBackOff(5000,3))
                         .build()
         );
     }

@@ -247,7 +247,7 @@ public class TownshipSchedulingServiceImpl
                 TownshipSchedulingRequest moreScale = originalQuest.clone();
                 moreScale.getPlayerEntityOrderEntities()
                         .forEach(orderEntity -> {
-                            Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
+                            Map<ProductEntity, Integer> productAmountMap = orderEntity.toProductAmountMap();
                             productAmountMap.keySet()
                                     .forEach(productEntity -> productAmountMap.computeIfPresent(productEntity, (inMapProduct, integer) -> integer + (factor + factor / 2)));
                         });

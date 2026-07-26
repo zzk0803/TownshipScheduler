@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +24,8 @@ public class TownshipFandomCrawlingProcessFacade {
 
     private final TownshipDataPersistProcessor persistProcessor;
 
+    private final TownshipDataHierarchyBuildingProcessor hierarchyBuildingProcessor;
+
     private final TownshipDataHardcodeHotfixProcessor hardcodeHotfixProcessor;
 
     private final ExecutorService townshipExecutorService;
@@ -34,6 +35,8 @@ public class TownshipFandomCrawlingProcessFacade {
     private ParsedResult parsedResult;
 
     private TransferResult transferResult;
+
+    private PersistResult persistResult;
 
     public CompletableFuture<Void> process() {
         return crawlingProcessor.process()
@@ -50,10 +53,16 @@ public class TownshipFandomCrawlingProcessFacade {
                             return this.transferProcessor.process(parsedResult);
                         }, townshipExecutorService
                 )
-                .thenAcceptAsync(
+                .thenApplyAsync(
                         transferResult -> {
                             setTransferResult(transferResult);
-                            this.persistProcessor.process(transferResult);
+                            return this.persistProcessor.process(transferResult);
+                        }, townshipExecutorService
+                )
+                .thenApplyAsync(
+                        persistResult -> {
+                            setPersistResult(persistResult);
+                            return this.hierarchyBuildingProcessor.process(persistResult);
                         }, townshipExecutorService
                 ).thenAcceptAsync(
                         _ -> {
@@ -65,30 +74,40 @@ public class TownshipFandomCrawlingProcessFacade {
     /**
      * Process from uploaded HTML document.
      *
-     * @param uploadedDocument The HTML document from user upload
+     * @param mhtmlResult The HTML document from user upload
      * @return CompletableFuture with processing result
      */
-    public CompletableFuture<Void> processFromUploadedHtml(Document uploadedDocument) {
-        return crawlingProcessor.processFromUploadedHtml(uploadedDocument)
+    public CompletableFuture<Void> processFromUploadedHtml(MhtmlProcessComponent.Result mhtmlResult) {
+        return crawlingProcessor.processFromUploadedHtml(mhtmlResult)
                 .thenApplyAsync(
                         crawledResult -> {
                             setCrawledResult(crawledResult);
                             persistProcessor.process(crawledResult);
-                            return crawledResult;
+                            return parsingProcessor.process(crawledResult);
                         }, townshipExecutorService
                 )
-                .thenApplyAsync(parsingProcessor::process, townshipExecutorService)
-                .thenApply(parsedResult -> {
-                    setParsedResult(parsedResult);
-                    return this.transferProcessor.process(parsedResult);
-                })
-                .thenAccept(transferResult -> {
-                    setTransferResult(transferResult);
-                    this.persistProcessor.process(transferResult);
-                })
-                .thenAccept(_ -> {
-                    this.hardcodeHotfixProcessor.process();
-                });
+                .thenApplyAsync(
+                        parsedResult -> {
+                            setParsedResult(parsedResult);
+                            return this.transferProcessor.process(parsedResult);
+                        }, townshipExecutorService
+                )
+                .thenApplyAsync(
+                        transferResult -> {
+                            setTransferResult(transferResult);
+                            return this.persistProcessor.process(transferResult);
+                        }, townshipExecutorService
+                )
+                .thenApplyAsync(
+                        persistResult -> {
+                            setPersistResult(persistResult);
+                            return this.hierarchyBuildingProcessor.process(persistResult);
+                        }, townshipExecutorService
+                ).thenAcceptAsync(
+                        _ -> {
+                            this.hardcodeHotfixProcessor.process();
+                        }, townshipExecutorService
+                );
     }
 
     public void clean() {

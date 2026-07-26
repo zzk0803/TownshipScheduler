@@ -11,13 +11,17 @@ import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import java.util.List;
 import java.util.Optional;
 
-public interface PlayerEntityRepository extends JpaRepository<PlayerEntity, Long> {
+public interface PlayerEntityRepository
+        extends JpaRepository<PlayerEntity, Long> {
 
     @EntityGraph(value = "player.full")
     <T> List<T> findBy(Class<T> projectionClass);
 
     @Transactional(readOnly = true)
-    @EntityGraph(value = "player.full")
+    @EntityGraph(
+            value = "player.full",
+            type = EntityGraph.EntityGraphType.LOAD
+    )
     Optional<PlayerEntity> findPlayerEntitiesByAccount(AccountEntity appUser);
 
     @EntityGraph(value = "player.full")
@@ -25,10 +29,10 @@ public interface PlayerEntityRepository extends JpaRepository<PlayerEntity, Long
 
     @EntityGraph(
             attributePaths = {
-                    "warehouseEntity.productAmountMap",
+                    "warehouseEntity.warehouseItemEntities.product",
                     "fieldFactoryEntities",
                     "fieldFactoryEntities.fieldFactoryInfoEntity",
-                    "orderEntities.productAmountMap"
+                    "orderEntities.orderItemEntities.productEntity"
             }
     )
     @Query("select p from PlayerEntity p where p.id=:playerId")

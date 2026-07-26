@@ -27,7 +27,7 @@ import java.util.*;
                 @NamedSubgraph(
                         name = "player.warehouse",
                         attributeNodes = {
-                                @NamedAttributeNode(value = "productAmountMap")
+                                @NamedAttributeNode(value = "warehouseItemEntities")
                         }
                 )
         }

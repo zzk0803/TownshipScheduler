@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.persistence.dao;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,14 +30,7 @@ public interface ProductEntityRepository
     @Query("from ProductEntity as pe join  pe.fieldFactoryInfo  as ffe  select distinct pe.fieldFactoryInfo")
     List<FieldFactoryInfoEntity> queryFieldFactory();
 
-//    @Query(
-//            """
-//                select p from ProductEntity as p
-//                            left join fetch p.manufactureInfoEntities as pmi
-//                                        left join fetch pmi.productMaterialsRelations as pmr
-//                                                    left join fetch pmr.material
-//                where p.level<=:level
-//            """)
+    @Transactional(readOnly = true)
     @EntityGraph(
             attributePaths = {
                     "fieldFactoryInfo",
@@ -47,8 +41,17 @@ public interface ProductEntityRepository
             type = EntityGraph.EntityGraphType.LOAD
     )
     @Query("select p from ProductEntity p where p.level<=:level")
-    @Transactional(readOnly = true)
     Set<ProductEntity> queryForPrepareScheduling(Integer level);
+
+    @Transactional(readOnly = true)
+    @Query("from ProductEntity p")
+    @EntityGraph(type = EntityGraph.EntityGraphType.FETCH)
+    <T> Set<T> queryForRawProductHierarchyGraphBuilding(Class<T> projectionClass, Sort sort);
+
+    @Transactional(readOnly = true)
+    @Query("from ProductEntity p")
+    @EntityGraph(value = "products.g.full")
+    <T> Set<T> queryForRapeProductHierarchyGraphBuilding(Class<T> projectionClass, Sort sort);
 
     @EntityGraph(
             attributePaths = {
@@ -66,6 +69,8 @@ public interface ProductEntityRepository
     @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.id=:id")
     CompletableFuture<byte[]> futureProductImageById(Serializable id);
 
+    @Transactional(readOnly = true)
+    @Cacheable(cacheNames = {"product-images-cache"}, key = "name")
     @EntityGraph(
             attributePaths = {
                     "crawledAsImage.imageBytes"

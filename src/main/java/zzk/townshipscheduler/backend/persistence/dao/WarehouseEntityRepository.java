@@ -7,7 +7,7 @@ import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
 
 public interface WarehouseEntityRepository extends JpaRepository<WarehouseEntity, Long> {
 
-    @EntityGraph(attributePaths = {"productAmountMap"}, type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(value = "warehouse.items", type = EntityGraph.EntityGraphType.LOAD)
     WarehouseEntity findWarehouseEntityByPlayerEntity(PlayerEntity player);
 
 }

@@ -316,7 +316,7 @@ class ProblemTransferProcess {
     }
 
     private ProductAmountBill createProductAmountBill(OrderEntity order) {
-        Map<ProductEntity, Integer> productIdAmountMap = order.getProductAmountMap();
+        Map<ProductEntity, Integer> productIdAmountMap = order.toProductAmountMap();
         ProductAmountBill productAmountBill = new ProductAmountBill();
         productIdAmountMap.forEach(
                 (product, amount) -> {

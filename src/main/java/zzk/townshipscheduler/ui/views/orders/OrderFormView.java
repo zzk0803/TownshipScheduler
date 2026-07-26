@@ -111,9 +111,9 @@ public class OrderFormView
         this.productsAmountPanel = new ProductsAmountPanel(
                 this.orderListViewPresenter.getCollectionSupplier(),
                 billItemListSignalConsumer(),
-                this.getEditModeOrderEntity().getProductAmountMap()
+                this.getEditModeOrderEntity().toProductAmountMap()
         );
-        this.billItemListSignalConsumer().accept(this.getEditModeOrderEntity().getProductAmountMap());
+        this.billItemListSignalConsumer().accept(this.getEditModeOrderEntity().toProductAmountMap());
 
         style();
         add(assembleBillForm());
@@ -416,7 +416,7 @@ public class OrderFormView
             }
 
             getBillItemListSignal().peekValues().forEach(
-                    billItem -> this.orderEntity.addItem(
+                    billItem -> this.orderEntity.itemAdd(
                             billItem.productEntity(),
                             billItem.amount()
                     )
