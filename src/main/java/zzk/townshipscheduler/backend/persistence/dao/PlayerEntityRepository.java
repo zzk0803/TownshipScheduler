@@ -27,16 +27,8 @@ public interface PlayerEntityRepository
     @EntityGraph(value = "player.full")
     Optional<PlayerEntity> findPlayerById(Long playerId);
 
-    @EntityGraph(
-            attributePaths = {
-                    "warehouseEntity.warehouseItemEntities.product",
-                    "fieldFactoryEntities",
-                    "fieldFactoryEntities.fieldFactoryInfoEntity",
-                    "orderEntities.orderItemEntities.productEntity"
-            }
-    )
+    @EntityGraph(value = "player.full")
     @Query("select p from PlayerEntity p where p.id=:playerId")
-    @Transactional(readOnly = true)
     Optional<PlayerEntity> queryForPrepareScheduling(@Param("playerId") Long playerId);
 
 }

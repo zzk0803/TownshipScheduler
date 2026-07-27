@@ -21,43 +21,46 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @NamedEntityGraph(
         name = "order.items",
+        includeAllAttributes = true,
         attributeNodes = {
                 @NamedAttributeNode(
                         value = "orderItemEntities",
-                        subgraph = "order.items.product"
+                        subgraph = "orderItemEntity.subgraph"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "order.items.product",
+                        name = "orderItemEntity.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
                                         value = "productEntity",
-                                        subgraph = "products.g.full"
+                                        subgraph = "productEntity.subgraph"
                                 )
                         }
                 ),
                 @NamedSubgraph(
-                        name = "products.g.full",
+                        name = "productEntity.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
                                         value = "crawledAsImage",
-                                        subgraph = "products.g.full.image"
+                                        subgraph = "wikiCrawledEntity.subgraph"
                                 ),
-                                @NamedAttributeNode("fieldFactoryInfo"),
                                 @NamedAttributeNode(
                                         value = "manufactureInfoEntities",
-                                        subgraph = "products.g.full.manufacture"
+                                        subgraph = "productManufactureInfoEntity.subgraph"
                                 )
                         }
                 ),
                 @NamedSubgraph(
-                        name = "products.g.full.image",
+                        name = "wikiCrawledEntity.subgraph",
                         attributeNodes = @NamedAttributeNode("imageBytes")
                 ),
                 @NamedSubgraph(
-                        name = "products.g.full.manufacture",
-                        attributeNodes = @NamedAttributeNode("productMaterialsRelations")
+                        name = "productManufactureInfoEntity.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode("fieldFactoryInfo"),
+                                @NamedAttributeNode("productMaterialsRelations"),
+                        }
                 )
         }
 )
@@ -90,10 +93,10 @@ public class OrderEntity {
 
     @OneToMany(
             mappedBy = "orderEntity",
-            cascade =CascadeType.ALL,
+            cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private SortedSet<OrderItemEntity> orderItemEntities = new TreeSet<>();
+    private Set<OrderItemEntity> orderItemEntities = new LinkedHashSet<>();
 
     private boolean boolFinished;
 

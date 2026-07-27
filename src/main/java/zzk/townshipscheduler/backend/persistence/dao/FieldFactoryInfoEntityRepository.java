@@ -1,19 +1,18 @@
 package zzk.townshipscheduler.backend.persistence.dao;
 
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFactoryInfoEntity, Long> {
+public interface FieldFactoryInfoEntityRepository
+        extends JpaRepository<FieldFactoryInfoEntity, Long> {
 
     Optional<FieldFactoryInfoEntity> findByCategory(String category);
 
@@ -23,38 +22,16 @@ public interface FieldFactoryInfoEntityRepository extends JpaRepository<FieldFac
 
     List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelBetween(Integer levelAfter, Integer levelBefore);
 
-    @Query("select f from FieldFactoryInfoEntity f join fetch f.portfolioGoods as fpg where f.level<=:level and fpg.level<=:level ")
-    @Transactional(readOnly = true)
-    Set<FieldFactoryInfoEntity> queryForPrepareScheduling(@Param("level") Integer level);
-
-    @EntityGraph(
-            attributePaths = {
-                    "portfolioGoods",
-                    "portfolioGoods.crawledAsImage.imageBytes"
-            }
-    )
+    @EntityGraph("fieldFactoryInfo.g.full")
     @Query("select ffie from FieldFactoryInfoEntity ffie")
-    Set<FieldFactoryInfoEntity> queryForFactoryProductSelection();
-
-    @EntityGraph(
-            attributePaths = {
-                    "portfolioGoods",
-                    "portfolioGoods.crawledAsImage.imageBytes"
-            }
-    )
-    @Query("select ffie from FieldFactoryInfoEntity ffie")
-    @Cacheable(cacheNames = {"cache::factoryProducts"})
     Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Sort sort);
 
-    @EntityGraph(
-            attributePaths = {
-                    "portfolioGoods",
-                    "portfolioGoods.manufactureInfoEntities.productMaterialsRelations",
-                    "portfolioGoods.crawledAsImage.imageBytes"
-            }
-    )
-    @Query("select ffie from FieldFactoryInfoEntity ffie join fetch ffie.portfolioGoods as ffieg where ffie.level<=:level and ffieg.level<=:level")
-    @Cacheable(cacheNames = {"cache::factoryProducts:level"}, key = "#level")
+    @Query("select f from FieldFactoryInfoEntity f join fetch f.productManufactureInfoSet as fpg where f.level<=:level and fpg.productEntity.level<=:level ")
+    @EntityGraph("fieldFactoryInfo.g.full")
+    Set<FieldFactoryInfoEntity> queryForPrepareScheduling(@Param("level") Integer level);
+
+    @EntityGraph("fieldFactoryInfo.g.full")
+    @Query("select ffie from FieldFactoryInfoEntity ffie join fetch ffie.productManufactureInfoSet as ffiep where ffie.level<=:level and ffiep.productEntity.level<=:level")
     Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Integer level, Sort sort);
 
     /*

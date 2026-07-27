@@ -4,18 +4,18 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.parameters.P;
-import zzk.townshipscheduler.backend.persistence.ProductAmountBill;
-import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
-import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.dao.ProductManufactureInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductMaterialsRelationRepository;
+import org.springframework.transaction.annotation.Transactional;
+import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.persistence.dao.*;
+import zzk.townshipscheduler.ui.components.ProductImagesBytesComponent;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 @SpringComponent
 @RequiredArgsConstructor
@@ -29,12 +29,22 @@ public class ProductViewPresenter {
 
     private final ProductMaterialsRelationRepository productMaterialsRelationRepository;
 
+    private final FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository;
+
+    public byte[] getProductImage(ProductEntity productEntity) {
+        return productImagesBytesComponent.getProductImage(productEntity);
+    }
+
+    private final ProductImagesBytesComponent productImagesBytesComponent;
+
     private ProductView productView;
 
-    public Set<ProductEntity> fetchProducts() {
-        return productEntityRepository.findBy(
-                ProductEntity.class,
-                Sort.by(Sort.Order.asc("level"))
+    public Set<FieldFactoryInfoEntity> getFieldFactoryInfoCollection() {
+        return this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
+                Sort.by(
+                        Sort.Direction.ASC,
+                        "level"
+                )
         );
     }
 

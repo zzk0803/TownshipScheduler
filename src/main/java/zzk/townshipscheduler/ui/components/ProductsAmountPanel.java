@@ -29,6 +29,7 @@ import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
@@ -137,20 +138,16 @@ public class ProductsAmountPanel
     private SerializablePredicate<FieldFactoryInfoEntity> createTextFieldGridFilter(String criteria) {
         return fieldFactoryInfoEntity -> {
             String factoryName = fieldFactoryInfoEntity.getCategory();
+            Set<ProductManufactureInfoEntity> productManufactureInfoSet = fieldFactoryInfoEntity.getProductManufactureInfoSet();
             return factoryName.contains(criteria)
-                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                           .anyMatch(productEntity -> {
-                               return productEntity.getName()
+                   || productManufactureInfoSet.stream()
+                           .anyMatch(productManufactureInfoEntity -> {
+                               return productManufactureInfoEntity.getProductEntity().getName()
                                               .toLowerCase()
                                               .contains(criteria)
-                                      || productEntity.getBomString()
+                                      || productManufactureInfoEntity.getProductEntity().getBomString()
                                               .toLowerCase()
                                               .contains(criteria);
-                           })
-                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                           .map(ProductEntity::getBomString)
-                           .anyMatch(productBomString -> {
-                               return productBomString.toLowerCase().contains(criteria);
                            });
         };
     }
@@ -207,15 +204,15 @@ public class ProductsAmountPanel
 
     private boolean isAtomicProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         boolean result;
-        result = fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                .anyMatch(productEntity -> productEntity.getBomString().isBlank());
+        result = fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
+                .anyMatch(productManufactureInfoEntity -> productManufactureInfoEntity.getProductEntity().getBomString().isBlank());
         return result;
     }
 
     private boolean isFinalProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         boolean result;
-        result = fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                .anyMatch(subjectProduct -> subjectProductComposite(subjectProduct).isEmpty());
+        result = fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
+                .anyMatch(productManufactureInfoEntity -> subjectProductComposite(productManufactureInfoEntity.getProductEntity()).isEmpty());
         return result;
     }
 
@@ -258,7 +255,7 @@ public class ProductsAmountPanel
 
         Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities = factoryProductsSupplier.get();
         this.productEntityList = fieldFactoryInfoEntities.stream()
-                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getPortfolioGoods().stream())
+                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity))
                 .toList();
         this.factoryProductsGrid.setItems(fieldFactoryInfoEntities);
     }
@@ -354,7 +351,7 @@ public class ProductsAmountPanel
                     "color",
                     () -> {
                         Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
-                        if (fieldFactoryInfoEntity.getPortfolioGoods()
+                        if (fieldFactoryInfoEntity.getProductManufactureInfoSet()
                                 .stream()
                                 .anyMatch(productEntity -> productEntityIntegerMap.containsKey(productEntity) && productEntityIntegerMap.get(productEntity) > 0)) {
                             return "var(--lumo-primary-color)";
@@ -367,8 +364,9 @@ public class ProductsAmountPanel
             factoryHeaderLayout.getElement().appendChild(category, level);
 
             AvatarGroup avatarGroup = new AvatarGroup(
-                    fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                            .map(productEntity -> {
+                    fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
+                            .map(productManufactureInfoEntity -> {
+                                ProductEntity productEntity = productManufactureInfoEntity.getProductEntity();
                                 String name = productEntity.getName();
                                 WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
                                 return ProductImages.productImageDownloadHandler(name, crawledAsImage);
@@ -384,7 +382,8 @@ public class ProductsAmountPanel
 
             HorizontalLayout productsGridLayout = new HorizontalLayout();
             productsGridLayout.setWrap(true);
-            fieldFactoryInfoEntity.getPortfolioGoods().stream()
+            fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
+                    .map(ProductManufactureInfoEntity::getProductEntity)
                     .sorted(Comparator.comparingInt(ProductEntity::getLevel))
                     .map(ProductCard::new)
                     .forEachOrdered(productsGridLayout::add);
@@ -396,7 +395,7 @@ public class ProductsAmountPanel
                     factoryHeaderDetails,
                     () -> {
                         Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
-                        if (fieldFactoryInfoEntity.getPortfolioGoods().stream().anyMatch(productEntityIntegerMap::containsKey)) {
+                        if (fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().anyMatch(productEntityIntegerMap::containsKey)) {
                             factoryHeaderDetails.setOpened(true);
                         }
                     }

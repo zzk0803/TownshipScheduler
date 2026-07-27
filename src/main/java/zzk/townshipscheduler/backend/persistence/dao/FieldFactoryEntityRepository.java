@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface FieldFactoryEntityRepository extends JpaRepository<FieldFactoryEntity, Long> {
 
-    @EntityGraph(attributePaths = {"fieldFactoryInfoEntity", "playerEntity"}, type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(value = "fieldFactoryEntity.g.full", type = EntityGraph.EntityGraphType.LOAD)
     List<FieldFactoryEntity> findFieldFactoryEntityByPlayerEntity(PlayerEntity player);
 
     int countByPlayerEntityAndFieldFactoryInfoEntity(

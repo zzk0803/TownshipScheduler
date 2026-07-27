@@ -14,7 +14,7 @@ public interface OrderEntityRepository
 
     @EntityGraph(
             value = "order.items",
-            type = EntityGraph.EntityGraphType.LOAD
+            type = EntityGraph.EntityGraphType.FETCH
     )
     @Query("select oe from OrderEntity as oe where oe.playerEntity=:player")
     List<OrderEntity> queryForOrderListView(@Param("player") PlayerEntity player);

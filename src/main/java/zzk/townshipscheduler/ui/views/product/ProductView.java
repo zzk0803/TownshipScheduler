@@ -24,7 +24,7 @@ public class ProductView extends VerticalLayout {
         setSpacing(false);
         setMargin(false);
 
-        this.productsCategoriesPanel = new ProductsCategoriesPanel(this.productViewPresenter::fetchProducts);
+        this.productsCategoriesPanel = new ProductsCategoriesPanel(this.productViewPresenter);
         addAndExpand(this.productsCategoriesPanel);
         setFlexShrink(1.0, this.productsCategoriesPanel);
     }

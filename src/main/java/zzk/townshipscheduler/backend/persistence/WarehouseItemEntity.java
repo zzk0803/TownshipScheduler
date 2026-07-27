@@ -19,8 +19,31 @@ import java.util.Objects;
         name = "warehouse-item.g.full",
         includeAllAttributes = true,
         attributeNodes = {
-                @NamedAttributeNode(value = "product"),
+                @NamedAttributeNode(
+                        value = "product",
+                        subgraph = "productEntity.suggraph"
+                ),
                 @NamedAttributeNode(value = "warehouse")
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "productEntity.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "crawledAsImage",
+                                        subgraph = "wikiCrawledEntity.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "manufactureInfoEntities"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "wikiCrawledEntity.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "imageBytes")
+                        }
+                )
         }
 )
 public class WarehouseItemEntity
@@ -67,8 +90,9 @@ public class WarehouseItemEntity
 
     @Override
     public int compareTo(WarehouseItemEntity that) {
-        return Comparator.comparing(WarehouseItemEntity::getWarehouse, Comparator.comparingLong(WarehouseEntity::getId))
-                .thenComparingLong(WarehouseItemEntity::getId).compare(this, that);
+        return Comparator.comparing(WarehouseItemEntity::getWarehouse, Comparator.nullsFirst(Comparator.comparingLong(WarehouseEntity::getId)))
+                .thenComparing(Comparator.nullsFirst(Comparator.comparingLong(WarehouseItemEntity::getId)))
+                .compare(this, that);
     }
 
 }

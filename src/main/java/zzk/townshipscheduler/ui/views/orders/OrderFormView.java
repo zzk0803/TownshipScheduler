@@ -37,9 +37,7 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.ui.components.BillDurationField;
-import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.ProductsAmountPanel;
 import zzk.townshipscheduler.ui.pojo.BillItem;
 
@@ -109,7 +107,7 @@ public class OrderFormView
         this.editModeOrderEntity = editModeOrderEntity;
         this.editMode = true;
         this.productsAmountPanel = new ProductsAmountPanel(
-                this.orderListViewPresenter.getCollectionSupplier(),
+                this.orderListViewPresenter.getFieldFactoryInfoCollectionSupplier(),
                 billItemListSignalConsumer(),
                 this.getEditModeOrderEntity().toProductAmountMap()
         );
@@ -277,7 +275,6 @@ public class OrderFormView
     private ComponentRenderer<Div, BillItem> buildItemCard() {
         return new ComponentRenderer<>(billItem -> {
             ProductEntity productEntity = billItem.productEntity();
-            WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
 
             Div card = new Div();
             card.addClassNames(
@@ -289,10 +286,8 @@ public class OrderFormView
                     LumoUtility.Margin.XSMALL
             );
 
-            Image image = ProductImages.productImage(
-                    productEntity.getName(),
-                    crawledAsImage
-            );
+
+            Image image =  this.orderListViewPresenter.productImage(productEntity);
             image.addClassNames(
                     LumoUtility.Display.FLEX,
                     LumoUtility.FlexDirection.ROW,
@@ -452,7 +447,7 @@ public class OrderFormView
         this.orderListView = orderListView;
         this.orderListViewPresenter = orderListViewPresenter;
         this.productsAmountPanel = new ProductsAmountPanel(
-                this.orderListViewPresenter.getCollectionSupplier(),
+                this.orderListViewPresenter.getFieldFactoryInfoCollectionSupplier(),
                 billItemListSignalConsumer()
         );
         this.editMode = false;

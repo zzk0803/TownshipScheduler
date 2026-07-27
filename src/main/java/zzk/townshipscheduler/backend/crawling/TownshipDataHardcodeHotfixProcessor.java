@@ -5,9 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.ProducingStructureType;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -65,10 +66,7 @@ class TownshipDataHardcodeHotfixProcessor {
                 .forEach(fieldFactoryInfoEntity -> {
                     String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
                     transactionTemplate.executeWithoutResult(transactionStatus -> {
-                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
-                                fieldFactoryInfoEntity);
-                        Arrays.stream(strings).map(productEntityRepository::findByName)
-                                .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
+                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(fieldFactoryInfoEntity);
                     });
                 });
 
@@ -92,8 +90,6 @@ class TownshipDataHardcodeHotfixProcessor {
                     transactionTemplate.executeWithoutResult(transactionStatus -> {
                         FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
                                 fieldFactoryInfoEntity);
-                        Arrays.stream(strings).map(productEntityRepository::findByName)
-                                .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
                     });
                 });
 
@@ -109,10 +105,7 @@ class TownshipDataHardcodeHotfixProcessor {
         duckFeeder.setMaxReapWindowCapacity(3);
         String[] duckFeederProducts = farmingProductMap.get(duckFeeder.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(duckFeeder);
-            Arrays.stream(duckFeederProducts).
-                    map(productEntityRepository::findByName)
-                    .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
+             fieldFactoryInfoEntityRepository.save(duckFeeder);
         });
 
         FieldFactoryInfoEntity otterPond = new FieldFactoryInfoEntity();
@@ -127,9 +120,7 @@ class TownshipDataHardcodeHotfixProcessor {
         otterPond.setMaxReapWindowCapacity(3);
         String[] otterPondProducts = farmingProductMap.get(otterPond.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(otterPond);
-            Arrays.stream(otterPondProducts).map(productEntityRepository::findByName)
-                    .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
+             fieldFactoryInfoEntityRepository.save(otterPond);
         });
 
         FieldFactoryInfoEntity mushroomFarm = new FieldFactoryInfoEntity();
@@ -145,8 +136,6 @@ class TownshipDataHardcodeHotfixProcessor {
         String[] mushroomFarmProducts = farmingProductMap.get(mushroomFarm.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
             FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(mushroomFarm);
-            Arrays.stream(mushroomFarmProducts).map(productEntityRepository::findByName)
-                    .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
         });
 
         transactionTemplate.executeWithoutResult(_ -> {

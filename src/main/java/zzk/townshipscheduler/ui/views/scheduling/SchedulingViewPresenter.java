@@ -31,6 +31,7 @@ import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingPrepareCompone
 import zzk.townshipscheduler.backend.scheduling.TownshipSchedulingRequest;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.ui.components.ProductImages;
+import zzk.townshipscheduler.ui.components.ProductImagesBytesComponent;
 import zzk.townshipscheduler.ui.components.TriggerButton;
 import zzk.townshipscheduler.ui.pojo.scheduling.TownshipSchedulingProblemBriefViewModel;
 import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
@@ -63,6 +64,8 @@ public class SchedulingViewPresenter {
 
     private final ProductEntityRepository productEntityRepository;
 
+    private final ProductImagesBytesComponent productImagesBytesComponent;
+
     private final TownshipSchedulingPrepareComponent townshipSchedulingPrepareComponent;
 
     private final ITownshipSchedulingService schedulingService;
@@ -93,17 +96,10 @@ public class SchedulingViewPresenter {
     }
 
     private Image createProductImage(String productName) {
-        byte[] productImage = fetchProductImage(productName);
-        Image image = ProductImages.productImage(productName, productImage);
+        Image image = ProductImages.productImage(productName,productImagesBytesComponent.getProductImage(productName));
         image.setWidth("50px");
         image.setHeight("50px");
-
         return image;
-    }
-
-    private byte[] fetchProductImage(String productName) {
-        Optional<byte[]> bytes = productEntityRepository.queryProductImageByName(productName);
-        return bytes.orElse(null);
     }
 
     public ValueSignal<ReactiveTownshipSchedulingProblemViewModel> getTownshipSchedulingProblemViewModelSignal() {
@@ -281,11 +277,6 @@ public class SchedulingViewPresenter {
 
     public TownshipSchedulingProblem reflushAndGetCurrentProblem() {
         return this.townshipSchedulingProblemAtomicReference.updateAndGet(_ -> this.schedulingService.gatherProblem(getTownshipSchedulingProblemId()));
-    }
-
-    public byte[] fetchProductImage(Long productId) {
-        Optional<byte[]> productImage = productEntityRepository.queryProductImageById(productId);
-        return productImage.orElse(null);
     }
 
     public void setupSlotSizeSelectReadValue(Select<DateTimeSlotSize> slotSizeSelect) {

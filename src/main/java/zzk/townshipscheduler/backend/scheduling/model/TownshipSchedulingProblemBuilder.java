@@ -184,7 +184,7 @@ public class TownshipSchedulingProblemBuilder {
                     .getExecutionModeSet()
                     .stream()
                     .min(Comparator.comparing(SchedulingProducingExecutionMode::getExecuteDuration))
-                    .orElseThrow();
+                    .orElseThrow(() -> new IllegalArgumentException("iteratingArrangement %s couldn't find most minimized executionMode".formatted(iteratingArrangement.toString())));
             iteratingArrangement.setProducingExecutionMode(producingExecutionMode);
 
             if (producingArrangement.boolOrderDirect()) {

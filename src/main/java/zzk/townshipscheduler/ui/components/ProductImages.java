@@ -4,14 +4,15 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.server.streams.DownloadResponse;
 import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
+import lombok.experimental.UtilityClass;
 import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 
 import java.io.ByteArrayInputStream;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+@UtilityClass
 public class ProductImages {
 
     public static Image productImage(String productName, WikiCrawledEntity crawledEntity) {
@@ -19,13 +20,6 @@ public class ProductImages {
             return new Image("images/placeholder.png", "placeholder");
         }
         return productImage(productName, crawledEntity.getImageBytes());
-    }
-
-    public static DownloadHandler productImageDownloadHandler(String productName, WikiCrawledEntity crawledEntity) {
-        Objects.requireNonNull(productName);
-        Objects.requireNonNull(crawledEntity);
-        byte[] imageBytes = crawledEntity.getImageBytes();
-        return getDownloadHandlerOfProduct(productName, imageBytes);
     }
 
     public static Image productImage(String productName, byte[] bytes) {
@@ -50,12 +44,15 @@ public class ProductImages {
         );
     }
 
-    public static Image productImage(String productName, Supplier<byte[]> bytesSupplier) {
-        return productImage(productName, bytesSupplier.get());
+    public static DownloadHandler productImageDownloadHandler(String productName, WikiCrawledEntity crawledEntity) {
+        Objects.requireNonNull(productName);
+        Objects.requireNonNull(crawledEntity);
+        byte[] imageBytes = crawledEntity.getImageBytes();
+        return getDownloadHandlerOfProduct(productName, imageBytes);
     }
 
-    public static CompletableFuture<Image> productImage(String productName, CompletableFuture<byte[]> bytesFuture) {
-        return bytesFuture.thenApply(bytes -> productImage(productName, bytes));
+    public static Image productImage(String productName, Supplier<byte[]> bytesSupplier) {
+        return productImage(productName, bytesSupplier.get());
     }
 
 }

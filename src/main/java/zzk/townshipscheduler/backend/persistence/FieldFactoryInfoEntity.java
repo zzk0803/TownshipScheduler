@@ -6,22 +6,61 @@ import org.hibernate.proxy.HibernateProxy;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
 @Entity
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @NamedEntityGraph(
-        name = "fieldFactoryInfo.g.portfolioGoods",
+        name = "fieldFactoryInfo.g.full",
+        includeAllAttributes = true,
         attributeNodes = {
-                @NamedAttributeNode("portfolioGoods")
+                @NamedAttributeNode(
+                        value = "productManufactureInfoSet",
+                        subgraph = "productManufactureInfoSet.suggraph"
+                )
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "productManufactureInfoSet.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "productEntity",
+                                        subgraph = "productEntity.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "productMaterialsRelations",
+                                        subgraph = "productMaterialsRelation.subgraph"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "productEntity.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "crawledAsImage",
+                                        subgraph = "crawledAsImage.subgraph"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "crawledAsImage.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "imageBytes")
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "productMaterialsRelation.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "material")
+                        }
+                )
         }
 )
 public class FieldFactoryInfoEntity {
@@ -38,81 +77,64 @@ public class FieldFactoryInfoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     private String category;
 
     private boolean boolCategoryField;
 
     private Integer level;
 
-    @Builder.Default
-    @OneToMany(
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH},
-            targetEntity = ProductEntity.class,
-            mappedBy = "fieldFactoryInfo"
-    )
-    @ToString.Exclude
-    private Set<ProductEntity> portfolioGoods = new HashSet<>();
+    @OneToMany(mappedBy = "fieldFactoryInfo")
+    private Set<ProductManufactureInfoEntity> productManufactureInfoSet=new LinkedHashSet<>();
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     private ProducingStructureType producingType = ProducingStructureType.QUEUE;
 
-    @Builder.Default
     private Integer defaultInstanceAmount = 1;
 
-    @Builder.Default
     private Integer defaultProducingCapacity = 3;
 
-    @Builder.Default
     private Integer defaultReapWindowCapacity = 6;
 
-    @Builder.Default
     private Integer maxProducingCapacity = 7;
 
-    @Builder.Default
     private Integer maxReapWindowCapacity = 8;
 
-    @Builder.Default
     private Integer maxInstanceAmount = 1;
 
-    public void attacheProductEntity(ProductEntity productEntity) {
-        productEntity.setFieldFactoryInfo(this);
-        portfolioGoods.add(productEntity);
+    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+        productManufactureInfo.setFieldFactoryInfo(this);
+        return this.productManufactureInfoSet.add(productManufactureInfo);
     }
 
-    public void attacheProductEntities(Collection<ProductEntity> productEntities) {
-        if (productEntities == null || productEntities.isEmpty()) {
-            return;
-        }
-        productEntities.forEach(product -> {
-            product.setFieldFactoryInfo(this);
-            this.attacheProductEntity(product);
-        });
-    }
-
-    public boolean detachProductEntity(ProductEntity productEntity) {
-        productEntity.setFieldFactoryInfo(null);
-        return portfolioGoods.remove(productEntity);
+    public boolean attacheProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+        return productManufactureInfoEntities.stream()
+                .allMatch(this::attacheProductManufactureInfo);
     }
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
                 .getPersistentClass()
-                .hashCode() : getClass().hashCode();
+                .hashCode()
+                : getClass().hashCode();
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer()
-                .getPersistentClass() : o.getClass();
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy
+                ? ((HibernateProxy) o).getHibernateLazyInitializer()
+                .getPersistentClass()
+                : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
                 ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
                 : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         FieldFactoryInfoEntity that = (FieldFactoryInfoEntity) o;
         return getId() != null && Objects.equals(getId(), that.getId());
     }

@@ -16,11 +16,56 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 @ToString
+@NamedEntityGraph(
+        name = "product-manufacture-info.g.full",
+        includeAllAttributes = true,
+        attributeNodes = {
+                @NamedAttributeNode(
+                        value = "productEntity",
+                        subgraph = "productEntity.suggraph"
+                ),
+                @NamedAttributeNode(
+                        value = "productMaterialsRelations",
+                        subgraph = "productMaterialsRelation.subgraph"
+                ),
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "productEntity.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "crawledAsImage",
+                                        subgraph = "wikiCrawledEntity.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "manufactureInfoEntities"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "wikiCrawledEntity.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "imageBytes")
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "productMaterialsRelation.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "productManufactureInfo"),
+                                @NamedAttributeNode(value = "material")
+                        }
+                )
+        }
+)
 public class ProductManufactureInfoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private Duration producingDuration = Duration.ZERO;
+
+    private Integer amountWhenCreated = 1;
 
     @ManyToOne
     @JoinColumn(
@@ -28,12 +73,10 @@ public class ProductManufactureInfoEntity {
     )
     private ProductEntity productEntity;
 
-    private Duration producingDuration;
+    @ManyToOne
+    private FieldFactoryInfoEntity fieldFactoryInfo;
 
-    private Integer amountWhenCreated = 1;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "jointable_manufacture_material")
+    @OneToMany(mappedBy = "productManufactureInfo")
     @ToString.Exclude
     private Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
 

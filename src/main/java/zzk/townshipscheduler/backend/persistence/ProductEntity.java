@@ -24,22 +24,41 @@ import java.util.Set;
         attributeNodes = {
                 @NamedAttributeNode(
                         value = "crawledAsImage",
-                        subgraph = "products.g.full.image"
+                        subgraph = "crawledAsImage.subgraph"
                 ),
-                @NamedAttributeNode("fieldFactoryInfo"),
                 @NamedAttributeNode(
                         value = "manufactureInfoEntities",
-                        subgraph = "products.g.full.manufacture"
+                        subgraph = "manufactureInfoEntities.subgraph"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "products.g.full.image",
+                        name = "crawledAsImage.subgraph",
                         attributeNodes = @NamedAttributeNode("imageBytes")
                 ),
                 @NamedSubgraph(
-                        name = "products.g.full.manufacture",
-                        attributeNodes = @NamedAttributeNode("productMaterialsRelations")
+                        name = "manufactureInfoEntities.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "fieldFactoryInfo",
+                                        subgraph = "fieldFactoryInfo.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "productMaterialsRelations",
+                                        subgraph = "productMaterialsRelations.subgraph"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "fieldFactoryInfo.subgraph",
+                        attributeNodes = @NamedAttributeNode("productManufactureInfoSet")
+                ),
+                @NamedSubgraph(
+                        name = "productMaterialsRelations.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode("material"),
+                                @NamedAttributeNode("productManufactureInfo"),
+                        }
                 )
         }
 )
@@ -57,12 +76,6 @@ public class ProductEntity {
     private String nameForMaterial = "";
 
     private String category = "";
-
-    @ManyToOne
-    @JoinColumn(
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-    )
-    private FieldFactoryInfoEntity fieldFactoryInfo;
 
     private Integer level = 1;
 
@@ -82,40 +95,51 @@ public class ProductEntity {
 
     private String durationString = "";
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "jointable_product_manufacture")
+    @OneToMany(mappedBy = "productEntity")
     private Set<ProductManufactureInfoEntity> manufactureInfoEntities = new HashSet<>();
 
     @OneToOne
     private WikiCrawledEntity crawledAsImage;
+
+    @PostLoad
+    public void postLoad() {
+        setProductId(ProductId.of(getId()));
+    }
 
     public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
         productManufactureInfo.setProductEntity(this);
         return manufactureInfoEntities.add(productManufactureInfo);
     }
 
-    public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        productManufactureInfo.setProductEntity(null);
-        return manufactureInfoEntities.remove(productManufactureInfo);
+    public boolean attacheProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+        return productManufactureInfoEntities.stream()
+                .allMatch(this::attacheProductManufactureInfo);
     }
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
                 .getPersistentClass()
-                .hashCode() : getClass().hashCode();
+                .hashCode()
+                : getClass().hashCode();
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer()
-                .getPersistentClass() : o.getClass();
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy
+                ? ((HibernateProxy) o).getHibernateLazyInitializer()
+                .getPersistentClass()
+                : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
                 ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
                 : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         ProductEntity productEntity = (ProductEntity) o;
         return getId() != null && Objects.equals(getId(), productEntity.getId());
     }

@@ -1,7 +1,10 @@
 package zzk.townshipscheduler.backend.persistence;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Comparator;
@@ -16,11 +19,35 @@ import java.util.Objects;
         name = "order-item.g.full",
         includeAllAttributes = true,
         attributeNodes = {
-                @NamedAttributeNode(value = "productEntity"),
+                @NamedAttributeNode(
+                        value = "productEntity",
+                        subgraph = "productEntity.suggraph"
+                ),
                 @NamedAttributeNode(value = "orderEntity")
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "productEntity.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "crawledAsImage",
+                                        subgraph = "crawledAsImage.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "manufactureInfoEntities"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "crawledAsImage.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "imageBytes")
+                        }
+                )
         }
 )
-public class OrderItemEntity implements Comparable<OrderItemEntity>{
+public class OrderItemEntity
+        implements Comparable<OrderItemEntity> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,8 +65,16 @@ public class OrderItemEntity implements Comparable<OrderItemEntity>{
 
     @Override
     public int compareTo(OrderItemEntity that) {
-        return Comparator.comparing(OrderItemEntity::getOrderEntity,Comparator.comparingLong(OrderEntity::getId))
-                .thenComparingLong(OrderItemEntity::getId).compare(this,that);
+        return Comparator.comparing(OrderItemEntity::getOrderEntity, Comparator.nullsFirst(Comparator.comparingLong(OrderEntity::getId)))
+                .thenComparing(Comparator.nullsFirst(Comparator.comparingLong(OrderItemEntity::getId)))
+                .compare(this, that);
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode()
+                : getClass().hashCode();
     }
 
     @Override
@@ -58,13 +93,6 @@ public class OrderItemEntity implements Comparable<OrderItemEntity>{
             return false;
         OrderItemEntity that = (OrderItemEntity) o;
         return getId() != null && Objects.equals(getId(), that.getId());
-    }
-
-    @Override
-    public final int hashCode() {
-        return this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode()
-                : getClass().hashCode();
     }
 
 }

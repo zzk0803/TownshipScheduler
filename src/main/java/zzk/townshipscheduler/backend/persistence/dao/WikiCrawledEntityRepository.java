@@ -50,6 +50,15 @@ public interface WikiCrawledEntityRepository
 
     @Query(
             """
+             from WikiCrawledEntity as tc
+            where tc.type=zzk.townshipscheduler.backend.persistence.WikiCrawledEntity.Type.IMAGE
+            and tc.text=:text
+            """
+    )
+    WikiCrawledEntity queryEntityBearImageByText(String text);
+
+    @Query(
+            """
             select tc.imageBytes from WikiCrawledEntity as tc
             where tc.type=zzk.townshipscheduler.backend.persistence.WikiCrawledEntity.Type.IMAGE
             and tc.html=:html

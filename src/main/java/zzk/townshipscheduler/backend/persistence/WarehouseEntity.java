@@ -20,40 +20,34 @@ import java.util.stream.Collectors;
         attributeNodes = {
                 @NamedAttributeNode(
                         value = "warehouseItemEntities",
-                        subgraph = "order.items.product"
+                        subgraph = "warehouseItemEntities.subgraph"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "order.items.product",
+                        name = "warehouseItemEntities.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
                                         value = "product",
-                                        subgraph = "products.g.full"
+                                        subgraph = "product.subgraph"
                                 )
                         }
                 ),
                 @NamedSubgraph(
-                        name = "products.g.full",
+                        name = "product.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
                                         value = "crawledAsImage",
-                                        subgraph = "products.g.full.image"
+                                        subgraph = "crawledAsImage.subgraph"
                                 ),
-                                @NamedAttributeNode("fieldFactoryInfo"),
                                 @NamedAttributeNode(
-                                        value = "manufactureInfoEntities",
-                                        subgraph = "products.g.full.manufacture"
+                                        value = "manufactureInfoEntities"
                                 )
                         }
                 ),
                 @NamedSubgraph(
-                        name = "products.g.full.image",
+                        name = "crawledAsImage.subgraph",
                         attributeNodes = @NamedAttributeNode("imageBytes")
-                ),
-                @NamedSubgraph(
-                        name = "products.g.full.manufacture",
-                        attributeNodes = @NamedAttributeNode("productMaterialsRelations")
                 )
         }
 )
@@ -77,7 +71,7 @@ public class WarehouseEntity {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private SortedSet<WarehouseItemEntity> warehouseItemEntities = new TreeSet<>();
+    private Set<WarehouseItemEntity> warehouseItemEntities = new LinkedHashSet<>();
 
     @Transient
     private transient Map<ProductEntity, Integer> productAmountMap = new LinkedHashMap<>();

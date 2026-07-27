@@ -31,9 +31,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ProductHierarchyAndGraphComponent {
 
-    public static final Pattern PATTERN = Pattern.compile("(\\d+)\\s+([^\\d\\s]+(?:\\s+[^\\d\\s]+)*)");
+    public static final Pattern AMOUNT_MATERIAL_PATTERN = Pattern.compile("(\\d+)\\s+([^\\d\\s]+(?:\\s+[^\\d\\s]+)*)");
 
-    public static final Pattern MULTIPLE_BOM_PATTERN = Pattern.compile("\\s\\bor\\b\\s");
+    public static final Pattern MULTIPLE_APPROCH_BOM_PATTERN = Pattern.compile("\\s\\bor\\b\\s");
 
     public static final JaroWinklerSimilarity JARO_WINKLER_SIMILARITY = new JaroWinklerSimilarity();
 
@@ -50,7 +50,9 @@ public class ProductHierarchyAndGraphComponent {
     public Set<ProductManufactureInfoEntity> calcManufactureInfoSet(ProductEntity productEntity) {
         Set<ContextProductHierarchyStructure> productHierarchies = calcProductsHierarchies(productEntity);
         List<Duration> durations = calcProductProducingDuration(productEntity);
-        assert durations.size() == productHierarchies.size();
+        if (durations.size() != productHierarchies.size()) {
+            log.warn("product {} materialsSize != durationSize", productEntity.getName());
+        }
 
         Set<ProductManufactureInfoEntity> producingInfoSet = new HashSet<>();
         Iterator<ContextProductHierarchyStructure> manufactureRelationIterator = productHierarchies.iterator();
@@ -71,7 +73,6 @@ public class ProductHierarchyAndGraphComponent {
             }
 
             ProductManufactureInfoEntity productManufactureInfoEntity = buildProductManufactureInfoEntity(
-                    productEntity,
                     contextProductHierarchyStructure,
                     duration
             );
@@ -110,7 +111,7 @@ public class ProductHierarchyAndGraphComponent {
                     );
 
                     //prepare internal process
-                    initProductIntoCachedRelations(productEntity);
+                    BUILD_UP_CONTEXT.getGraph().addVertex(productEntity);
                 }
         );
 
@@ -123,13 +124,6 @@ public class ProductHierarchyAndGraphComponent {
             );
         }
 
-        //        for (ProductEntity currentProductDto : productEntities) {
-        //            checkCompositeOfGoodsIntoHierarchy(
-        //                    currentProductDto,
-        //                    nameProductMap
-        //            );
-        //        }
-
         Set<ContextProductHierarchyStructure> hierarchyStructures = BUILD_UP_CONTEXT.resultByGroupInProduct();
         log.info(
                 "calcGoodsHierarchies end...result in {} items,time(mill) {} passed",
@@ -138,20 +132,6 @@ public class ProductHierarchyAndGraphComponent {
         );
 
         boolNeedCachedGoodHierarchiesReady.set(Boolean.FALSE);
-    }
-
-    private void initProductIntoCachedRelations(
-            ProductEntity productEntity
-    ) {
-        //        ContextProductHierarchyStructure manufactureRelation = ContextProductHierarchyStructure.builder()
-        //                .id(idRoller.getAndIncrement())
-        //                .productEntity(productEntity)
-        //                .productId(ProductEntity.ProductId.of(productEntity.getId()))
-        //                .composite(new ArrayList<>())
-        //                .materials(new HashMap<>())
-        //                .build();
-        //        cachedRelations.add(manufactureRelation);
-        BUILD_UP_CONTEXT.getGraph().addVertex(productEntity);
     }
 
     private void checkMaterialOfGoodsIntoHierarchy(
@@ -163,8 +143,8 @@ public class ProductHierarchyAndGraphComponent {
             return;
         }
 
-        if (MULTIPLE_BOM_PATTERN.matcher(bomStringFromEntity).find()) {
-            String replacedOr = bomStringFromEntity.replaceAll(MULTIPLE_BOM_PATTERN.pattern(), ",");
+        if (MULTIPLE_APPROCH_BOM_PATTERN.matcher(bomStringFromEntity).find()) {
+            String replacedOr = bomStringFromEntity.replaceAll(MULTIPLE_APPROCH_BOM_PATTERN.pattern(), ",");
             String[] split = replacedOr.split(",");
 
             List<String> materialStringSplitedList = Arrays.stream(split)
@@ -173,7 +153,7 @@ public class ProductHierarchyAndGraphComponent {
 
             for (int i = 0; i < materialStringSplitedList.size(); i++) {
                 String bomString = materialStringSplitedList.get(i);
-                Matcher matcher = PATTERN.matcher(bomString);
+                Matcher matcher = AMOUNT_MATERIAL_PATTERN.matcher(bomString);
                 while (matcher.find()) {
                     int quantity = refineQuantity(matcher);
                     ProductEntity materialProduct = refineMaterial(nameProductMap, matcher);
@@ -185,7 +165,7 @@ public class ProductHierarchyAndGraphComponent {
                 }
             }
         } else {
-            Matcher matcher = PATTERN.matcher(bomStringFromEntity);
+            Matcher matcher = AMOUNT_MATERIAL_PATTERN.matcher(bomStringFromEntity);
             while (matcher.find()) {
                 int quantity = refineQuantity(matcher);
                 ProductEntity materialProduct = refineMaterial(nameProductMap, matcher);
@@ -212,54 +192,30 @@ public class ProductHierarchyAndGraphComponent {
                 nameProductMap.keySet()
         );
 
-        ProductEntity goodsMaterialDto = nameProductMap.get(materialProductName1);
-        if (goodsMaterialDto == null) {
-            goodsMaterialDto = nameProductMap.get(materialProductName2);
-            if (goodsMaterialDto == null) {
-                throw new IllegalStateException("unable to find %s".formatted(rawMaterial));
+        ProductEntity goodsMaterialDto1 = nameProductMap.get(materialProductName1);
+        ProductEntity goodsMaterialDto2 = nameProductMap.get(materialProductName2);
+        if (materialProductName1.equalsIgnoreCase(materialProductName2)) {
+            if (Objects.nonNull(goodsMaterialDto1)) {
+                assert goodsMaterialDto1 == goodsMaterialDto2;
+                return goodsMaterialDto1;
             }
+        } else if (Objects.nonNull(goodsMaterialDto2)) {
+            return goodsMaterialDto2;
         }
-        return goodsMaterialDto;
+        throw new IllegalStateException("couldn't find rawMaterial %s".formatted(rawMaterial));
     }
 
     private String jaroWinklerSimilarityLookup(String example, Set<String> candidates) {
         return candidates.stream()
-                .map(str -> new Pair<String, Double>(
-                        str,
-                        JARO_WINKLER_SIMILARITY.apply(example, str)
+                .map(productNameAsMaterial -> new Pair<>(
+                        productNameAsMaterial,
+                        JARO_WINKLER_SIMILARITY.apply(example, productNameAsMaterial)
                 ))
                 .filter(pair -> pair.value0() != null && pair.value1() != null)
                 .max(Comparator.comparingDouble(Pair::value1))
                 .map(Pair::value0)
                 .get();
     }
-
-//    private void checkCompositeOfGoodsIntoHierarchy(
-//            ProductEntity productEntityDtoForBuildUp,
-//            LinkedHashMap<String, ProductEntity> nameProductMap
-//    ) {
-//        Set<ContextProductHierarchyStructure> cachedRelations = BUILD_UP_CONTEXT.getCachedRelations();
-//
-//        Long productEntityId = productEntityDtoForBuildUp.getId();
-//        String name = productEntityDtoForBuildUp.getName();
-//
-//        ArrayList<ProductEntity.ProductId> productIdList = cachedRelations.stream()
-//                .filter(contextProductHierarchyStructure -> contextProductHierarchyStructure.getMaterials()
-//                        .containsKey(ProductEntity.ProductId.of(productEntityId)))
-//                .map(ContextProductHierarchyStructure::getProductId)
-//                .collect(Collectors.toCollection(ArrayList::new));
-//
-//        cachedRelations.stream()
-//                .filter(contextProductHierarchyStructure -> Objects.equals(
-//                                contextProductHierarchyStructure.getProductId().getValue(),
-//                                productEntityDtoForBuildUp.getId()
-//                        )
-//                )
-//                .forEach(contextProductHierarchyStructure -> {
-//                    contextProductHierarchyStructure.getComposite().addAll(productIdList);
-//                });
-//
-//    }
 
     public List<Duration> calcProductProducingDuration(ProductEntity productEntity) {
         String durationString = productEntity.getDurationString();
@@ -291,12 +247,10 @@ public class ProductHierarchyAndGraphComponent {
     }
 
     private ProductManufactureInfoEntity buildProductManufactureInfoEntity(
-            ProductEntity productEntity,
             ContextProductHierarchyStructure contextProductHierarchyStructure,
             Duration duration
     ) {
         ProductManufactureInfoEntity productManufactureInfoEntity = new ProductManufactureInfoEntity();
-        productManufactureInfoEntity.setProductEntity(productEntity);
         if (contextProductHierarchyStructure != null && !contextProductHierarchyStructure.boolAtomicProduct()) {
             Set<ProductMaterialsRelation> productMaterialsRelations = buildProductMaterialRelationSet(
                     productManufactureInfoEntity,
@@ -304,11 +258,8 @@ public class ProductHierarchyAndGraphComponent {
             );
             productMaterialsRelations.forEach(productManufactureInfoEntity::attacheProductMaterialsRelation);
         }
-        if (duration != null) {
-            productManufactureInfoEntity.setProducingDuration(duration);
-        } else {
-            productManufactureInfoEntity.setProducingDuration(Duration.ZERO);
-        }
+
+        productManufactureInfoEntity.setProducingDuration(Objects.requireNonNullElse(duration, Duration.ZERO));
         return productManufactureInfoEntity;
     }
 
@@ -353,7 +304,7 @@ public class ProductHierarchyAndGraphComponent {
                                     integerListMap -> {
                                         Set<ContextProductHierarchyStructure> result = new LinkedHashSet<>();
                                         for (Map.Entry<Integer, List<ContextProductHierarchyGraphEdge>> entry : integerListMap.entrySet()) {
-                                            Integer id = entry.getKey();
+                                            Integer groupId = entry.getKey();
                                             List<ContextProductHierarchyGraphEdge> materialEdges = entry.getValue();
                                             Map<ProductEntity.ProductId, Integer> materialIdToAmountMap
                                                     = materialEdges.stream()
@@ -364,7 +315,7 @@ public class ProductHierarchyAndGraphComponent {
                                                             )
                                                     );
                                             ContextProductHierarchyStructure hierarchyStructure = ContextProductHierarchyStructure.builder()
-                                                    .id(id)
+                                                    .id(groupId)
                                                     .productId(productEntity.getProductId())
                                                     .materials(materialIdToAmountMap)
                                                     .build();
@@ -375,36 +326,6 @@ public class ProductHierarchyAndGraphComponent {
                             )
                     );
         }
-
-//        @Getter
-//        private final Set<ContextProductHierarchyStructure> cachedRelations = new LinkedHashSet<>();
-
-//        public Map<ProductEntity.ProductId, List<ContextProductHierarchyStructure>> resultByGroupInProduct() {
-//            return cachedRelations.stream()
-//                    .collect(Collectors.groupingBy(ContextProductHierarchyStructure::getProductId));
-//        }
-
-//        public Map<ProductEntity.ProductId, Integer> buildOrGetContextProductHierarchyStructure(ProductEntityDtoForBuildUp targetProduct, int splitLength, AtomicInteger idRoller) {
-//            if (splitLength == 1) {
-//                Optional<ContextProductHierarchyStructure> relationOptional
-//                        = cachedRelations.stream()
-//                        .filter(contextProductHierarchyStructure -> Objects.equals(
-//                                contextProductHierarchyStructure.getProductId().getValue(),
-//                                targetProduct.getId()
-//                        ))
-//                        .findFirst();
-//                return relationOptional.map(ContextProductHierarchyStructure::getMaterials)
-//                        .orElseThrow();
-//            }
-//            ContextProductHierarchyStructure manufactureRelation = ContextProductHierarchyStructure.builder()
-//                    .id(idRoller.getAndIncrement())
-//                    .productId(ProductEntity.ProductId.of(targetProduct.getId()))
-//                    .composite(new ArrayList<>())
-//                    .materials(new HashMap<>())
-//                    .build();
-//            cachedRelations.add(manufactureRelation);
-//            return manufactureRelation.getMaterials();
-//        }
 
     }
 

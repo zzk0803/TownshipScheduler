@@ -104,17 +104,18 @@ class ProblemTransferProcess {
     }
 
     private void fetchAndMapToSchedulingProduct() {
-        Collection<ProductEntity> productDtoList = townshipSchedulingRequest.getProductEntities();
-        for (ProductEntity productDto : productDtoList) {
-            SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productDto);
-
-            FieldFactoryInfoEntity fieldFactoryInfo = productDto.getFieldFactoryInfo();
-            schedulingProduct.setRequireFactory(buildOrGetSchedulingFactoryInfo(fieldFactoryInfo));
-
-            Set<SchedulingProducingExecutionMode> producingExecutionModes
-                    = calcProducingExecutionMode(productDto, schedulingProduct);
-            schedulingProduct.setExecutionModeSet(producingExecutionModes);
-            this.schedulingProducingExecutionModes.addAll(producingExecutionModes);
+        Collection<ProductEntity> productEntities = townshipSchedulingRequest.getProductEntities();
+        for (ProductEntity productEntity : productEntities) {
+            Set<ProductManufactureInfoEntity> manufactureInfoEntities = productEntity.getManufactureInfoEntities();
+            manufactureInfoEntities.forEach(productManufactureInfoEntity -> {
+                FieldFactoryInfoEntity fieldFactoryInfo = productManufactureInfoEntity.getFieldFactoryInfo();
+                SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productEntity);
+                schedulingProduct.setRequireFactory(buildOrGetSchedulingFactoryInfo(fieldFactoryInfo));
+                Set<SchedulingProducingExecutionMode> producingExecutionModes
+                        = calcProducingExecutionMode(productEntity, schedulingProduct);
+                schedulingProduct.setExecutionModeSet(producingExecutionModes);
+                this.schedulingProducingExecutionModes.addAll(producingExecutionModes);
+            });
         }
     }
 
@@ -177,9 +178,6 @@ class ProblemTransferProcess {
         factoryInfoEntities.forEach(
                 fieldFactoryInfo -> {
                     SchedulingFactoryInfo schedulingFactoryInfo = buildOrGetSchedulingFactoryInfo(fieldFactoryInfo);
-                    fieldFactoryInfo.getPortfolioGoods().stream()
-                            .map(this::buildOrGetSchedulingProduct)
-                            .forEach(schedulingFactoryInfo::appendPortfolioProduct);
                     schedulingFactoryInfo.setProducingStructureType(fieldFactoryInfo.getProducingType());
                     schedulingFactoryInfo.setDefaultInstanceAmount(fieldFactoryInfo.getDefaultInstanceAmount());
                     schedulingFactoryInfo.setDefaultProducingCapacity(fieldFactoryInfo.getDefaultProducingCapacity());
