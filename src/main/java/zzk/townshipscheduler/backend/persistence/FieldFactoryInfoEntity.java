@@ -44,6 +44,9 @@ import java.util.function.Supplier;
                         name = "productEntity.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
+                                        value = "manufactureInfoEntities"
+                                ),
+                                @NamedAttributeNode(
                                         value = "crawledAsImage",
                                         subgraph = "crawledAsImage.subgraph"
                                 )
@@ -58,7 +61,12 @@ import java.util.function.Supplier;
                 @NamedSubgraph(
                         name = "productMaterialsRelation.subgraph",
                         attributeNodes = {
-                                @NamedAttributeNode(value = "material")
+                                @NamedAttributeNode(
+                                        value = "material"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "productManufactureInfo"
+                                )
                         }
                 )
         }
@@ -83,8 +91,22 @@ public class FieldFactoryInfoEntity {
 
     private Integer level;
 
-    @OneToMany(mappedBy = "fieldFactoryInfo")
-    private Set<ProductManufactureInfoEntity> productManufactureInfoSet=new LinkedHashSet<>();
+    @OneToMany(
+            targetEntity = ProductManufactureInfoEntity.class,
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}
+    )
+    @JoinTable(
+            name = "jointable_factoryInfo_manufactureInfo",
+            joinColumns = @JoinColumn(
+                    name = "factoryInfo_id",
+                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name = "manufactureinfo_id",
+                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+            )
+    )
+    private Set<ProductManufactureInfoEntity> productManufactureInfoSet = new LinkedHashSet<>();
 
     @Enumerated(EnumType.STRING)
     private ProducingStructureType producingType = ProducingStructureType.QUEUE;
@@ -101,14 +123,14 @@ public class FieldFactoryInfoEntity {
 
     private Integer maxInstanceAmount = 1;
 
-    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        productManufactureInfo.setFieldFactoryInfo(this);
-        return this.productManufactureInfoSet.add(productManufactureInfo);
-    }
-
     public boolean attacheProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
         return productManufactureInfoEntities.stream()
                 .allMatch(this::attacheProductManufactureInfo);
+    }
+
+    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+        productManufactureInfo.setFieldFactoryInfo(this);
+        return this.productManufactureInfoSet.add(productManufactureInfo);
     }
 
     @Override

@@ -27,12 +27,10 @@ public interface ProductEntityRepository
     @Query("select p from ProductEntity p where p.level<=:level")
     Set<ProductEntity> queryForPrepareScheduling(Integer level);
 
-    @Transactional(readOnly = true)
     @Query("from ProductEntity p")
     @EntityGraph(type = EntityGraph.EntityGraphType.FETCH)
     <T> Set<T> queryForRawProductHierarchyGraphBuilding(Class<T> projectionClass, Sort sort);
 
-    @Transactional(readOnly = true)
     @EntityGraph(
             attributePaths = {
                     "crawledAsImage.imageBytes"
@@ -40,6 +38,14 @@ public interface ProductEntityRepository
     )
     @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.name=:name")
     Optional<byte[]> queryProductImageByName(String name);
+
+    @EntityGraph(
+            attributePaths = {
+                    "crawledAsImage.imageBytes"
+            }
+    )
+    @Query("select pe.crawledAsImage.imageBytes from ProductEntity as pe where pe.id=:id")
+    Optional<byte[]> queryProductImageById(Long id);
 
 
 

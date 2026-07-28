@@ -95,10 +95,25 @@ public class ProductEntity {
 
     private String durationString = "";
 
-    @OneToMany(mappedBy = "productEntity")
+    @OneToMany(
+            targetEntity = ProductManufactureInfoEntity.class,
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}
+    )
+    @JoinTable(
+            name = "jointable_product_manufactureInfo",
+            joinColumns = @JoinColumn(
+                    name = "product_id",
+                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name = "manufactureinfo_id",
+                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+            )
+    )
     private Set<ProductManufactureInfoEntity> manufactureInfoEntities = new HashSet<>();
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private WikiCrawledEntity crawledAsImage;
 
     @PostLoad
@@ -106,14 +121,14 @@ public class ProductEntity {
         setProductId(ProductId.of(getId()));
     }
 
-    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        productManufactureInfo.setProductEntity(this);
-        return manufactureInfoEntities.add(productManufactureInfo);
-    }
-
     public boolean attacheProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
         return productManufactureInfoEntities.stream()
                 .allMatch(this::attacheProductManufactureInfo);
+    }
+
+    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+        productManufactureInfo.setProductEntity(this);
+        return manufactureInfoEntities.add(productManufactureInfo);
     }
 
     @Override
@@ -151,7 +166,6 @@ public class ProductEntity {
     }
 
     @Data
-    @Embeddable
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ProductId {

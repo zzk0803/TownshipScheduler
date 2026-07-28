@@ -28,9 +28,8 @@ public class ProductImagesBytesComponent {
             unless = "#result==null"
     )
     public byte[] getProductImage(Long productId) {
-        Optional<ProductEntity> optionalProductEntity = productEntityRepository.findById(productId);
-        ProductEntity product = optionalProductEntity.get();
-        return getProductImage(product);
+        Optional<byte[]> optionalBytes = productEntityRepository.queryProductImageById(productId);
+        return optionalBytes.get();
     }
 
     @Transactional(readOnly = true)
@@ -41,14 +40,6 @@ public class ProductImagesBytesComponent {
     )
     public byte[] getProductImage(ProductEntity productEntity) {
         String productEntityName = productEntity.getName();
-        WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
-        if (crawledAsImage != null) {
-            byte[] imageBytes = crawledAsImage.getImageBytes();
-            if (imageBytes == null) {
-                return getProductImage(productEntityName);
-            }
-            return imageBytes;
-        }
         return getProductImage(productEntityName);
     }
 

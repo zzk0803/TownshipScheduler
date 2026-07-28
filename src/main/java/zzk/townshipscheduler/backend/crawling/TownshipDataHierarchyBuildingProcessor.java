@@ -11,10 +11,7 @@ import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
 import zzk.townshipscheduler.backend.persistence.dao.*;
 import zzk.townshipscheduler.backend.service.ProductHierarchyAndGraphComponent;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -49,39 +46,39 @@ public class TownshipDataHierarchyBuildingProcessor {
                             .stream()
                             .collect(Collectors.groupingBy(ProductEntity::getCategory))
                             .forEach((category, productEntities) -> {
-                                FieldFactoryInfoEntity newFieldFactoryInfo = new FieldFactoryInfoEntity();
-                                newFieldFactoryInfo.setCategory(category);
-                                newFieldFactoryInfo.setLevel(
-                                        productEntities.stream()
-                                                .map(ProductEntity::getLevel)
-                                                .min(Integer::compareTo)
-                                                .orElseThrow()
-                                );
-                                FieldFactoryInfoEntity savedFieldFactoryInfoEntity = fieldFactoryInfoEntityRepository.saveAndFlush(newFieldFactoryInfo);
+                                transactionTemplate.executeWithoutResult(_ -> {
+                                    FieldFactoryInfoEntity newFieldFactoryInfo = new FieldFactoryInfoEntity();
+                                    newFieldFactoryInfo.setCategory(category);
+                                    newFieldFactoryInfo.setLevel(
+                                            productEntities.stream()
+                                                    .map(ProductEntity::getLevel)
+                                                    .min(Integer::compareTo)
+                                                    .orElseThrow()
+                                    );
 
-                                productEntities.forEach(
-                                        productEntity -> {
-                                            Set<ProductManufactureInfoEntity> calcedManufactureInfoSet
-                                                    = productHierarchyAndGraphComponent.calcManufactureInfoSet(productEntity);
-                                            List<ProductManufactureInfoEntity> savedManufactureInfoSet = productManufactureInfoEntityRepository.saveAllAndFlush(calcedManufactureInfoSet);
-                                            if (!productEntity.attacheProductManufactureInfoCollection(savedManufactureInfoSet)) {
-                                                log.warn("{} attacheProductManufactureInfoCollection not all success", productEntity.getName());
-                                            }
-                                            if (!savedFieldFactoryInfoEntity.attacheProductManufactureInfoCollection(savedManufactureInfoSet)) {
-                                                log.warn("{} attacheProductManufactureInfoCollection not all success", savedFieldFactoryInfoEntity.getCategory());
-                                            }
-                                            ProductEntity savedProduct = productEntityRepository.saveAndFlush(productEntity);
+                                    productEntities.forEach(
+                                            productEntity -> {
+                                                Set<ProductManufactureInfoEntity> calcedManufactureInfoSet
+                                                        = productHierarchyAndGraphComponent.calcManufactureInfoSet(productEntity);
+                                                if (!productEntity.attacheProductManufactureInfoCollection(calcedManufactureInfoSet)) {
+                                                    log.warn("{} attacheProductManufactureInfoCollection not all success", productEntity.getName());
+                                                }
+                                                if (!newFieldFactoryInfo.attacheProductManufactureInfoCollection(calcedManufactureInfoSet)) {
+                                                    log.warn("{} attacheProductManufactureInfoCollection not all success", newFieldFactoryInfo.getCategory());
+                                                }
 
-                                            productMaterialsRelations.addAll(
-                                                    savedProduct.getManufactureInfoEntities()
-                                                            .stream()
-                                                            .flatMap(manufactureInfoEntity -> manufactureInfoEntity.getProductMaterialsRelations().stream())
-                                                            .toList()
-                                            );
-                                            productManufactureInfoEntities.addAll(calcedManufactureInfoSet);
-                                        }
-                                );
-                                fieldFactoryInfoEntities.add(newFieldFactoryInfo);
+                                                productMaterialsRelations.addAll(
+                                                        calcedManufactureInfoSet.stream()
+                                                                .flatMap(manufactureInfoEntity -> manufactureInfoEntity.getProductMaterialsRelations().stream())
+                                                                .toList()
+                                                );
+                                                productManufactureInfoEntities.addAll(calcedManufactureInfoSet);
+                                            }
+                                    );
+                                    fieldFactoryInfoEntityRepository.save(newFieldFactoryInfo);
+                                    productEntityRepository.saveAllAndFlush(productEntities);
+                                    fieldFactoryInfoEntities.add(newFieldFactoryInfo);
+                                });
                             });
 
                     log.info("bonus...map to factory info and persist.....done");

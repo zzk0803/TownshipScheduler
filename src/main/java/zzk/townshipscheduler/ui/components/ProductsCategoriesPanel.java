@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -48,20 +47,13 @@ public class ProductsCategoriesPanel
 
     private Set<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
 
-    private Set<ProductEntity> productEntities;
-
     private FieldFactoryInfoEntity currentSelectFactoryInfo;
 
     private ProductEntity currentSelectProduct;
 
     public ProductsCategoriesPanel(ProductViewPresenter productViewPresenter) {
         this.productViewPresenter = productViewPresenter;
-        this.fieldFactoryInfoEntities = this.productViewPresenter.getFieldFactoryInfoCollection();
-        setProductEntities(
-                fieldFactoryInfoEntities.stream().flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getProductManufactureInfoSet().stream())
-                        .map(ProductManufactureInfoEntity::getProductEntity)
-                        .collect(Collectors.toSet())
-        );
+        this.setFieldFactoryInfoEntities(this.productViewPresenter.getFieldFactoryInfoCollection());
 
         searchField = createSearchField();
         categoryRadioGroup = createCategoryRadioGroup();
@@ -140,7 +132,8 @@ public class ProductsCategoriesPanel
         categoryRadioGroup.setMinWidth("10rem");
         categoryRadioGroup.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
         categoryRadioGroup.addValueChangeListener(valueChangeEvent -> {
-            this.filterCategoryProduct(valueChangeEvent.getValue());
+            FieldFactoryInfoEntity fieldFactoryInfoEntity = valueChangeEvent.getValue();
+            this.filterCategoryProduct(fieldFactoryInfoEntity);
         });
         categoryRadioGroup.setItems(this.fieldFactoryInfoEntities);
         return categoryRadioGroup;
@@ -149,7 +142,11 @@ public class ProductsCategoriesPanel
     public void filterCategoryProduct(FieldFactoryInfoEntity category) {
         if (Objects.nonNull(category)) {
             setCurrentSelectFactoryInfo(category);
-            getGridListDataView().addFilter(product -> product.getManufactureInfoEntities().containsAll(category.getProductManufactureInfoSet()));
+            getGridListDataView().addFilter(product -> {
+                Set<ProductManufactureInfoEntity> manufactureInfoEntities = product.getManufactureInfoEntities();
+                Set<ProductManufactureInfoEntity> productManufactureInfoSet = category.getProductManufactureInfoSet();
+                return manufactureInfoEntities.stream().anyMatch(productManufactureInfoSet::contains);
+            });
         }
     }
 
@@ -183,7 +180,7 @@ public class ProductsCategoriesPanel
     }
 
     private Component createProductImage(ProductEntity productEntity) {
-        byte[] productImage = this.productViewPresenter.getProductImage(productEntity);
+        byte[] productImage = productViewPresenter.getProductImagesBytesComponent().getProductImage(productEntity);
         return ProductImages.productImage(
                 productEntity.getName(),
                 productImage
@@ -277,11 +274,17 @@ public class ProductsCategoriesPanel
 
     @Override
     protected void onAttach(AttachEvent attachEvent) {
-        setGridListDataView(getProductsGrid().setItems(getProductEntities()));
         this.forceReloadingData();
     }
 
     public void forceReloadingData() {
+        setGridListDataView(
+                getProductsGrid().setItems(
+                        getFieldFactoryInfoEntities().stream()
+                                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity))
+                                .toList()
+                )
+        );
         this.productsGrid.getDataProvider().refreshAll();
         this.categoryRadioGroup.getDataProvider().refreshAll();
     }

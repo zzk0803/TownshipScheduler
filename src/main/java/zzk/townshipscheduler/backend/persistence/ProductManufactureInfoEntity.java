@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
                         subgraph = "productEntity.suggraph"
                 ),
                 @NamedAttributeNode(
+                        value = "fieldFactoryInfo"
+                ),
+                @NamedAttributeNode(
                         value = "productMaterialsRelations",
                         subgraph = "productMaterialsRelation.subgraph"
                 ),
@@ -67,16 +70,18 @@ public class ProductManufactureInfoEntity {
 
     private Integer amountWhenCreated = 1;
 
-    @ManyToOne
-    @JoinColumn(
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-    )
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ProductEntity productEntity;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private FieldFactoryInfoEntity fieldFactoryInfo;
 
-    @OneToMany(mappedBy = "productManufactureInfo")
+    @OneToMany(
+            mappedBy = "productManufactureInfo",
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}
+    )
     @ToString.Exclude
     private Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
 

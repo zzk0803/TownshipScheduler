@@ -64,7 +64,7 @@ class TownshipDataHardcodeHotfixProcessor {
                     return fieldFactoryInfo;
                 })
                 .forEach(fieldFactoryInfoEntity -> {
-                    String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
+                    String[] products = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
                     transactionTemplate.executeWithoutResult(transactionStatus -> {
                         FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(fieldFactoryInfoEntity);
                     });
@@ -105,7 +105,7 @@ class TownshipDataHardcodeHotfixProcessor {
         duckFeeder.setMaxReapWindowCapacity(3);
         String[] duckFeederProducts = farmingProductMap.get(duckFeeder.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-             fieldFactoryInfoEntityRepository.save(duckFeeder);
+            fieldFactoryInfoEntityRepository.save(duckFeeder);
         });
 
         FieldFactoryInfoEntity otterPond = new FieldFactoryInfoEntity();
@@ -120,7 +120,7 @@ class TownshipDataHardcodeHotfixProcessor {
         otterPond.setMaxReapWindowCapacity(3);
         String[] otterPondProducts = farmingProductMap.get(otterPond.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-             fieldFactoryInfoEntityRepository.save(otterPond);
+            fieldFactoryInfoEntityRepository.save(otterPond);
         });
 
         FieldFactoryInfoEntity mushroomFarm = new FieldFactoryInfoEntity();
