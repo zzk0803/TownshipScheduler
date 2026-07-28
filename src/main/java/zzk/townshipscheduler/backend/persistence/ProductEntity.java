@@ -6,10 +6,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Getter
@@ -97,7 +94,7 @@ public class ProductEntity {
 
     @OneToMany(
             targetEntity = ProductManufactureInfoEntity.class,
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.REMOVE}
     )
     @JoinTable(
             name = "jointable_product_manufactureInfo",
@@ -106,7 +103,7 @@ public class ProductEntity {
                     foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
             ),
             inverseJoinColumns = @JoinColumn(
-                    name = "manufactureinfo_id",
+                    name = "manufactureInfo_id",
                     foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
             )
     )
@@ -131,13 +128,19 @@ public class ProductEntity {
         return manufactureInfoEntities.add(productManufactureInfo);
     }
 
-    public boolean detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
-        return productManufactureInfoEntities.stream()
-                .allMatch(this::detachProductManufactureInfo);
+    public void detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+        Iterator<? extends ProductManufactureInfoEntity> iterator = productManufactureInfoEntities.iterator();
+        while (iterator.hasNext()) {
+            ProductManufactureInfoEntity productManufactureInfoEntity = iterator.next();
+            this.detachProductManufactureInfo(productManufactureInfoEntity);
+            iterator.remove();
+        }
     }
 
     public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        productManufactureInfo.setFieldFactoryInfo(null);
+        if (this.manufactureInfoEntities.contains(productManufactureInfo)) {
+            productManufactureInfo.setFieldFactoryInfo(null);
+        }
         return this.manufactureInfoEntities.remove(productManufactureInfo);
     }
 

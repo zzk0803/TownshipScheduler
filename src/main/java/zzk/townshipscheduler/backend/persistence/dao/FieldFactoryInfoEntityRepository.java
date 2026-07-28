@@ -14,6 +14,7 @@ import java.util.Set;
 public interface FieldFactoryInfoEntityRepository
         extends JpaRepository<FieldFactoryInfoEntity, Long> {
 
+    @EntityGraph("fieldFactoryInfo.g.full")
     Optional<FieldFactoryInfoEntity> findByCategory(String category);
 
     <T> Set<T> findBy(Class<T> projectionClass);

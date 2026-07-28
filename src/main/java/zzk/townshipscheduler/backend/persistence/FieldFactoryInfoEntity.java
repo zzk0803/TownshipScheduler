@@ -5,10 +5,7 @@ import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 
 @Entity
@@ -106,7 +103,7 @@ public class FieldFactoryInfoEntity {
 
     @OneToMany(
             targetEntity = ProductManufactureInfoEntity.class,
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.REMOVE}
     )
     @JoinTable(
             name = "jointable_factoryInfo_manufactureInfo",
@@ -115,7 +112,7 @@ public class FieldFactoryInfoEntity {
                     foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
             ),
             inverseJoinColumns = @JoinColumn(
-                    name = "manufactureinfo_id",
+                    name = "manufactureInfo_id",
                     foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
             )
     )
@@ -146,13 +143,19 @@ public class FieldFactoryInfoEntity {
         return this.productManufactureInfoSet.add(productManufactureInfo);
     }
 
-    public boolean detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
-        return productManufactureInfoEntities.stream()
-                .allMatch(this::detachProductManufactureInfo);
+    public void detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+        Iterator<? extends ProductManufactureInfoEntity> iterator = productManufactureInfoEntities.iterator();
+        while (iterator.hasNext()) {
+            ProductManufactureInfoEntity productManufactureInfoEntity = iterator.next();
+            this.detachProductManufactureInfo(productManufactureInfoEntity);
+            iterator.remove();
+        }
     }
 
     public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        productManufactureInfo.setFieldFactoryInfo(null);
+        if (this.productManufactureInfoSet.contains(productManufactureInfo)) {
+            productManufactureInfo.setFieldFactoryInfo(null);
+        }
         return this.productManufactureInfoSet.remove(productManufactureInfo);
     }
 

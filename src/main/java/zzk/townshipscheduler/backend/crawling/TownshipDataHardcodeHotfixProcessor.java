@@ -11,10 +11,7 @@ import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -51,6 +48,22 @@ class TownshipDataHardcodeHotfixProcessor {
         );
 
         String[] threeInstanceFarmingPart = {"Cowshed", "Chicken Coop"};
+
+        transactionTemplate.executeWithoutResult(_ -> {
+            Optional<FieldFactoryInfoEntity> farmBuildings
+                    = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
+            farmBuildings.ifPresent(fieldFactoryInfoEntity -> {
+                Set<ProductManufactureInfoEntity> productManufactureInfoSet = fieldFactoryInfoEntity.getProductManufactureInfoSet();
+                List<ProductEntity> relatedProduct = productManufactureInfoSet.stream().map(ProductManufactureInfoEntity::getProductEntity).toList();
+                for (ProductEntity productEntity : relatedProduct) {
+                    productEntity.detachProductManufactureInfoCollection(productManufactureInfoSet);
+                    productEntityRepository.saveAndFlush(productEntity);
+                }
+                fieldFactoryInfoEntity.detachProductManufactureInfoCollection(productManufactureInfoSet);
+                fieldFactoryInfoEntityRepository.delete(fieldFactoryInfoEntity);
+            });
+        });
+
         Arrays.stream(threeInstanceFarmingPart)
                 .map(categoryString -> {
                     FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
@@ -175,16 +188,6 @@ class TownshipDataHardcodeHotfixProcessor {
                         savedFieldFactoryInfo.attacheProductManufactureInfoCollection(productManufactureInfoEntities);
                         fieldFactoryInfoEntityRepository.save(savedFieldFactoryInfo);
                     });
-        });
-
-        transactionTemplate.executeWithoutResult(_ -> {
-            Optional<FieldFactoryInfoEntity> farmBuildings
-                    = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
-            farmBuildings.ifPresent(entity -> {
-                Set<ProductManufactureInfoEntity> productManufactureInfoSet = entity.getProductManufactureInfoSet();
-                entity.detachProductManufactureInfoCollection(productManufactureInfoSet);
-                fieldFactoryInfoEntityRepository.delete(entity);
-            });
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {

@@ -26,6 +26,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
 
+import java.time.Duration;
+
 @Slf4j
 @Route(value = "crawling")
 @Menu(
@@ -112,6 +114,7 @@ public class CrawlingWikiView
                     Notification notification = new Notification("Error occur when get data from fandom wiki");
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                     notification.setPosition(Notification.Position.MIDDLE);
+                    notification.setDuration(Duration.ofSeconds(3).toSecondsPart());
                     notification.open();
                     actionButton.setDisableOnClick(false);
                 });
@@ -184,6 +187,7 @@ public class CrawlingWikiView
                             Notification notification = new Notification("Error occur when get data from fandom wiki");
                             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                             notification.setPosition(Notification.Position.MIDDLE);
+                            notification.setDuration(Duration.ofSeconds(3).toSecondsPart());
                             notification.open();
                             actionButton.setDisableOnClick(false);
                         });
