@@ -53,6 +53,18 @@ import java.util.function.Supplier;
                         }
                 ),
                 @NamedSubgraph(
+                        name = "material.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "manufactureInfoEntities"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "crawledAsImage",
+                                        subgraph = "crawledAsImage.subgraph"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
                         name = "crawledAsImage.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(value = "imageBytes")
@@ -62,7 +74,8 @@ import java.util.function.Supplier;
                         name = "productMaterialsRelation.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
-                                        value = "material"
+                                        value = "material",
+                                        subgraph = "material.subgraph"
                                 ),
                                 @NamedAttributeNode(
                                         value = "productManufactureInfo"
@@ -131,6 +144,16 @@ public class FieldFactoryInfoEntity {
     public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
         productManufactureInfo.setFieldFactoryInfo(this);
         return this.productManufactureInfoSet.add(productManufactureInfo);
+    }
+
+    public boolean detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+        return productManufactureInfoEntities.stream()
+                .allMatch(this::detachProductManufactureInfo);
+    }
+
+    public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+        productManufactureInfo.setFieldFactoryInfo(null);
+        return this.productManufactureInfoSet.remove(productManufactureInfo);
     }
 
     @Override

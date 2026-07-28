@@ -131,6 +131,16 @@ public class ProductEntity {
         return manufactureInfoEntities.add(productManufactureInfo);
     }
 
+    public boolean detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+        return productManufactureInfoEntities.stream()
+                .allMatch(this::detachProductManufactureInfo);
+    }
+
+    public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+        productManufactureInfo.setFieldFactoryInfo(null);
+        return this.manufactureInfoEntities.remove(productManufactureInfo);
+    }
+
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy

@@ -21,6 +21,7 @@ public interface ProductEntityRepository
     @EntityGraph(value = "products.g.full")
     <T> Set<T> findBy(Class<T> projectionClass, Sort sort);
 
+    @EntityGraph(value = "products.g.full")
     Optional<ProductEntity> findByName(String name);
 
     @EntityGraph("products.g.full")
@@ -28,7 +29,6 @@ public interface ProductEntityRepository
     Set<ProductEntity> queryForPrepareScheduling(Integer level);
 
     @Query("from ProductEntity p")
-    @EntityGraph(type = EntityGraph.EntityGraphType.FETCH)
     <T> Set<T> queryForRawProductHierarchyGraphBuilding(Class<T> projectionClass, Sort sort);
 
     @EntityGraph(

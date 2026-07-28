@@ -89,7 +89,7 @@ public class CrawlingWikiViewPresenter {
                 .whenCompleteAsync(
                         (unused, throwable) -> {
                             if (throwable != null) {
-                                log.error("error occur while process preceding：{}", throwable.getMessage());
+                                log.error("error occur while process preceding：{}", throwable);
                             }
                             log.info("download and finished");
                             townshipFandomCrawlingProcessFacade.clean();

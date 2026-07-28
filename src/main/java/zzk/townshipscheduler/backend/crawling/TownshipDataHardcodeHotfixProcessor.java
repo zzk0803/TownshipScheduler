@@ -7,12 +7,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
 import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -66,7 +68,14 @@ class TownshipDataHardcodeHotfixProcessor {
                 .forEach(fieldFactoryInfoEntity -> {
                     String[] products = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
                     transactionTemplate.executeWithoutResult(transactionStatus -> {
-                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(fieldFactoryInfoEntity);
+                        Arrays.stream(products)
+                                .map(this.productEntityRepository::findByName)
+                                .flatMap(Optional::stream)
+                                .map(ProductEntity::getManufactureInfoEntities)
+                                .forEach(productManufactureInfoEntities -> {
+                                    fieldFactoryInfoEntity.attacheProductManufactureInfoCollection(productManufactureInfoEntities);
+                                    fieldFactoryInfoEntityRepository.save(fieldFactoryInfoEntity);
+                                });
                     });
                 });
 
@@ -86,10 +95,16 @@ class TownshipDataHardcodeHotfixProcessor {
                     return fieldFactoryInfo;
                 })
                 .forEach(fieldFactoryInfoEntity -> {
-                    String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
+                    String[] products = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
                     transactionTemplate.executeWithoutResult(transactionStatus -> {
-                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
-                                fieldFactoryInfoEntity);
+                        Arrays.stream(products)
+                                .map(this.productEntityRepository::findByName)
+                                .flatMap(Optional::stream)
+                                .map(ProductEntity::getManufactureInfoEntities)
+                                .forEach(productManufactureInfoEntities -> {
+                                    fieldFactoryInfoEntity.attacheProductManufactureInfoCollection(productManufactureInfoEntities);
+                                    fieldFactoryInfoEntityRepository.save(fieldFactoryInfoEntity);
+                                });
                     });
                 });
 
@@ -106,6 +121,14 @@ class TownshipDataHardcodeHotfixProcessor {
         String[] duckFeederProducts = farmingProductMap.get(duckFeeder.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
             fieldFactoryInfoEntityRepository.save(duckFeeder);
+            Arrays.stream(duckFeederProducts)
+                    .map(this.productEntityRepository::findByName)
+                    .flatMap(Optional::stream)
+                    .map(ProductEntity::getManufactureInfoEntities)
+                    .forEach(productManufactureInfoEntities -> {
+                        duckFeeder.attacheProductManufactureInfoCollection(productManufactureInfoEntities);
+                        fieldFactoryInfoEntityRepository.save(duckFeeder);
+                    });
         });
 
         FieldFactoryInfoEntity otterPond = new FieldFactoryInfoEntity();
@@ -121,6 +144,14 @@ class TownshipDataHardcodeHotfixProcessor {
         String[] otterPondProducts = farmingProductMap.get(otterPond.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
             fieldFactoryInfoEntityRepository.save(otterPond);
+            Arrays.stream(otterPondProducts)
+                    .map(this.productEntityRepository::findByName)
+                    .flatMap(Optional::stream)
+                    .map(ProductEntity::getManufactureInfoEntities)
+                    .forEach(productManufactureInfoEntities -> {
+                        otterPond.attacheProductManufactureInfoCollection(productManufactureInfoEntities);
+                        fieldFactoryInfoEntityRepository.save(otterPond);
+                    });
         });
 
         FieldFactoryInfoEntity mushroomFarm = new FieldFactoryInfoEntity();
@@ -136,12 +167,24 @@ class TownshipDataHardcodeHotfixProcessor {
         String[] mushroomFarmProducts = farmingProductMap.get(mushroomFarm.getCategory());
         transactionTemplate.executeWithoutResult(transactionStatus -> {
             FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(mushroomFarm);
+            Arrays.stream(mushroomFarmProducts)
+                    .map(this.productEntityRepository::findByName)
+                    .flatMap(Optional::stream)
+                    .map(ProductEntity::getManufactureInfoEntities)
+                    .forEach(productManufactureInfoEntities -> {
+                        savedFieldFactoryInfo.attacheProductManufactureInfoCollection(productManufactureInfoEntities);
+                        fieldFactoryInfoEntityRepository.save(savedFieldFactoryInfo);
+                    });
         });
 
         transactionTemplate.executeWithoutResult(_ -> {
             Optional<FieldFactoryInfoEntity> farmBuildings
                     = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
-            farmBuildings.ifPresent(fieldFactoryInfoEntityRepository::delete);
+            farmBuildings.ifPresent(entity -> {
+                Set<ProductManufactureInfoEntity> productManufactureInfoSet = entity.getProductManufactureInfoSet();
+                entity.detachProductManufactureInfoCollection(productManufactureInfoSet);
+                fieldFactoryInfoEntityRepository.delete(entity);
+            });
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {

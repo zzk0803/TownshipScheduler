@@ -1,6 +1,9 @@
 package zzk.townshipscheduler.ui.components;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -16,6 +19,8 @@ import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ValueSignal;
 import lombok.Getter;
 import lombok.Setter;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
@@ -26,9 +31,7 @@ import zzk.townshipscheduler.ui.views.product.ProductViewPresenter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 
 @Getter
 @Setter
@@ -47,9 +50,9 @@ public class ProductsCategoriesPanel
 
     private Set<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
 
-    private FieldFactoryInfoEntity currentSelectFactoryInfo;
+    private ValueSignal<String> filterCriterialValueSignal = new ValueSignal<>("");
 
-    private ProductEntity currentSelectProduct;
+    private ValueSignal<FieldFactoryInfoEntity> currentSelectFactoryInfoValueSignal = new ValueSignal<>(null);
 
     public ProductsCategoriesPanel(ProductViewPresenter productViewPresenter) {
         this.productViewPresenter = productViewPresenter;
@@ -75,7 +78,6 @@ public class ProductsCategoriesPanel
                 new Button(
                         VaadinIcon.REFRESH.create(),
                         buttonClickEvent -> {
-                            setCurrentSelectProduct(null);
                             this.searchField.clear();
                             this.categoryRadioGroup.clear();
                             this.gridListDataView.removeFilters().refreshAll();
@@ -99,29 +101,9 @@ public class ProductsCategoriesPanel
         textField.setWidthFull();
         textField.addValueChangeListener(valueChange -> {
             String criteria = valueChange.getValue();
-            this.filterGoods(criteria);
+            this.filterCriterialValueSignal.set(criteria);
         });
         return textField;
-    }
-
-    public void filterGoods(String filterCriteria) {
-        if (filterCriteria.isBlank()) {
-            reset();
-            getGridListDataView().refreshAll();
-        }
-
-        getGridListDataView().addFilter(
-                product -> {
-                    String productName = product.getName();
-                    String bomString = product.getBomString();
-                    return productName.contains(filterCriteria) || bomString.contains(filterCriteria);
-                }
-        );
-    }
-
-    public void reset() {
-        this.gridListDataView.removeFilters();
-        this.currentSelectFactoryInfo = null;
     }
 
     private RadioButtonGroup<FieldFactoryInfoEntity> createCategoryRadioGroup() {
@@ -133,21 +115,10 @@ public class ProductsCategoriesPanel
         categoryRadioGroup.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
         categoryRadioGroup.addValueChangeListener(valueChangeEvent -> {
             FieldFactoryInfoEntity fieldFactoryInfoEntity = valueChangeEvent.getValue();
-            this.filterCategoryProduct(fieldFactoryInfoEntity);
+            this.currentSelectFactoryInfoValueSignal.set(fieldFactoryInfoEntity);
         });
         categoryRadioGroup.setItems(this.fieldFactoryInfoEntities);
         return categoryRadioGroup;
-    }
-
-    public void filterCategoryProduct(FieldFactoryInfoEntity category) {
-        if (Objects.nonNull(category)) {
-            setCurrentSelectFactoryInfo(category);
-            getGridListDataView().addFilter(product -> {
-                Set<ProductManufactureInfoEntity> manufactureInfoEntities = product.getManufactureInfoEntities();
-                Set<ProductManufactureInfoEntity> productManufactureInfoSet = category.getProductManufactureInfoSet();
-                return manufactureInfoEntities.stream().anyMatch(productManufactureInfoSet::contains);
-            });
-        }
     }
 
     private Grid<ProductEntity> createGrid() {
@@ -165,26 +136,70 @@ public class ProductsCategoriesPanel
                 .setHeader("Category").setAutoWidth(true);
         grid.addColumn(ProductEntity::getDurationString)
                 .setHeader("Producing Duration").setAutoWidth(true);
-        grid.addColumn(ProductEntity::getBomString).setHeader("Materials-String").setAutoWidth(true);
         grid.addColumn(new ComponentRenderer<>(this::productMaterialsRender))
                 .setHeader("Materials").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
         grid.setHeightFull();
-        grid.asSingleSelect().addValueChangeListener(valueChangeEvent -> {
-            valueChangeEvent.getHasValue().getOptionalValue().ifPresentOrElse(
-                    this::setCurrentSelectProduct,
-                    () -> this.setCurrentSelectProduct(null)
-            );
-        });
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+        Signal.effect(
+                grid,
+                () -> {
+                    String criterial = filterCriterialValueSignal.get();
+                    this.filterProducts(criterial);
+                }
+        );
+        Signal.effect(
+                grid,
+                () -> {
+                    FieldFactoryInfoEntity fieldFactoryInfoEntity = currentSelectFactoryInfoValueSignal.get();
+                    if (fieldFactoryInfoEntity != null) {
+                        this.gridListDataView = grid.setItems(fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity).toList());
+                    } else {
+                        this.gridListDataView = grid.setItems(
+                                getFieldFactoryInfoEntities().stream()
+                                        .flatMap(fieldFactoryInfo -> fieldFactoryInfo.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity))
+                                        .toList()
+                        );
+                    }
+                }
+        );
         return grid;
     }
 
     private Component createProductImage(ProductEntity productEntity) {
-        byte[] productImage = productViewPresenter.getProductImagesBytesComponent().getProductImage(productEntity);
+        byte[] productImage = productEntity.getCrawledAsImage().getImageBytes();
         return ProductImages.productImage(
                 productEntity.getName(),
                 productImage
         );
+    }
+
+    public void filterProducts(String filterCriteria) {
+        if (filterCriteria == null) {
+            if (this.gridListDataView != null) {
+                this.gridListDataView.removeFilters();
+                this.gridListDataView.refreshAll();
+            }
+            return;
+        }
+
+        if (filterCriteria.isBlank()) {
+            if (this.gridListDataView != null) {
+                this.gridListDataView.removeFilters();
+                this.gridListDataView.refreshAll();
+            }
+            return;
+        }
+
+        if (this.gridListDataView != null) {
+            this.gridListDataView.addFilter(
+                    product -> {
+                        String productName = product.getName().toLowerCase();
+                        String bomString = product.getBomString().toLowerCase();
+                        return productName.contains(filterCriteria.toLowerCase()) || bomString.contains(filterCriteria.toLowerCase());
+                    }
+            );
+        }
     }
 
     private Component productMaterialsRender(ProductEntity productEntity) {
@@ -251,6 +266,14 @@ public class ProductsCategoriesPanel
         return accordion;
     }
 
+    public void reset() {
+        if (this.gridListDataView != null) {
+            this.gridListDataView.removeFilters();
+        }
+        this.currentSelectFactoryInfoValueSignal.set(null);
+        this.filterCriterialValueSignal.set(null);
+    }
+
     @Override
     protected VerticalLayout initContent() {
         VerticalLayout contentLayout = super.initContent();
@@ -262,31 +285,10 @@ public class ProductsCategoriesPanel
         return contentLayout;
     }
 
-    public void consumeSelected(Consumer<ProductEntity> consumer) {
-        consumer.accept(getCurrentSelectProduct());
-    }
-
     public void refreshImgBtnClickDone(ProductEntity productEntity) {
         UI.getCurrent().access(() -> {
             productsGrid.getGenericDataView().refreshItem(productEntity);
         });
-    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        this.forceReloadingData();
-    }
-
-    public void forceReloadingData() {
-        setGridListDataView(
-                getProductsGrid().setItems(
-                        getFieldFactoryInfoEntities().stream()
-                                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity))
-                                .toList()
-                )
-        );
-        this.productsGrid.getDataProvider().refreshAll();
-        this.categoryRadioGroup.getDataProvider().refreshAll();
     }
 
 }

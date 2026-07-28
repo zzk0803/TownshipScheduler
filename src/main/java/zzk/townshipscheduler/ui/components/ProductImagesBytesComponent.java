@@ -40,7 +40,8 @@ public class ProductImagesBytesComponent {
     )
     public byte[] getProductImage(ProductEntity productEntity) {
         String productEntityName = productEntity.getName();
-        return getProductImage(productEntityName);
+        Optional<byte[]> optionalBytes = productEntityRepository.queryProductImageByName(productEntityName);
+        return optionalBytes.orElse(wikiCrawledEntityRepository.queryEntityBearImageByText(productEntityName).getImageBytes());
     }
 
     @Transactional(readOnly = true)
