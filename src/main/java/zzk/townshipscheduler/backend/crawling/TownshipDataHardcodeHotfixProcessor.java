@@ -49,20 +49,28 @@ class TownshipDataHardcodeHotfixProcessor {
 
         String[] threeInstanceFarmingPart = {"Cowshed", "Chicken Coop"};
 
-        transactionTemplate.executeWithoutResult(_ -> {
-            Optional<FieldFactoryInfoEntity> farmBuildings
-                    = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
-            farmBuildings.ifPresent(fieldFactoryInfoEntity -> {
-                Set<ProductManufactureInfoEntity> productManufactureInfoSet = fieldFactoryInfoEntity.getProductManufactureInfoSet();
-                List<ProductEntity> relatedProduct = productManufactureInfoSet.stream().map(ProductManufactureInfoEntity::getProductEntity).toList();
-                for (ProductEntity productEntity : relatedProduct) {
-                    productEntity.detachProductManufactureInfoCollection(productManufactureInfoSet);
-                    productEntityRepository.saveAndFlush(productEntity);
+        Optional<FieldFactoryInfoEntity> farmBuildings
+                = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
+        farmBuildings.ifPresent(
+                fieldFactoryInfoEntity -> {
+                    Set<ProductManufactureInfoEntity> productManufactureInfoSet = fieldFactoryInfoEntity.getProductManufactureInfoSet();
+                    List<ProductEntity> relatedProduct = productManufactureInfoSet.stream().map(ProductManufactureInfoEntity::getProductEntity).toList();
+                    for (ProductEntity productEntity : relatedProduct) {
+                        transactionTemplate.executeWithoutResult(_ -> {
+                            productEntity.detachProductManufactureInfoCollection(productManufactureInfoSet);
+                            productEntityRepository.saveAndFlush(productEntity);
+                        });
+                    }
+                    transactionTemplate.executeWithoutResult(_ -> {
+                        fieldFactoryInfoEntity.detachProductManufactureInfoCollection(productManufactureInfoSet);
+                        fieldFactoryInfoEntityRepository.saveAndFlush(fieldFactoryInfoEntity);
+                    });
+                    transactionTemplate.executeWithoutResult(_ -> {
+                        fieldFactoryInfoEntityRepository.delete(fieldFactoryInfoEntity);
+                    });
                 }
-                fieldFactoryInfoEntity.detachProductManufactureInfoCollection(productManufactureInfoSet);
-                fieldFactoryInfoEntityRepository.delete(fieldFactoryInfoEntity);
-            });
-        });
+        );
+
 
         Arrays.stream(threeInstanceFarmingPart)
                 .map(categoryString -> {
