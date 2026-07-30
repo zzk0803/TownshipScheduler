@@ -128,8 +128,7 @@ public class PlayerService {
             );
             return fieldFactoryInfoEntitiesByLevelBetween.stream()
                     .map(fieldFactoryInfoEntity -> {
-                        FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(
-                                () -> playerEntity);
+                        FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(() -> playerEntity);
                         fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getDefaultProducingCapacity());
                         fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getDefaultReapWindowCapacity());
                         return fieldFactoryEntityRepository.save(fieldFactoryEntity);

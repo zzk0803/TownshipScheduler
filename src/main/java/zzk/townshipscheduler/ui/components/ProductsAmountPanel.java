@@ -87,7 +87,8 @@ public class ProductsAmountPanel
         filterTextField.setPlaceholder("Filter Products...");
         filterTextField.setValueChangeMode(ValueChangeMode.EAGER);
         filterTextField.addValueChangeListener(valueChangeEvent -> {
-            String criteria = valueChangeEvent.getValue().toLowerCase();
+            String criteria = valueChangeEvent.getValue()
+                    .toLowerCase();
             GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
             dataView.removeFilters();
             dataView.addFilter(createTextFieldGridFilter(criteria));
@@ -138,14 +139,14 @@ public class ProductsAmountPanel
     private SerializablePredicate<FieldFactoryInfoEntity> createTextFieldGridFilter(String criteria) {
         return fieldFactoryInfoEntity -> {
             String factoryName = fieldFactoryInfoEntity.getCategory();
-            Set<ProductManufactureInfoEntity> productManufactureInfoSet = fieldFactoryInfoEntity.getProductManufactureInfoSet();
+            Set<ProductEntity> productEntities = fieldFactoryInfoEntity.getProductEntities();
             return factoryName.contains(criteria)
-                   || productManufactureInfoSet.stream()
-                           .anyMatch(productManufactureInfoEntity -> {
-                               return productManufactureInfoEntity.getProductEntity().getName()
+                   || productEntities.stream()
+                           .anyMatch(productEntity -> {
+                               return productEntity.getName()
                                               .toLowerCase()
                                               .contains(criteria)
-                                      || productManufactureInfoEntity.getProductEntity().getBomString()
+                                      || productEntity.getBomString()
                                               .toLowerCase()
                                               .contains(criteria);
                            });
@@ -204,26 +205,30 @@ public class ProductsAmountPanel
 
     private boolean isAtomicProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         boolean result;
-        result = fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
-                .anyMatch(productManufactureInfoEntity -> productManufactureInfoEntity.getProductEntity().getBomString().isBlank());
+        result = fieldFactoryInfoEntity.getProductEntities()
+                .stream()
+                .anyMatch(productEntity -> productEntity.getBomString()
+                        .isBlank());
         return result;
     }
 
     private boolean isFinalProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         boolean result;
-        result = fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
-                .anyMatch(productManufactureInfoEntity -> subjectProductComposite(productManufactureInfoEntity.getProductEntity()).isEmpty());
+        result = fieldFactoryInfoEntity.getProductEntities()
+                .stream()
+                .anyMatch(productEntity -> subjectProductComposite(productEntity).isEmpty());
         return result;
     }
 
-    private List<ProductEntity> subjectProductComposite(ProductEntity productInFactoryInfo) {
+    private List<ProductEntity> subjectProductComposite(ProductEntity productEntity) {
         return this.productEntityList.stream()
                 .filter(product -> {
-                    return product.getManufactureInfoEntities().stream()
+                    return product.getManufactureInfoEntities()
+                            .stream()
                             .flatMap(productManufactureInfoEntity -> productManufactureInfoEntity.getProductMaterialsRelations()
                                     .stream()
                             )
-                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(), productInFactoryInfo));
+                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(), productEntity));
                 })
                 .toList();
     }
@@ -255,7 +260,9 @@ public class ProductsAmountPanel
 
         Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities = factoryProductsSupplier.get();
         this.productEntityList = fieldFactoryInfoEntities.stream()
-                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity))
+                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getProductEntities()
+                        .stream()
+                )
                 .toList();
         this.factoryProductsGrid.setItems(fieldFactoryInfoEntities);
     }
@@ -347,26 +354,28 @@ public class ProductsAmountPanel
         public FactoryProductsCard(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
             HorizontalLayout factoryHeaderLayout = new HorizontalLayout();
             Element category = ElementFactory.createHeading2(fieldFactoryInfoEntity.getCategory());
-            category.getStyle().bind(
-                    "color",
-                    () -> {
-                        Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
-                        if (fieldFactoryInfoEntity.getProductManufactureInfoSet()
-                                .stream()
-                                .anyMatch(productEntity -> productEntityIntegerMap.containsKey(productEntity) && productEntityIntegerMap.get(productEntity) > 0)) {
-                            return "var(--lumo-primary-color)";
-                        } else {
-                            return "var(--lumo-header-text-color)";
-                        }
-                    }
-            );
+            category.getStyle()
+                    .bind(
+                            "color",
+                            () -> {
+                                Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
+                                if (fieldFactoryInfoEntity.getProductEntities()
+                                        .stream()
+                                        .anyMatch(productEntity -> productEntityIntegerMap.containsKey(productEntity) && productEntityIntegerMap.get(productEntity) > 0)) {
+                                    return "var(--lumo-primary-color)";
+                                } else {
+                                    return "var(--lumo-header-text-color)";
+                                }
+                            }
+                    );
             Element level = ElementFactory.createSpan(String.valueOf(fieldFactoryInfoEntity.getLevel()));
-            factoryHeaderLayout.getElement().appendChild(category, level);
+            factoryHeaderLayout.getElement()
+                    .appendChild(category, level);
 
             AvatarGroup avatarGroup = new AvatarGroup(
-                    fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
-                            .map(productManufactureInfoEntity -> {
-                                ProductEntity productEntity = productManufactureInfoEntity.getProductEntity();
+                    fieldFactoryInfoEntity.getProductEntities()
+                            .stream()
+                            .map(productEntity -> {
                                 String name = productEntity.getName();
                                 WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
                                 return ProductImages.productImageDownloadHandler(name, crawledAsImage);
@@ -378,12 +387,13 @@ public class ProductsAmountPanel
                             })
                             .toList()
             );
-            factoryHeaderLayout.getElement().appendChild(avatarGroup.getElement());
+            factoryHeaderLayout.getElement()
+                    .appendChild(avatarGroup.getElement());
 
             HorizontalLayout productsGridLayout = new HorizontalLayout();
             productsGridLayout.setWrap(true);
-            fieldFactoryInfoEntity.getProductManufactureInfoSet().stream()
-                    .map(ProductManufactureInfoEntity::getProductEntity)
+            fieldFactoryInfoEntity.getProductEntities()
+                    .stream()
                     .sorted(Comparator.comparingInt(ProductEntity::getLevel))
                     .map(ProductCard::new)
                     .forEachOrdered(productsGridLayout::add);
@@ -395,7 +405,9 @@ public class ProductsAmountPanel
                     factoryHeaderDetails,
                     () -> {
                         Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
-                        if (fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().anyMatch(productEntityIntegerMap::containsKey)) {
+                        if (fieldFactoryInfoEntity.getProductEntities()
+                                .stream()
+                                .anyMatch(productEntityIntegerMap::containsKey)) {
                             factoryHeaderDetails.setOpened(true);
                         }
                     }
@@ -421,8 +433,10 @@ public class ProductsAmountPanel
 
         public ProductCard(ProductEntity productEntity) {
             Element nameSpan = ElementFactory.createSpan(productEntity.getName());
-            nameSpan.getStyle().setCursor("pointer");
-            nameSpan.getStyle().setBorderBottom("1px solid black");
+            nameSpan.getStyle()
+                    .setCursor("pointer");
+            nameSpan.getStyle()
+                    .setBorderBottom("1px solid black");
             nameSpan.addEventListener(
                     "click",
                     domEvent -> {
@@ -435,7 +449,8 @@ public class ProductsAmountPanel
             getContent().getElement()
                     .appendChild(nameSpan);
             getContent().getElement()
-                    .appendChild(ElementFactory.createSpan("Level:" + productEntity.getLevel().toString()));
+                    .appendChild(ElementFactory.createSpan("Level:" + productEntity.getLevel()
+                            .toString()));
             getContent().add(createAmountField(productEntity));
         }
 
@@ -452,7 +467,8 @@ public class ProductsAmountPanel
             amountField.setPlaceholder("Amount");
 //            amountField.setValue(markedProducts.getOrDefault(productEntity, 0));
             amountField.bindValue(
-                    () -> ProductsAmountPanel.this.markedProductsSignals.get().getOrDefault(productEntity, 0),
+                    () -> ProductsAmountPanel.this.markedProductsSignals.get()
+                            .getOrDefault(productEntity, 0),
                     integer -> {
                         if (integer <= 0) {
                             amountField.setValue(0);

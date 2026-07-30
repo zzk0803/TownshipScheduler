@@ -37,18 +37,10 @@ import java.util.*;
                         name = "manufactureInfoEntities.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
-                                        value = "fieldFactoryInfo",
-                                        subgraph = "fieldFactoryInfo.subgraph"
-                                ),
-                                @NamedAttributeNode(
                                         value = "productMaterialsRelations",
                                         subgraph = "productMaterialsRelations.subgraph"
                                 )
                         }
-                ),
-                @NamedSubgraph(
-                        name = "fieldFactoryInfo.subgraph",
-                        attributeNodes = @NamedAttributeNode("productManufactureInfoSet")
                 ),
                 @NamedSubgraph(
                         name = "productMaterialsRelations.subgraph",
@@ -94,54 +86,58 @@ public class ProductEntity {
     private String durationString = "";
 
     @OneToMany(
-//            mappedBy = "productEntity",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
+            mappedBy = "productEntity",
+            cascade = CascadeType.ALL
     )
-    @JoinTable(
-            name = "jointable_product_manufactureInfo",
-            joinColumns = @JoinColumn(
-                    name = "product_id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            ),
-            inverseJoinColumns = @JoinColumn(
-                    name = "manufactureInfo_id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            )
-    )
+//    @JoinTable(
+//            name = "jointable_product_manufactureInfo",
+//            joinColumns = @JoinColumn(
+//                    name = "product_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            ),
+//            inverseJoinColumns = @JoinColumn(
+//                    name = "manufactureInfo_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            )
+//    )
     private Set<ProductManufactureInfoEntity> manufactureInfoEntities = new HashSet<>();
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private WikiCrawledEntity crawledAsImage;
 
+    @ManyToOne
+    @JoinColumn(name = "field_factory_info_entity_id")
+    private FieldFactoryInfoEntity fieldFactoryInfoEntity;
+
     @PostLoad
     public void postLoad() {
         setProductId(ProductId.of(getId()));
     }
 
-    public boolean attacheProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+    public boolean addProductManufactureInfos(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
         return productManufactureInfoEntities.stream()
-                .allMatch(this::attacheProductManufactureInfo);
+                .allMatch(this::addProductManufactureInfo);
     }
 
-    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+    public boolean addProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
         productManufactureInfo.setProductEntity(this);
         return manufactureInfoEntities.add(productManufactureInfo);
     }
 
-    public void detachProductManufactureInfoCollection() {
-        Iterator<? extends ProductManufactureInfoEntity> iterator = manufactureInfoEntities.iterator();
-        while (iterator.hasNext()) {
-            ProductManufactureInfoEntity productManufactureInfoEntity = iterator.next();
-            productManufactureInfoEntity.setFieldFactoryInfo(null);
-            iterator.remove();
+    public synchronized void clearProductManufactureInfos() {
+        for (ProductManufactureInfoEntity productManufactureInfoEntity : this.manufactureInfoEntities) {
+            productManufactureInfoEntity.setProductEntity(null);
         }
+        this.manufactureInfoEntities.clear();
     }
 
-    public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        if (this.manufactureInfoEntities.contains(productManufactureInfo)) {
-            productManufactureInfo.setFieldFactoryInfo(null);
+    public boolean removeProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+        if (!this.getManufactureInfoEntities()
+                .contains(productManufactureInfo)) {
+            return false;
         }
+        productManufactureInfo.setProductEntity(null);
         return this.manufactureInfoEntities.remove(productManufactureInfo);
     }
 

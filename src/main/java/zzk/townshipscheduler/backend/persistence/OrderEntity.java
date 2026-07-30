@@ -58,7 +58,6 @@ import java.util.stream.Collectors;
                 @NamedSubgraph(
                         name = "productManufactureInfoEntity.subgraph",
                         attributeNodes = {
-                                @NamedAttributeNode("fieldFactoryInfo"),
                                 @NamedAttributeNode("productMaterialsRelations"),
                         }
                 )

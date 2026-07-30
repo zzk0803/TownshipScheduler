@@ -16,6 +16,7 @@ import zzk.townshipscheduler.backend.persistence.dao.ProductManufactureInfoEntit
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -84,7 +85,7 @@ class TownshipDataHardcodeHotfixProcessor {
                         .build()
         );
 
-        record productEntityTempRecord(
+        record ProductEntityTempRecord(
                 String productName,
                 ProductEntity productEntity,
                 Collection<ProductManufactureInfoEntity> productManufactureInfoEntities
@@ -92,48 +93,40 @@ class TownshipDataHardcodeHotfixProcessor {
 
         }
 
-        AtomicReference<Set<productEntityTempRecord>> tempTableReference = new AtomicReference<>();
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            Optional<FieldFactoryInfoEntity> farmBuildings
-                    = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
-            farmBuildings.ifPresent(
-                    fieldFactoryInfoEntity -> {
-                        Set<ProductManufactureInfoEntity> productManufactureInfoSet = fieldFactoryInfoEntity.getProductManufactureInfoSet();
-                        Set<productEntityTempRecord> productEntityTempRecords = productManufactureInfoSet.stream()
-                                .map(productManufactureInfoEntity -> {
-                                    ProductEntity product = productManufactureInfoEntity.getProductEntity();
-                                    return new productEntityTempRecord(
-                                            product.getName(),
-                                            product,
-                                            product.getManufactureInfoEntities()
-                                                    .stream()
-                                                    .toList()
-                                    );
-                                })
-                                .collect(Collectors.toSet());
-                        tempTableReference.set(productEntityTempRecords);
+        AtomicReference<Set<ProductEntityTempRecord>> tempTableReference = new AtomicReference<>();
+        Optional<FieldFactoryInfoEntity> farmBuildings
+                = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
+        farmBuildings.ifPresent(
+                fieldFactoryInfoEntity -> {
+                    Set<ProductEntity> relatedProducts = fieldFactoryInfoEntity.getProductEntities();
+                    Set<ProductEntityTempRecord> ProductEntityTempRecords = relatedProducts.stream()
+                            .map(productEntity -> new ProductEntityTempRecord(
+                                    productEntity.getName(),
+                                    productEntity,
+                                    productEntity.getManufactureInfoEntities()
+                                            .stream()
+                                            .toList()
+                            ))
+                            .collect(Collectors.toSet());
+                    tempTableReference.set(ProductEntityTempRecords);
 
-                        fieldFactoryInfoEntity.detachProductManufactureInfoCollection();
-
-//                        List<ProductEntity> productEntities = productEntityTempRecords.stream().map(productEntityTempRecord::productEntity).toList();
-//                        for (ProductEntity productEntity : productEntities) {
-//                            productEntity.detachProductManufactureInfoCollection();
-//                        }
-
-                        transactionTemplate.executeWithoutResult(_ -> fieldFactoryInfoEntityRepository.delete(fieldFactoryInfoEntity));
-                    }
-            );
-        });
+                    fieldFactoryInfoEntity.clearProductEntity();
+                    transactionTemplate.executeWithoutResult(_ -> fieldFactoryInfoEntityRepository.save(fieldFactoryInfoEntity));
+                    transactionTemplate.executeWithoutResult(_ -> fieldFactoryInfoEntityRepository.delete(fieldFactoryInfoEntity));
+                }
+        );
 
         List<String> list = tempTableReference.get()
                 .stream()
-                .map(productEntityTempRecord::productName)
+                .map(ProductEntityTempRecord::productName)
+                .distinct()
                 .sorted()
                 .toList();
         List<String> list1 = instanceAmendMap.values()
                 .stream()
                 .map(MendingData::productNameList)
                 .flatMap(Collection::stream)
+                .distinct()
                 .sorted()
                 .toList();
         if (!list.equals(list1)) {
@@ -144,31 +137,11 @@ class TownshipDataHardcodeHotfixProcessor {
 
         instanceAmendMap.forEach(
                 (factoryName, mendingData) -> {
-                    FieldFactoryInfoEntity fieldFactoryInfo = createFieldFactoryInfo(factoryName, mendingData);
+                    FieldFactoryInfoEntity fieldFactoryInfo = createFieldFactoryInfo(factoryName, mendingData,name->productEntityRepository.queryByName(name).orElseThrow());
                     FieldFactoryInfoEntity savedFieldFactory = transactionTemplate.execute(status -> fieldFactoryInfoEntityRepository.saveAndFlush(fieldFactoryInfo));
-
-                    mendingData.productNameList()
-                            .forEach(
-                                    productString -> {
-                                        Set<productEntityTempRecord> productEntityTempRecords = tempTableReference.get();
-                                        productEntityTempRecords.stream()
-                                                .filter(productEntityTempRecord -> productEntityTempRecord.productName()
-                                                        .equals(productString))
-                                                .peek(productEntityTempRecord -> log.info("re-persist {}", productEntityTempRecord))
-                                                .flatMap(
-                                                        productEntityTempRecord -> productEntityTempRecord.productManufactureInfoEntities()
-                                                                .stream()
-//                                                                .map(ProductManufactureInfoEntity::forFieldFactoryInfo)
-                                                )
-                                                .forEach(productManufactureInfoEntity -> {
-                                                    fieldFactoryInfo.attacheProductManufactureInfo(productManufactureInfoEntity);
-                                                    fieldFactoryInfoEntityRepository.saveAndFlush(savedFieldFactory);
-                                                });
-                                    }
-                            );
-
                 }
         );
+
         transactionTemplate.executeWithoutResult(transactionStatus -> {
             Optional<FieldFactoryInfoEntity> feedMillOptional
                     = fieldFactoryInfoEntityRepository.findByCategory("Feed Mill");
@@ -233,7 +206,7 @@ class TownshipDataHardcodeHotfixProcessor {
         log.info("going to hardcode fix factoryinfo method over");
     }
 
-    private @NonNull FieldFactoryInfoEntity createFieldFactoryInfo(String factoryName, MendingData mendingData) {
+    private @NonNull FieldFactoryInfoEntity createFieldFactoryInfo(String factoryName, MendingData mendingData, Function<String,ProductEntity> nameToProductFunction) {
         FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
         fieldFactoryInfo.setCategory(factoryName);
         fieldFactoryInfo.setLevel(mendingData.level());
@@ -244,6 +217,9 @@ class TownshipDataHardcodeHotfixProcessor {
         fieldFactoryInfo.setMaxInstanceAmount(mendingData.instanceAmount());
         fieldFactoryInfo.setMaxProducingCapacity(6);
         fieldFactoryInfo.setMaxReapWindowCapacity(6);
+        mendingData.productNameList().stream()
+                .map(nameToProductFunction)
+                .forEach(fieldFactoryInfo::addProductEntity);
         return fieldFactoryInfo;
     }
 

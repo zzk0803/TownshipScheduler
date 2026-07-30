@@ -24,6 +24,9 @@ public interface ProductEntityRepository
     @EntityGraph(value = "products.g.full")
     Optional<ProductEntity> findByName(String name);
 
+    @Query("select p from ProductEntity p where p.name = ?1")
+    Optional<ProductEntity> queryByName(String name);
+
     @EntityGraph("products.g.full")
     @Query("select p from ProductEntity p where p.level<=:level")
     Set<ProductEntity> queryForPrepareScheduling(Integer level);

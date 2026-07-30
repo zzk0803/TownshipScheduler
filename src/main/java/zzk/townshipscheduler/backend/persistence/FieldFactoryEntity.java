@@ -27,17 +27,17 @@ import java.util.Objects;
                         name = "fieldFactoryInfoEntity.suggraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
-                                        value = "productManufactureInfoSet",
-                                        subgraph = "productManufactureInfoSet.suggraph"
+                                        value = "productEntities",
+                                        subgraph = "productEntities.suggraph"
                                 )
                         }
                 ),
                 @NamedSubgraph(
-                        name = "productManufactureInfoSet.suggraph",
+                        name = "productEntities.suggraph",
                         attributeNodes = {
-                                @NamedAttributeNode("productMaterialsRelations"),
-                                @NamedAttributeNode("fieldFactoryInfo"),
-                                @NamedAttributeNode("productEntity")
+                                @NamedAttributeNode("manufactureInfoEntities"),
+                                @NamedAttributeNode("crawledAsImage"),
+                                @NamedAttributeNode("fieldFactoryInfoEntity")
                         }
                 )
         }
@@ -46,7 +46,8 @@ public class FieldFactoryEntity
         implements Comparable<FieldFactoryEntity> {
 
     public static final Comparator<FieldFactoryEntity> COMPARATOR =
-            Comparator.comparing(fieldFactoryEntity -> fieldFactoryEntity.getFieldFactoryInfoEntity().getLevel());
+            Comparator.comparing(fieldFactoryEntity -> fieldFactoryEntity.getFieldFactoryInfoEntity()
+                    .getLevel());
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -116,10 +117,12 @@ public class FieldFactoryEntity
         if (o == null)
             return false;
         Class<?> oEffectiveClass = o instanceof HibernateProxy
-                ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) o).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : this.getClass();
         if (thisEffectiveClass != oEffectiveClass)
             return false;

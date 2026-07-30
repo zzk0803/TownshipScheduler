@@ -106,16 +106,13 @@ class ProblemTransferProcess {
     private void fetchAndMapToSchedulingProduct() {
         Collection<ProductEntity> productEntities = townshipSchedulingRequest.getProductEntities();
         for (ProductEntity productEntity : productEntities) {
-            Set<ProductManufactureInfoEntity> manufactureInfoEntities = productEntity.getManufactureInfoEntities();
-            manufactureInfoEntities.forEach(productManufactureInfoEntity -> {
-                FieldFactoryInfoEntity fieldFactoryInfo = productManufactureInfoEntity.getFieldFactoryInfo();
-                SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productEntity);
-                schedulingProduct.setRequireFactory(buildOrGetSchedulingFactoryInfo(fieldFactoryInfo));
-                Set<SchedulingProducingExecutionMode> producingExecutionModes
-                        = calcProducingExecutionMode(productEntity, schedulingProduct);
-                schedulingProduct.setExecutionModeSet(producingExecutionModes);
-                this.schedulingProducingExecutionModes.addAll(producingExecutionModes);
-            });
+            FieldFactoryInfoEntity fieldFactoryInfo = productEntity.getFieldFactoryInfoEntity();
+            SchedulingProduct schedulingProduct = buildOrGetSchedulingProduct(productEntity);
+            schedulingProduct.setRequireFactory(buildOrGetSchedulingFactoryInfo(fieldFactoryInfo));
+            Set<SchedulingProducingExecutionMode> producingExecutionModes
+                    = calcProducingExecutionMode(productEntity, schedulingProduct);
+            schedulingProduct.setExecutionModeSet(producingExecutionModes);
+            this.schedulingProducingExecutionModes.addAll(producingExecutionModes);
         }
     }
 

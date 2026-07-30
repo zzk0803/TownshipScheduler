@@ -25,9 +25,6 @@ import java.util.stream.Collectors;
                         subgraph = "productEntity.suggraph"
                 ),
                 @NamedAttributeNode(
-                        value = "fieldFactoryInfo"
-                ),
-                @NamedAttributeNode(
                         value = "productMaterialsRelations",
                         subgraph = "productMaterialsRelation.subgraph"
                 ),
@@ -74,13 +71,9 @@ public class ProductManufactureInfoEntity {
     @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ProductEntity productEntity;
 
-    @ManyToOne
-    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
-    private FieldFactoryInfoEntity fieldFactoryInfo;
-
     @OneToMany(
             mappedBy = "productManufactureInfo",
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}
+            cascade = CascadeType.ALL
     )
     private Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
 
@@ -93,32 +86,6 @@ public class ProductManufactureInfoEntity {
         productMaterialsRelation.setProductManufactureInfo(null);
         return productMaterialsRelations.remove(productMaterialsRelation);
     }
-
-//    public ProductManufactureInfoEntity forNoneAttache() {
-//        ProductManufactureInfoEntity productManufactureInfo = new ProductManufactureInfoEntity();
-//        productManufactureInfo.setProducingDuration(producingDuration);
-//        productManufactureInfo.setAmountWhenCreated(amountWhenCreated);
-//        productManufactureInfo.setProductMaterialsRelations(productMaterialsRelations);
-//        return productManufactureInfo;
-//    }
-//
-//    public ProductManufactureInfoEntity forProduct() {
-//        ProductManufactureInfoEntity productManufactureInfo = new ProductManufactureInfoEntity();
-//        productManufactureInfo.setProducingDuration(producingDuration);
-//        productManufactureInfo.getFieldFactoryInfo().attacheProductManufactureInfo(productManufactureInfo);
-//        productManufactureInfo.setAmountWhenCreated(amountWhenCreated);
-//        productManufactureInfo.setProductMaterialsRelations(productMaterialsRelations);
-//        return productManufactureInfo;
-//    }
-//
-//    public ProductManufactureInfoEntity forFieldFactoryInfo() {
-//        ProductManufactureInfoEntity productManufactureInfo = new ProductManufactureInfoEntity();
-//        productManufactureInfo.setProducingDuration(producingDuration);
-//        getProductEntity().attacheProductManufactureInfo(productManufactureInfo);
-//        productManufactureInfo.setAmountWhenCreated(amountWhenCreated);
-//        productManufactureInfo.setProductMaterialsRelations(productMaterialsRelations);
-//        return productManufactureInfo;
-//    }
 
     public ProductAmountBill toProductAmountBill() {
         return ProductAmountBill.of(productMaterialsRelations.stream()
@@ -146,10 +113,12 @@ public class ProductManufactureInfoEntity {
         if (object == null)
             return false;
         Class<?> oEffectiveClass = object instanceof HibernateProxy
-                ? ((HibernateProxy) object).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) object).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : object.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : this.getClass();
         if (thisEffectiveClass != oEffectiveClass)
             return false;

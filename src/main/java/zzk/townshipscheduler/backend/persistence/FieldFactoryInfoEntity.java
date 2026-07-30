@@ -5,7 +5,10 @@ import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 
 @Entity
@@ -19,32 +22,17 @@ import java.util.function.Supplier;
         includeAllAttributes = true,
         attributeNodes = {
                 @NamedAttributeNode(
-                        value = "productManufactureInfoSet",
-                        subgraph = "productManufactureInfoSet.suggraph"
+                        value = "productEntities",
+                        subgraph = "productEntities.suggraph"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "productManufactureInfoSet.suggraph",
+                        name = "productEntities.suggraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
-                                        value = "productEntity",
-                                        subgraph = "productEntity.subgraph"
-                                ),
-                                @NamedAttributeNode(
-                                        value = "productMaterialsRelations",
-                                        subgraph = "productMaterialsRelation.subgraph"
-                                ),
-                                @NamedAttributeNode(
-                                        value = "fieldFactoryInfo"
-                                )
-                        }
-                ),
-                @NamedSubgraph(
-                        name = "productEntity.subgraph",
-                        attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "manufactureInfoEntities"
+                                        value = "manufactureInfoEntities",
+                                        subgraph = "manufactureInfoEntities.subgraph"
                                 ),
                                 @NamedAttributeNode(
                                         value = "crawledAsImage",
@@ -53,33 +41,16 @@ import java.util.function.Supplier;
                         }
                 ),
                 @NamedSubgraph(
-                        name = "material.subgraph",
+                        name = "manufactureInfoEntities.subgraph",
                         attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "manufactureInfoEntities"
-                                ),
-                                @NamedAttributeNode(
-                                        value = "crawledAsImage",
-                                        subgraph = "crawledAsImage.subgraph"
-                                )
+                                @NamedAttributeNode(value = "productEntity"),
+                                @NamedAttributeNode(value = "productMaterialsRelations")
                         }
                 ),
                 @NamedSubgraph(
                         name = "crawledAsImage.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(value = "imageBytes")
-                        }
-                ),
-                @NamedSubgraph(
-                        name = "productMaterialsRelation.subgraph",
-                        attributeNodes = {
-                                @NamedAttributeNode(
-                                        value = "material",
-                                        subgraph = "material.subgraph"
-                                ),
-                                @NamedAttributeNode(
-                                        value = "productManufactureInfo"
-                                )
                         }
                 )
         }
@@ -105,25 +76,6 @@ public class FieldFactoryInfoEntity {
 
     private Integer level;
 
-    @OneToMany(
-//            mappedBy = "fieldFactoryInfo",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
-    )
-    @JoinTable(
-            name = "jointable_factoryInfo_manufactureInfo",
-            joinColumns = @JoinColumn(
-                    name = "factoryInfo_id",
-                    referencedColumnName = "id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            ),
-            inverseJoinColumns = @JoinColumn(
-                    name = "manufactureInfo_id",
-                    referencedColumnName = "id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            )
-    )
-    private Set<ProductManufactureInfoEntity> productManufactureInfoSet = new LinkedHashSet<>();
-
     @Enumerated(EnumType.STRING)
     private ProducingStructureType producingType = ProducingStructureType.QUEUE;
 
@@ -139,46 +91,25 @@ public class FieldFactoryInfoEntity {
 
     private Integer maxInstanceAmount = 1;
 
-    public boolean attacheProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
-        return productManufactureInfoEntities.stream()
-                .allMatch(this::attacheProductManufactureInfo);
-    }
+    @OneToMany(
+            mappedBy = "fieldFactoryInfoEntity",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH}
+    ) private Set<ProductEntity> productEntities = new LinkedHashSet<>();
 
-    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        productManufactureInfo.setFieldFactoryInfo(this);
-        return this.productManufactureInfoSet.add(productManufactureInfo);
-    }
-
-    public void detachProductManufactureInfoCollection() {
-        Iterator<? extends ProductManufactureInfoEntity> iterator = this.productManufactureInfoSet.iterator();
-        while (iterator.hasNext()) {
-            ProductManufactureInfoEntity productManufactureInfoEntity = iterator.next();
-            productManufactureInfoEntity.setFieldFactoryInfo(null);
-            iterator.remove();
+    public boolean removeProductEntity(ProductEntity productEntity) {
+        if (!this.getProductEntities()
+                .contains(productEntity)) {
+            return false;
         }
+        productEntity.setFieldFactoryInfoEntity(null);
+        return productEntities.remove(productEntity);
     }
 
-    public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
-        if (this.productManufactureInfoSet.contains(productManufactureInfo)) {
-            productManufactureInfo.setFieldFactoryInfo(null);
+    public synchronized void clearProductEntity() {
+        for (ProductEntity productEntity : productEntities) {
+            productEntity.setFieldFactoryInfoEntity(null);
         }
-        return this.productManufactureInfoSet.remove(productManufactureInfo);
-    }
-
-    //facility method
-    public FieldFactoryEntity toFieldFactoryEntity() {
-        FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity();
-        fieldFactoryEntity.setFieldFactoryInfoEntity(this);
-        fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
-        fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
-        return fieldFactoryEntity;
-    }
-
-    public FieldFactoryEntity toFieldFactoryEntity(Supplier<PlayerEntity> playerEntitySupplier) {
-        FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity(this, playerEntitySupplier.get());
-        fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
-        fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
-        return fieldFactoryEntity;
+        this.productEntities.clear();
     }
 
     @Override
@@ -209,6 +140,30 @@ public class FieldFactoryInfoEntity {
         FieldFactoryInfoEntity that = (FieldFactoryInfoEntity) o;
         return (getId() != null && Objects.equals(getId(), that.getId()))
                || (getCategory() != null && Objects.equals(getCategory(), that.getCategory()));
+    }
+
+    public FieldFactoryEntity toFieldFactoryEntity() {
+        FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity();
+        fieldFactoryEntity.setFieldFactoryInfoEntity(this);
+        fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
+        fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
+        return fieldFactoryEntity;
+    }
+
+    public FieldFactoryEntity toFieldFactoryEntity(Supplier<PlayerEntity> playerEntitySupplier) {
+        FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity(this, playerEntitySupplier.get());
+        fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
+        fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
+        return fieldFactoryEntity;
+    }
+
+    public void addProductEntities(Collection<ProductEntity> productEntities) {
+        productEntities.forEach(this::addProductEntity);
+    }
+
+    public boolean addProductEntity(ProductEntity productEntity) {
+        productEntity.setFieldFactoryInfoEntity(this);
+        return productEntities.add(productEntity);
     }
 
 }

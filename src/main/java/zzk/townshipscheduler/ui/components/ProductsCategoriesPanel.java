@@ -153,11 +153,11 @@ public class ProductsCategoriesPanel
                 () -> {
                     FieldFactoryInfoEntity fieldFactoryInfoEntity = currentSelectFactoryInfoValueSignal.get();
                     if (fieldFactoryInfoEntity != null) {
-                        this.gridListDataView = grid.setItems(fieldFactoryInfoEntity.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity).toList());
+                        this.gridListDataView = grid.setItems(fieldFactoryInfoEntity.getProductEntities().stream().toList());
                     } else {
                         this.gridListDataView = grid.setItems(
                                 getFieldFactoryInfoEntities().stream()
-                                        .flatMap(fieldFactoryInfo -> fieldFactoryInfo.getProductManufactureInfoSet().stream().map(ProductManufactureInfoEntity::getProductEntity))
+                                        .flatMap(fieldFactoryInfo -> fieldFactoryInfo.getProductEntities().stream())
                                         .toList()
                         );
                     }
