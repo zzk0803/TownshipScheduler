@@ -48,41 +48,29 @@ public class ProductHierarchyAndGraphComponent {
     }
 
     public Set<ProductManufactureInfoEntity> calcManufactureInfoSet(ProductEntity productEntity) {
-        Set<ContextProductHierarchyStructure> productHierarchies = calcProductsHierarchies(productEntity);
-        List<Duration> durations = calcProductProducingDuration(productEntity);
-        if (durations.size() != productHierarchies.size()) {
+        List<ContextProductHierarchyStructure> productHierarchies = calcProductsHierarchies(productEntity);
+        List<Duration> productDurations = calcProductProducingDuration(productEntity);
+        int productHierarchiesSize = productHierarchies.size();
+        int productDurationsSize = productDurations.size();
+        if (productHierarchiesSize != productDurationsSize) {
             log.warn("product {} materialsSize != durationSize", productEntity.getName());
         }
+        int iteratingSize = Math.min(productHierarchiesSize, productDurationsSize);
 
         Set<ProductManufactureInfoEntity> producingInfoSet = new HashSet<>();
-        Iterator<ContextProductHierarchyStructure> manufactureRelationIterator = productHierarchies.iterator();
-        Iterator<Duration> durationIterator = durations.iterator();
-        while (manufactureRelationIterator.hasNext() || durationIterator.hasNext()) {
-            ContextProductHierarchyStructure contextProductHierarchyStructure = null;
-            try {
-                contextProductHierarchyStructure = manufactureRelationIterator.next();
-            } catch (NoSuchElementException e) {
-                //don't be alert
-            }
-
-            Duration duration = null;
-            try {
-                duration = durationIterator.next();
-            } catch (NoSuchElementException e) {
-                //don't be alert
-            }
-
-            ProductManufactureInfoEntity productManufactureInfoEntity = buildProductManufactureInfoEntity(
+        for (int i = 0; i < iteratingSize; i++) {
+            ContextProductHierarchyStructure contextProductHierarchyStructure = productHierarchies.get(i);
+            Duration duration = productDurations.get(i);
+            producingInfoSet.add(buildProductManufactureInfoEntity(
                     contextProductHierarchyStructure,
                     duration
-            );
-            producingInfoSet.add(productManufactureInfoEntity);
+            ));
         }
 
         return producingInfoSet;
     }
 
-    public Set<ContextProductHierarchyStructure> calcProductsHierarchies(ProductEntity productEntity) {
+    public List<ContextProductHierarchyStructure> calcProductsHierarchies(ProductEntity productEntity) {
         if (boolNeedCachedGoodHierarchiesReady.get()) {
             calcProductsHierarchies();
         }
@@ -295,14 +283,14 @@ public class ProductHierarchyAndGraphComponent {
             return graph.vertexSet().stream().map(this::resultByGroupInProduct).flatMap(Collection::stream).collect(Collectors.toUnmodifiableSet());
         }
 
-        public Set<ContextProductHierarchyStructure> resultByGroupInProduct(ProductEntity productEntity) {
+        public List<ContextProductHierarchyStructure> resultByGroupInProduct(ProductEntity productEntity) {
             Set<ContextProductHierarchyGraphEdge> productHierarchyGraphEdges = graph.incomingEdgesOf(productEntity);
             return productHierarchyGraphEdges.stream()
                     .collect(
                             Collectors.collectingAndThen(
                                     Collectors.groupingBy(ContextProductHierarchyGraphEdge::getGroupId),
                                     integerListMap -> {
-                                        Set<ContextProductHierarchyStructure> result = new LinkedHashSet<>();
+                                        List<ContextProductHierarchyStructure> result = new ArrayList<>();
                                         for (Map.Entry<Integer, List<ContextProductHierarchyGraphEdge>> entry : integerListMap.entrySet()) {
                                             Integer groupId = entry.getKey();
                                             List<ContextProductHierarchyGraphEdge> materialEdges = entry.getValue();

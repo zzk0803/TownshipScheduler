@@ -18,6 +18,8 @@ public class TownshipFandomCrawlingProcessFacade {
 
     private final TownshipDataCrawlingProcessor crawlingProcessor;
 
+    private final TownshipOfflineDataCrawlingProcessor offlineProcessor;
+
     private final TownshipDataParsingProcessor parsingProcessor;
 
     private final TownshipDataMappingProcessor transferProcessor;
@@ -71,14 +73,41 @@ public class TownshipFandomCrawlingProcessFacade {
                 );
     }
 
-    /**
-     * Process from uploaded HTML document.
-     *
-     * @param mhtmlResult The HTML document from user upload
-     * @return CompletableFuture with processing result
-     */
-    public CompletableFuture<Void> processFromUploadedHtml(MhtmlProcessComponent.Result mhtmlResult) {
-        return crawlingProcessor.processFromUploadedHtml(mhtmlResult)
+    public CompletableFuture<Void> processFromOfflineMhtmlAsTxt() {
+        return offlineProcessor.processFromOfflineMhtmlAsTxt()
+                .thenApplyAsync(
+                        crawledResult -> {
+                            setCrawledResult(crawledResult);
+                            persistProcessor.process(crawledResult);
+                            return parsingProcessor.process(crawledResult);
+                        }, townshipExecutorService
+                )
+                .thenApplyAsync(
+                        parsedResult -> {
+                            setParsedResult(parsedResult);
+                            return this.transferProcessor.process(parsedResult);
+                        }, townshipExecutorService
+                )
+                .thenApplyAsync(
+                        transferResult -> {
+                            setTransferResult(transferResult);
+                            return this.persistProcessor.process(transferResult);
+                        }, townshipExecutorService
+                )
+                .thenApplyAsync(
+                        persistResult -> {
+                            setPersistResult(persistResult);
+                            return this.hierarchyBuildingProcessor.process(persistResult);
+                        }, townshipExecutorService
+                ).thenAcceptAsync(
+                        _ -> {
+                            this.hardcodeHotfixProcessor.process();
+                        }, townshipExecutorService
+                );
+    }
+
+    public CompletableFuture<Void> processFromOfflineMhtmlAsTxt(MhtmlProcessComponent.Result mhtmlResult) {
+        return offlineProcessor.processFromOfflineMhtmlAsTxt(mhtmlResult)
                 .thenApplyAsync(
                         crawledResult -> {
                             setCrawledResult(crawledResult);
@@ -114,6 +143,7 @@ public class TownshipFandomCrawlingProcessFacade {
         crawledResult = null;
         parsedResult = null;
         transferResult = null;
+        persistResult = null;
     }
 
 }

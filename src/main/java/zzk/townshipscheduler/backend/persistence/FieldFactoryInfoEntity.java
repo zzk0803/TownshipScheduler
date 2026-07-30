@@ -2,6 +2,8 @@ package zzk.townshipscheduler.backend.persistence;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.proxy.HibernateProxy;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
@@ -95,6 +97,7 @@ public class FieldFactoryInfoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
     private String category;
 
     private boolean boolCategoryField;
@@ -102,20 +105,20 @@ public class FieldFactoryInfoEntity {
     private Integer level;
 
     @OneToMany(
-            targetEntity = ProductManufactureInfoEntity.class,
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.REMOVE}
+            mappedBy = "fieldFactoryInfo",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
     )
-    @JoinTable(
-            name = "jointable_factoryInfo_manufactureInfo",
-            joinColumns = @JoinColumn(
-                    name = "factoryInfo_id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            ),
-            inverseJoinColumns = @JoinColumn(
-                    name = "manufactureInfo_id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            )
-    )
+//    @JoinTable(
+//            name = "jointable_factoryInfo_manufactureInfo",
+//            joinColumns = @JoinColumn(
+//                    name = "factoryInfo_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            ),
+//            inverseJoinColumns = @JoinColumn(
+//                    name = "manufactureInfo_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            )
+//    )
     private Set<ProductManufactureInfoEntity> productManufactureInfoSet = new LinkedHashSet<>();
 
     @Enumerated(EnumType.STRING)
@@ -143,11 +146,11 @@ public class FieldFactoryInfoEntity {
         return this.productManufactureInfoSet.add(productManufactureInfo);
     }
 
-    public void detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
-        Iterator<? extends ProductManufactureInfoEntity> iterator = productManufactureInfoEntities.iterator();
+    public void detachProductManufactureInfoCollection() {
+        Iterator<? extends ProductManufactureInfoEntity> iterator = this.productManufactureInfoSet.iterator();
         while (iterator.hasNext()) {
             ProductManufactureInfoEntity productManufactureInfoEntity = iterator.next();
-            this.detachProductManufactureInfo(productManufactureInfoEntity);
+            productManufactureInfoEntity.setFieldFactoryInfo(null);
             iterator.remove();
         }
     }
@@ -157,34 +160,6 @@ public class FieldFactoryInfoEntity {
             productManufactureInfo.setFieldFactoryInfo(null);
         }
         return this.productManufactureInfoSet.remove(productManufactureInfo);
-    }
-
-    @Override
-    public final int hashCode() {
-        return this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer()
-                .getPersistentClass()
-                .hashCode()
-                : getClass().hashCode();
-    }
-
-    @Override
-    public final boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null)
-            return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy
-                ? ((HibernateProxy) o).getHibernateLazyInitializer()
-                .getPersistentClass()
-                : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
-                : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass)
-            return false;
-        FieldFactoryInfoEntity that = (FieldFactoryInfoEntity) o;
-        return getId() != null && Objects.equals(getId(), that.getId());
     }
 
     //facility method
@@ -201,6 +176,32 @@ public class FieldFactoryInfoEntity {
         fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
         fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
         return fieldFactoryEntity;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy
+                ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
+                : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
+        FieldFactoryInfoEntity that = (FieldFactoryInfoEntity) o;
+        return (getId() != null && Objects.equals(getId(), that.getId()))
+               || (getCategory() != null && Objects.equals(getCategory(), that.getCategory()));
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode()
+                : getClass().hashCode();
     }
 
 }

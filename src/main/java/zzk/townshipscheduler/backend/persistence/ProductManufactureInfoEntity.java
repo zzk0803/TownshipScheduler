@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Entity
 @Getter
 @Setter
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @NamedEntityGraph(
         name = "product-manufacture-info.g.full",
         includeAllAttributes = true,
@@ -70,11 +70,11 @@ public class ProductManufactureInfoEntity {
 
     private Integer amountWhenCreated = 1;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ProductEntity productEntity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private FieldFactoryInfoEntity fieldFactoryInfo;
 
@@ -82,7 +82,6 @@ public class ProductManufactureInfoEntity {
             mappedBy = "productManufactureInfo",
             cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}
     )
-    @ToString.Exclude
     private Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
 
     public boolean attacheProductMaterialsRelation(ProductMaterialsRelation productMaterialsRelation) {
@@ -94,6 +93,32 @@ public class ProductManufactureInfoEntity {
         productMaterialsRelation.setProductManufactureInfo(null);
         return productMaterialsRelations.remove(productMaterialsRelation);
     }
+
+//    public ProductManufactureInfoEntity forNoneAttache() {
+//        ProductManufactureInfoEntity productManufactureInfo = new ProductManufactureInfoEntity();
+//        productManufactureInfo.setProducingDuration(producingDuration);
+//        productManufactureInfo.setAmountWhenCreated(amountWhenCreated);
+//        productManufactureInfo.setProductMaterialsRelations(productMaterialsRelations);
+//        return productManufactureInfo;
+//    }
+//
+//    public ProductManufactureInfoEntity forProduct() {
+//        ProductManufactureInfoEntity productManufactureInfo = new ProductManufactureInfoEntity();
+//        productManufactureInfo.setProducingDuration(producingDuration);
+//        productManufactureInfo.getFieldFactoryInfo().attacheProductManufactureInfo(productManufactureInfo);
+//        productManufactureInfo.setAmountWhenCreated(amountWhenCreated);
+//        productManufactureInfo.setProductMaterialsRelations(productMaterialsRelations);
+//        return productManufactureInfo;
+//    }
+//
+//    public ProductManufactureInfoEntity forFieldFactoryInfo() {
+//        ProductManufactureInfoEntity productManufactureInfo = new ProductManufactureInfoEntity();
+//        productManufactureInfo.setProducingDuration(producingDuration);
+//        getProductEntity().attacheProductManufactureInfo(productManufactureInfo);
+//        productManufactureInfo.setAmountWhenCreated(amountWhenCreated);
+//        productManufactureInfo.setProductMaterialsRelations(productMaterialsRelations);
+//        return productManufactureInfo;
+//    }
 
     public ProductAmountBill toProductAmountBill() {
         return ProductAmountBill.of(productMaterialsRelations.stream()

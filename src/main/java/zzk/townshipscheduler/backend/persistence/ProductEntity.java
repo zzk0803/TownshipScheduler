@@ -68,6 +68,7 @@ public class ProductEntity {
     @Transient
     private transient ProductId productId;
 
+    @Column(unique = true)
     private String name = "";
 
     private String nameForMaterial = "";
@@ -93,20 +94,20 @@ public class ProductEntity {
     private String durationString = "";
 
     @OneToMany(
-            targetEntity = ProductManufactureInfoEntity.class,
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.REMOVE}
+            mappedBy = "productEntity",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
     )
-    @JoinTable(
-            name = "jointable_product_manufactureInfo",
-            joinColumns = @JoinColumn(
-                    name = "product_id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            ),
-            inverseJoinColumns = @JoinColumn(
-                    name = "manufactureInfo_id",
-                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-            )
-    )
+//    @JoinTable(
+//            name = "jointable_product_manufactureInfo",
+//            joinColumns = @JoinColumn(
+//                    name = "product_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            ),
+//            inverseJoinColumns = @JoinColumn(
+//                    name = "manufactureInfo_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            )
+//    )
     private Set<ProductManufactureInfoEntity> manufactureInfoEntities = new HashSet<>();
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -128,11 +129,11 @@ public class ProductEntity {
         return manufactureInfoEntities.add(productManufactureInfo);
     }
 
-    public void detachProductManufactureInfoCollection(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
-        Iterator<? extends ProductManufactureInfoEntity> iterator = productManufactureInfoEntities.iterator();
+    public void detachProductManufactureInfoCollection() {
+        Iterator<? extends ProductManufactureInfoEntity> iterator = manufactureInfoEntities.iterator();
         while (iterator.hasNext()) {
             ProductManufactureInfoEntity productManufactureInfoEntity = iterator.next();
-            this.detachProductManufactureInfo(productManufactureInfoEntity);
+            productManufactureInfoEntity.setFieldFactoryInfo(null);
             iterator.remove();
         }
     }
@@ -169,7 +170,7 @@ public class ProductEntity {
         if (thisEffectiveClass != oEffectiveClass)
             return false;
         ProductEntity productEntity = (ProductEntity) o;
-        return getId() != null && Objects.equals(getId(), productEntity.getId());
+        return (getId() != null && Objects.equals(getId(), productEntity.getId())) || (getName() != null && Objects.equals(getName(), productEntity.getName()));
     }
 
     public ProductId getProductId() {

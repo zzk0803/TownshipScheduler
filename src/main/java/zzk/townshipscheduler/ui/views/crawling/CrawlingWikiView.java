@@ -21,9 +21,11 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.streams.UploadHandler;
+import com.vaadin.flow.signals.local.ValueSignal;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import zzk.townshipscheduler.backend.crawling.MhtmlProcessComponent;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
 
 import java.time.Duration;
@@ -46,6 +48,8 @@ public class CrawlingWikiView
 
     private final RadioButtonGroup<CrawlingMode> modeSelector;
 
+    private ValueSignal<CrawlingMode> crawlingModeValueSignal = new ValueSignal<>(CrawlingMode.AUTO_CRAWL);
+
     @Setter
     @Getter
     private UI currentUi;
@@ -66,7 +70,9 @@ public class CrawlingWikiView
 
         // Create upload panel
         uploadPanel = createUploadPanel();
-        uploadPanel.setVisible(false); // Hidden by default
+
+        actionButton.bindVisible(crawlingModeValueSignal.map(value -> value == CrawlingMode.AUTO_CRAWL));
+        uploadPanel.bindVisible(crawlingModeValueSignal.map(value -> value == CrawlingMode.MANUAL_UPLOAD));
 
         add(actionButton, uploadPanel);
     }
@@ -89,13 +95,8 @@ public class CrawlingWikiView
         radioGroup.setValue(CrawlingMode.AUTO_CRAWL);
 
         radioGroup.addValueChangeListener(event -> {
-            if (event.getValue() == CrawlingMode.AUTO_CRAWL) {
-                actionButton.setVisible(true);
-                uploadPanel.setVisible(false);
-            } else {
-                actionButton.setVisible(false);
-                uploadPanel.setVisible(true);
-            }
+            CrawlingMode selectedModel = event.getValue();
+            this.crawlingModeValueSignal.set(selectedModel);
         });
 
         return radioGroup;
@@ -143,7 +144,29 @@ public class CrawlingWikiView
         VerticalLayout instructionsLayout = new VerticalLayout();
         instructionsLayout.setPadding(false);
         instructionsLayout.add(
-                new HorizontalLayout(new Paragraph("1. Open Page :: Township Wiki Goods :"), createLink("https://township.fandom.com/wiki/Goods", "Township Wiki Goods")) {{
+                new HorizontalLayout(
+                        new Button("Use builtin offline file") {{
+                            addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                            addClickListener(event -> CrawlingWikiView.this.presenter.asyncProcessFromOfflineHtml()
+                                    .whenComplete((unused, throwable) -> {
+                                        getCurrentUi().access(() -> add(prepareCoordCellGrid()));
+                                    }).exceptionally(throwable -> {
+                                        currentUi.access(() -> {
+                                            Notification notification = new Notification("Error occur when get data from fandom wiki");
+                                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                            notification.setPosition(Notification.Position.MIDDLE);
+                                            notification.setDuration(Duration.ofSeconds(3).toSecondsPart());
+                                            notification.open();
+                                            actionButton.setDisableOnClick(false);
+                                        });
+                                        return null;
+                                    }));
+                        }}
+                ),
+                new HorizontalLayout(
+                        new Paragraph("1. Open Page :: Township Wiki Goods :"),
+                        createLink("https://township.fandom.com/wiki/Goods", "Township Wiki Goods")
+                ) {{
                     setAlignItems(Alignment.BASELINE);
                 }},
                 new Paragraph("2. Press Ctrl+S Save it"),
@@ -161,39 +184,47 @@ public class CrawlingWikiView
             downloadExampleBtn.getElement().setAttribute("download", "mhtml_upload_instructions.txt");
         });
 
-        Upload upload = new Upload(UploadHandler.inMemory((metadata, data) -> {
-            // Get other information about the file.
-            String fileName = metadata.fileName();
-            String mimeType = metadata.contentType();
-            long contentLength = metadata.contentLength();
+        Upload upload = new Upload(
+                UploadHandler.inMemory(
+                        (metadata, data) -> {
+                            // Get other information about the file.
+                            String fileName = metadata.fileName();
+                            String mimeType = metadata.contentType();
+                            long contentLength = metadata.contentLength();
 
-            getCurrentUi().access(() -> {
-                Notification.show("File Received！Processing...", 3000, Notification.Position.TOP_CENTER);
-            });
+                            getCurrentUi().access(() -> {
+                                Notification.show("File Received！Processing...", 3000, Notification.Position.TOP_CENTER);
+                            });
 
-            // Do something with the file data...
-            this.presenter.handleUploadSuccess(data, fileName)
-                    .whenComplete((unused, throwable) -> {
-                        getCurrentUi().access(() -> {
-                            if (throwable == null) {
-                                add(prepareCoordCellGrid());
-                                Notification.show("Done!", 5000, Notification.Position.BOTTOM_CENTER);
-                            } else {
-                                Notification.show("Fail!" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
-                            }
-                        });
-                    }).exceptionally(throwable -> {
-                        currentUi.access(() -> {
-                            Notification notification = new Notification("Error occur when get data from fandom wiki");
-                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                            notification.setPosition(Notification.Position.MIDDLE);
-                            notification.setDuration(Duration.ofSeconds(3).toSecondsPart());
-                            notification.open();
-                            actionButton.setDisableOnClick(false);
-                        });
-                        return null;
-                    });
-        }));
+                            // Do something with the file data...
+                            MhtmlProcessComponent.Result mhtmlResult = this.presenter.processMhtmlBytes(data);
+                            this.presenter.asyncProcessFromUploadedHtml(mhtmlResult)
+                                    .whenComplete(
+                                            (unused, throwable) -> {
+                                                getCurrentUi().access(() -> {
+                                                    if (throwable == null) {
+                                                        add(prepareCoordCellGrid());
+                                                        Notification.show("Done!", 5000, Notification.Position.BOTTOM_CENTER);
+                                                    } else {
+                                                        Notification.show("Fail!" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
+                                                    }
+                                                });
+                                            }
+                                    )
+                                    .exceptionally(throwable -> {
+                                        currentUi.access(() -> {
+                                            Notification notification = new Notification("Error occur when get data from fandom wiki");
+                                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                            notification.setPosition(Notification.Position.MIDDLE);
+                                            notification.setDuration(Duration.ofSeconds(3).toSecondsPart());
+                                            notification.open();
+                                            actionButton.setDisableOnClick(false);
+                                        });
+                                        return null;
+                                    });
+                        }
+                )
+        );
         upload.setAcceptedFileExtensions(".txt");
         upload.addFileRejectedListener(event -> {
             Notification.show("failed：" + event.getFileName(), 5000, Notification.Position.BOTTOM_CENTER);
