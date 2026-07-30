@@ -28,12 +28,12 @@ public class ProductImages {
         }
 
         return new Image(
-                getDownloadHandlerOfProduct(productName, bytes),
+                createDownloadHandlerOfProductImage(productName, bytes),
                 productName
         );
     }
 
-    private static @NonNull InputStreamDownloadHandler getDownloadHandlerOfProduct(String productName, byte[] bytes) {
+    private static @NonNull InputStreamDownloadHandler createDownloadHandlerOfProductImage(String productName, byte[] bytes) {
         return DownloadHandler.fromInputStream(
                 _ -> new DownloadResponse(
                         new ByteArrayInputStream(bytes),
@@ -48,7 +48,7 @@ public class ProductImages {
         Objects.requireNonNull(productName);
         Objects.requireNonNull(crawledEntity);
         byte[] imageBytes = crawledEntity.getImageBytes();
-        return getDownloadHandlerOfProduct(productName, imageBytes);
+        return createDownloadHandlerOfProductImage(productName, imageBytes);
     }
 
     public static Image productImage(String productName, Supplier<byte[]> bytesSupplier) {

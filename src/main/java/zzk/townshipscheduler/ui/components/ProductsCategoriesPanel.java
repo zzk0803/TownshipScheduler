@@ -285,10 +285,4 @@ public class ProductsCategoriesPanel
         return contentLayout;
     }
 
-    public void refreshImgBtnClickDone(ProductEntity productEntity) {
-        UI.getCurrent().access(() -> {
-            productsGrid.getGenericDataView().refreshItem(productEntity);
-        });
-    }
-
 }

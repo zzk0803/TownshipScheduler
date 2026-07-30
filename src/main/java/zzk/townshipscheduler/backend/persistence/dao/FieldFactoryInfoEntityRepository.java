@@ -23,8 +23,18 @@ public interface FieldFactoryInfoEntityRepository
 
     List<FieldFactoryInfoEntity> findFieldFactoryInfoEntitiesByLevelBetween(Integer levelAfter, Integer levelBefore);
 
-    @EntityGraph("fieldFactoryInfo.g.full")
-    @Query("select ffie from FieldFactoryInfoEntity ffie")
+    @EntityGraph(
+            attributePaths = {
+                    "productManufactureInfoSet",
+                    "productManufactureInfoSet.productEntity",
+                    "productManufactureInfoSet.productEntity.manufactureInfoEntities",
+                    "productManufactureInfoSet.productEntity.crawledAsImage.imageBytes",
+                    "productManufactureInfoSet.productMaterialsRelations",
+                    "productManufactureInfoSet.productMaterialsRelations.material.manufactureInfoEntities",
+                    "productManufactureInfoSet.productMaterialsRelations.material.crawledAsImage.imageBytes"
+            }
+    )
+    @Query("from FieldFactoryInfoEntity as ffie")
     Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Sort sort);
 
     @Query("select f from FieldFactoryInfoEntity f join fetch f.productManufactureInfoSet as fpg where f.level<=:level and fpg.productEntity.level<=:level ")

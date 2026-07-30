@@ -94,20 +94,20 @@ public class ProductEntity {
     private String durationString = "";
 
     @OneToMany(
-            mappedBy = "productEntity",
+//            mappedBy = "productEntity",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
     )
-//    @JoinTable(
-//            name = "jointable_product_manufactureInfo",
-//            joinColumns = @JoinColumn(
-//                    name = "product_id",
-//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-//            ),
-//            inverseJoinColumns = @JoinColumn(
-//                    name = "manufactureInfo_id",
-//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-//            )
-//    )
+    @JoinTable(
+            name = "jointable_product_manufactureInfo",
+            joinColumns = @JoinColumn(
+                    name = "product_id",
+                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name = "manufactureInfo_id",
+                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+            )
+    )
     private Set<ProductManufactureInfoEntity> manufactureInfoEntities = new HashSet<>();
 
     @OneToOne(fetch = FetchType.LAZY)

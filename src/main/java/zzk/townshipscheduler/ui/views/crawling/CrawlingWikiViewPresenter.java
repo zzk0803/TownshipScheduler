@@ -1,6 +1,10 @@
 package zzk.townshipscheduler.ui.views.crawling;
 
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.server.streams.InMemoryUploadHandler;
+import com.vaadin.flow.server.streams.UploadHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -10,6 +14,7 @@ import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntit
 import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledParsedCoordCellEntityRepository;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -32,15 +37,16 @@ public class CrawlingWikiViewPresenter {
     }
 
     CompletableFuture<Void> asyncProcess() {
-        return townshipFandomCrawlingProcessFacade.process().whenCompleteAsync(
-                (unused, throwable) -> {
-                    if (throwable != null) {
-                        log.error(throwable.getMessage());
-                    }
-                    log.info("setup presenter");
-                    townshipFandomCrawlingProcessFacade.clean();
-                }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService()
-        );
+        return townshipFandomCrawlingProcessFacade.process()
+                .whenCompleteAsync(
+                        (unused, throwable) -> {
+                            if (throwable != null) {
+                                log.error(throwable.getMessage());
+                            }
+                            log.info("setup presenter");
+                            townshipFandomCrawlingProcessFacade.clean();
+                        }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService()
+                );
     }
 
     void setupTownshipCoordCellGrid(Grid<WikiCrawledParsedCoordCellEntity> grid) {
@@ -48,29 +54,12 @@ public class CrawlingWikiViewPresenter {
     }
 
     boolean boolTownshipCrawled() {
-        return wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1().isPresent();
+        return wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1()
+                .isPresent();
     }
 
-    public MhtmlProcessComponent.Result processMhtmlBytes(byte[] data) {
-        return this.mhtmlProcessComponent.processMhtmlBytes(data);
-//        try (var inputStream = new ByteArrayInputStream(data)) {
-//            this.mhtmlProcessComponent.validateMhtmlHeader((InputStream) inputStream);
-//            inputStream.reset();
-//
-//            return this.mhtmlProcessComponent.parseMhtmlInputStream(inputStream);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-    }
-
-    /**
-     * Process uploaded HTML document.
-     *
-     * @param uploadedDocument The HTML document from user upload
-     * @return CompletableFuture with processing result
-     */
-    CompletableFuture<Void> asyncProcessFromUploadedHtml(MhtmlProcessComponent.Result uploadedDocument) {
-        return townshipFandomCrawlingProcessFacade.processFromOfflineMhtmlAsTxt(uploadedDocument)
+    CompletableFuture<Void> asyncProcessFromOfflineHtml() {
+        return townshipFandomCrawlingProcessFacade.processFromOfflineMhtmlAsTxt()
                 .whenCompleteAsync(
                         (unused, throwable) -> {
                             if (throwable != null) {
@@ -82,8 +71,66 @@ public class CrawlingWikiViewPresenter {
                 );
     }
 
-    CompletableFuture<Void> asyncProcessFromOfflineHtml() {
-        return townshipFandomCrawlingProcessFacade.processFromOfflineMhtmlAsTxt()
+    public InMemoryUploadHandler createUploadHandler() {
+        InMemoryUploadHandler uploadHandler = UploadHandler.inMemory(
+                (metadata, data) -> {
+                    // Get other information about the file.
+                    String fileName = metadata.fileName();
+                    String mimeType = metadata.contentType();
+                    long contentLength = metadata.contentLength();
+
+                    this.view.getCurrentUi()
+                            .access(() -> {
+                                Notification.show("File Received！Processing...", 3000, Notification.Position.TOP_CENTER);
+                            });
+
+                    // Do something with the file data...
+                    MhtmlProcessComponent.Result mhtmlResult = processMhtmlBytes(data);
+                    asyncProcessFromUploadedHtml(mhtmlResult)
+                            .whenComplete(
+                                    (unused, throwable) -> {
+                                        this.view.getCurrentUi()
+                                                .access(() -> {
+                                                    if (throwable == null) {
+                                                        this.view.add(this.view.prepareCoordCellGrid());
+                                                        Notification.show("Done!", 5000, Notification.Position.BOTTOM_CENTER);
+                                                    } else {
+                                                        Notification.show("Fail!" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
+                                                    }
+                                                });
+                                    }
+                            )
+                            .exceptionally(throwable -> {
+                                this.view.getCurrentUi()
+                                        .access(() -> {
+                                            Notification notification = new Notification("Error occur when get data from fandom wiki");
+                                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                            notification.setPosition(Notification.Position.MIDDLE);
+                                            notification.setDuration(Duration.ofSeconds(3)
+                                                    .toSecondsPart());
+                                            notification.open();
+                                            this.view.getActionButton()
+                                                    .setDisableOnClick(false);
+                                        });
+                                return null;
+                            });
+                }
+        );
+        return uploadHandler;
+    }
+
+    public MhtmlProcessComponent.Result processMhtmlBytes(byte[] data) {
+        return this.mhtmlProcessComponent.processMhtmlBytes(data);
+    }
+
+    /**
+     * Process uploaded HTML document.
+     *
+     * @param uploadedDocument The HTML document from user upload
+     * @return CompletableFuture with processing result
+     */
+    CompletableFuture<Void> asyncProcessFromUploadedHtml(MhtmlProcessComponent.Result uploadedDocument) {
+        return townshipFandomCrawlingProcessFacade.processFromOfflineMhtmlAsTxt(uploadedDocument)
                 .whenCompleteAsync(
                         (unused, throwable) -> {
                             if (throwable != null) {

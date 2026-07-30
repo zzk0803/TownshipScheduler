@@ -67,6 +67,7 @@ public class TownshipDataHierarchyBuildingProcessor {
                                                     log.warn("{} attacheProductManufactureInfoCollection not all success", newFieldFactoryInfo.getCategory());
                                                 }
 
+                                                productEntity.attacheProductManufactureInfoCollection(calcedManufactureInfoSet);
                                                 productMaterialsRelations.addAll(
                                                         calcedManufactureInfoSet.stream()
                                                                 .flatMap(manufactureInfoEntity -> manufactureInfoEntity.getProductMaterialsRelations().stream())

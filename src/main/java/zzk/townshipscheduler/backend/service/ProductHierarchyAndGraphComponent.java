@@ -61,10 +61,12 @@ public class ProductHierarchyAndGraphComponent {
         for (int i = 0; i < iteratingSize; i++) {
             ContextProductHierarchyStructure contextProductHierarchyStructure = productHierarchies.get(i);
             Duration duration = productDurations.get(i);
-            producingInfoSet.add(buildProductManufactureInfoEntity(
-                    contextProductHierarchyStructure,
-                    duration
-            ));
+            producingInfoSet.add(
+                    buildProductManufactureInfoEntity(
+                            contextProductHierarchyStructure,
+                            duration
+                    )
+            );
         }
 
         return producingInfoSet;
@@ -99,7 +101,8 @@ public class ProductHierarchyAndGraphComponent {
                     );
 
                     //prepare internal process
-                    BUILD_UP_CONTEXT.getGraph().addVertex(productEntity);
+                    BUILD_UP_CONTEXT.getGraph()
+                            .addVertex(productEntity);
                 }
         );
 
@@ -131,7 +134,8 @@ public class ProductHierarchyAndGraphComponent {
             return;
         }
 
-        if (MULTIPLE_APPROCH_BOM_PATTERN.matcher(bomStringFromEntity).find()) {
+        if (MULTIPLE_APPROCH_BOM_PATTERN.matcher(bomStringFromEntity)
+                .find()) {
             String replacedOr = bomStringFromEntity.replaceAll(MULTIPLE_APPROCH_BOM_PATTERN.pattern(), ",");
             String[] split = replacedOr.split(",");
 
@@ -173,7 +177,9 @@ public class ProductHierarchyAndGraphComponent {
     }
 
     private ProductEntity refineMaterial(LinkedHashMap<String, ProductEntity> nameProductMap, Matcher matcher) {
-        String rawMaterial = matcher.group(2).trim().toLowerCase();
+        String rawMaterial = matcher.group(2)
+                .trim()
+                .toLowerCase();
         String materialProductName1 = English.plural(rawMaterial, 1);
         String materialProductName2 = jaroWinklerSimilarityLookup(
                 rawMaterial,
@@ -280,7 +286,11 @@ public class ProductHierarchyAndGraphComponent {
 
 
         public Set<ContextProductHierarchyStructure> resultByGroupInProduct() {
-            return graph.vertexSet().stream().map(this::resultByGroupInProduct).flatMap(Collection::stream).collect(Collectors.toUnmodifiableSet());
+            return graph.vertexSet()
+                    .stream()
+                    .map(this::resultByGroupInProduct)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toUnmodifiableSet());
         }
 
         public List<ContextProductHierarchyStructure> resultByGroupInProduct(ProductEntity productEntity) {
@@ -298,7 +308,8 @@ public class ProductHierarchyAndGraphComponent {
                                                     = materialEdges.stream()
                                                     .collect(
                                                             Collectors.toMap(
-                                                                    edge -> ProductEntity.ProductId.of(edge.getSource().getId()),
+                                                                    edge -> ProductEntity.ProductId.of(edge.getSource()
+                                                                            .getId()),
                                                                     ContextProductHierarchyGraphEdge::getAmount
                                                             )
                                                     );
@@ -358,7 +369,8 @@ public class ProductHierarchyAndGraphComponent {
         }
 
         public ProductEntity.ProductId getSourceId() {
-            return this.getSource().getProductId();
+            return this.getSource()
+                    .getProductId();
         }
 
         @Override
@@ -367,7 +379,8 @@ public class ProductHierarchyAndGraphComponent {
         }
 
         public ProductEntity.ProductId getTargetId() {
-            return this.getTarget().getProductId();
+            return this.getTarget()
+                    .getProductId();
         }
 
         @Override
