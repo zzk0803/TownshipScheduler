@@ -34,7 +34,13 @@ public interface FieldFactoryInfoEntityRepository
     Set<FieldFactoryInfoEntity> queryForFactoryProductSelection(Sort sort);
 
     @Query("select f from FieldFactoryInfoEntity f join fetch f.productEntities as pe where f.level<=:level and pe.level<=:level ")
-    @EntityGraph("fieldFactoryInfo.g.full")
+    @EntityGraph(
+            attributePaths = {
+                    "productEntities",
+                    "productEntities.manufactureInfoEntities.productMaterialsRelations",
+                    "productEntities.crawledAsImage.imageBytes"
+            }
+    )
     Set<FieldFactoryInfoEntity> queryForPrepareScheduling(@Param("level") Integer level);
 
     @EntityGraph("fieldFactoryInfo.g.full")

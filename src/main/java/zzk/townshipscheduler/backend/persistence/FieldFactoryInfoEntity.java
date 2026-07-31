@@ -69,6 +69,7 @@ public class FieldFactoryInfoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ToString.Include
     @Column(unique = true)
     private String category;
 
@@ -94,7 +95,8 @@ public class FieldFactoryInfoEntity {
     @OneToMany(
             mappedBy = "fieldFactoryInfoEntity",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH}
-    ) private Set<ProductEntity> productEntities = new LinkedHashSet<>();
+    )
+    private Set<ProductEntity> productEntities = new LinkedHashSet<>();
 
     public boolean removeProductEntity(ProductEntity productEntity) {
         if (!this.getProductEntities()
@@ -157,13 +159,15 @@ public class FieldFactoryInfoEntity {
         return fieldFactoryEntity;
     }
 
-    public void addProductEntities(Collection<ProductEntity> productEntities) {
-        productEntities.forEach(this::addProductEntity);
+    public boolean addProductEntities(Collection<ProductEntity> productEntities) {
+        return productEntities.stream()
+                .map(this::addProductEntity)
+                .allMatch(aBoolean -> aBoolean);
     }
 
     public boolean addProductEntity(ProductEntity productEntity) {
         productEntity.setFieldFactoryInfoEntity(this);
-        return productEntities.add(productEntity);
+        return this.productEntities.add(productEntity);
     }
 
 }

@@ -16,10 +16,7 @@ import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -47,12 +44,18 @@ public class TownshipSchedulingPrepareComponent {
         final Set<FieldFactoryInfoEntity> factoryInfos
                 = fieldFactoryInfoEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
 
-        final Set<ProductEntity> products
-                = productEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
-        products.removeIf(productEntity -> productEntity.getLevel() > playerEntity.getLevel());
+        final List<ProductEntity> products = factoryInfos.stream()
+                .flatMap(fieldFactoryInfo -> fieldFactoryInfo.getProductEntities()
+                        .stream())
+                .toList();
+
+//        final Set<ProductEntity> products
+//                = productEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
+//        products.removeIf(productEntity -> productEntity.getLevel() > playerEntity.getLevel());
 
         return optionalPlayerForScheduling
-                .map(playerEntityProjection -> TownshipSchedulingRequest.builder()
+                .map(
+                        playerEntityProjection -> TownshipSchedulingRequest.builder()
                                 .requestId(UuidGenerator.timeOrderedV6())
                                 .productEntities(products)
                                 .fieldFactoryInfoEntities(factoryInfos)
@@ -61,7 +64,7 @@ public class TownshipSchedulingPrepareComponent {
                                 .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
                                 .dateTimeSlotSize(dateTimeSlotSize)
                                 .workCalendarStart(workCalendarStart)
-//                        .workCalendarEnd(workCalendarEnd)
+                                //.workCalendarEnd(workCalendarEnd)
                                 .sleepStartPickerValue(sleepStartPickerValue)
                                 .sleepEndPickerValue(sleepEndPickerValue)
                                 .build()

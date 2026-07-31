@@ -107,7 +107,7 @@ public class ProductEntity {
     private WikiCrawledEntity crawledAsImage;
 
     @ManyToOne
-    @JoinColumn(name = "field_factory_info_entity_id")
+    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private FieldFactoryInfoEntity fieldFactoryInfoEntity;
 
     @PostLoad

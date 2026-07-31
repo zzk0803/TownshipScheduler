@@ -94,27 +94,20 @@ class TownshipDataHardcodeHotfixProcessor {
         }
 
         AtomicReference<Set<ProductEntityTempRecord>> tempTableReference = new AtomicReference<>();
-        Optional<FieldFactoryInfoEntity> farmBuildings
-                = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
-        farmBuildings.ifPresent(
-                fieldFactoryInfoEntity -> {
-                    Set<ProductEntity> relatedProducts = fieldFactoryInfoEntity.getProductEntities();
-                    Set<ProductEntityTempRecord> ProductEntityTempRecords = relatedProducts.stream()
-                            .map(productEntity -> new ProductEntityTempRecord(
-                                    productEntity.getName(),
-                                    productEntity,
-                                    productEntity.getManufactureInfoEntities()
-                                            .stream()
-                                            .toList()
-                            ))
-                            .collect(Collectors.toSet());
-                    tempTableReference.set(ProductEntityTempRecords);
-
-                    fieldFactoryInfoEntity.clearProductEntity();
-                    transactionTemplate.executeWithoutResult(_ -> fieldFactoryInfoEntityRepository.save(fieldFactoryInfoEntity));
-                    transactionTemplate.executeWithoutResult(_ -> fieldFactoryInfoEntityRepository.delete(fieldFactoryInfoEntity));
-                }
-        );
+        final Optional<FieldFactoryInfoEntity> farmBuildings = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
+        farmBuildings.ifPresent(fieldFactoryInfoEntity -> {
+            Set<ProductEntity> relatedProducts = fieldFactoryInfoEntity.getProductEntities();
+            Set<ProductEntityTempRecord> ProductEntityTempRecords = relatedProducts.stream()
+                    .map(productEntity -> new ProductEntityTempRecord(
+                            productEntity.getName(),
+                            productEntity,
+                            productEntity.getManufactureInfoEntities()
+                                    .stream()
+                                    .toList()
+                    ))
+                    .collect(Collectors.toSet());
+            tempTableReference.set(ProductEntityTempRecords);
+        });
 
         List<String> list = tempTableReference.get()
                 .stream()
@@ -135,16 +128,28 @@ class TownshipDataHardcodeHotfixProcessor {
             throw new IllegalStateException("tempTableReference products not equal instanceAmendMap products");
         }
 
-        instanceAmendMap.forEach(
-                (factoryName, mendingData) -> {
-                    FieldFactoryInfoEntity fieldFactoryInfo = createFieldFactoryInfo(factoryName, mendingData,name->productEntityRepository.queryByName(name).orElseThrow());
-                    FieldFactoryInfoEntity savedFieldFactory = transactionTemplate.execute(status -> fieldFactoryInfoEntityRepository.saveAndFlush(fieldFactoryInfo));
-                }
-        );
+        instanceAmendMap.forEach((factoryName, mendingData) -> {
+            FieldFactoryInfoEntity savedFieldFactory = transactionTemplate.execute(
+                    status -> fieldFactoryInfoEntityRepository.saveAndFlush(
+                            createFieldFactoryInfo(factoryName, mendingData)
+                    )
+            );
+            FieldFactoryInfoEntity updatedFieldFactory = transactionTemplate.execute(
+                    status -> fieldFactoryInfoEntityRepository.saveAndFlush(
+                            updateFieldFactoryInfo(
+                                    savedFieldFactory,
+                                    mendingData,
+                                    name -> productEntityRepository.queryByName(name)
+                                            .orElseThrow(),
+                                    farmBuildings.orElseThrow()
+                            )
+                    )
+            );
+            log.info("updatedFieldFactory ::  {}", updatedFieldFactory);
+        });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            Optional<FieldFactoryInfoEntity> feedMillOptional
-                    = fieldFactoryInfoEntityRepository.findByCategory("Feed Mill");
+            Optional<FieldFactoryInfoEntity> feedMillOptional = fieldFactoryInfoEntityRepository.findByCategory("Feed Mill");
             FieldFactoryInfoEntity feedMill = feedMillOptional.orElseThrow();
             feedMill.setLevel(3);
             feedMill.setDefaultInstanceAmount(1);
@@ -153,12 +158,11 @@ class TownshipDataHardcodeHotfixProcessor {
             feedMill.setMaxInstanceAmount(3);
             feedMill.setMaxProducingCapacity(7);
             feedMill.setMaxReapWindowCapacity(8);
-            fieldFactoryInfoEntityRepository.save(feedMill);
+            fieldFactoryInfoEntityRepository.saveAndFlush(feedMill);
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            Optional<FieldFactoryInfoEntity> fieldOptional
-                    = fieldFactoryInfoEntityRepository.findByCategory("Crops");
+            Optional<FieldFactoryInfoEntity> fieldOptional = fieldFactoryInfoEntityRepository.findByCategory("Crops");
             FieldFactoryInfoEntity field = fieldOptional.orElseThrow();
             field.setCategory(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA);
             field.setLevel(1);
@@ -170,12 +174,12 @@ class TownshipDataHardcodeHotfixProcessor {
             field.setMaxInstanceAmount(146);
             field.setMaxProducingCapacity(1);
             field.setMaxReapWindowCapacity(1);
-            fieldFactoryInfoEntityRepository.save(field);
+            fieldFactoryInfoEntityRepository.saveAndFlush(field);
+            log.info("updatedFieldFactory ::  {}", field);
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            Optional<FieldFactoryInfoEntity> islandShipOptional
-                    = fieldFactoryInfoEntityRepository.findByCategory("Islands and Ships");
+            Optional<FieldFactoryInfoEntity> islandShipOptional = fieldFactoryInfoEntityRepository.findByCategory("Islands and Ships");
             FieldFactoryInfoEntity islandShip = islandShipOptional.orElseThrow();
             islandShip.setCategory("IslandsShip");
             islandShip.setLevel(29);
@@ -186,7 +190,8 @@ class TownshipDataHardcodeHotfixProcessor {
             islandShip.setMaxInstanceAmount(4);
             islandShip.setMaxProducingCapacity(1);
             islandShip.setMaxReapWindowCapacity(3);
-            fieldFactoryInfoEntityRepository.save(islandShip);
+            fieldFactoryInfoEntityRepository.saveAndFlush(islandShip);
+            log.info("updatedFieldFactory ::  {}", islandShip);
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
@@ -200,13 +205,20 @@ class TownshipDataHardcodeHotfixProcessor {
             foundry.setMaxInstanceAmount(3);
             foundry.setMaxProducingCapacity(1);
             foundry.setMaxReapWindowCapacity(1);
-            fieldFactoryInfoEntityRepository.save(foundry);
+            fieldFactoryInfoEntityRepository.saveAndFlush(foundry);
+            log.info("updatedFieldFactory ::  {}", foundry);
+        });
+
+        farmBuildings.ifPresent(fieldFactoryInfoEntity -> {
+            fieldFactoryInfoEntity.clearProductEntity();
+            FieldFactoryInfoEntity updatedFieldFactoryInfoEntity = transactionTemplate.execute(_ -> fieldFactoryInfoEntityRepository.saveAndFlush(fieldFactoryInfoEntity));
+            transactionTemplate.executeWithoutResult(_ -> fieldFactoryInfoEntityRepository.delete(updatedFieldFactoryInfoEntity));
         });
 
         log.info("going to hardcode fix factoryinfo method over");
     }
 
-    private @NonNull FieldFactoryInfoEntity createFieldFactoryInfo(String factoryName, MendingData mendingData, Function<String,ProductEntity> nameToProductFunction) {
+    private @NonNull FieldFactoryInfoEntity createFieldFactoryInfo(String factoryName, MendingData mendingData) {
         FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
         fieldFactoryInfo.setCategory(factoryName);
         fieldFactoryInfo.setLevel(mendingData.level());
@@ -217,10 +229,23 @@ class TownshipDataHardcodeHotfixProcessor {
         fieldFactoryInfo.setMaxInstanceAmount(mendingData.instanceAmount());
         fieldFactoryInfo.setMaxProducingCapacity(6);
         fieldFactoryInfo.setMaxReapWindowCapacity(6);
-        mendingData.productNameList().stream()
-                .map(nameToProductFunction)
-                .forEach(fieldFactoryInfo::addProductEntity);
         return fieldFactoryInfo;
+    }
+
+    private FieldFactoryInfoEntity updateFieldFactoryInfo(
+            FieldFactoryInfoEntity savedFieldFactory,
+            MendingData mendingData,
+            Function<String, ProductEntity> nameToProductFunction,
+            FieldFactoryInfoEntity farmBuildings
+    ) {
+        farmBuildings.clearProductEntity();
+        savedFieldFactory.addProductEntities(
+                mendingData.productNameList()
+                .stream()
+                .map(nameToProductFunction)
+                .toList()
+        );
+        return savedFieldFactory;
     }
 
     @Builder

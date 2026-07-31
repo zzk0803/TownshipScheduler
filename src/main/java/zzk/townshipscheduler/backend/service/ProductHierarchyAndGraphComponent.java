@@ -211,7 +211,7 @@ public class ProductHierarchyAndGraphComponent {
                 .get();
     }
 
-    public List<Duration> calcProductProducingDuration(ProductEntity productEntity) {
+    public static List<Duration> calcProductProducingDuration(ProductEntity productEntity) {
         String durationString = productEntity.getDurationString();
         if (Objects.isNull(durationString)) {
             return Collections.singletonList(Duration.ZERO);
@@ -294,14 +294,22 @@ public class ProductHierarchyAndGraphComponent {
         }
 
         public List<ContextProductHierarchyStructure> resultByGroupInProduct(ProductEntity productEntity) {
-            Set<ContextProductHierarchyGraphEdge> productHierarchyGraphEdges = graph.incomingEdgesOf(productEntity);
-            return productHierarchyGraphEdges.stream()
+            Set<ContextProductHierarchyGraphEdge> productHierarchyGraphIncomeEdges = graph.incomingEdgesOf(productEntity);
+            Set<ContextProductHierarchyGraphEdge> productHierarchyGraphOutcomeEdges = graph.outgoingEdgesOf(productEntity);
+            Set<ContextProductHierarchyGraphEdge> productHierarchyGraphAllEdges = graph.edgesOf(productEntity);
+            if (productHierarchyGraphIncomeEdges.isEmpty()) {
+                ContextProductHierarchyStructure hierarchyStructure = ContextProductHierarchyStructure.builder()
+                        .productId(productEntity.getProductId())
+                        .build();
+                return List.of(hierarchyStructure);
+            }
+            return productHierarchyGraphIncomeEdges.stream()
                     .collect(
                             Collectors.collectingAndThen(
                                     Collectors.groupingBy(ContextProductHierarchyGraphEdge::getGroupId),
-                                    integerListMap -> {
+                                    groupIdIncomeEdgesMap -> {
                                         List<ContextProductHierarchyStructure> result = new ArrayList<>();
-                                        for (Map.Entry<Integer, List<ContextProductHierarchyGraphEdge>> entry : integerListMap.entrySet()) {
+                                        for (Map.Entry<Integer, List<ContextProductHierarchyGraphEdge>> entry : groupIdIncomeEdgesMap.entrySet()) {
                                             Integer groupId = entry.getKey();
                                             List<ContextProductHierarchyGraphEdge> materialEdges = entry.getValue();
                                             Map<ProductEntity.ProductId, Integer> materialIdToAmountMap
@@ -314,7 +322,7 @@ public class ProductHierarchyAndGraphComponent {
                                                             )
                                                     );
                                             ContextProductHierarchyStructure hierarchyStructure = ContextProductHierarchyStructure.builder()
-                                                    .id(groupId)
+                                                    .groupId(groupId)
                                                     .productId(productEntity.getProductId())
                                                     .materials(materialIdToAmountMap)
                                                     .build();
@@ -334,7 +342,7 @@ public class ProductHierarchyAndGraphComponent {
     public static class ContextProductHierarchyStructure {
 
         @EqualsAndHashCode.Include
-        private int id;
+        private int groupId;
 
         private ProductEntityDtoForBuildUp productEntity;
 
