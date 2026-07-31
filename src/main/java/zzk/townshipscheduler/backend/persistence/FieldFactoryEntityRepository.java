@@ -1,10 +1,7 @@
-package zzk.townshipscheduler.backend.persistence.dao;
+package zzk.townshipscheduler.backend.persistence;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryEntity;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 
 import java.util.List;
 

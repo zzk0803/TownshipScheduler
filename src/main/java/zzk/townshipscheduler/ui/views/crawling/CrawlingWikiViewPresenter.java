@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 import zzk.townshipscheduler.backend.crawling.MhtmlProcessComponent;
 import zzk.townshipscheduler.backend.crawling.TownshipFandomCrawlingProcessFacade;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledParsedCoordCellEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntityRepository;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;

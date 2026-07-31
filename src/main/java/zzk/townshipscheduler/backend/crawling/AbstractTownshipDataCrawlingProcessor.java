@@ -6,8 +6,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledParsedCoordCellEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntityRepository;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;

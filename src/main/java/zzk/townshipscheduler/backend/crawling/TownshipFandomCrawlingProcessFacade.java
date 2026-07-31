@@ -74,7 +74,8 @@ public class TownshipFandomCrawlingProcessFacade {
                         }, townshipExecutorService
                 )
                 .thenAcceptAsync(
-                        _ -> {
+                        hierarchyResult -> {
+                            setHierarchyResult(hierarchyResult);
                             this.hardcodeHotfixProcessor.process();
                         }, townshipExecutorService
                 );

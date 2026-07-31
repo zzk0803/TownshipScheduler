@@ -1,7 +1,6 @@
-package zzk.townshipscheduler.backend.persistence.dao;
+package zzk.townshipscheduler.backend.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import zzk.townshipscheduler.backend.persistence.OrderItemEntity;
 
 public interface OrderItemEntityRepository
         extends JpaRepository<OrderItemEntity, Long> {

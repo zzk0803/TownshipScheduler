@@ -10,9 +10,9 @@ import zzk.townshipscheduler.backend.ProducingStructureType;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
-import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductManufactureInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntityRepository;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;

@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.backend.service;
+package zzk.townshipscheduler.backend;
 
 import io.arxila.javatuples.Pair;
 import lombok.*;
@@ -13,8 +13,7 @@ import org.springframework.stereotype.Component;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.select.ProductEntityDtoForBuildUp;
+import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
 
 import java.io.Serial;
 import java.time.Duration;

@@ -7,16 +7,14 @@ import lombok.Setter;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.ProductAmountBill;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
-import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductManufactureInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductMaterialsRelationRepository;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelationRepository;
 import zzk.townshipscheduler.ui.components.ProductImagesBytesComponent;
 
-import java.util.List;
 import java.util.Set;
 
 @SpringComponent

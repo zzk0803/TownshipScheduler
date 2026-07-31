@@ -1,15 +1,12 @@
 package zzk.townshipscheduler.ui.components;
 
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntityRepository;
 
 import java.util.Optional;
 

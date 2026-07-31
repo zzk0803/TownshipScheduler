@@ -5,12 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
-import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
-import zzk.townshipscheduler.backend.persistence.dao.*;
-import zzk.townshipscheduler.backend.service.ProductHierarchyAndGraphComponent;
+import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.ProductHierarchyAndGraphComponent;
 
 import java.util.*;
 import java.util.stream.Collectors;

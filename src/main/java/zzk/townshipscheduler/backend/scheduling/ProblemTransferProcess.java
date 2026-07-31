@@ -6,7 +6,7 @@ import zzk.townshipscheduler.backend.OrderType;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
-import zzk.townshipscheduler.backend.service.ProductHierarchyAndGraphComponent;
+import zzk.townshipscheduler.backend.ProductHierarchyAndGraphComponent;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
