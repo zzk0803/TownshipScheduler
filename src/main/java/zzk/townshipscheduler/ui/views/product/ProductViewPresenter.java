@@ -48,21 +48,11 @@ public class ProductViewPresenter {
     }
 
     public void getMaterials(ProductEntity productEntity) {
-        Set<ProductManufactureInfoEntity> manufactureInfoEntities = productEntity.getManufactureInfoEntities();
-        List<manufactureInfoMaterialsPair> pairs = manufactureInfoEntities.stream()
-                .map(manufactureInfoEntity -> new manufactureInfoMaterialsPair(manufactureInfoEntity, manufactureInfoEntity.toProductAmountBill()))
-                .toList();
+        Set<ProductManufactureInfoEntity> materialsProductsManufactures = productEntity.getManufactureInfoEntities();
     }
 
     public void getComposite(ProductEntity productEntity) {
-
-    }
-
-    public record manufactureInfoMaterialsPair(
-            ProductManufactureInfoEntity manufactureInfo,
-            ProductAmountBill productAmountBill
-    ) {
-
+        Set<ProductManufactureInfoEntity> compositeProductsManufactures = this.productManufactureInfoEntityRepository.queryProductManufactureInfoByMaterial(productEntity);
     }
 
 }

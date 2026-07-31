@@ -13,8 +13,15 @@ public interface OrderEntityRepository
         extends JpaRepository<OrderEntity, Long> {
 
     @EntityGraph(
-            value = "order.items",
-            type = EntityGraph.EntityGraphType.FETCH
+            attributePaths = {
+                    "orderItemEntities",
+                    "orderItemEntities.productEntity",
+                    "orderItemEntities.productEntity.manufactureInfoEntities",
+                    "orderItemEntities.productEntity.manufactureInfoEntities.productMaterialsRelations",
+                    "orderItemEntities.productEntity.crawledAsImage.imageBytes",
+                    "orderItemEntities.productEntity.fieldFactoryInfoEntity",
+            },
+            type = EntityGraph.EntityGraphType.LOAD
     )
     @Query("select oe from OrderEntity as oe where oe.playerEntity=:player")
     List<OrderEntity> queryForOrderListView(@Param("player") PlayerEntity player);

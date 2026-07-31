@@ -1,10 +1,7 @@
 package zzk.townshipscheduler.backend.service;
 
 import io.arxila.javatuples.Pair;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.atteo.evo.inflector.English;
@@ -296,10 +293,14 @@ public class ProductHierarchyAndGraphComponent {
         public List<ContextProductHierarchyStructure> resultByGroupInProduct(ProductEntity productEntity) {
             Set<ContextProductHierarchyGraphEdge> productHierarchyGraphIncomeEdges = graph.incomingEdgesOf(productEntity);
             Set<ContextProductHierarchyGraphEdge> productHierarchyGraphOutcomeEdges = graph.outgoingEdgesOf(productEntity);
-            Set<ContextProductHierarchyGraphEdge> productHierarchyGraphAllEdges = graph.edgesOf(productEntity);
             if (productHierarchyGraphIncomeEdges.isEmpty()) {
                 ContextProductHierarchyStructure hierarchyStructure = ContextProductHierarchyStructure.builder()
                         .productId(productEntity.getProductId())
+                        .composite(
+                                productHierarchyGraphOutcomeEdges.stream()
+                                        .map(ContextProductHierarchyGraphEdge::getTargetId)
+                                        .collect(Collectors.toList())
+                        )
                         .build();
                 return List.of(hierarchyStructure);
             }
@@ -309,25 +310,27 @@ public class ProductHierarchyAndGraphComponent {
                                     Collectors.groupingBy(ContextProductHierarchyGraphEdge::getGroupId),
                                     groupIdIncomeEdgesMap -> {
                                         List<ContextProductHierarchyStructure> result = new ArrayList<>();
-                                        for (Map.Entry<Integer, List<ContextProductHierarchyGraphEdge>> entry : groupIdIncomeEdgesMap.entrySet()) {
-                                            Integer groupId = entry.getKey();
-                                            List<ContextProductHierarchyGraphEdge> materialEdges = entry.getValue();
-                                            Map<ProductEntity.ProductId, Integer> materialIdToAmountMap
-                                                    = materialEdges.stream()
-                                                    .collect(
-                                                            Collectors.toMap(
-                                                                    edge -> ProductEntity.ProductId.of(edge.getSource()
-                                                                            .getId()),
-                                                                    ContextProductHierarchyGraphEdge::getAmount
-                                                            )
-                                                    );
+                                        groupIdIncomeEdgesMap.forEach((groupId, materialEdges) -> {
                                             ContextProductHierarchyStructure hierarchyStructure = ContextProductHierarchyStructure.builder()
                                                     .groupId(groupId)
                                                     .productId(productEntity.getProductId())
-                                                    .materials(materialIdToAmountMap)
+                                                    .materials(
+                                                            materialEdges.stream()
+                                                                    .collect(
+                                                                            Collectors.toMap(
+                                                                                    ContextProductHierarchyGraphEdge::getSourceId,
+                                                                                    ContextProductHierarchyGraphEdge::getAmount
+                                                                            )
+                                                                    )
+                                                    )
+                                                    .composite(
+                                                            productHierarchyGraphOutcomeEdges.stream()
+                                                                    .map(ContextProductHierarchyGraphEdge::getTargetId)
+                                                                    .collect(Collectors.toList())
+                                                    )
                                                     .build();
                                             result.add(hierarchyStructure);
-                                        }
+                                        });
                                         return result;
                                     }
                             )
@@ -344,8 +347,6 @@ public class ProductHierarchyAndGraphComponent {
         @EqualsAndHashCode.Include
         private int groupId;
 
-        private ProductEntityDtoForBuildUp productEntity;
-
         @EqualsAndHashCode.Include
         private ProductEntity.ProductId productId;
 
@@ -353,13 +354,15 @@ public class ProductHierarchyAndGraphComponent {
 
         private Map<ProductEntity.ProductId, Integer> materials;
 
+        @Setter(AccessLevel.PRIVATE)
+        @Getter(AccessLevel.PRIVATE)
         private Boolean atomicProduct;
 
         public boolean boolAtomicProduct() {
-            if (atomicProduct == null) {
-                atomicProduct = materials == null || materials.isEmpty();
+            if (getAtomicProduct() == null) {
+                setAtomicProduct(materials == null || materials.isEmpty());
             }
-            return atomicProduct;
+            return getAtomicProduct();
         }
 
     }
