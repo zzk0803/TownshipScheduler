@@ -6,7 +6,11 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.*;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -87,7 +91,7 @@ public class ProductEntity {
 
     @OneToMany(
             mappedBy = "productEntity",
-            cascade = CascadeType.ALL
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
     )
 //    @JoinTable(
 //            name = "jointable_product_manufactureInfo",
@@ -161,7 +165,8 @@ public class ProductEntity {
                 .getPersistentClass()
                 : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : this.getClass();
         if (thisEffectiveClass != oEffectiveClass)
             return false;

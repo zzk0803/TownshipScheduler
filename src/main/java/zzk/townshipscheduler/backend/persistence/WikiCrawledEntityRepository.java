@@ -9,7 +9,10 @@ import java.util.Optional;
 public interface WikiCrawledEntityRepository
         extends JpaRepository<WikiCrawledEntity, Long> {
 
-    @Modifying(flushAutomatically = true,clearAutomatically = true)
+    @Modifying(
+            flushAutomatically = true,
+            clearAutomatically = true
+    )
     @Query("delete from WikiCrawledEntity")
     void clear();
 
@@ -49,12 +52,12 @@ public interface WikiCrawledEntityRepository
 
     @Query(
             """
-             from WikiCrawledEntity as tc
+            select tc.imageBytes from WikiCrawledEntity as tc
             where tc.type=zzk.townshipscheduler.backend.persistence.WikiCrawledEntity.Type.IMAGE
             and tc.text=:text
             """
     )
-    WikiCrawledEntity queryEntityBearImageByText(String text);
+    byte[] queryImageBytesByText(String text);
 
     @Query(
             """

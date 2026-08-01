@@ -139,7 +139,7 @@ class TownshipDataHardcodeHotfixProcessor {
                             updateFieldFactoryInfo(
                                     savedFieldFactory,
                                     mendingData,
-                                    name -> productEntityRepository.queryByName(name)
+                                    name -> productEntityRepository.querySimpleByName(name)
                                             .orElseThrow(),
                                     farmBuildings.orElseThrow()
                             )

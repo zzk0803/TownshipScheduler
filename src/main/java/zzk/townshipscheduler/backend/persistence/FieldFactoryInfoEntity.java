@@ -94,7 +94,7 @@ public class FieldFactoryInfoEntity {
 
     @OneToMany(
             mappedBy = "fieldFactoryInfoEntity",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH}
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
     )
     private Set<ProductEntity> productEntities = new LinkedHashSet<>();
 

@@ -73,7 +73,7 @@ public class ProductManufactureInfoEntity {
 
     @OneToMany(
             mappedBy = "productManufactureInfo",
-            cascade = CascadeType.ALL
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
     )
     private Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
 

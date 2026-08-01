@@ -2,6 +2,7 @@ package zzk.townshipscheduler.ui.components;
 
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.LazyInitializationException;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
@@ -36,9 +37,14 @@ public class ProductImagesBytesComponent {
             unless = "#result==null"
     )
     public byte[] getProductImage(ProductEntity productEntity) {
-        String productEntityName = productEntity.getName();
-        Optional<byte[]> optionalBytes = productEntityRepository.queryProductImageByName(productEntityName);
-        return optionalBytes.orElse(wikiCrawledEntityRepository.queryEntityBearImageByText(productEntityName).getImageBytes());
+        try {
+            return productEntity.getCrawledAsImage()
+                    .getImageBytes();
+        } catch (LazyInitializationException lie) {
+            String productEntityName = productEntity.getName();
+            Optional<byte[]> optionalBytes = productEntityRepository.queryProductImageByName(productEntityName);
+            return optionalBytes.orElse(wikiCrawledEntityRepository.queryImageBytesByText(productEntityName));
+        }
     }
 
     @Transactional(readOnly = true)
@@ -49,7 +55,7 @@ public class ProductImagesBytesComponent {
     )
     public byte[] getProductImage(String productName) {
         Optional<byte[]> optionalBytes = productEntityRepository.queryProductImageByName(productName);
-        return optionalBytes.orElse(wikiCrawledEntityRepository.queryEntityBearImageByText(productName).getImageBytes());
+        return optionalBytes.orElse(wikiCrawledEntityRepository.queryImageBytesByText(productName));
     }
 
 }
