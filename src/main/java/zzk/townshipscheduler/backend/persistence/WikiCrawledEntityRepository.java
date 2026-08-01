@@ -1,13 +1,20 @@
-package zzk.townshipscheduler.backend.persistence.dao;
+package zzk.townshipscheduler.backend.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 
 import java.util.Optional;
 
 public interface WikiCrawledEntityRepository
         extends JpaRepository<WikiCrawledEntity, Long> {
+
+    @Modifying(
+            flushAutomatically = true,
+            clearAutomatically = true
+    )
+    @Query("delete from WikiCrawledEntity")
+    void clear();
 
     boolean existsByHtml(String html);
 
@@ -42,6 +49,15 @@ public interface WikiCrawledEntityRepository
             """
     )
     WikiCrawledEntity queryEntityBearImageByHtml(String html);
+
+    @Query(
+            """
+            select tc.imageBytes from WikiCrawledEntity as tc
+            where tc.type=zzk.townshipscheduler.backend.persistence.WikiCrawledEntity.Type.IMAGE
+            and tc.text=:text
+            """
+    )
+    byte[] queryImageBytesByText(String text);
 
     @Query(
             """

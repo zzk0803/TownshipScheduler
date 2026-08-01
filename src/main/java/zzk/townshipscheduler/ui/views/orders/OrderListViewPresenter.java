@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.views.orders;
 
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -12,11 +13,14 @@ import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.OrderEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.service.PlayerService;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.OrderEntityRepository;
+import zzk.townshipscheduler.backend.persistence.PlayerEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
+import zzk.townshipscheduler.backend.PlayerService;
+import zzk.townshipscheduler.ui.components.ProductImages;
+import zzk.townshipscheduler.ui.components.ProductImagesBytesComponent;
 
 import java.util.Collection;
 import java.util.List;
@@ -37,6 +41,8 @@ public class OrderListViewPresenter {
 
     private final PlayerService playerService;
 
+    private final ProductImagesBytesComponent productImagesBytesComponent;
+
     private final TaskScheduler taskScheduler;
 
     private TownshipAuthenticationContext townshipAuthenticationContext;
@@ -48,6 +54,7 @@ public class OrderListViewPresenter {
             ProductEntityRepository productEntityRepository,
             FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository,
             PlayerService playerService,
+            ProductImagesBytesComponent productImagesBytesComponent,
             @Qualifier("townshipTaskScheduler") TaskScheduler taskScheduler
     ) {
 
@@ -55,6 +62,7 @@ public class OrderListViewPresenter {
         this.productEntityRepository = productEntityRepository;
         this.fieldFactoryInfoEntityRepository = fieldFactoryInfoEntityRepository;
         this.playerService = playerService;
+        this.productImagesBytesComponent = productImagesBytesComponent;
         this.taskScheduler = taskScheduler;
     }
 
@@ -74,6 +82,12 @@ public class OrderListViewPresenter {
         viewOrdersSignal.insertAllLast(orderEntities);
     }
 
+    private List<OrderEntity> queryBillList() {
+        Optional<PlayerEntity> optionalPlayer = townshipAuthenticationContext.getPlayerEntity();
+        PlayerEntity player = optionalPlayer.orElseThrow();
+        return orderEntityRepository.queryForOrderListView(player);
+    }
+
     OrderListView getView() {
         return view;
     }
@@ -82,15 +96,9 @@ public class OrderListViewPresenter {
         this.view = view;
     }
 
-    private List<OrderEntity> queryBillList() {
-        Optional<PlayerEntity> optionalPlayer = townshipAuthenticationContext.getPlayerEntity();
-        PlayerEntity player = optionalPlayer.orElseThrow();
-        return orderEntityRepository.queryForOrderListView(player);
-    }
-
-    public Supplier<Collection<FieldFactoryInfoEntity>> getCollectionSupplier() {
+    public Supplier<Collection<FieldFactoryInfoEntity>> getFieldFactoryInfoCollectionSupplier() {
         if (getTownshipAuthenticationContext() != null && getTownshipAuthenticationContext().getPlayerEntity().isPresent()) {
-            return getCollectionSupplier(getTownshipAuthenticationContext().getPlayerEntity().get());
+            return getFieldFactoryInfoCollectionSupplier(getTownshipAuthenticationContext().getPlayerEntity().get());
         }
         return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
                 Sort.by(
@@ -100,7 +108,7 @@ public class OrderListViewPresenter {
         );
     }
 
-    public Supplier<Collection<FieldFactoryInfoEntity>> getCollectionSupplier(PlayerEntity player) {
+    public Supplier<Collection<FieldFactoryInfoEntity>> getFieldFactoryInfoCollectionSupplier(PlayerEntity player) {
         return () -> this.fieldFactoryInfoEntityRepository.queryForFactoryProductSelection(
                 player.getLevel(),
                 Sort.by(
@@ -108,6 +116,11 @@ public class OrderListViewPresenter {
                         "level"
                 )
         );
+    }
+
+    public Image productImage(ProductEntity productEntity) {
+        byte[] productImage = this.productImagesBytesComponent.fetchProductImageBytes(productEntity);
+        return ProductImages.productImage(productEntity.getName(), productImage);
     }
 
 }

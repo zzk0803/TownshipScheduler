@@ -24,12 +24,10 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.function.SerializablePredicate;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.io.Serial;
@@ -86,7 +84,8 @@ public class ProductsAmountPanel
         filterTextField.setPlaceholder("Filter Products...");
         filterTextField.setValueChangeMode(ValueChangeMode.EAGER);
         filterTextField.addValueChangeListener(valueChangeEvent -> {
-            String criteria = valueChangeEvent.getValue().toLowerCase();
+            String criteria = valueChangeEvent.getValue()
+                    .toLowerCase();
             GridListDataView<FieldFactoryInfoEntity> dataView = factoryProductsGrid.getListDataView();
             dataView.removeFilters();
             dataView.addFilter(createTextFieldGridFilter(criteria));
@@ -137,8 +136,9 @@ public class ProductsAmountPanel
     private SerializablePredicate<FieldFactoryInfoEntity> createTextFieldGridFilter(String criteria) {
         return fieldFactoryInfoEntity -> {
             String factoryName = fieldFactoryInfoEntity.getCategory();
+            Set<ProductEntity> productEntities = fieldFactoryInfoEntity.getProductEntities();
             return factoryName.contains(criteria)
-                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
+                   || productEntities.stream()
                            .anyMatch(productEntity -> {
                                return productEntity.getName()
                                               .toLowerCase()
@@ -146,11 +146,6 @@ public class ProductsAmountPanel
                                       || productEntity.getBomString()
                                               .toLowerCase()
                                               .contains(criteria);
-                           })
-                   || fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                           .map(ProductEntity::getBomString)
-                           .anyMatch(productBomString -> {
-                               return productBomString.toLowerCase().contains(criteria);
                            });
         };
     }
@@ -207,26 +202,30 @@ public class ProductsAmountPanel
 
     private boolean isAtomicProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         boolean result;
-        result = fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                .anyMatch(productEntity -> productEntity.getBomString().isBlank());
+        result = fieldFactoryInfoEntity.getProductEntities()
+                .stream()
+                .anyMatch(productEntity -> productEntity.getBomString()
+                        .isBlank());
         return result;
     }
 
     private boolean isFinalProductFilter(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
         boolean result;
-        result = fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                .anyMatch(subjectProduct -> subjectProductComposite(subjectProduct).isEmpty());
+        result = fieldFactoryInfoEntity.getProductEntities()
+                .stream()
+                .anyMatch(productEntity -> subjectProductComposite(productEntity).isEmpty());
         return result;
     }
 
-    private List<ProductEntity> subjectProductComposite(ProductEntity productInFactoryInfo) {
+    private List<ProductEntity> subjectProductComposite(ProductEntity productEntity) {
         return this.productEntityList.stream()
                 .filter(product -> {
-                    return product.getManufactureInfoEntities().stream()
+                    return product.getManufactureInfoEntities()
+                            .stream()
                             .flatMap(productManufactureInfoEntity -> productManufactureInfoEntity.getProductMaterialsRelations()
                                     .stream()
                             )
-                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(), productInFactoryInfo));
+                            .anyMatch(productMaterialsRelation -> Objects.equals(productMaterialsRelation.getMaterial(), productEntity));
                 })
                 .toList();
     }
@@ -258,7 +257,9 @@ public class ProductsAmountPanel
 
         Collection<FieldFactoryInfoEntity> fieldFactoryInfoEntities = factoryProductsSupplier.get();
         this.productEntityList = fieldFactoryInfoEntities.stream()
-                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getPortfolioGoods().stream())
+                .flatMap(fieldFactoryInfoEntity -> fieldFactoryInfoEntity.getProductEntities()
+                        .stream()
+                )
                 .toList();
         this.factoryProductsGrid.setItems(fieldFactoryInfoEntities);
     }
@@ -350,29 +351,28 @@ public class ProductsAmountPanel
         public FactoryProductsCard(FieldFactoryInfoEntity fieldFactoryInfoEntity) {
             HorizontalLayout factoryHeaderLayout = new HorizontalLayout();
             Element category = ElementFactory.createHeading2(fieldFactoryInfoEntity.getCategory());
-            category.getStyle().bind(
-                    "color",
-                    () -> {
-                        Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
-                        if (fieldFactoryInfoEntity.getPortfolioGoods()
-                                .stream()
-                                .anyMatch(productEntity -> productEntityIntegerMap.containsKey(productEntity) && productEntityIntegerMap.get(productEntity) > 0)) {
-                            return "var(--lumo-primary-color)";
-                        } else {
-                            return "var(--lumo-header-text-color)";
-                        }
-                    }
-            );
+            category.getStyle()
+                    .bind(
+                            "color",
+                            () -> {
+                                Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
+                                if (fieldFactoryInfoEntity.getProductEntities()
+                                        .stream()
+                                        .anyMatch(productEntity -> productEntityIntegerMap.containsKey(productEntity) && productEntityIntegerMap.get(productEntity) > 0)) {
+                                    return "var(--lumo-primary-color)";
+                                } else {
+                                    return "var(--lumo-header-text-color)";
+                                }
+                            }
+                    );
             Element level = ElementFactory.createSpan(String.valueOf(fieldFactoryInfoEntity.getLevel()));
-            factoryHeaderLayout.getElement().appendChild(category, level);
+            factoryHeaderLayout.getElement()
+                    .appendChild(category, level);
 
             AvatarGroup avatarGroup = new AvatarGroup(
-                    fieldFactoryInfoEntity.getPortfolioGoods().stream()
-                            .map(productEntity -> {
-                                String name = productEntity.getName();
-                                WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
-                                return ProductImages.productImageDownloadHandler(name, crawledAsImage);
-                            })
+                    fieldFactoryInfoEntity.getProductEntities()
+                            .stream()
+                            .map(ProductImages::productImageDownloadHandler)
                             .map(downloadHandler -> {
                                 AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem();
                                 avatarGroupItem.setImageHandler(downloadHandler);
@@ -380,11 +380,13 @@ public class ProductsAmountPanel
                             })
                             .toList()
             );
-            factoryHeaderLayout.getElement().appendChild(avatarGroup.getElement());
+            factoryHeaderLayout.getElement()
+                    .appendChild(avatarGroup.getElement());
 
             HorizontalLayout productsGridLayout = new HorizontalLayout();
             productsGridLayout.setWrap(true);
-            fieldFactoryInfoEntity.getPortfolioGoods().stream()
+            fieldFactoryInfoEntity.getProductEntities()
+                    .stream()
                     .sorted(Comparator.comparingInt(ProductEntity::getLevel))
                     .map(ProductCard::new)
                     .forEachOrdered(productsGridLayout::add);
@@ -396,7 +398,9 @@ public class ProductsAmountPanel
                     factoryHeaderDetails,
                     () -> {
                         Map<ProductEntity, Integer> productEntityIntegerMap = ProductsAmountPanel.this.markedProductsSignals.get();
-                        if (fieldFactoryInfoEntity.getPortfolioGoods().stream().anyMatch(productEntityIntegerMap::containsKey)) {
+                        if (fieldFactoryInfoEntity.getProductEntities()
+                                .stream()
+                                .anyMatch(productEntityIntegerMap::containsKey)) {
                             factoryHeaderDetails.setOpened(true);
                         }
                     }
@@ -422,8 +426,10 @@ public class ProductsAmountPanel
 
         public ProductCard(ProductEntity productEntity) {
             Element nameSpan = ElementFactory.createSpan(productEntity.getName());
-            nameSpan.getStyle().setCursor("pointer");
-            nameSpan.getStyle().setBorderBottom("1px solid black");
+            nameSpan.getStyle()
+                    .setCursor("pointer");
+            nameSpan.getStyle()
+                    .setBorderBottom("1px solid black");
             nameSpan.addEventListener(
                     "click",
                     domEvent -> {
@@ -436,15 +442,16 @@ public class ProductsAmountPanel
             getContent().getElement()
                     .appendChild(nameSpan);
             getContent().getElement()
-                    .appendChild(ElementFactory.createSpan("Level:" + productEntity.getLevel().toString()));
+                    .appendChild(ElementFactory.createSpan("Level:" + productEntity.getLevel()
+                            .toString()));
             getContent().add(createAmountField(productEntity));
         }
 
         private Image createProductImage(ProductEntity productEntity) {
-            WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
             return ProductImages.productImage(
-                    productEntity.getName(),
-                    crawledAsImage
+                    productEntity,
+                    product -> product.getCrawledAsImage()
+                            .getImageBytes()
             );
         }
 
@@ -453,7 +460,8 @@ public class ProductsAmountPanel
             amountField.setPlaceholder("Amount");
 //            amountField.setValue(markedProducts.getOrDefault(productEntity, 0));
             amountField.bindValue(
-                    () -> ProductsAmountPanel.this.markedProductsSignals.get().getOrDefault(productEntity, 0),
+                    () -> ProductsAmountPanel.this.markedProductsSignals.get()
+                            .getOrDefault(productEntity, 0),
                     integer -> {
                         if (integer <= 0) {
                             amountField.setValue(0);
@@ -511,12 +519,6 @@ public class ProductsAmountPanel
                 });
             }});
             return amountField;
-        }
-
-        private DownloadHandler createProductImageDownloadHandler(ProductEntity productEntity) {
-            return ProductImages.productImageDownloadHandler(
-                    productEntity.getName(), productEntity.getCrawledAsImage()
-            );
         }
 
         @Override

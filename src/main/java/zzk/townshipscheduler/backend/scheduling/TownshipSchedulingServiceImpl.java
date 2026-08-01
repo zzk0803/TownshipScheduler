@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.backend.persistence.TownshipProblemEntity;
-import zzk.townshipscheduler.backend.persistence.dao.TownshipProblemEntityRepository;
+import zzk.townshipscheduler.backend.persistence.TownshipProblemEntityRepository;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.io.File;
@@ -247,7 +247,7 @@ public class TownshipSchedulingServiceImpl
                 TownshipSchedulingRequest moreScale = originalQuest.clone();
                 moreScale.getPlayerEntityOrderEntities()
                         .forEach(orderEntity -> {
-                            Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
+                            Map<ProductEntity, Integer> productAmountMap = orderEntity.toProductAmountMap();
                             productAmountMap.keySet()
                                     .forEach(productEntity -> productAmountMap.computeIfPresent(productEntity, (inMapProduct, integer) -> integer + (factor + factor / 2)));
                         });

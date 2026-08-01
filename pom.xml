@@ -149,7 +149,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.22.2</version>
+            <version>1.23.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.atteo/evo-inflector -->
@@ -179,14 +179,32 @@
             <artifactId>jakarta.mail</artifactId>
             <version>2.0.2</version>
         </dependency>
+
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.james</groupId>-->
+        <!--            <artifactId>apache-mime4j-core</artifactId>-->
+        <!--            <version>0.8.14</version>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.james</groupId>-->
+        <!--            <artifactId>apache-mime4j-dom</artifactId>-->
+        <!--            <version>0.8.14</version>-->
+        <!--        </dependency>-->
+
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-core</artifactId>
+            <version>1.5.3</version>
+        </dependency>
+
     </dependencies>
 
-    <!--    <repositories>-->
-    <!--        <repository>-->
-    <!--            <id>vaadin-addons</id>-->
-    <!--            <url>https://maven.vaadin.com/vaadin-addons</url>-->
-    <!--        </repository>-->
-    <!--    </repositories>-->
+<!--        <repositories>-->
+    <!--            <repository>-->
+    <!--                <id>vaadin-addons</id>-->
+    <!--                <url>https://maven.vaadin.com/vaadin-addons</url>-->
+    <!--            </repository>-->
+    <!--        </repositories>-->
 
     <build>
         <defaultGoal>spring-boot:run</defaultGoal>

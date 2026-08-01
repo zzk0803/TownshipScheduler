@@ -19,9 +19,9 @@ import org.springframework.util.backoff.FixedBackOff;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
-import zzk.townshipscheduler.backend.persistence.dao.AppUserEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.PlayerEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.WarehouseEntityRepository;
+import zzk.townshipscheduler.backend.persistence.AppUserEntityRepository;
+import zzk.townshipscheduler.backend.persistence.PlayerEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WarehouseEntityRepository;
 
 import java.net.http.HttpClient;
 import java.util.concurrent.ExecutorService;
@@ -93,7 +93,7 @@ public class Application {
     public RetryTemplate retryTemplate() {
         return new RetryTemplate(
                 RetryPolicy.builder()
-                        .backOff(new FixedBackOff())
+                        .backOff(new FixedBackOff(5000,3))
                         .build()
         );
     }

@@ -1,7 +1,12 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import jakarta.activation.DataHandler;
 import jakarta.mail.BodyPart;
 import jakarta.mail.Multipart;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.internet.MimeUtility;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -9,60 +14,54 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 class MhtmlImageExtractor {
 
-    public List<ImageData> processMultipart(Multipart multipart) throws Exception {
+    public List<ImageData> processMultipart(MimeMultipart multipart)
+            throws Exception {
         List<ImageData> images = new ArrayList<>();
 
+        log.info("multipart.getCount()=={}", multipart.getCount());
         for (int i = 0; i < multipart.getCount(); i++) {
             BodyPart bodyPart = multipart.getBodyPart(i);
-            String contentType = bodyPart.getContentType()
-                    .toLowerCase();
+            DataHandler dataHandler = bodyPart.getDataHandler();
+            String bodyPartEncoding = MimeUtility.getEncoding(dataHandler);
+            String contentType = bodyPart.getContentType().toLowerCase();
+            log.info("contentType:{},bodyPartEncoding:{}", contentType, bodyPartEncoding);
 
-            // 只处理图片类型
-            if (contentType.startsWith("image/")) {
-                ImageData info = extractImage(bodyPart, i);
-                if (info != null) {
-                    images.add(info);
+            if (contentType.startsWith("image")) {
+                try {
+                    images.add(extractImage(bodyPart, i, bodyPartEncoding));
+                } catch (Exception e) {
+                    log.error(e.toString());
                 }
-            }
-            // 递归处理嵌套的multipart
-            else if (bodyPart.getContent() instanceof Multipart) {
-                images.addAll(processMultipart((Multipart) bodyPart.getContent()));
+            } else if (bodyPart.getContent() instanceof Multipart) {
+                images.addAll(processMultipart((MimeMultipart) bodyPart.getContent()));
             }
         }
 
         return images;
     }
 
-    private ImageData extractImage(BodyPart bodyPart, int i) throws Exception {
-        // 获取图片类型
+    private ImageData extractImage(BodyPart bodyPart, int i, String bodyPartEncoding)
+            throws Exception {
         String contentType = bodyPart.getContentType();
         String mimeType = contentType.split(";")[0].trim();
         String extension = getExtensionFromMimeType(mimeType);
         int bodyPartSize = bodyPart.getSize();
 
-        // 获取Content-ID和Content-Location（用于关联HTML中的引用）
         String contentId = getHeaderValue(bodyPart, "Content-ID");
         String contentLocation = getHeaderValue(bodyPart, "Content-Location");
-
-        // 生成文件名
         String filename = generateFilename(contentId, contentLocation, i, extension);
 
-
-        // 保存图片数据
         long size;
         byte[] byteArray;
-        try (
-                InputStream is = bodyPart.getInputStream();
-                ByteArrayOutputStream fos = new ByteArrayOutputStream(bodyPartSize)
-        ) {
+        try (InputStream is = bodyPart.getInputStream(); ByteArrayOutputStream fos = new ByteArrayOutputStream(bodyPartSize)) {
             size = is.transferTo(fos);
             byteArray = fos.toByteArray();
         }
 
-        // 返回图片信息
         ImageData info = new ImageData();
         info.setFilename(filename);
         info.setContentType(mimeType);
@@ -71,18 +70,13 @@ class MhtmlImageExtractor {
         info.setData(byteArray);
         info.setSize(size);
 
-        System.out.printf(
-                "提取图片: %s (类型: %s, 大小: %d bytes)%n",
-                filename, mimeType, size
-        );
-
         return info;
     }
 
-    private String getHeaderValue(BodyPart part, String name) throws Exception {
+    private String getHeaderValue(BodyPart part, String name)
+            throws Exception {
         String[] values = part.getHeader(name);
         if (values != null && values.length > 0) {
-            // 去除可能的尖括号 <xxx>
             return values[0].replaceAll("[<>]", "");
         }
         return null;
@@ -100,25 +94,19 @@ class MhtmlImageExtractor {
         };
     }
 
-    private String generateFilename(
-            String contentId, String contentLocation,
-            int index, String extension
-    ) {
+    private String generateFilename(String contentId, String contentLocation, int index, String extension) {
         String baseName;
 
         if (contentLocation != null && !contentLocation.isEmpty()) {
-            // 从URL路径提取文件名
             baseName = contentLocation;
             int lastSlash = baseName.lastIndexOf('/');
             if (lastSlash >= 0) {
                 baseName = baseName.substring(lastSlash + 1);
             }
-            // 去除查询参数
             int queryIdx = baseName.indexOf('?');
             if (queryIdx > 0) {
                 baseName = baseName.substring(0, queryIdx);
             }
-            // 去除扩展名（后面统一加）
             baseName = baseName.replaceAll("\\.[^.]+$", "");
         } else if (contentId != null && !contentId.isEmpty()) {
             baseName = "cid_" + contentId.replaceAll("[^a-zA-Z0-9]", "_");
@@ -126,10 +114,8 @@ class MhtmlImageExtractor {
             baseName = "image_" + index;
         }
 
-        // 清理非法字符
         baseName = baseName.replaceAll("[\\\\/:*?\"<>|]", "_");
 
-        // 限制长度
         if (baseName.length() > 50) {
             baseName = baseName.substring(0, 50);
         }
@@ -137,7 +123,7 @@ class MhtmlImageExtractor {
         return baseName + "." + extension;
     }
 
-    // 图片信息类
+    @Data
     public static class ImageData {
 
         private String filename;
@@ -153,71 +139,6 @@ class MhtmlImageExtractor {
         private byte[] data;
 
         private long size;
-
-        // Getters and Setters
-        public String getFilename() {
-            return filename;
-        }
-
-        public void setFilename(String filename) {
-            this.filename = filename;
-        }
-
-        public String getFilepath() {
-            return filepath;
-        }
-
-        public void setFilepath(String filepath) {
-            this.filepath = filepath;
-        }
-
-        public String getContentType() {
-            return contentType;
-        }
-
-        public void setContentType(String contentType) {
-            this.contentType = contentType;
-        }
-
-        public String getContentId() {
-            return contentId;
-        }
-
-        public void setContentId(String contentId) {
-            this.contentId = contentId;
-        }
-
-        public String getContentLocation() {
-            return contentLocation;
-        }
-
-        public void setContentLocation(String contentLocation) {
-            this.contentLocation = contentLocation;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public byte[] getData() {
-            return data;
-        }
-
-        public void setData(byte[] data) {
-            this.data = data;
-        }
-
-        @Override
-        public String toString() {
-            return String.format(
-                    "ImageData{filename='%s', type='%s', size=%d bytes}",
-                    filename, contentType, size
-            );
-        }
 
     }
 

@@ -1,21 +1,20 @@
 package zzk.townshipscheduler.ui.views.crawling;
 
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.server.streams.InMemoryUploadHandler;
+import com.vaadin.flow.server.streams.UploadHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import zzk.townshipscheduler.backend.crawling.MhtmlProcessComponent;
 import zzk.townshipscheduler.backend.crawling.TownshipFandomCrawlingProcessFacade;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntity;
-import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledParsedCoordCellEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledParsedCoordCellEntityRepository;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -23,11 +22,10 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class CrawlingWikiViewPresenter {
 
-    public static final Logger logger = LoggerFactory.getLogger(CrawlingWikiViewPresenter.class);
-
     private final TownshipFandomCrawlingProcessFacade townshipFandomCrawlingProcessFacade;
 
     private final MhtmlProcessComponent mhtmlProcessComponent;
+
     private final WikiCrawledEntityRepository wikiCrawledEntityRepository;
 
     private final WikiCrawledParsedCoordCellEntityRepository wikiCrawledParsedCoordCellEntityRepository;
@@ -40,29 +38,15 @@ public class CrawlingWikiViewPresenter {
 
     CompletableFuture<Void> asyncProcess() {
         return townshipFandomCrawlingProcessFacade.process()
-                .whenCompleteAsync((unused, throwable) -> {
-                    if (throwable != null) {
-                        logger.error(throwable.getMessage());
-                    }
-                    logger.info("setup presenter");
-                    townshipFandomCrawlingProcessFacade.clean();
-                }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService());
-    }
-    /**
-     * Process uploaded HTML document.
-     *
-     * @param uploadedDocument The HTML document from user upload
-     * @return CompletableFuture with processing result
-     */
-    CompletableFuture<Void> asyncProcessFromUploadedHtml(Document uploadedDocument) {
-        return townshipFandomCrawlingProcessFacade.processFromUploadedHtml(uploadedDocument)
-                .whenCompleteAsync((unused, throwable) -> {
-                    if (throwable != null) {
-                        logger.error("处理上传文件时出错：{}", throwable.getMessage());
-                    }
-                    logger.info("上传处理完成");
-                    townshipFandomCrawlingProcessFacade.clean();
-                }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService());
+                .whenCompleteAsync(
+                        (unused, throwable) -> {
+                            if (throwable != null) {
+                                log.error(throwable.getMessage());
+                            }
+                            log.info("setup presenter");
+                            townshipFandomCrawlingProcessFacade.clean();
+                        }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService()
+                );
     }
 
     void setupTownshipCoordCellGrid(Grid<WikiCrawledParsedCoordCellEntity> grid) {
@@ -70,34 +54,92 @@ public class CrawlingWikiViewPresenter {
     }
 
     boolean boolTownshipCrawled() {
-        return wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1().isPresent();
+        return wikiCrawledEntityRepository.orderByCreatedDateTimeDescLimit1()
+                .isPresent();
     }
 
-    public void validateMhtmlHeader(InputStream inputStream) throws IOException {
-        this.mhtmlProcessComponent.validateMhtmlHeader(inputStream);
+    CompletableFuture<Void> asyncProcessFromOfflineHtml() {
+        return townshipFandomCrawlingProcessFacade.processFromOfflineMhtmlAsTxt()
+                .whenCompleteAsync(
+                        (unused, throwable) -> {
+                            if (throwable != null) {
+                                log.error("error occur while process preceding：{}", throwable);
+                            }
+                            log.info("download and finished");
+                            townshipFandomCrawlingProcessFacade.clean();
+                        }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService()
+                );
     }
 
-    public Document processUploadedMhtml(InputStream inputStream) throws IOException {
-        return this.mhtmlProcessComponent.processUploadedMhtml(inputStream);
+    public InMemoryUploadHandler createUploadHandler() {
+        InMemoryUploadHandler uploadHandler = UploadHandler.inMemory(
+                (metadata, data) -> {
+                    // Get other information about the file.
+                    String fileName = metadata.fileName();
+                    String mimeType = metadata.contentType();
+                    long contentLength = metadata.contentLength();
+
+                    this.view.getCurrentUi()
+                            .access(() -> {
+                                Notification.show("File Received！Processing...", 3000, Notification.Position.TOP_CENTER);
+                            });
+
+                    // Do something with the file data...
+                    MhtmlProcessComponent.Result mhtmlResult = processMhtmlBytes(data);
+                    asyncProcessFromUploadedHtml(mhtmlResult)
+                            .whenComplete(
+                                    (unused, throwable) -> {
+                                        this.view.getCurrentUi()
+                                                .access(() -> {
+                                                    if (throwable == null) {
+                                                        this.view.add(this.view.prepareCoordCellGrid());
+                                                        Notification.show("Done!", 5000, Notification.Position.BOTTOM_CENTER);
+                                                    } else {
+                                                        Notification.show("Fail!" + throwable.getMessage(), 8000, Notification.Position.BOTTOM_CENTER);
+                                                    }
+                                                });
+                                    }
+                            )
+                            .exceptionally(throwable -> {
+                                this.view.getCurrentUi()
+                                        .access(() -> {
+                                            Notification notification = new Notification("Error occur when get data from fandom wiki");
+                                            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                            notification.setPosition(Notification.Position.MIDDLE);
+                                            notification.setDuration(Duration.ofSeconds(3)
+                                                    .toSecondsPart());
+                                            notification.open();
+                                            this.view.getActionButton()
+                                                    .setDisableOnClick(false);
+                                        });
+                                return null;
+                            });
+                }
+        );
+        return uploadHandler;
     }
 
-    public CompletableFuture<Void> handleUploadSuccess(byte[] data, String fileName) {
-        try (var inputStream = new ByteArrayInputStream(data)) {
-            // Validate MHTML header
-            this.validateMhtmlHeader(inputStream);
-
-            // Reset stream position
-            inputStream.reset();
-
-            // Process the uploaded file
-            var document = this.processUploadedMhtml(inputStream);;
-
-            // Process the document
-            return this.asyncProcessFromUploadedHtml(document);
-        }
-        catch (Exception e) {
-            log.error("处理上传文件时出错", e);
-            return CompletableFuture.failedFuture(e);
-        }
+    public MhtmlProcessComponent.Result processMhtmlBytes(byte[] data) {
+        return this.mhtmlProcessComponent.processMhtmlBytes(data);
     }
+
+    /**
+     * Process uploaded HTML document.
+     *
+     * @param uploadedDocument The HTML document from user upload
+     * @return CompletableFuture with processing result
+     */
+    CompletableFuture<Void> asyncProcessFromUploadedHtml(MhtmlProcessComponent.Result uploadedDocument) {
+        return townshipFandomCrawlingProcessFacade.processFromOfflineMhtmlAsTxt(uploadedDocument)
+                .whenCompleteAsync(
+                        (unused, throwable) -> {
+                            if (throwable != null) {
+                                log.error("error occur while process preceding：{}", throwable);
+                            }
+                            log.info("download and finished");
+                            townshipFandomCrawlingProcessFacade.clean();
+                        }, townshipFandomCrawlingProcessFacade.getTownshipExecutorService()
+                );
+    }
+
 }

@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,11 +18,15 @@ public class TownshipFandomCrawlingProcessFacade {
 
     private final TownshipDataCrawlingProcessor crawlingProcessor;
 
+    private final TownshipOfflineDataCrawlingProcessor offlineProcessor;
+
     private final TownshipDataParsingProcessor parsingProcessor;
 
     private final TownshipDataMappingProcessor transferProcessor;
 
     private final TownshipDataPersistProcessor persistProcessor;
+
+    private final TownshipDataHierarchyBuildingProcessor hierarchyBuildingProcessor;
 
     private final TownshipDataHardcodeHotfixProcessor hardcodeHotfixProcessor;
 
@@ -35,9 +38,17 @@ public class TownshipFandomCrawlingProcessFacade {
 
     private TransferResult transferResult;
 
+    private PersistResult persistResult;
+
+    private HierarchyResult hierarchyResult;
+
     public CompletableFuture<Void> process() {
-        return crawlingProcessor.process()
-                .thenApplyAsync(
+        CompletableFuture<CrawledResult> crawledResultCompletableFuture = crawlingProcessor.process();
+        return afterCrawlingProcess(crawledResultCompletableFuture);
+    }
+
+    public CompletableFuture<Void> afterCrawlingProcess(CompletableFuture<CrawledResult> crawledResultCompletableFuture) {
+        return crawledResultCompletableFuture.thenApplyAsync(
                         crawledResult -> {
                             setCrawledResult(crawledResult);
                             persistProcessor.process(crawledResult);
@@ -50,51 +61,42 @@ public class TownshipFandomCrawlingProcessFacade {
                             return this.transferProcessor.process(parsedResult);
                         }, townshipExecutorService
                 )
-                .thenAcceptAsync(
+                .thenApplyAsync(
                         transferResult -> {
                             setTransferResult(transferResult);
-                            this.persistProcessor.process(transferResult);
+                            return this.persistProcessor.process(transferResult);
                         }, townshipExecutorService
-                ).thenAcceptAsync(
-                        _ -> {
+                )
+                .thenApplyAsync(
+                        persistResult -> {
+                            setPersistResult(persistResult);
+                            return this.hierarchyBuildingProcessor.process(persistResult);
+                        }, townshipExecutorService
+                )
+                .thenAcceptAsync(
+                        hierarchyResult -> {
+                            setHierarchyResult(hierarchyResult);
                             this.hardcodeHotfixProcessor.process();
                         }, townshipExecutorService
                 );
     }
 
-    /**
-     * Process from uploaded HTML document.
-     *
-     * @param uploadedDocument The HTML document from user upload
-     * @return CompletableFuture with processing result
-     */
-    public CompletableFuture<Void> processFromUploadedHtml(Document uploadedDocument) {
-        return crawlingProcessor.processFromUploadedHtml(uploadedDocument)
-                .thenApplyAsync(
-                        crawledResult -> {
-                            setCrawledResult(crawledResult);
-                            persistProcessor.process(crawledResult);
-                            return crawledResult;
-                        }, townshipExecutorService
-                )
-                .thenApplyAsync(parsingProcessor::process, townshipExecutorService)
-                .thenApply(parsedResult -> {
-                    setParsedResult(parsedResult);
-                    return this.transferProcessor.process(parsedResult);
-                })
-                .thenAccept(transferResult -> {
-                    setTransferResult(transferResult);
-                    this.persistProcessor.process(transferResult);
-                })
-                .thenAccept(_ -> {
-                    this.hardcodeHotfixProcessor.process();
-                });
+    public CompletableFuture<Void> processFromOfflineMhtmlAsTxt() {
+        CompletableFuture<CrawledResult> crawledResultCompletableFuture = offlineProcessor.processFromOfflineMhtmlAsTxt();
+        return afterCrawlingProcess(crawledResultCompletableFuture);
+    }
+
+    public CompletableFuture<Void> processFromOfflineMhtmlAsTxt(MhtmlProcessComponent.Result mhtmlResult) {
+        CompletableFuture<CrawledResult> crawledResultCompletableFuture = offlineProcessor.processFromOfflineMhtmlAsTxt(mhtmlResult);
+        return afterCrawlingProcess(crawledResultCompletableFuture);
     }
 
     public void clean() {
         crawledResult = null;
         parsedResult = null;
         transferResult = null;
+        persistResult = null;
+        hierarchyResult = null;
     }
 
 }

@@ -1,17 +1,23 @@
 package zzk.townshipscheduler.backend.crawling;
 
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.persistence.dao.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
+import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntityRepository;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -20,144 +26,130 @@ class TownshipDataHardcodeHotfixProcessor {
 
     private final FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository;
 
+    private final ProductManufactureInfoEntityRepository productManufactureInfoEntityRepository;
+
     private final ProductEntityRepository productEntityRepository;
 
     private final TransactionTemplate transactionTemplate;
 
     public void process() {
         log.info("going to hardcode fix factoryinfo");
-        Map<String, String[]> farmingProductMap = Map.of(
-                "Cowshed", new String[]{"Milk"},
-                "Chicken Coop", new String[]{"Egg"},
-                "Sheep Farm", new String[]{"Wool"},
-                "Apiary", new String[]{"Honeycombs"},
-                "Pig Farm", new String[]{"Bacon"},
-                "Duck Feeder", new String[]{"Down Feather", "Colorful Feather"},
-                "Otter Pond", new String[]{"Seaweed", "Scallop", "Pearls"},
-                "Mushroom Farm", new String[]{"Mushroom"}
+        Map<String, MendingData> instanceAmendMap = Map.of(
+                "Cowshed",
+                MendingData.builder()
+                        .productNameList(List.of("Milk"))
+                        .level(1)
+                        .instanceAmount(3)
+                        .build(),
+                "Chicken Coop",
+                MendingData.builder()
+                        .productNameList(List.of("Egg"))
+                        .level(5)
+                        .instanceAmount(3)
+                        .build(),
+                "Sheep Farm",
+                MendingData.builder()
+                        .productNameList(List.of("Wool"))
+                        .level(10)
+                        .instanceAmount(2)
+                        .build(),
+                "Apiary",
+                MendingData.builder()
+                        .productNameList(List.of("Honeycombs"))
+                        .level(35)
+                        .instanceAmount(2)
+                        .build(),
+                "Pig Farm",
+                MendingData.builder()
+                        .productNameList(List.of("Bacon"))
+                        .level(42)
+                        .instanceAmount(2)
+                        .build(),
+                "Duck Feeder",
+                MendingData.builder()
+                        .productNameList(List.of("Down Feather", "Colorful Feather"))
+                        .level(48)
+                        .instanceAmount(1)
+                        .build(),
+                "Otter Pond",
+                MendingData.builder()
+                        .productNameList(List.of("Seaweed", "Scallop", "Pearls"))
+                        .level(58)
+                        .instanceAmount(1)
+                        .build(),
+                "Mushroom Farm",
+                MendingData.builder()
+                        .productNameList(List.of("Mushroom"))
+                        .level(63)
+                        .instanceAmount(1)
+                        .build()
         );
-        Map<String, Integer> farmingLevelMap = Map.of(
-                "Cowshed", 1,
-                "Chicken Coop", 5,
-                "Sheep Farm", 10,
-                "Apiary", 35,
-                "Pig Farm", 42,
-                "Duck Feeder", 48,
-                "Otter Pond", 58,
-                "Mushroom Farm", 63
-        );
 
-        String[] threeInstanceFarmingPart = {"Cowshed", "Chicken Coop"};
-        Arrays.stream(threeInstanceFarmingPart)
-                .map(categoryString -> {
-                    FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
-                    fieldFactoryInfo.setCategory(categoryString);
-                    fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
-                    fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
-                    fieldFactoryInfo.setDefaultInstanceAmount(1);
-                    fieldFactoryInfo.setDefaultProducingCapacity(3);
-                    fieldFactoryInfo.setDefaultReapWindowCapacity(3);
-                    fieldFactoryInfo.setMaxInstanceAmount(3);
-                    fieldFactoryInfo.setMaxProducingCapacity(6);
-                    fieldFactoryInfo.setMaxReapWindowCapacity(6);
-                    return fieldFactoryInfo;
-                })
-                .forEach(fieldFactoryInfoEntity -> {
-                    String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
-                    transactionTemplate.executeWithoutResult(transactionStatus -> {
-                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
-                                fieldFactoryInfoEntity);
-                        Arrays.stream(strings).map(productEntityRepository::findByName)
-                                .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
-                    });
-                });
+        record ProductEntityTempRecord(
+                String productName,
+                ProductEntity productEntity,
+                Collection<ProductManufactureInfoEntity> productManufactureInfoEntities
+        ) {
 
-        String[] twoInstanceFarmingPart = {"Sheep Farm", "Apiary", "Pig Farm"};
-        Arrays.stream(twoInstanceFarmingPart)
-                .map(categoryString -> {
-                    FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
-                    fieldFactoryInfo.setCategory(categoryString);
-                    fieldFactoryInfo.setLevel(farmingLevelMap.get(categoryString));
-                    fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
-                    fieldFactoryInfo.setDefaultInstanceAmount(1);
-                    fieldFactoryInfo.setDefaultProducingCapacity(2);
-                    fieldFactoryInfo.setDefaultReapWindowCapacity(3);
-                    fieldFactoryInfo.setMaxInstanceAmount(2);
-                    fieldFactoryInfo.setMaxProducingCapacity(6);
-                    fieldFactoryInfo.setMaxReapWindowCapacity(6);
-                    return fieldFactoryInfo;
-                })
-                .forEach(fieldFactoryInfoEntity -> {
-                    String[] strings = farmingProductMap.get(fieldFactoryInfoEntity.getCategory());
-                    transactionTemplate.executeWithoutResult(transactionStatus -> {
-                        FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(
-                                fieldFactoryInfoEntity);
-                        Arrays.stream(strings).map(productEntityRepository::findByName)
-                                .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
-                    });
-                });
+        }
 
-        FieldFactoryInfoEntity duckFeeder = new FieldFactoryInfoEntity();
-        duckFeeder.setCategory("Duck Feeder");
-        duckFeeder.setLevel(48);
-        duckFeeder.setProducingType(ProducingStructureType.SLOT);
-        duckFeeder.setDefaultInstanceAmount(1);
-        duckFeeder.setDefaultProducingCapacity(3);
-        duckFeeder.setDefaultReapWindowCapacity(3);
-        duckFeeder.setMaxInstanceAmount(1);
-        duckFeeder.setMaxProducingCapacity(3);
-        duckFeeder.setMaxReapWindowCapacity(3);
-        String[] duckFeederProducts = farmingProductMap.get(duckFeeder.getCategory());
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(duckFeeder);
-            Arrays.stream(duckFeederProducts).
-                    map(productEntityRepository::findByName)
-                    .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
+        AtomicReference<Set<ProductEntityTempRecord>> tempTableReference = new AtomicReference<>();
+        final Optional<FieldFactoryInfoEntity> farmBuildings = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
+        farmBuildings.ifPresent(fieldFactoryInfoEntity -> {
+            Set<ProductEntity> relatedProducts = fieldFactoryInfoEntity.getProductEntities();
+            Set<ProductEntityTempRecord> ProductEntityTempRecords = relatedProducts.stream()
+                    .map(productEntity -> new ProductEntityTempRecord(
+                            productEntity.getName(),
+                            productEntity,
+                            productEntity.getManufactureInfoEntities()
+                                    .stream()
+                                    .toList()
+                    ))
+                    .collect(Collectors.toSet());
+            tempTableReference.set(ProductEntityTempRecords);
         });
 
-        FieldFactoryInfoEntity otterPond = new FieldFactoryInfoEntity();
-        otterPond.setCategory("Otter Pond");
-        otterPond.setLevel(58);
-        otterPond.setProducingType(ProducingStructureType.SLOT);
-        otterPond.setDefaultInstanceAmount(1);
-        otterPond.setDefaultProducingCapacity(3);
-        otterPond.setDefaultReapWindowCapacity(3);
-        otterPond.setMaxInstanceAmount(1);
-        otterPond.setMaxProducingCapacity(3);
-        otterPond.setMaxReapWindowCapacity(3);
-        String[] otterPondProducts = farmingProductMap.get(otterPond.getCategory());
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(otterPond);
-            Arrays.stream(otterPondProducts).map(productEntityRepository::findByName)
-                    .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
-        });
+        List<String> list = tempTableReference.get()
+                .stream()
+                .map(ProductEntityTempRecord::productName)
+                .distinct()
+                .sorted()
+                .toList();
+        List<String> list1 = instanceAmendMap.values()
+                .stream()
+                .map(MendingData::productNameList)
+                .flatMap(Collection::stream)
+                .distinct()
+                .sorted()
+                .toList();
+        if (!list.equals(list1)) {
+            log.info("tempTableReference :: {}", list);
+            log.info("instanceAmendMap :: {}", list1);
+            throw new IllegalStateException("tempTableReference products not equal instanceAmendMap products");
+        }
 
-        FieldFactoryInfoEntity mushroomFarm = new FieldFactoryInfoEntity();
-        mushroomFarm.setCategory("Mushroom Farm");
-        mushroomFarm.setLevel(63);
-        mushroomFarm.setProducingType(ProducingStructureType.SLOT);
-        mushroomFarm.setDefaultInstanceAmount(1);
-        mushroomFarm.setDefaultProducingCapacity(3);
-        mushroomFarm.setDefaultReapWindowCapacity(3);
-        mushroomFarm.setMaxInstanceAmount(1);
-        mushroomFarm.setMaxProducingCapacity(6);
-        mushroomFarm.setMaxReapWindowCapacity(6);
-        String[] mushroomFarmProducts = farmingProductMap.get(mushroomFarm.getCategory());
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            FieldFactoryInfoEntity savedFieldFactoryInfo = fieldFactoryInfoEntityRepository.save(mushroomFarm);
-            Arrays.stream(mushroomFarmProducts).map(productEntityRepository::findByName)
-                    .forEach(productEntity -> productEntity.ifPresent(savedFieldFactoryInfo::attacheProductEntity));
-        });
-
-        transactionTemplate.executeWithoutResult(_ -> {
-            Optional<FieldFactoryInfoEntity> farmBuildings
-                    = fieldFactoryInfoEntityRepository.findByCategory("Farm Buildings");
-            farmBuildings.ifPresent(fieldFactoryInfoEntityRepository::delete);
+        instanceAmendMap.forEach((factoryName, mendingData) -> {
+            FieldFactoryInfoEntity savedFieldFactory = transactionTemplate.execute(
+                    status -> fieldFactoryInfoEntityRepository.saveAndFlush(
+                            createFieldFactoryInfo(factoryName, mendingData)
+                    )
+            );
+            FieldFactoryInfoEntity updatedFieldFactory = transactionTemplate.execute(
+                    status -> fieldFactoryInfoEntityRepository.saveAndFlush(
+                            updateFieldFactoryInfo(
+                                    savedFieldFactory,
+                                    mendingData,
+                                    name -> productEntityRepository.querySimpleByName(name)
+                                            .orElseThrow(),
+                                    farmBuildings.orElseThrow()
+                            )
+                    )
+            );
+            log.info("updatedFieldFactory ::  {}", updatedFieldFactory);
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            Optional<FieldFactoryInfoEntity> feedMillOptional
-                    = fieldFactoryInfoEntityRepository.findByCategory("Feed Mill");
+            Optional<FieldFactoryInfoEntity> feedMillOptional = fieldFactoryInfoEntityRepository.findByCategory("Feed Mill");
             FieldFactoryInfoEntity feedMill = feedMillOptional.orElseThrow();
             feedMill.setLevel(3);
             feedMill.setDefaultInstanceAmount(1);
@@ -166,12 +158,11 @@ class TownshipDataHardcodeHotfixProcessor {
             feedMill.setMaxInstanceAmount(3);
             feedMill.setMaxProducingCapacity(7);
             feedMill.setMaxReapWindowCapacity(8);
-            fieldFactoryInfoEntityRepository.save(feedMill);
+            fieldFactoryInfoEntityRepository.saveAndFlush(feedMill);
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            Optional<FieldFactoryInfoEntity> fieldOptional
-                    = fieldFactoryInfoEntityRepository.findByCategory("Crops");
+            Optional<FieldFactoryInfoEntity> fieldOptional = fieldFactoryInfoEntityRepository.findByCategory("Crops");
             FieldFactoryInfoEntity field = fieldOptional.orElseThrow();
             field.setCategory(FieldFactoryInfoEntity.FIELD_CATEGORY_CRITERIA);
             field.setLevel(1);
@@ -183,12 +174,12 @@ class TownshipDataHardcodeHotfixProcessor {
             field.setMaxInstanceAmount(146);
             field.setMaxProducingCapacity(1);
             field.setMaxReapWindowCapacity(1);
-            fieldFactoryInfoEntityRepository.save(field);
+            fieldFactoryInfoEntityRepository.saveAndFlush(field);
+            log.info("updatedFieldFactory ::  {}", field);
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            Optional<FieldFactoryInfoEntity> islandShipOptional
-                    = fieldFactoryInfoEntityRepository.findByCategory("Islands and Ships");
+            Optional<FieldFactoryInfoEntity> islandShipOptional = fieldFactoryInfoEntityRepository.findByCategory("Islands and Ships");
             FieldFactoryInfoEntity islandShip = islandShipOptional.orElseThrow();
             islandShip.setCategory("IslandsShip");
             islandShip.setLevel(29);
@@ -199,7 +190,8 @@ class TownshipDataHardcodeHotfixProcessor {
             islandShip.setMaxInstanceAmount(4);
             islandShip.setMaxProducingCapacity(1);
             islandShip.setMaxReapWindowCapacity(3);
-            fieldFactoryInfoEntityRepository.save(islandShip);
+            fieldFactoryInfoEntityRepository.saveAndFlush(islandShip);
+            log.info("updatedFieldFactory ::  {}", islandShip);
         });
 
         transactionTemplate.executeWithoutResult(transactionStatus -> {
@@ -213,10 +205,56 @@ class TownshipDataHardcodeHotfixProcessor {
             foundry.setMaxInstanceAmount(3);
             foundry.setMaxProducingCapacity(1);
             foundry.setMaxReapWindowCapacity(1);
-            fieldFactoryInfoEntityRepository.save(foundry);
+            fieldFactoryInfoEntityRepository.saveAndFlush(foundry);
+            log.info("updatedFieldFactory ::  {}", foundry);
+        });
+
+        farmBuildings.ifPresent(fieldFactoryInfoEntity -> {
+            fieldFactoryInfoEntity.clearProductEntity();
+            FieldFactoryInfoEntity updatedFieldFactoryInfoEntity = transactionTemplate.execute(_ -> fieldFactoryInfoEntityRepository.saveAndFlush(fieldFactoryInfoEntity));
+            transactionTemplate.executeWithoutResult(_ -> fieldFactoryInfoEntityRepository.delete(updatedFieldFactoryInfoEntity));
         });
 
         log.info("going to hardcode fix factoryinfo method over");
+    }
+
+    private @NonNull FieldFactoryInfoEntity createFieldFactoryInfo(String factoryName, MendingData mendingData) {
+        FieldFactoryInfoEntity fieldFactoryInfo = new FieldFactoryInfoEntity();
+        fieldFactoryInfo.setCategory(factoryName);
+        fieldFactoryInfo.setLevel(mendingData.level());
+        fieldFactoryInfo.setProducingType(ProducingStructureType.SLOT);
+        fieldFactoryInfo.setDefaultInstanceAmount(1);
+        fieldFactoryInfo.setDefaultProducingCapacity(3);
+        fieldFactoryInfo.setDefaultReapWindowCapacity(3);
+        fieldFactoryInfo.setMaxInstanceAmount(mendingData.instanceAmount());
+        fieldFactoryInfo.setMaxProducingCapacity(6);
+        fieldFactoryInfo.setMaxReapWindowCapacity(6);
+        return fieldFactoryInfo;
+    }
+
+    private FieldFactoryInfoEntity updateFieldFactoryInfo(
+            FieldFactoryInfoEntity savedFieldFactory,
+            MendingData mendingData,
+            Function<String, ProductEntity> nameToProductFunction,
+            FieldFactoryInfoEntity farmBuildings
+    ) {
+        farmBuildings.clearProductEntity();
+        savedFieldFactory.addProductEntities(
+                mendingData.productNameList()
+                .stream()
+                .map(nameToProductFunction)
+                .toList()
+        );
+        return savedFieldFactory;
+    }
+
+    @Builder
+    public record MendingData(
+            List<String> productNameList,
+            int level,
+            int instanceAmount
+    ) {
+
     }
 
 }

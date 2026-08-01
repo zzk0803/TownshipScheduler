@@ -6,22 +6,53 @@ import org.hibernate.proxy.HibernateProxy;
 import zzk.townshipscheduler.backend.ProducingStructureType;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
 @Entity
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @NamedEntityGraph(
-        name = "fieldFactoryInfo.g.portfolioGoods",
+        name = "fieldFactoryInfo.g.full",
+        includeAllAttributes = true,
         attributeNodes = {
-                @NamedAttributeNode("portfolioGoods")
+                @NamedAttributeNode(
+                        value = "productEntities",
+                        subgraph = "productEntities.suggraph"
+                )
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "productEntities.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "manufactureInfoEntities",
+                                        subgraph = "manufactureInfoEntities.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "crawledAsImage",
+                                        subgraph = "crawledAsImage.subgraph"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "manufactureInfoEntities.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "productEntity"),
+                                @NamedAttributeNode(value = "productMaterialsRelations")
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "crawledAsImage.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "imageBytes")
+                        }
+                )
         }
 )
 public class FieldFactoryInfoEntity {
@@ -38,86 +69,81 @@ public class FieldFactoryInfoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
+    @ToString.Include
+    @Column(unique = true)
     private String category;
 
     private boolean boolCategoryField;
 
     private Integer level;
 
-    @Builder.Default
-    @OneToMany(
-            cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH},
-            targetEntity = ProductEntity.class,
-            mappedBy = "fieldFactoryInfo"
-    )
-    @ToString.Exclude
-    private Set<ProductEntity> portfolioGoods = new HashSet<>();
-
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     private ProducingStructureType producingType = ProducingStructureType.QUEUE;
 
-    @Builder.Default
     private Integer defaultInstanceAmount = 1;
 
-    @Builder.Default
     private Integer defaultProducingCapacity = 3;
 
-    @Builder.Default
     private Integer defaultReapWindowCapacity = 6;
 
-    @Builder.Default
     private Integer maxProducingCapacity = 7;
 
-    @Builder.Default
     private Integer maxReapWindowCapacity = 8;
 
-    @Builder.Default
     private Integer maxInstanceAmount = 1;
 
-    public void attacheProductEntity(ProductEntity productEntity) {
-        productEntity.setFieldFactoryInfo(this);
-        portfolioGoods.add(productEntity);
-    }
+    @OneToMany(
+            mappedBy = "fieldFactoryInfoEntity",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
+    )
+    private Set<ProductEntity> productEntities = new LinkedHashSet<>();
 
-    public void attacheProductEntities(Collection<ProductEntity> productEntities) {
-        if (productEntities == null || productEntities.isEmpty()) {
-            return;
+    public boolean removeProductEntity(ProductEntity productEntity) {
+        if (!this.getProductEntities()
+                .contains(productEntity)) {
+            return false;
         }
-        productEntities.forEach(product -> {
-            product.setFieldFactoryInfo(this);
-            this.attacheProductEntity(product);
-        });
+        productEntity.setFieldFactoryInfoEntity(null);
+        return productEntities.remove(productEntity);
     }
 
-    public boolean detachProductEntity(ProductEntity productEntity) {
-        productEntity.setFieldFactoryInfo(null);
-        return portfolioGoods.remove(productEntity);
+    public synchronized void clearProductEntity() {
+        for (ProductEntity productEntity : productEntities) {
+            productEntity.setFieldFactoryInfoEntity(null);
+        }
+        this.productEntities.clear();
     }
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
                 .getPersistentClass()
-                .hashCode() : getClass().hashCode();
+                .hashCode()
+                : getClass().hashCode();
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer()
-                .getPersistentClass() : o.getClass();
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy
+                ? ((HibernateProxy) o).getHibernateLazyInitializer()
+                .getPersistentClass()
+                : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         FieldFactoryInfoEntity that = (FieldFactoryInfoEntity) o;
-        return getId() != null && Objects.equals(getId(), that.getId());
+        return (getId() != null && Objects.equals(getId(), that.getId()))
+               || (getCategory() != null && Objects.equals(getCategory(), that.getCategory()));
     }
 
-    //facility method
     public FieldFactoryEntity toFieldFactoryEntity() {
         FieldFactoryEntity fieldFactoryEntity = new FieldFactoryEntity();
         fieldFactoryEntity.setFieldFactoryInfoEntity(this);
@@ -131,6 +157,17 @@ public class FieldFactoryInfoEntity {
         fieldFactoryEntity.setProducingLength(this.getDefaultProducingCapacity());
         fieldFactoryEntity.setReapWindowSize(this.getDefaultReapWindowCapacity());
         return fieldFactoryEntity;
+    }
+
+    public boolean addProductEntities(Collection<ProductEntity> productEntities) {
+        return productEntities.stream()
+                .map(this::addProductEntity)
+                .allMatch(aBoolean -> aBoolean);
+    }
+
+    public boolean addProductEntity(ProductEntity productEntity) {
+        productEntity.setFieldFactoryInfoEntity(this);
+        return this.productEntities.add(productEntity);
     }
 
 }

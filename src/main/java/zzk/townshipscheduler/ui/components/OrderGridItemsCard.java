@@ -19,7 +19,7 @@ public class OrderGridItemsCard extends HorizontalLayout {
             = productEntity -> productEntity.getCrawledAsImage().getImageBytes();
 
     public OrderGridItemsCard(OrderEntity orderEntity) {
-        Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
+        Map<ProductEntity, Integer> productAmountMap = orderEntity.toProductAmountMap();
         productAmountMap.forEach((product, amount) -> {
             Image image = ProductImages.productImage(
                     product.getName(),

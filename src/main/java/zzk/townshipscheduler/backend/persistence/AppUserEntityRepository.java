@@ -1,8 +1,7 @@
-package zzk.townshipscheduler.backend.persistence.dao;
+package zzk.townshipscheduler.backend.persistence;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import zzk.townshipscheduler.backend.persistence.AccountEntity;
 
 public interface AppUserEntityRepository extends JpaRepository<AccountEntity, Long> {
 

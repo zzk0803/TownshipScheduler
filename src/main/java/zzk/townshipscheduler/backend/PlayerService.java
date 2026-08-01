@@ -1,4 +1,4 @@
-package zzk.townshipscheduler.backend.service;
+package zzk.townshipscheduler.backend;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -7,9 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.*;
-import zzk.townshipscheduler.backend.persistence.dao.*;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -128,8 +126,7 @@ public class PlayerService {
             );
             return fieldFactoryInfoEntitiesByLevelBetween.stream()
                     .map(fieldFactoryInfoEntity -> {
-                        FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(
-                                () -> playerEntity);
+                        FieldFactoryEntity fieldFactoryEntity = fieldFactoryInfoEntity.toFieldFactoryEntity(() -> playerEntity);
                         fieldFactoryEntity.setProducingLength(fieldFactoryInfoEntity.getDefaultProducingCapacity());
                         fieldFactoryEntity.setReapWindowSize(fieldFactoryInfoEntity.getDefaultReapWindowCapacity());
                         return fieldFactoryEntityRepository.save(fieldFactoryEntity);

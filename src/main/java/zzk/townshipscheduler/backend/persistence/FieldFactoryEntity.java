@@ -1,22 +1,53 @@
 package zzk.townshipscheduler.backend.persistence;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 @Getter
 @Setter
 @ToString
 @Entity
-public class FieldFactoryEntity implements Comparable<FieldFactoryEntity> {
+@NamedEntityGraph(
+        name = "fieldFactoryEntity.g.full",
+        includeAllAttributes = true,
+        attributeNodes = {
+                @NamedAttributeNode(
+                        value = "fieldFactoryInfoEntity",
+                        subgraph = "fieldFactoryInfoEntity.suggraph"
+                )
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "fieldFactoryInfoEntity.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "productEntities",
+                                        subgraph = "productEntities.suggraph"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "productEntities.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode("manufactureInfoEntities"),
+                                @NamedAttributeNode("crawledAsImage"),
+                                @NamedAttributeNode("fieldFactoryInfoEntity")
+                        }
+                )
+        }
+)
+public class FieldFactoryEntity
+        implements Comparable<FieldFactoryEntity> {
 
     public static final Comparator<FieldFactoryEntity> COMPARATOR =
-            Comparator.comparing(fieldFactoryEntity -> fieldFactoryEntity.getFieldFactoryInfoEntity().getLevel());
+            Comparator.comparing(fieldFactoryEntity -> fieldFactoryEntity.getFieldFactoryInfoEntity()
+                    .getLevel());
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,9 +94,11 @@ public class FieldFactoryEntity implements Comparable<FieldFactoryEntity> {
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
                 .getPersistentClass()
-                .hashCode() : getClass().hashCode();
+                .hashCode()
+                : getClass().hashCode();
     }
 
 //    public void attachFactoryRecord(Collection<FieldFactoryRecordEntity> fieldFactoryRecordEntities) {
@@ -79,15 +112,20 @@ public class FieldFactoryEntity implements Comparable<FieldFactoryEntity> {
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
         Class<?> oEffectiveClass = o instanceof HibernateProxy
-                ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) o).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         FieldFactoryEntity that = (FieldFactoryEntity) o;
         return getId() != null && Objects.equals(getId(), that.getId());
     }

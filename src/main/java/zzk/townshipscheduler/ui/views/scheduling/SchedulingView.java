@@ -107,7 +107,7 @@ public class SchedulingView
             = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
             townshipSchedulingProblemViewModel -> {
                 if (townshipSchedulingProblemViewModel == null
-                    || TownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
+                    || ReactiveTownshipSchedulingProblemViewModel.EMPTY_NULL_VALUE.equals(townshipSchedulingProblemViewModel)
                 ) {
                     return List.of();
                 }
