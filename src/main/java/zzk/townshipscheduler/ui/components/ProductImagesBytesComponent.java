@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.ui.components;
 
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.LazyInitializationException;
@@ -25,7 +26,7 @@ public class ProductImagesBytesComponent {
             key = "#productId",
             unless = "#result==null"
     )
-    public byte[] getProductImage(Long productId) {
+    public byte[] fetchProductImageBytes(Long productId) {
         Optional<byte[]> optionalBytes = productEntityRepository.queryProductImageById(productId);
         return optionalBytes.get();
     }
@@ -36,7 +37,7 @@ public class ProductImagesBytesComponent {
             key = "#productEntity.id",
             unless = "#result==null"
     )
-    public byte[] getProductImage(ProductEntity productEntity) {
+    public byte[] fetchProductImageBytes(ProductEntity productEntity) {
         try {
             return productEntity.getCrawledAsImage()
                     .getImageBytes();
@@ -53,7 +54,7 @@ public class ProductImagesBytesComponent {
             key = "#productName",
             unless = "#result==null"
     )
-    public byte[] getProductImage(String productName) {
+    public byte[] fetchProductImageBytes(String productName) {
         Optional<byte[]> optionalBytes = productEntityRepository.queryProductImageByName(productName);
         return optionalBytes.orElse(wikiCrawledEntityRepository.queryImageBytesByText(productName));
     }

@@ -32,6 +32,7 @@ public class ProductDetailPanel
         backwardButton.addClickListener(_ -> UI.getCurrent()
                 .navigate(ProductView.class));
         getContent().add(backwardButton);
+
         getContent().add(buildProductReadonlyForm(productEntity));
 
         Grid<ProductEntity> materialsGrid = new ProductsBriefGrid(this.productViewPresenter.getProductEntityImageFunction());
@@ -48,9 +49,7 @@ public class ProductDetailPanel
     private Component buildProductReadonlyForm(ProductEntity productEntity) {
         FormLayout productDetailLayout = new FormLayout();
 
-        TextField nameField = new TextField("Name");
-        nameField.setValue(productEntity.getName());
-        nameField.setReadOnly(true);
+        productDetailLayout.add(new ProductNameImageCard(productEntity, productViewPresenter.getProductEntityImageFunction()));
 
         TextField categoryField = new TextField("Category");
         categoryField.setValue(productEntity.getCategory());
@@ -80,7 +79,7 @@ public class ProductDetailPanel
         helpValueField.setValue(String.valueOf(productEntity.getHelpValue()));
         helpValueField.setReadOnly(true);
 
-        productDetailLayout.add(nameField, categoryField, levelField, costField, sellPriceField, xpField, dealerValueField, helpValueField);
+        productDetailLayout.add( categoryField, levelField, costField, sellPriceField, xpField, dealerValueField, helpValueField);
         return productDetailLayout;
     }
 

@@ -11,6 +11,7 @@ import com.vaadin.flow.router.RouterLink;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.views.product.ProductView;
 
+import java.util.Comparator;
 import java.util.function.Function;
 
 public class ProductsGrid
@@ -41,6 +42,8 @@ public class ProductsGrid
                 .setAutoWidth(true);
         this.addColumn(ProductEntity::getLevel)
                 .setHeader("Required Level")
+                .setSortable(true)
+                .setComparator(Comparator.comparingInt(ProductEntity::getLevel))
                 .setAutoWidth(true);
         this.addColumn(ProductEntity::getCategory)
                 .setHeader("Category")

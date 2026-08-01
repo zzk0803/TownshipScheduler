@@ -119,7 +119,7 @@ public class OrderListViewPresenter {
     }
 
     public Image productImage(ProductEntity productEntity) {
-        byte[] productImage = this.productImagesBytesComponent.getProductImage(productEntity);
+        byte[] productImage = this.productImagesBytesComponent.fetchProductImageBytes(productEntity);
         return ProductImages.productImage(productEntity.getName(), productImage);
     }
 

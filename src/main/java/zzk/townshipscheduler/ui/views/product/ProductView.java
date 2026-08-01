@@ -13,7 +13,6 @@ import zzk.townshipscheduler.ui.components.ProductsCategoriesPanel;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 @Getter
 @Route("/products/:productName?")
@@ -59,7 +58,7 @@ public class ProductView
 
     private void productDetailUi(String productName) {
         ProductEntity productEntity = this.productViewPresenter.queryProduct(productName);
-        addAndExpand(new ProductDetailPanel(productEntity,this.productViewPresenter));
+        addAndExpand(new ProductDetailPanel(productEntity, this.productViewPresenter));
         setFlexShrink(1.0, this.productsCategoriesPanel);
     }
 

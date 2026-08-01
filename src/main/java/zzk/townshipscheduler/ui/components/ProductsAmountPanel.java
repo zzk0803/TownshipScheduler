@@ -24,13 +24,10 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.function.SerializablePredicate;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.signals.Signal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
 
 import java.io.Serial;
@@ -375,11 +372,7 @@ public class ProductsAmountPanel
             AvatarGroup avatarGroup = new AvatarGroup(
                     fieldFactoryInfoEntity.getProductEntities()
                             .stream()
-                            .map(productEntity -> {
-                                String name = productEntity.getName();
-                                WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
-                                return ProductImages.productImageDownloadHandler(name, crawledAsImage);
-                            })
+                            .map(ProductImages::productImageDownloadHandler)
                             .map(downloadHandler -> {
                                 AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem();
                                 avatarGroupItem.setImageHandler(downloadHandler);
@@ -455,10 +448,10 @@ public class ProductsAmountPanel
         }
 
         private Image createProductImage(ProductEntity productEntity) {
-            WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
             return ProductImages.productImage(
-                    productEntity.getName(),
-                    crawledAsImage
+                    productEntity,
+                    product -> product.getCrawledAsImage()
+                            .getImageBytes()
             );
         }
 
@@ -526,12 +519,6 @@ public class ProductsAmountPanel
                 });
             }});
             return amountField;
-        }
-
-        private DownloadHandler createProductImageDownloadHandler(ProductEntity productEntity) {
-            return ProductImages.productImageDownloadHandler(
-                    productEntity.getName(), productEntity.getCrawledAsImage()
-            );
         }
 
         @Override

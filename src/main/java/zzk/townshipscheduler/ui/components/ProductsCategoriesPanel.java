@@ -21,6 +21,7 @@ import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
 import zzk.townshipscheduler.ui.views.product.ProductViewPresenter;
 
+import java.util.Comparator;
 import java.util.Set;
 
 @Getter
@@ -132,12 +133,16 @@ public class ProductsCategoriesPanel
                     if (fieldFactoryInfoEntity != null) {
                         this.gridListDataView = grid.setItems(fieldFactoryInfoEntity.getProductEntities()
                                 .stream()
+                                .sorted(Comparator.comparingInt(ProductEntity::getLevel)
+                                        .thenComparing(ProductEntity::getName))
                                 .toList());
                     } else {
                         this.gridListDataView = grid.setItems(
                                 getFieldFactoryInfoEntities().stream()
                                         .flatMap(fieldFactoryInfo -> fieldFactoryInfo.getProductEntities()
                                                 .stream())
+                                        .sorted(Comparator.comparingInt(ProductEntity::getLevel)
+                                                .thenComparing(ProductEntity::getName))
                                         .toList()
                         );
                     }

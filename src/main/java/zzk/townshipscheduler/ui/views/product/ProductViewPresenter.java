@@ -8,13 +8,10 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.function.SerializableFunction;
-import com.vaadin.flow.signals.Signal;
-import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.hibernate.LazyInitializationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.persistence.*;
@@ -22,9 +19,9 @@ import zzk.townshipscheduler.ui.components.ProductImages;
 import zzk.townshipscheduler.ui.components.ProductImagesBytesComponent;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @SpringComponent
 @RequiredArgsConstructor
@@ -93,14 +90,6 @@ public class ProductViewPresenter {
         }
     }
 
-    public Set<ProductManufactureInfoEntity> getMaterialsAsProductManufactureInfo(ProductEntity productEntity) {
-        try {
-            return productEntity.getManufactureInfoEntities();
-        } catch (Exception e) {
-            return productManufactureInfoEntityRepository.queryMaterials(productEntity);
-        }
-    }
-
     public VerticalLayout mapToMaterialCard(ProductManufactureInfoEntity productManufactureInfoEntity) {
         VerticalLayout materialAmountCard = new VerticalLayout();
         Set<ProductMaterialsRelation> materialsRelationSet = productManufactureInfoEntity.getProductMaterialsRelations();
@@ -119,7 +108,7 @@ public class ProductViewPresenter {
     }
 
     public Image createProductImage(ProductEntity productEntity) {
-        byte[] productImage = productImagesBytesComponent.getProductImage(productEntity);
+        byte[] productImage = productImagesBytesComponent.fetchProductImageBytes(productEntity);
         return ProductImages.productImage(
                 productEntity.getName(),
                 productImage
@@ -144,7 +133,7 @@ public class ProductViewPresenter {
         return accordion;
     }
 
-    public Set<ProductEntity> getMaterials(ProductEntity productEntity) {
+    public List<ProductEntity> getMaterials(ProductEntity productEntity) {
         return this.getMaterialsAsProductManufactureInfo(productEntity)
                 .stream()
                 .map(ProductManufactureInfoEntity::getProductMaterialsRelations)
@@ -152,14 +141,26 @@ public class ProductViewPresenter {
                         productMaterialsRelations -> productMaterialsRelations.stream()
                                 .map(ProductMaterialsRelation::getMaterial)
                 )
-                .collect(Collectors.toSet());
+                .sorted(Comparator.comparingInt(ProductEntity::getLevel)
+                        .thenComparing(ProductEntity::getName))
+                .toList();
     }
 
-    public Set<ProductEntity> getComposite(ProductEntity productEntity) {
+    public Set<ProductManufactureInfoEntity> getMaterialsAsProductManufactureInfo(ProductEntity productEntity) {
+        try {
+            return productEntity.getManufactureInfoEntities();
+        } catch (Exception e) {
+            return productManufactureInfoEntityRepository.queryMaterials(productEntity);
+        }
+    }
+
+    public List<ProductEntity> getComposite(ProductEntity productEntity) {
         return this.productManufactureInfoEntityRepository.queryComposite(productEntity)
                 .stream()
                 .map(ProductManufactureInfoEntity::getProductEntity)
-                .collect(Collectors.toSet());
+                .sorted(Comparator.comparingInt(ProductEntity::getLevel)
+                        .thenComparing(ProductEntity::getName))
+                .toList();
     }
 
 }
