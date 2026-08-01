@@ -58,21 +58,18 @@ class PlayerFieldFactoryArticle
     private @NonNull Grid<FieldFactoryEntity> buildFieldFactoryGrid() {
         final Grid<FieldFactoryEntity> factoryEntityGrid;
         factoryEntityGrid = new Grid<>(FieldFactoryEntity.class, false);
-        Grid.Column<FieldFactoryEntity> typeColumn
-                = factoryEntityGrid.addColumn(
-                fieldFactory -> fieldFactory.getFieldFactoryInfoEntity().getCategory()
-        ).setHeader("Field&FactoryType");
-        Grid.Column<FieldFactoryEntity> producingLengthColumn
-                = factoryEntityGrid.addColumn(FieldFactoryEntity::getProducingLength)
-                .setHeader("Factory Producing Length");
-        Grid.Column<FieldFactoryEntity> factoryReapWindowSizeColumn
-                = factoryEntityGrid.addColumn(FieldFactoryEntity::getReapWindowSize)
+        factoryEntityGrid.addColumn(
+                        fieldFactory -> fieldFactory.getFieldFactoryInfoEntity()
+                                .getCategory()
+                )
+                .setHeader("Field&FactoryType");
+        factoryEntityGrid.addColumn(FieldFactoryEntity::getReapWindowSize)
                 .setHeader("Factory Reap Window Size");
         factoryEntityGrid.setItems(fieldFactoryEntityForPlayer);
         factoryEntityGrid.addItemDoubleClickListener(event -> {
             PlayerFieldFactoryArticleForm playerFieldFactoryArticleForm = new PlayerFieldFactoryArticleForm(this.playerViewPresenter, event.getItem());
             Dialog dialog = new Dialog(playerFieldFactoryArticleForm);
-            dialog.setWidth(67.8F,Unit.VW);
+            dialog.setWidth(67.8F, Unit.VW);
             Dialog.DialogHeader header = dialog.getHeader();
             HorizontalLayout dialogHeaderWrapper = new HorizontalLayout();
             dialogHeaderWrapper.setWidthFull();
@@ -82,7 +79,8 @@ class PlayerFieldFactoryArticle
                         dialog.close();
                     }
             );
-            closeBtn.getStyle().set("margin-left", "auto");
+            closeBtn.getStyle()
+                    .set("margin-left", "auto");
             dialogHeaderWrapper.add(new Text("Edit Factory Instance"));
             dialogHeaderWrapper.add(closeBtn);
             header.add(dialogHeaderWrapper);
@@ -95,7 +93,8 @@ class PlayerFieldFactoryArticle
                                 boolean submitted = playerFieldFactoryArticleForm.submit(true);
                                 if (submitted) {
                                     dialog.close();
-                                    UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
+                                    UI.getCurrentOrThrow()
+                                            .access(this::reloadPlayerFieldFactory);
                                 }
                             }
                     )
@@ -114,12 +113,15 @@ class PlayerFieldFactoryArticle
         );
 
         MenuItem menuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.ERASER.create());
+        menuItem.setDisableOnClick(true);
         menuItem.addClickListener(event -> {
             ConfirmDialog confirmDialog = new ConfirmDialog(
-                    "Clear All FieldFactory", "text:Clear All FieldFactory", "confirmtext:Clear All FieldFactory", confirmClick -> {
+                    "Clear All FieldFactory", "Remove All FieldFactory Instance!This is Not Recoverable", "Execute", confirmClick -> {
                 PlayerEntity player = playerViewPresenter.getPlayer();
                 playerViewPresenter.clearPlayerFieldFactory(player);
-                UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
+                menuItem.setEnabled(true);
+                UI.getCurrentOrThrow()
+                        .access(this::reloadPlayerFieldFactory);
             }
             );
             confirmDialog.open();
@@ -127,11 +129,14 @@ class PlayerFieldFactoryArticle
         MenuItem newFieldFactoryDialogMenuItem = fieldFactoryGridMenuBar.addItem(VaadinIcon.PLUS.create());
         newFieldFactoryDialogMenuItem.addSingleClickListener(newFieldFactoryDialog());
         MenuItem toPlayerLevelPropertiesMenuItem = fieldFactoryGridMenuBar.addItem("One Key To My Level Properties");
+        toPlayerLevelPropertiesMenuItem.setDisableOnClick(true);
         toPlayerLevelPropertiesMenuItem.addClickListener(event -> {
             ConfirmDialog confirmDialog = new ConfirmDialog(
-                    "ToCorrespondedLevelInBatch", "text:ToCorrespondedLevelInBatch", "confirmtext:ToCorrespondedLevelInBatch", confirmClick -> {
+                    "ToCorrespondedLevelInBatch", "Setup All Available Field Factory Match Your Player Level", "Execute", confirmClick -> {
                 playerViewPresenter.playerFactoryToCorrespondedLevelInBatch();
-                UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
+                toPlayerLevelPropertiesMenuItem.setEnabled(true);
+                UI.getCurrentOrThrow()
+                        .access(this::reloadPlayerFieldFactory);
             }
             );
             confirmDialog.open();
@@ -142,14 +147,15 @@ class PlayerFieldFactoryArticle
     private void reloadPlayerFieldFactory() {
         loadPlayerFieldFactory();
         getFieldFactoryEntityListDataProvider().refreshAll();
-        getFieldFactoryEntityGrid().getDataProvider().refreshAll();
+        getFieldFactoryEntityGrid().getDataProvider()
+                .refreshAll();
     }
 
     private @NonNull ComponentEventListener<ClickEvent<MenuItem>> newFieldFactoryDialog() {
         return menuItemClickEvent -> {
             PlayerFieldFactoryArticleForm playerFieldFactoryArticleForm = new PlayerFieldFactoryArticleForm(this.playerViewPresenter);
             Dialog dialog = new Dialog(playerFieldFactoryArticleForm);
-            dialog.setWidth(67.8F,Unit.VW);
+            dialog.setWidth(67.8F, Unit.VW);
             Dialog.DialogHeader header = dialog.getHeader();
             HorizontalLayout dialogHeaderWrapper = new HorizontalLayout();
             dialogHeaderWrapper.setWidthFull();
@@ -159,7 +165,8 @@ class PlayerFieldFactoryArticle
                         dialog.close();
                     }
             );
-            closeBtn.getStyle().set("margin-left", "auto");
+            closeBtn.getStyle()
+                    .set("margin-left", "auto");
             dialogHeaderWrapper.add(new Text("New Factory Instance"));
             dialogHeaderWrapper.add(closeBtn);
             header.add(dialogHeaderWrapper);
@@ -172,7 +179,8 @@ class PlayerFieldFactoryArticle
                                 boolean submitted = playerFieldFactoryArticleForm.submit(false);
                                 if (submitted) {
                                     dialog.close();
-                                    UI.getCurrentOrThrow().access(this::reloadPlayerFieldFactory);
+                                    UI.getCurrentOrThrow()
+                                            .access(this::reloadPlayerFieldFactory);
                                 }
                             }
                     )

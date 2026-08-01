@@ -4,6 +4,7 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -41,12 +42,19 @@ class PlayerBasicArticle
 
     private Button buildUpdatePlayerButton() {
         Button button = new Button("Update");
+        button.setDisableOnClick(true);
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         button.addClickListener(clicked -> {
             PlayerEntity playerEntity = this.playerForm.submitAndGet();
             if (playerEntity != null) {
                 playerViewPresenter.emergeAndUpdate(playerEntity);
-                playerForm.reflash();
+                ConfirmDialog confirmDialog = new ConfirmDialog(
+                        "Update Player Info", "Done", "OK", confirmClicked -> {
+                    playerForm.reflash();
+                    button.setEnabled(true);
+                }
+                );
+                confirmDialog.open();
             } else {
                 Notification.show("not success");
             }
@@ -94,7 +102,7 @@ class PlayerBasicArticle
             binder.forField(warehouseSizeField)
                     .withValidator((integer, valueContext) -> integer > 0
                             ? ValidationResult.ok()
-                            : ValidationResult.error("field number should >0"))
+                            : ValidationResult.error("warehouse size should >0"))
                     .bind(PlayerEntity::getWarehouseSize, PlayerEntity::setWarehouseSize);
 
             add(nameField);
