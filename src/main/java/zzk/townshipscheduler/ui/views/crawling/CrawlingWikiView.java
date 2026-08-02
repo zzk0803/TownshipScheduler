@@ -181,7 +181,7 @@ public class CrawlingWikiView
         });
 
         // Status message
-        Span statusMessage = new Span("file format：MHTML");
+        Span statusMessage = new Span("file format：TXT");
         statusMessage.getStyle()
                 .set("font-size", "0.875rem")
                 .set("color", "var(--lumo-secondary-text-color)");

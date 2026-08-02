@@ -17,6 +17,7 @@ class ProblemPersistingPrecess {
             TownshipSchedulingProblem townshipSchedulingProblem
     ) {
         this.townshipSchedulingProblem = townshipSchedulingProblem;
+        this.townshipSchedulingProblem.setScoreString(this.townshipSchedulingProblem.getScore().toString());
     }
 
     public synchronized TownshipProblemEntity process() {

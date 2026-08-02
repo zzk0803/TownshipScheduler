@@ -7,11 +7,13 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationResult;
+import lombok.Getter;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 
@@ -37,6 +39,43 @@ class PlayerBasicArticle
         this.playerForm = new PlayerForm(this.playerViewPresenter.getPlayer());
 
         getContent().add(playerForm);
+        getContent().add(
+                new VerticalLayout(
+                        new Button("Use Template (level=30,fieldAmount=30,warehouseSize=300)") {{
+                            addThemeVariants(ButtonVariant.TERTIARY);
+                            addClickListener(click -> {
+                                PlayerForm theForm = PlayerBasicArticle.this.playerForm;
+                                theForm.getLevelField()
+                                        .setValue(30);
+                                theForm.getFieldAmountField()
+                                        .setValue(30);
+                                theForm.getWarehouseSizeField()
+                                        .setValue(300);
+                            });
+                        }}, new Button("Use Template (level=60,fieldAmount=100,warehouseSize=600)") {{
+                    addThemeVariants(ButtonVariant.TERTIARY);
+                    addClickListener(click -> {
+                        PlayerForm theForm = PlayerBasicArticle.this.playerForm;
+                        theForm.getLevelField()
+                                .setValue(60);
+                        theForm.getFieldAmountField()
+                                .setValue(100);
+                        theForm.getWarehouseSizeField()
+                                .setValue(600);
+                    });
+                }}, new Button("Use Template (level=90,fieldAmount=120,warehouseSize=900)") {{
+                    addThemeVariants(ButtonVariant.TERTIARY);
+                    addClickListener(click -> {
+                        PlayerForm theForm = PlayerBasicArticle.this.playerForm;
+                        theForm.getLevelField()
+                                .setValue(90);
+                        theForm.getFieldAmountField()
+                                .setValue(120);
+                        theForm.getWarehouseSizeField()
+                                .setValue(900);
+                    });
+                }}
+                ));
         getContent().add(buildUpdatePlayerButton());
     }
 
@@ -62,8 +101,15 @@ class PlayerBasicArticle
         return button;
     }
 
+    @Getter
     private class PlayerForm
             extends FormLayout {
+
+        private final IntegerField levelField;
+
+        private final IntegerField fieldAmountField;
+
+        private final IntegerField warehouseSizeField;
 
         PlayerEntity player = new PlayerEntity();
 
@@ -78,9 +124,9 @@ class PlayerBasicArticle
             );
 
             var nameField = new TextField("Name");
-            var levelField = new IntegerField("Level");
-            var fieldAmountField = new IntegerField("Field Amount");
-            var warehouseSizeField = new IntegerField("Warehouse Size");
+            levelField = new IntegerField("Level");
+            fieldAmountField = new IntegerField("Field Amount");
+            warehouseSizeField = new IntegerField("Warehouse Size");
 
             binder.bindReadOnly(
                     nameField,

@@ -54,7 +54,9 @@ public class TownshipSchedulingProblem implements Serializable {
     private SchedulingPlayer schedulingPlayer;
 
     @PlanningScore
-    private HardMediumSoftBigDecimalScore score;
+    private transient HardMediumSoftBigDecimalScore score;
+
+    private String scoreString;
 
     private DateTimeSlotSize dateTimeSlotSize;
 

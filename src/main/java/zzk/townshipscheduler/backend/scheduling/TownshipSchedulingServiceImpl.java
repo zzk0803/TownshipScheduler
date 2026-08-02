@@ -135,7 +135,8 @@ public class TownshipSchedulingServiceImpl
                 })
                 .withFirstInitializedSolutionEventConsumer(firstInitializedSolutionEvent -> {
                     TownshipSchedulingProblem townshipSchedulingProblem = firstInitializedSolutionEvent.solution();
-                    firstInitializedSolutionConsumer.andThen(defaultConsumer).accept(townshipSchedulingProblem);
+                    firstInitializedSolutionConsumer.andThen(defaultConsumer)
+                            .accept(townshipSchedulingProblem);
                 })
                 .withBestSolutionEventConsumer(solutionNewBestSolutionEvent -> {
                     TownshipSchedulingProblem solution = solutionNewBestSolutionEvent.solution();
@@ -144,7 +145,7 @@ public class TownshipSchedulingServiceImpl
                 })
                 .withFinalBestSolutionEventConsumer(finalBestSolutionEvent -> {
                     defaultConsumer.andThen(finalBestSolutionEventConsumer)
-//                                    .andThen(this::persist)
+                            .andThen(this::persist)
                             .accept(finalBestSolutionEvent.solution());
                 })
                 .withExceptionHandler(defaultExceptionHandler.andThen(exceptionHandler))
