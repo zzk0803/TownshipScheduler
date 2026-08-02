@@ -20,10 +20,6 @@ public interface ProductEntityRepository
     @Query("select p from ProductEntity p where p.name = ?1")
     Optional<ProductEntity> querySimpleByName(String name);
 
-    @EntityGraph(value = "products.g.full")
-    @Query("select p from ProductEntity p where p.name = ?1")
-    Optional<ProductEntity> queryFullByName(String name);
-
     @EntityGraph("products.g.full")
     @Query("select p from ProductEntity p where p.level<=:level")
     Set<ProductEntity> queryForPrepareScheduling(Integer level);

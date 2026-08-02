@@ -24,6 +24,57 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 class TownshipDataHardcodeHotfixProcessor {
 
+    public static final Map<String, MendingData> INSTANCE_AMEND_MAP = Map.of(
+            "Cowshed",
+            MendingData.builder()
+                    .productNameList(List.of("Milk"))
+                    .level(1)
+                    .instanceAmount(3)
+                    .build(),
+            "Chicken Coop",
+            MendingData.builder()
+                    .productNameList(List.of("Egg"))
+                    .level(5)
+                    .instanceAmount(3)
+                    .build(),
+            "Sheep Farm",
+            MendingData.builder()
+                    .productNameList(List.of("Wool"))
+                    .level(10)
+                    .instanceAmount(2)
+                    .build(),
+            "Apiary",
+            MendingData.builder()
+                    .productNameList(List.of("Honeycombs"))
+                    .level(35)
+                    .instanceAmount(2)
+                    .build(),
+            "Pig Farm",
+            MendingData.builder()
+                    .productNameList(List.of("Bacon"))
+                    .level(42)
+                    .instanceAmount(2)
+                    .build(),
+            "Duck Feeder",
+            MendingData.builder()
+                    .productNameList(List.of("Down Feather", "Colorful Feather"))
+                    .level(48)
+                    .instanceAmount(1)
+                    .build(),
+            "Otter Pond",
+            MendingData.builder()
+                    .productNameList(List.of("Seaweed", "Scallop", "Pearls"))
+                    .level(58)
+                    .instanceAmount(1)
+                    .build(),
+            "Mushroom Farm",
+            MendingData.builder()
+                    .productNameList(List.of("Mushroom"))
+                    .level(63)
+                    .instanceAmount(1)
+                    .build()
+    );
+
     private final FieldFactoryInfoEntityRepository fieldFactoryInfoEntityRepository;
 
     private final ProductManufactureInfoEntityRepository productManufactureInfoEntityRepository;
@@ -34,56 +85,6 @@ class TownshipDataHardcodeHotfixProcessor {
 
     public void process() {
         log.info("going to hardcode fix factoryinfo");
-        Map<String, MendingData> instanceAmendMap = Map.of(
-                "Cowshed",
-                MendingData.builder()
-                        .productNameList(List.of("Milk"))
-                        .level(1)
-                        .instanceAmount(3)
-                        .build(),
-                "Chicken Coop",
-                MendingData.builder()
-                        .productNameList(List.of("Egg"))
-                        .level(5)
-                        .instanceAmount(3)
-                        .build(),
-                "Sheep Farm",
-                MendingData.builder()
-                        .productNameList(List.of("Wool"))
-                        .level(10)
-                        .instanceAmount(2)
-                        .build(),
-                "Apiary",
-                MendingData.builder()
-                        .productNameList(List.of("Honeycombs"))
-                        .level(35)
-                        .instanceAmount(2)
-                        .build(),
-                "Pig Farm",
-                MendingData.builder()
-                        .productNameList(List.of("Bacon"))
-                        .level(42)
-                        .instanceAmount(2)
-                        .build(),
-                "Duck Feeder",
-                MendingData.builder()
-                        .productNameList(List.of("Down Feather", "Colorful Feather"))
-                        .level(48)
-                        .instanceAmount(1)
-                        .build(),
-                "Otter Pond",
-                MendingData.builder()
-                        .productNameList(List.of("Seaweed", "Scallop", "Pearls"))
-                        .level(58)
-                        .instanceAmount(1)
-                        .build(),
-                "Mushroom Farm",
-                MendingData.builder()
-                        .productNameList(List.of("Mushroom"))
-                        .level(63)
-                        .instanceAmount(1)
-                        .build()
-        );
 
         record ProductEntityTempRecord(
                 String productName,
@@ -115,7 +116,7 @@ class TownshipDataHardcodeHotfixProcessor {
                 .distinct()
                 .sorted()
                 .toList();
-        List<String> list1 = instanceAmendMap.values()
+        List<String> list1 = INSTANCE_AMEND_MAP.values()
                 .stream()
                 .map(MendingData::productNameList)
                 .flatMap(Collection::stream)
@@ -128,7 +129,7 @@ class TownshipDataHardcodeHotfixProcessor {
             throw new IllegalStateException("tempTableReference products not equal instanceAmendMap products");
         }
 
-        instanceAmendMap.forEach((factoryName, mendingData) -> {
+        INSTANCE_AMEND_MAP.forEach((factoryName, mendingData) -> {
             FieldFactoryInfoEntity savedFieldFactory = transactionTemplate.execute(
                     status -> fieldFactoryInfoEntityRepository.saveAndFlush(
                             createFieldFactoryInfo(factoryName, mendingData)

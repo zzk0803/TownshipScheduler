@@ -56,7 +56,7 @@ public class ProductViewPresenter {
     }
 
     public ProductEntity queryProduct(String productName) {
-        return this.productEntityRepository.queryFullByName(productName)
+        return this.productEntityRepository.findByName(productName)
                 .orElse(null);
     }
 
