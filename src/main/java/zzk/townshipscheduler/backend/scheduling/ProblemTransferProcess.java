@@ -3,10 +3,10 @@ package zzk.townshipscheduler.backend.scheduling;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 import zzk.townshipscheduler.backend.OrderType;
+import zzk.townshipscheduler.backend.ProductHierarchyAndGraphComponent;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.model.*;
 import zzk.townshipscheduler.backend.scheduling.model.ProductAmountBill;
-import zzk.townshipscheduler.backend.ProductHierarchyAndGraphComponent;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -87,6 +87,7 @@ class ProblemTransferProcess {
         return TownshipSchedulingProblem.builder()
                 .uuid()
                 .schedulingProductList(new ArrayList<>(this.schedulingProductList))
+                .schedulingProducingExecutionModes(this.schedulingProducingExecutionModes)
                 .schedulingFactoryInfoList(new ArrayList<>(this.schedulingFactoryInfoList))
                 .schedulingOrderList(new ArrayList<>(this.schedulingOrders))
                 .schedulingFactoryInstanceList(new ArrayList<>(this.schedulingFactoryInstances))
@@ -313,6 +314,8 @@ class ProblemTransferProcess {
                     );
                 }
         );
+
+        this.schedulingPlayer.setProductAmountMap(ProductAmountBill.of(productAmountMap));
     }
 
     private void fetchAndMapToSchedulingOrder() {

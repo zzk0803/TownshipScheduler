@@ -6,9 +6,7 @@ import com.vaadin.flow.server.streams.DownloadResponse;
 import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
 import lombok.experimental.UtilityClass;
 import org.jspecify.annotations.NonNull;
-import org.springframework.security.core.parameters.P;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 
 import java.io.ByteArrayInputStream;
 import java.util.Objects;

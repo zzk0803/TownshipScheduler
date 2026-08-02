@@ -1,20 +1,16 @@
 package zzk.townshipscheduler.backend.scheduling;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
-import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
 
 @Value
 @Builder

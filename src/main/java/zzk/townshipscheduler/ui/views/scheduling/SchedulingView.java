@@ -141,7 +141,8 @@ public class SchedulingView
             = this.reactiveTownshipSchedulingProblemViewModelValueSignal
             .map(townshipSchedulingProblem -> {
                         if (townshipSchedulingProblem != null) {
-                            return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels().getValues()
+                            return townshipSchedulingProblem.schedulingProducingArrangementReactiveViewModels()
+                                    .getValues()
                                     .map(schedulingProducingArrangement -> LitSchedulingProducingArrangementVO.of(schedulingProducingArrangement, true))
                                     .collect(Collectors.toCollection(ArrayList::new));
                         } else {
@@ -160,7 +161,8 @@ public class SchedulingView
     private Signal<String> solverResultSpanSignal = reactiveTownshipSchedulingProblemViewModelValueSignal.map(
             townshipSchedulingProblemViewModel -> {
                 if (townshipSchedulingProblemViewModel != null) {
-                    return townshipSchedulingProblemViewModel.feasible().get()
+                    return townshipSchedulingProblemViewModel.feasible()
+                            .get()
                             ? "Feasible"
                             : "Not Feasible";
                 } else {
@@ -472,7 +474,8 @@ public class SchedulingView
                                 case SOLVING, FINISHED -> {
                                     ReactiveTownshipSchedulingProblemViewModel reactiveTownshipSchedulingProblemViewModel = reactiveTownshipSchedulingProblemViewModelValueSignal.get();
                                     if (reactiveTownshipSchedulingProblemViewModel != null) {
-                                        return reactiveTownshipSchedulingProblemViewModel.score().get();
+                                        return reactiveTownshipSchedulingProblemViewModel.score()
+                                                .get();
                                     } else {
                                         return "N/A";
                                     }
@@ -532,13 +535,16 @@ public class SchedulingView
         reactiveArrangementTreeGrid.addComponentColumn(
                         reactiveSchedulingProducingArrangementViewModel -> {
                             Span span = new Span();
-                            span.bindText(reactiveSchedulingProducingArrangementViewModel.assignedFactoryInstance().map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
-                                    ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
-                                    : "N/A"));
+                            span.bindText(reactiveSchedulingProducingArrangementViewModel.assignedFactoryInstance()
+                                    .map(schedulingFactoryInstanceViewModel -> schedulingFactoryInstanceViewModel != null
+                                            ? schedulingFactoryInstanceViewModel.factoryReadableIdentifier()
+                                            : "N/A"));
                             return span;
                         })
                 .setSortable(true)
-                .setComparator(Comparator.comparing(o -> o.assignedFactoryInstance().peek().factoryReadableIdentifier()))
+                .setComparator(Comparator.comparing(o -> o.assignedFactoryInstance()
+                        .peek()
+                        .factoryReadableIdentifier()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Assign Factory")
@@ -556,7 +562,8 @@ public class SchedulingView
                             return span;
                         })
                 .setSortable(true)
-                .setComparator(Comparator.comparing(o -> o.arrangeDateTime().peek()))
+                .setComparator(Comparator.comparing(o -> o.arrangeDateTime()
+                        .peek()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Arrange Date Time")
@@ -573,7 +580,8 @@ public class SchedulingView
                             return span;
                         })
                 .setSortable(true)
-                .setComparator(Comparator.comparing(o -> o.producingDateTime().peek()))
+                .setComparator(Comparator.comparing(o -> o.producingDateTime()
+                        .peek()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Producing Date Time")
@@ -590,7 +598,8 @@ public class SchedulingView
                             return span;
                         })
                 .setSortable(true)
-                .setComparator(Comparator.comparing(o -> o.completedDateTime().peek()))
+                .setComparator(Comparator.comparing(o -> o.completedDateTime()
+                        .peek()))
                 .setResizable(true)
                 .setAutoWidth(true)
                 .setHeader("Completed Date Time")
@@ -920,7 +929,8 @@ public class SchedulingView
                             );
                         }};
                         LitTimer timer = new LitTimer();
-                        timer.getElement().setAttribute("theme", "large");
+                        timer.getElement()
+                                .setAttribute("theme", "large");
                         timer.setMode(LitTimer.Mode.COUNTUP);
                         dialogWrapper.addAndExpand(form);
                         dialogWrapper.add(startButton);
@@ -945,7 +955,9 @@ public class SchedulingView
                                                     timer.pause();
                                                     Icon icon = VaadinIcon.CHECK_CIRCLE.create();
                                                     icon.setSize("5rem");
-                                                    icon.getElement().getStyle().setColor("var(--lumo-success-color)");
+                                                    icon.getElement()
+                                                            .getStyle()
+                                                            .setColor("var(--lumo-success-color)");
                                                     dialogWrapper.replace(progressBar, icon);
                                                     if (throwable != null) {
                                                         dialogWrapper.add(new Paragraph(throwable.toString()));
@@ -959,30 +971,7 @@ public class SchedulingView
 
                                                         String timestamp = LocalDateTime.now()
                                                                 .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                                                        String zipFileName = "Report_" + timestamp + ".zip";
-
-//                                                        StreamResource resource = new StreamResource(
-//                                                                zipFileName,
-//                                                                () -> createZipInputStream(
-//                                                                        "BenchmarkReport",
-//                                                                        mayNullFile
-//                                                                )
-//                                                        );
-
-                                                        Anchor downloadLink = new Anchor(
-                                                                DownloadHandler.fromInputStream(downloadEvent -> {
-                                                                    return new DownloadResponse(
-                                                                            createZipInputStream(
-                                                                                    "BenchmarkReport",
-                                                                                    mayNullFile
-                                                                            ),
-                                                                            zipFileName,
-                                                                            "octet-stream",
-                                                                            -1
-                                                                    );
-                                                                }),
-                                                                "Download Benchmark Report(zip)"
-                                                        );
+                                                        Anchor downloadLink = createDownloadLink(mayNullFile, timestamp);
                                                         downloadLink.getElement()
                                                                 .setAttribute(
                                                                         "download",
@@ -1019,6 +1008,25 @@ public class SchedulingView
                     });
                     dialog.open();
                 }
+        );
+    }
+
+    private Anchor createDownloadLink(File mayNullFile, String timestamp) {
+        String zipFileName = "Report_" + timestamp + ".zip";
+
+        return new Anchor(
+                DownloadHandler.fromInputStream(downloadEvent -> {
+                    return new DownloadResponse(
+                            createZipInputStream(
+                                    "BenchmarkReport",
+                                    mayNullFile
+                            ),
+                            zipFileName,
+                            "octet-stream",
+                            -1
+                    );
+                }),
+                "Download Benchmark Report(zip)"
         );
     }
 

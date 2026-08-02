@@ -25,8 +25,8 @@ public interface WikiCrawledEntityRepository
     @Query(
             """
             from WikiCrawledEntity as tc
-            where tc.type=zzk.townshipscheduler.backend.persistence.WikiCrawledEntity.Type.HTML 
-            order by tc.createdDateTime 
+            where tc.type=zzk.townshipscheduler.backend.persistence.WikiCrawledEntity.Type.HTML
+            order by tc.createdDateTime
             limit 1
             """
     )

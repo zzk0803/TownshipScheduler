@@ -29,33 +29,15 @@ class PlayerFieldFactoryArticleForm
 
     private final PlayerViewPresenter playerViewPresenter;
 
-    private final ValueSignal<Boolean> availableFieldFactoryBooleanValueSignal = new ValueSignal<>(false);
-
-    private List<FieldFactoryEntity> fieldFactoryEntityForPlayer;
-
-    private List<FieldFactoryInfoEntity> availableFieldFactoryInfoForPlayer;
+    private final boolean createMode;
 
     private Map<FieldFactoryInfoEntity, Long> calcedPlayerPropertiesCountMap;
 
-    private Grid<FieldFactoryInfoEntity> fieldFactoryInfoEntityGrid;
-
     private ValueSignal<FieldFactoryInfoEntity> selectedOrEditingFieldFactoryInfoValueSignal;
-
-    private Signal<Boolean> fieldFactoryInfoSelectedSignal;
-
-//    private IntegerField producingLengthIntegerField;
-
-//    private ValueSignal<Integer> producingLengthIntegerSignal;
-
-//    private IntegerField reapWindowSizeIntegerField;
-
-//    private ValueSignal<Integer> reapWindowSizeIntegerSignal;
 
     private FieldFactoryEntity fieldFactoryEntity;
 
     private Binder<FieldFactoryEntity> binder;
-
-    private boolean createMode;
 
     public PlayerFieldFactoryArticleForm(PlayerViewPresenter playerViewPresenter) {
         this.playerViewPresenter = playerViewPresenter;
@@ -83,24 +65,31 @@ class PlayerFieldFactoryArticleForm
         setAlignItems(FlexComponent.Alignment.START);
         setJustifyContentMode(FlexComponent.JustifyContentMode.START);
 
-        this.availableFieldFactoryInfoForPlayer = this.playerViewPresenter.findAvailableFieldFactoryInfoIfPlayerLevelExist();
-        this.fieldFactoryEntityForPlayer = this.playerViewPresenter.findFieldFactoryEntityByPlayer();
+        List<FieldFactoryInfoEntity> availableFieldFactoryInfoForPlayer = this.playerViewPresenter.findAvailableFieldFactoryInfoIfPlayerLevelExist();
+        List<FieldFactoryEntity> fieldFactoryEntityForPlayer = this.playerViewPresenter.findFieldFactoryEntityByPlayer();
         this.calcedPlayerPropertiesCountMap = this.playerViewPresenter.calcPlayerPropertiesCount(
-                this.fieldFactoryEntityForPlayer
+                fieldFactoryEntityForPlayer
         );
 
-        fieldFactoryInfoEntityGrid = new Grid<>();
+        Grid<FieldFactoryInfoEntity> fieldFactoryInfoEntityGrid = new Grid<>();
         fieldFactoryInfoEntityGrid.addClassName("player-field-factory-article-form");
-        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getCategory).setHeader("Category");
-        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getLevel).setHeader("Level");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getCategory)
+                .setHeader("Category");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getLevel)
+                .setHeader("Level");
         fieldFactoryInfoEntityGrid.addColumn(fieldFactoryInfoEntity -> {
-            return this.calcedPlayerPropertiesCountMap.getOrDefault(fieldFactoryInfoEntity, 0L) + "/" + fieldFactoryInfoEntity.getMaxInstanceAmount();
-        }).setHeader("Instance You Have/Max Instance");
-        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getDefaultProducingCapacity).setHeader("Default Producing Capacity");
-        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getMaxProducingCapacity).setHeader("Max Producing Capacity");
-        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getDefaultReapWindowCapacity).setHeader("Default Reap Window");
-        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getMaxReapWindowCapacity).setHeader("Max Reap Window");
-        fieldFactoryInfoEntityGrid.setItems(this.availableFieldFactoryInfoForPlayer);
+                    return this.calcedPlayerPropertiesCountMap.getOrDefault(fieldFactoryInfoEntity, 0L) + "/" + fieldFactoryInfoEntity.getMaxInstanceAmount();
+                })
+                .setHeader("Instance You Have/Max Instance");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getDefaultProducingCapacity)
+                .setHeader("Default Producing Capacity");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getMaxProducingCapacity)
+                .setHeader("Max Producing Capacity");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getDefaultReapWindowCapacity)
+                .setHeader("Default Reap Window");
+        fieldFactoryInfoEntityGrid.addColumn(FieldFactoryInfoEntity::getMaxReapWindowCapacity)
+                .setHeader("Max Reap Window");
+        fieldFactoryInfoEntityGrid.setItems(availableFieldFactoryInfoForPlayer);
         fieldFactoryInfoEntityGrid.setItemSelectableProvider(
                 fieldFactoryInfoEntity -> calcedPlayerPropertiesCountMap.getOrDefault(fieldFactoryInfoEntity, 0L) < fieldFactoryInfoEntity.getMaxInstanceAmount()
         );
@@ -114,15 +103,16 @@ class PlayerFieldFactoryArticleForm
 
         if (createMode) {
             selectedOrEditingFieldFactoryInfoValueSignal = new ValueSignal<>(FieldFactoryInfoEntity.NULL_EMPTY_VALUE);
-            fieldFactoryInfoEntityGrid.asSingleSelect().bindValue(
-                    selectedOrEditingFieldFactoryInfoValueSignal,
-                    value -> {
-                        var setToSignal = value == null
-                                ? FieldFactoryInfoEntity.NULL_EMPTY_VALUE
-                                : value;
-                        selectedOrEditingFieldFactoryInfoValueSignal.set(setToSignal);
-                    }
-            );
+            fieldFactoryInfoEntityGrid.asSingleSelect()
+                    .bindValue(
+                            selectedOrEditingFieldFactoryInfoValueSignal,
+                            value -> {
+                                var setToSignal = value == null
+                                        ? FieldFactoryInfoEntity.NULL_EMPTY_VALUE
+                                        : value;
+                                selectedOrEditingFieldFactoryInfoValueSignal.set(setToSignal);
+                            }
+                    );
         } else {
             selectedOrEditingFieldFactoryInfoValueSignal = new ValueSignal<>(this.fieldFactoryEntity.getFieldFactoryInfoEntity());
             fieldFactoryInfoEntityGrid.select(this.fieldFactoryEntity.getFieldFactoryInfoEntity());
@@ -130,8 +120,7 @@ class PlayerFieldFactoryArticleForm
             fieldFactoryInfoEntityGrid.setSelectionMode(Grid.SelectionMode.NONE);
         }
 
-        fieldFactoryInfoSelectedSignal
-                = selectedOrEditingFieldFactoryInfoValueSignal.map(obj -> Objects.nonNull(obj) && !FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(obj));
+        Signal<Boolean> fieldFactoryInfoSelectedSignal = selectedOrEditingFieldFactoryInfoValueSignal.map(obj -> Objects.nonNull(obj) && !FieldFactoryInfoEntity.NULL_EMPTY_VALUE.equals(obj));
         binder = new Binder<>(FieldFactoryEntity.class);
         TextField fieldFactoryTypeTextField = new TextField("Field&Factory Type");
         fieldFactoryTypeTextField.setReadOnly(true);
@@ -164,7 +153,9 @@ class PlayerFieldFactoryArticleForm
         producingLength.bindMax(selectedOrEditingFieldFactoryInfoValueSignal.map(FieldFactoryInfoEntity::getMaxProducingCapacity));
         producingLength.bindMin(selectedOrEditingFieldFactoryInfoValueSignal.map(FieldFactoryInfoEntity::getDefaultProducingCapacity));
         if (createMode) {
-            producingLength.setValue(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek()).map(FieldFactoryInfoEntity::getDefaultProducingCapacity).orElse(3));
+            producingLength.setValue(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek())
+                    .map(FieldFactoryInfoEntity::getDefaultProducingCapacity)
+                    .orElse(3));
         }
         IntegerField reapWindow = new IntegerField("Reap Window");
         Binder.Binding<FieldFactoryEntity, Integer> fieldFactoryEntityReapWindowBinding
@@ -185,9 +176,13 @@ class PlayerFieldFactoryArticleForm
         reapWindow.bindEnabled(fieldFactoryInfoSelectedSignal);
         reapWindow.bindVisible(fieldFactoryInfoSelectedSignal);
         reapWindow.bindMax(selectedOrEditingFieldFactoryInfoValueSignal.map(FieldFactoryInfoEntity::getMaxReapWindowCapacity));
-        reapWindow.setMin(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek()).map(FieldFactoryInfoEntity::getDefaultReapWindowCapacity).orElse(6));
+        reapWindow.setMin(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek())
+                .map(FieldFactoryInfoEntity::getDefaultReapWindowCapacity)
+                .orElse(6));
         if (createMode) {
-            reapWindow.setValue(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek()).map(FieldFactoryInfoEntity::getDefaultReapWindowCapacity).orElse(6));
+            reapWindow.setValue(Optional.ofNullable(selectedOrEditingFieldFactoryInfoValueSignal.peek())
+                    .map(FieldFactoryInfoEntity::getDefaultReapWindowCapacity)
+                    .orElse(6));
         }
         binder.readBean(fieldFactoryEntity);
 

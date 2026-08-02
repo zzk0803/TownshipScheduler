@@ -6,7 +6,6 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;

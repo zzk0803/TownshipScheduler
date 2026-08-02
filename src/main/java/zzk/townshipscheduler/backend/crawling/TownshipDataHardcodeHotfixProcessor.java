@@ -7,12 +7,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import zzk.townshipscheduler.backend.ProducingStructureType;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntityRepository;
+import zzk.townshipscheduler.backend.persistence.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;

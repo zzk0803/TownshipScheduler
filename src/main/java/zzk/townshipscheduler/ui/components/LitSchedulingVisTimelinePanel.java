@@ -6,18 +6,13 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
-import com.vaadin.flow.signals.Signal;
-import zzk.townshipscheduler.ui.pojo.scheduling.LitSchedulingProducingArrangementVO;
-import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingFactoryInstanceViewModel;
 import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Tag("scheduling-vis-timeline-panel")
 @NpmPackage(value = "vis-timeline", version = "8.5.2")

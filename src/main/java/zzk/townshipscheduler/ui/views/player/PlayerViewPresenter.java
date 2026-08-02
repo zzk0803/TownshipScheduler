@@ -8,11 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Sort;
+import zzk.townshipscheduler.backend.PlayerService;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.*;
-import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.WarehouseEntityRepository;
-import zzk.townshipscheduler.backend.PlayerService;
 
 import java.util.Collection;
 import java.util.List;
@@ -62,7 +60,7 @@ public class PlayerViewPresenter {
     }
 
     public PlayerEntity getPlayer() {
-        return townshipAuthenticationContext.getPlayerEntity().get();
+        return townshipAuthenticationContext.getPlayerEntity().orElseThrow();
     }
 
     public List<FieldFactoryInfoEntity> findAvailableFieldFactoryInfoByPlayer() {

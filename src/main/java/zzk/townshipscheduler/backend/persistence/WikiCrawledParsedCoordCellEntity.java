@@ -1,7 +1,10 @@
 package zzk.townshipscheduler.backend.persistence;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.proxy.HibernateProxy;
 import zzk.townshipscheduler.backend.crawling.CrawledDataCell;
 import zzk.townshipscheduler.backend.crawling.CrawledDataCoordinate;

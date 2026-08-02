@@ -7,7 +7,8 @@ import lombok.ToString;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.IntStream;
 
 @Data

@@ -17,12 +17,9 @@ import zzk.townshipscheduler.ui.views.product.ProductViewPresenter;
 public class ProductDetailPanel
         extends Composite<VerticalLayout> {
 
-    private final ProductEntity productEntity;
-
     private final ProductViewPresenter productViewPresenter;
 
     public ProductDetailPanel(ProductEntity productEntity, ProductViewPresenter productViewPresenter) {
-        this.productEntity = productEntity;
         this.productViewPresenter = productViewPresenter;
 
         Button backwardButton = new Button(

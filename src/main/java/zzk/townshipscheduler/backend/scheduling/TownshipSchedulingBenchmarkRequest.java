@@ -21,7 +21,7 @@ public class TownshipSchedulingBenchmarkRequest {
     public static enum BenchmarkSize {
         SELF(1), SMALL(3), BIG(5);
 
-        private int problemSize;
+        private final int problemSize;
 
         BenchmarkSize(int problemSize) {
             this.problemSize = problemSize;

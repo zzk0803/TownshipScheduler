@@ -12,13 +12,13 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.signals.Signal;
-import com.vaadin.flow.signals.local.AbstractLocalSignal;
-import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.ui.pojo.scheduling.*;
-import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.ProductAmountBillViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportArrangeDateTimeGroupViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportFactoryGroupViewModel;
+import zzk.townshipscheduler.ui.pojo.scheduling.SchedulingReportGroupsViewModel;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
 import java.io.Serial;

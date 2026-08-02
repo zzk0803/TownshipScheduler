@@ -1,17 +1,8 @@
 package zzk.townshipscheduler.backend;
 
 public enum OrderEntityScheduleState {
-    NONE(0, "Just Create"),
-    HAS_ARRANGE(1, "Arranged Schedule,Not Finish"),
-    HAS_SCHEDULE(2, "Schedule Complete"),
-    ;
+    NONE,
+    HAS_ARRANGE,
+    HAS_SCHEDULE
 
-    private final int code;
-
-    private final String string;
-
-    OrderEntityScheduleState(int code, String string) {
-        this.code = code;
-        this.string = string;
-    }
 }

@@ -7,7 +7,6 @@ import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 public class ProducingArrangementPlanningFactoryConstructionHeuristicChangeMoveSelectionFilter

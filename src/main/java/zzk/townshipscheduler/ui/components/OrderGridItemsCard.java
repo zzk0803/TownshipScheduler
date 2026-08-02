@@ -7,11 +7,9 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class OrderGridItemsCard extends HorizontalLayout {
 

@@ -11,9 +11,9 @@ import org.jgrapht.graph.builder.GraphTypeBuilder;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
 import zzk.townshipscheduler.backend.persistence.ProductManufactureInfoEntity;
 import zzk.townshipscheduler.backend.persistence.ProductMaterialsRelation;
-import zzk.townshipscheduler.backend.persistence.ProductEntityRepository;
 
 import java.io.Serial;
 import java.time.Duration;

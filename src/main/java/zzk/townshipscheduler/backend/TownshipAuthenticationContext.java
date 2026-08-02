@@ -16,6 +16,7 @@ import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntityRepository;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @SpringComponent
@@ -35,16 +36,22 @@ public class TownshipAuthenticationContext {
     public AccountEntity getUserDetails() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof AccountEntity accountEntity) {
-            return accountEntity;
-        } else {
+        if (Objects.isNull(authentication)) {
             return null;
         }
+        Object principal = authentication.getPrincipal();
+        return principal instanceof AccountEntity accountEntity
+                ? accountEntity
+                : null;
     }
 
     public String getUsername() {
-        var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication authentication = SecurityContextHolder.getContext()
+                .getAuthentication();
+        if (authentication == null) {
+            return "";
+        }
+        var principal = authentication.getPrincipal();
         return switch (principal) {
             case AccountEntity accountEntity -> accountEntity.getUsername();
             case null, default -> ""; // Anonymous or no authentication.

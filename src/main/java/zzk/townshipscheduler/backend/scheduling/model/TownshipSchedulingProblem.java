@@ -32,6 +32,9 @@ public class TownshipSchedulingProblem implements Serializable {
     private List<SchedulingProduct> schedulingProductList;
 
     @ProblemFactCollectionProperty
+    private List<SchedulingProducingExecutionMode> schedulingProducingExecutionModeList;
+
+    @ProblemFactCollectionProperty
     private List<SchedulingFactoryInfo> schedulingFactoryInfoList;
 
     @ProblemFactCollectionProperty
@@ -65,6 +68,7 @@ public class TownshipSchedulingProblem implements Serializable {
     public TownshipSchedulingProblem(
             String uuid,
             List<SchedulingProduct> schedulingProductList,
+            List<SchedulingProducingExecutionMode> schedulingProducingExecutionModeList,
             List<SchedulingFactoryInfo> schedulingFactoryInfoList,
             List<SchedulingOrder> schedulingOrderList,
             List<SchedulingFactoryInstance> schedulingFactoryInstanceList,
@@ -78,6 +82,7 @@ public class TownshipSchedulingProblem implements Serializable {
     ) {
         this.uuid = uuid;
         this.schedulingProductList = schedulingProductList;
+        this.schedulingProducingExecutionModeList = schedulingProducingExecutionModeList;
         this.schedulingFactoryInfoList = schedulingFactoryInfoList;
         this.schedulingOrderList = schedulingOrderList;
         this.schedulingFactoryInstanceList = schedulingFactoryInstanceList;

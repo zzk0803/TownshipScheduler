@@ -173,24 +173,23 @@ public class ProductsAmountPanel
                     );
             listDataView.addFilter(
                     fieldFactoryInfoEntity -> {
-                        boolean result = false;
                         RadioButtonGroupValues value = changed.getValue();
                         switch (value) {
                             case ATOMIC -> {
-                                result = isAtomicProductFilter(fieldFactoryInfoEntity);
+                                return isAtomicProductFilter(fieldFactoryInfoEntity);
                             }
                             case INTERMEDIATE -> {
-                                result = !isAtomicProductFilter(fieldFactoryInfoEntity)
-                                         && !isFinalProductFilter(fieldFactoryInfoEntity);
+                                return !isAtomicProductFilter(fieldFactoryInfoEntity)
+                                       && !isFinalProductFilter(fieldFactoryInfoEntity);
                             }
                             case FINAL -> {
-                                result = isFinalProductFilter(fieldFactoryInfoEntity);
+                                return isFinalProductFilter(fieldFactoryInfoEntity);
                             }
                             case EVERYTHING -> {
-                                return result = true;
+                                return true;
                             }
                         }
-                        return result;
+                        return false;
                     });
 
             listDataView.refreshAll();
@@ -276,16 +275,10 @@ public class ProductsAmountPanel
     }
 
     private enum RadioButtonGroupValues {
-        EVERYTHING("Everything"),
-        ATOMIC("Atomic"),
-        INTERMEDIATE("Intermediate"),
-        FINAL("Final");
-
-        private final String string;
-
-        RadioButtonGroupValues(String string) {
-            this.string = string;
-        }
+        EVERYTHING,
+        ATOMIC,
+        INTERMEDIATE,
+        FINAL
     }
 
     public static class ProductCardProductSpanClickedEvent

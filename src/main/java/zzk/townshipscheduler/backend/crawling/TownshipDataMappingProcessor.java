@@ -60,8 +60,8 @@ class TownshipDataMappingProcessor {
                                 }
                             }
                         }
-                        case "goods[colspan:1]",
-                             "Goods[colspan:1]" -> {//include symbol '[' ']',so str.tolowercase() doesn't work??
+                        //include symbol '[' ']',so str.tolowercase() doesn't work??
+                        case "goods[colspan:1]", "Goods[colspan:1]" -> {
                             valueAsDataCell.getImageString().ifPresent(imgUrl -> {
                                 productEntity.setCrawledAsImage(wikiCrawledEntityRepository.queryEntityBearImageByHtml(imgUrl));
                             });

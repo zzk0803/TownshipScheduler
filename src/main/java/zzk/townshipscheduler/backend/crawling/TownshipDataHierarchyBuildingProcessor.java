@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.ProductHierarchyAndGraphComponent;
+import zzk.townshipscheduler.backend.persistence.*;
 
 import java.util.*;
 import java.util.stream.Collectors;

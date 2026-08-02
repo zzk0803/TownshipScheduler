@@ -1,7 +1,5 @@
 package zzk.townshipscheduler.backend.persistence;
 
-import zzk.townshipscheduler.backend.scheduling.model.SchedulingProduct;
-
 import java.io.Serial;
 import java.util.LinkedHashMap;
 import java.util.Map;
