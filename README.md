@@ -14,67 +14,64 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 
 本项目部分游戏数据（如产品配方、生产时间、工厂类型等）来源于公开的 [Goods|Township Fandom Wiki](https://township.fandom.com/wiki/Goods#All_Goods_List)。  
 这些数据仅用于**个人学习和非商业研究目的**
-数据仅在首次运行时爬取一次，用于初始化本地数据库，项目的基本功能依赖于此。  
+数据仅在首次运行时爬取一次，用于初始化本地数据库。
+或者可以通过下载的离线网页(mhtml)解析解析以完成数据准备。
+没有这些数据，后面的功能根本无从谈起。
 
 本项目**不隶属于 Playrix（Township 开发商）或 Fandom**，所有游戏相关内容版权归原作者所有。  
 如有任何版权疑虑，请联系作者，我们将立即处理。
 
 ## 建模背景
+游戏是模拟经营游戏，核心玩法是依据给订单做相应的生产：比如你看到火车上有一个订单，要有6个牛奶。而牛奶需要牛饲料，而牛饲料需要小麦和玉米。所以你需要先生产小麦和玉米，完成后生产牛饲料，最后才生产牛奶。所以可以说：
 * 订单具有不同的种类，不同的种类的订单具有不同的奖励和限制（比如时间窗口限制）。
 * 订单包含若干物品及其物品数量。
 * 物品具有原材料结构，一些物品既是产品也作为原材料使用。
-* 物品的生产依赖特定的工厂，物品的生产需要时间。。
+* 物品的生产依赖特定的工厂，物品的生产需要时间。
 * 工厂可以生产一系列物品.
 * 有的工厂能同时生产多个物品。大多数工厂具有生产队列，一次只能生产一个物品，生产完成后接着生产下一个。
 * 工厂的生产队列任务数量有限制。
-* 玩家们一般每隔一段时间上线（比如每隔5分钟、每隔1小时），(他/她)上线一次需要尽可能安排多的任务，以保证完成游戏目标
-* 其他游戏内的特性，如库存限制，工厂收割窗口及其数量限制，订单的手动完成，加速工具，金币等暂不考虑。
+* 玩家们一般每隔一段时间上线（比如每隔10分钟、每隔半小时、每隔1小时），(他/她)上线一次需要尽可能安排多的任务，以保证完成游戏目标。
+* 其他游戏内的特性，如产品的收割、仓库大小限制，工厂收割窗口及其数量限制，订单的手动完成，加速工具，金币等暂不考虑。
 
-## 技术亮点与难点
+## 核心问题
 
-本项目运用 Timefold 的基本特性，通过`@ShadowVariable` 与自定义`VariableListener`动态维护的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)时间顺序与实际执行时段，模拟了ChainVariable或PlanningListVariable的顺序特性，实现了链式时间模型和多层排序（时间+id)，解决 Township 游戏调度问题：
+通常来说，要实现带前置依赖的链式时间模式需要使用`@PlanningListVariable`配合`@ShadowVariable`综合考虑前置任务的结束时间来当前任务计算开始时间和结束时间。
+但在这个场景中，一个过于具体的时间并没有意义，取而代之的是*时间点*，这些时间点如同建模背景所说的是具有相同的间隔的。 
 
-* 混合工厂模型：系统同时处理两种工厂类型——队列型（如面包房、饲料厂，织布厂等任务按顺序执行）和槽位型（如田地、农场等）。 
+总之，玩家关心的是它每个*时间点*应该做哪些事情，才能实现满足订单任务。
+而求解器需要关心每个时间点的安排，它们各自的生产时间和结束时间是什么，别且不能违反相关约束的同时要尽早尽快。
 
-* 动态时间窗约束：生产活动[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)的执行时间不仅取决于工厂类型，还受到玩家自定义的工作日历和睡眠时间的限制。这使得时间变量的值域和约束计算变得动态且复杂。我的实现是使用 `@ShadowVariable` 和自定义的 `VariableListener` ([SchedulingProducingArrangementFactorySequenceVariableListener.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/utility/SchedulingProducingArrangementFactorySequenceVariableListener.java)) 委托`@PlanningEntity`[SchedulingFactoryInstance.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingFactoryInstance.java)维护TreeMap来动态计算每个生产活动的实际开始和结束时间并保持datetime及其生产队列的顺序。 
+将*时间点*视为`PlanningVariable`，同时还需要实现链式时间模式。经过一番折腾，我能找到的解决方法是通过[SchedulingPlayer.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingPlayer.java)持有所有的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)，在`@ShadowVariable`计算的时候先以*时间点*排序再计算所有的生产时间和完成时间，以Map的形式保存。之后每个[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)再通过`@ShadowVariable`查询自己的生产时间和完成时间，从而解决了这个问题。如果将来某一天`@PlanningListVariable`支持以另外一个`@PlanningVariable`为准安排顺序我就不用这么大费周章了。
 
-* 依赖关系：生产活动之间存在多层次的前置依赖（例如，生产面包需要先生产小麦和面粉），在求解器开始之前完成计算。 
-
-* 多目标优化：系统在满足所有硬性约束的前提下，通过软约束进行多目标优化，包括最小化订单完成时间、尽早安排生产以及避免在玩家休息时间安排任务等。
+## 其他技术点
+* 通过`jakarta.mail`解析mhtml。
+* 通过`jsoup`完成网页结构的解析。
+* 通过`commons-text`和`evo-inflector`处理英文单词，以便于BOM关系保存到JPA实体
+* 通过`jgrapht`帮助保存BOM关系
+* 实践了JPA的*EntityGraph*优化查询性能
+* 实践了Vaadin的Signal实现
+* vaadin自定义组件以及Lit自定义组件
+* 使用了`vis-timeline`实现了简单的甘特图
 
 ## Township Scheduler 约束 
 
-1. **forbidBrokenFactoryAbility**：硬性约束，避免【生产活动】超出【工厂】的队列容量限制
-2. **forbidBrokenPrerequisiteArrangement**：硬性约束，避免【生产活动】违反先后顺序
-3. **shouldNotBrokenDeadlineOrder**：容忍约束，避免【生产活动】超过特定的违约时间
-4. **shouldNotBrokenCalendarEnd**：容忍约束，避免【生产活动】超过work-calendar的时间
-5. **preferNotArrangeInPlayerSleepTime**：优化约束，【生产活动】不能在“玩家”睡觉时间排
-6. **preferMinimizeOrderCompletedDateTime**：优化约束，最小化订单完成时间
-7. **preferArrangeDateTimeAsSoonAsPassible**：优化约束，最好安排【生产活动】最早越好
-8. **preferMinimizeProductArrangeDateTimeSlotUsage**：优化约束，最好在一个[SchedulingDateTimeSlot.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingDateTimeSlot.java)里尽可能多的安排
+1. **forbidBrokenFactoryAbility**：硬约束，避免【生产活动】超出【工厂】的队列容量限制
+2. **forbidBrokenPrerequisiteArrangement**：硬约束，避免【生产活动】违反先后顺序
+3. **shouldNotBrokenDeadlineOrder**：软约束，避免【生产活动】超过特定的违约时间
+4. **shouldNotBrokenCalendarEnd**：软约束，避免【生产活动】超过work-calendar的时间
+5. **preferNotArrangeInPlayerSleepTime**：软约束，【生产活动】不能在“玩家”睡觉时间排
+6. **preferMinimizeOrderCompletedDateTime**：软约束，最小化订单完成时间
+7. **preferArrangeDateTimeAsSoonAsPassible**：软约束，最好安排【生产活动】最早越好
+8. **preferMinimizeProductArrangeDateTimeSlotUsage**：软约束，最好在一个[SchedulingDateTimeSlot.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingDateTimeSlot.java)里尽可能多的安排
+9**preferLoadBalanceArrangementsInFactoryInstance**：软约束，在多实例工厂中实现负载均衡
 
 ## 技术栈
 
 - **后端**：Spring Boot
 - **前端**：Vaadin Platform
 - **求解器**：Timefold
-- **数据库**：H2 内存数据库（开发环境）
+- **数据库**：H2 内存数据库
 - **构建工具**：Maven
-
-## 项目结构概览
-src/main/java/zzk/townshipscheduler/
-``` text
-├── backend/               # 核心业务逻辑与数据持久层
-│   ├── crawling/          # 从 Township Wiki 爬取并处理游戏数据
-│   ├── dao/               # Spring Data JPA 仓库
-│   ├── persistence/       # JPA 实体定义
-│   └── service/           # 业务服务
-├── scheduling/            # **Timefold 核心模块**
-│   ├── model/             # 规划实体 (`@PlanningEntity`) 和解决方案 (`@PlanningSolution`)
-│   ├── utility/           # 自定义 `VariableListener` 和比较器
-│   └── score/             # **约束定义 (`ConstraintProvider`)**
-└── ui/                    # Vaadin 前端视图与组件
-```
 
 ## 功能模块
 
@@ -88,6 +85,7 @@ src/main/java/zzk/townshipscheduler/
 ![(3)scheduling_view_brief_article.png](readme/%283%29scheduling_view_brief_article.png)
 ![(4)scheduling_view_treegrid_article.png](readme/%284%29scheduling_view_treegrid_article.png)
 ![(5)scheduling_view_timeline_by_factory.png](readme/%285%29scheduling_view_timeline.png)
+![(6)scheduling_view_report.png](readme/%286%29scheduling_view_report.png)
 
 ## 运行步骤
 1. **克隆项目**
@@ -96,7 +94,3 @@ src/main/java/zzk/townshipscheduler/
     mvn clean install
 3. **运行项目**
     mvn spring-boot:run
-
-## 配置说明
-- **数据库配置**：`src/main/resources/application.properties`
-- **调度引擎配置**：`src/main/resources/timefold-township-config.xml`
