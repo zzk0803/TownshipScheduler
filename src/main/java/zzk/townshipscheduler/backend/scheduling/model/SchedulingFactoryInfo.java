@@ -130,10 +130,6 @@ public class SchedulingFactoryInfo
                 '}';
     }
 
-    public boolean weatherFactoryProducingTypeIsSlot() {
-        return getProducingStructureType() == ProducingStructureType.SLOT;
-    }
-
     @Value
     public static class Id
             implements Comparable<Id>, Serializable {

@@ -69,7 +69,6 @@ export class ByUnitTimelineComponents
                         timeAxis: {scale: 'minute', step: this.dateTimeSlotSizeInMinute},
                         orientation: {axis: 'top'},
                         zoomKey: 'ctrlKey',
-                        verticalScroll: true,
                         stackSubgroups: false,
                         stack: false,
                         tooltip: {
