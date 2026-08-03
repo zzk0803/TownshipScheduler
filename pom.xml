@@ -12,7 +12,7 @@
 
     <properties>
         <java.version>26</java.version>
-        <vaadin.version>25.2.4</vaadin.version>
+        <vaadin.version>25.2.5</vaadin.version>
         <timefold-solver.version>2.4.0</timefold-solver.version>
     </properties>
 
@@ -351,7 +351,7 @@
                         <configuration>
                             <arguments>
                                 <arguments>
-                                    <argument>-XX:+UseParallelGC</argument>
+                                    <argument>-XX:+UseG1GC</argument>
                                     <argument>-XX:+UseCompactObjectHeaders</argument>
                                     <argument>-Xms512m</argument>
                                     <argument>-Xmx2g</argument>
