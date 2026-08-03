@@ -18,15 +18,17 @@ import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SchedulingFactoryInfo implements Serializable {
+public class SchedulingFactoryInfo
+        implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -3411137456098907358L;
 
     @JsonUnwrapped
     @EqualsAndHashCode.Include
-    private Id id;
+    private long id;
 
+    @EqualsAndHashCode.Include
     private String categoryName;
 
     private int level;
@@ -111,17 +113,30 @@ public class SchedulingFactoryInfo implements Serializable {
                 ", level=" + level +
                 ", portfolio=" + portfolio.stream()
                 .map(SchedulingProduct::getName)
-                .collect(Collectors.joining(",", "[", "]")) +
+                .collect(Collectors.joining(
+                        ",",
+                        "[",
+                        "]"
+                )) +
                 ", producingStructureType=" + producingStructureType +
                 ", factoryInstances=" + factoryInstances.stream()
                 .map(SchedulingFactoryInstance::getFactoryReadableIdentifier)
                 .collect(
-                        Collectors.joining(",", "[", "]")) +
+                        Collectors.joining(
+                                ",",
+                                "[",
+                                "]"
+                        )) +
                 '}';
     }
 
+    public boolean weatherFactoryProducingTypeIsSlot() {
+        return getProducingStructureType() == ProducingStructureType.SLOT;
+    }
+
     @Value
-    public static class Id implements Comparable<Id>, Serializable {
+    public static class Id
+            implements Comparable<Id>, Serializable {
 
         @Serial
         private static final long serialVersionUID = 2278621691459222451L;
@@ -148,7 +163,10 @@ public class SchedulingFactoryInfo implements Serializable {
 
         @Override
         public int compareTo(Id that) {
-            return Long.compare(this.value, that.value);
+            return Long.compare(
+                    this.value,
+                    that.value
+            );
         }
 
         @Override
@@ -158,7 +176,9 @@ public class SchedulingFactoryInfo implements Serializable {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Id id)) return false;
+            if (!(o instanceof Id id)) {
+                return false;
+            }
 
             return getValue() == id.getValue();
         }

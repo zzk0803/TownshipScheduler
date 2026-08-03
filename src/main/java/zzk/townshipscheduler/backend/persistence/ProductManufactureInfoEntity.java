@@ -10,30 +10,71 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
 @Setter
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
+@NamedEntityGraph(
+        name = "product-manufacture-info.g.full",
+        includeAllAttributes = true,
+        attributeNodes = {
+                @NamedAttributeNode(
+                        value = "productEntity",
+                        subgraph = "productEntity.suggraph"
+                ),
+                @NamedAttributeNode(
+                        value = "productMaterialsRelations",
+                        subgraph = "productMaterialsRelation.subgraph"
+                ),
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "productEntity.suggraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "crawledAsImage",
+                                        subgraph = "wikiCrawledEntity.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "manufactureInfoEntities"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "wikiCrawledEntity.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "imageBytes")
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "productMaterialsRelation.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "productManufactureInfo"),
+                                @NamedAttributeNode(value = "material")
+                        }
+                )
+        }
+)
 public class ProductManufactureInfoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-    )
-    private ProductEntity productEntity;
-
-    private Duration producingDuration;
+    private Duration producingDuration = Duration.ZERO;
 
     private Integer amountWhenCreated = 1;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "jointable_manufacture_material")
-    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private ProductEntity productEntity;
+
+    @OneToMany(
+            mappedBy = "productManufactureInfo",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
+    )
     private Set<ProductMaterialsRelation> productMaterialsRelations = new HashSet<>();
 
     public boolean attacheProductMaterialsRelation(ProductMaterialsRelation productMaterialsRelation) {
@@ -46,26 +87,43 @@ public class ProductManufactureInfoEntity {
         return productMaterialsRelations.remove(productMaterialsRelation);
     }
 
-    @Override
-    public final boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null) return false;
-        Class<?> oEffectiveClass = object instanceof HibernateProxy
-                ? ((HibernateProxy) object).getHibernateLazyInitializer().getPersistentClass()
-                : object.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
-                : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
-        ProductManufactureInfoEntity that = (ProductManufactureInfoEntity) object;
-        return getId() != null && Objects.equals(getId(), that.getId());
+    public ProductAmountBill toProductAmountBill() {
+        return ProductAmountBill.of(productMaterialsRelations.stream()
+                .collect(Collectors.toMap(
+                                ProductMaterialsRelation::getMaterial,
+                                ProductMaterialsRelation::getAmount,
+                                Integer::sum
+                        )
+                ));
     }
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
                 .getPersistentClass()
-                .hashCode() : getClass().hashCode();
+                .hashCode()
+                : getClass().hashCode();
+    }
+
+    @Override
+    public final boolean equals(Object object) {
+        if (this == object)
+            return true;
+        if (object == null)
+            return false;
+        Class<?> oEffectiveClass = object instanceof HibernateProxy
+                ? ((HibernateProxy) object).getHibernateLazyInitializer()
+                .getPersistentClass()
+                : object.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                .getPersistentClass()
+                : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
+        ProductManufactureInfoEntity that = (ProductManufactureInfoEntity) object;
+        return getId() != null && Objects.equals(getId(), that.getId());
     }
 
 }

@@ -20,25 +20,37 @@ import java.util.Set;
 @DynamicInsert
 @NamedEntityGraph(
         name = "products.g.full",
+        includeAllAttributes = true,
         attributeNodes = {
                 @NamedAttributeNode(
                         value = "crawledAsImage",
-                        subgraph = "products.g.full.image"
+                        subgraph = "crawledAsImage.subgraph"
                 ),
-                @NamedAttributeNode("fieldFactoryInfo"),
                 @NamedAttributeNode(
                         value = "manufactureInfoEntities",
-                        subgraph = "products.g.full.manufacture"
+                        subgraph = "manufactureInfoEntities.subgraph"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "products.g.full.image",
+                        name = "crawledAsImage.subgraph",
                         attributeNodes = @NamedAttributeNode("imageBytes")
                 ),
                 @NamedSubgraph(
-                        name = "products.g.full.manufacture",
-                        attributeNodes = @NamedAttributeNode("productMaterialsRelations")
+                        name = "manufactureInfoEntities.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(
+                                        value = "productMaterialsRelations",
+                                        subgraph = "productMaterialsRelations.subgraph"
+                                )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "productMaterialsRelations.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode("material"),
+                                @NamedAttributeNode("productManufactureInfo"),
+                        }
                 )
         }
 )
@@ -51,17 +63,12 @@ public class ProductEntity {
     @Transient
     private transient ProductId productId;
 
+    @Column(unique = true)
     private String name = "";
 
     private String nameForMaterial = "";
 
     private String category = "";
-
-    @ManyToOne
-    @JoinColumn(
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-    )
-    private FieldFactoryInfoEntity fieldFactoryInfo;
 
     private Integer level = 1;
 
@@ -81,42 +88,89 @@ public class ProductEntity {
 
     private String durationString = "";
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "jointable_product_manufacture")
+    @OneToMany(
+            mappedBy = "productEntity",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}
+    )
+//    @JoinTable(
+//            name = "jointable_product_manufactureInfo",
+//            joinColumns = @JoinColumn(
+//                    name = "product_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            ),
+//            inverseJoinColumns = @JoinColumn(
+//                    name = "manufactureInfo_id",
+//                    foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+//            )
+//    )
     private Set<ProductManufactureInfoEntity> manufactureInfoEntities = new HashSet<>();
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private WikiCrawledEntity crawledAsImage;
 
-    public boolean attacheProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+    @ManyToOne
+    @JoinColumn(foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private FieldFactoryInfoEntity fieldFactoryInfoEntity;
+
+    @PostLoad
+    public void postLoad() {
+        setProductId(ProductId.of(getId()));
+    }
+
+    public boolean addProductManufactureInfos(Collection<? extends ProductManufactureInfoEntity> productManufactureInfoEntities) {
+        return productManufactureInfoEntities.stream()
+                .allMatch(this::addProductManufactureInfo);
+    }
+
+    public boolean addProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
         productManufactureInfo.setProductEntity(this);
         return manufactureInfoEntities.add(productManufactureInfo);
     }
 
-    public boolean detachProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+    public synchronized void clearProductManufactureInfos() {
+        for (ProductManufactureInfoEntity productManufactureInfoEntity : this.manufactureInfoEntities) {
+            productManufactureInfoEntity.setProductEntity(null);
+        }
+        this.manufactureInfoEntities.clear();
+    }
+
+    public boolean removeProductManufactureInfo(ProductManufactureInfoEntity productManufactureInfo) {
+        if (!this.getManufactureInfoEntities()
+                .contains(productManufactureInfo)) {
+            return false;
+        }
         productManufactureInfo.setProductEntity(null);
-        return manufactureInfoEntities.remove(productManufactureInfo);
+        return this.manufactureInfoEntities.remove(productManufactureInfo);
     }
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
                 .getPersistentClass()
-                .hashCode() : getClass().hashCode();
+                .hashCode()
+                : getClass().hashCode();
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer()
-                .getPersistentClass() : o.getClass();
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy
+                ? ((HibernateProxy) o).getHibernateLazyInitializer()
+                .getPersistentClass()
+                : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
-                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                ? ((HibernateProxy) this).getHibernateLazyInitializer()
+                .getPersistentClass()
                 : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         ProductEntity productEntity = (ProductEntity) o;
-        return getId() != null && Objects.equals(getId(), productEntity.getId());
+        return (getId() != null && Objects.equals(getId(), productEntity.getId())) || (getName() != null && Objects.equals(getName(), productEntity.getName()));
     }
 
     public ProductId getProductId() {
@@ -126,7 +180,6 @@ public class ProductEntity {
     }
 
     @Data
-    @Embeddable
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ProductId {

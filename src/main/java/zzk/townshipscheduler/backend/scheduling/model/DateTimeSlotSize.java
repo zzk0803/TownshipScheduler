@@ -7,7 +7,8 @@ public enum DateTimeSlotSize implements Serializable {
     HALF_HOUR(30),
     HOUR(60),
     TWO_HOUR(120),
-    THREE_HOUR(180);
+    THREE_HOUR(180),
+    SIX_HOUR(360);
 
     private final int minute;
 
@@ -26,6 +27,7 @@ public enum DateTimeSlotSize implements Serializable {
             case 60 -> HOUR;
             case 120 -> TWO_HOUR;
             case 180 -> THREE_HOUR;
+            case 360 -> SIX_HOUR;
             default -> throw new IllegalStateException("Unexpected value: " + minute);
         };
     }

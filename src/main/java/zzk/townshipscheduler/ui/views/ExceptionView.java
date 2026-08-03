@@ -9,10 +9,12 @@ import com.vaadin.flow.router.HasErrorParameter;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.HttpStatusCode;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+@Slf4j
 @Route(layout = MainLayout.class)
 @AnonymousAllowed
 public class ExceptionView
@@ -33,7 +35,7 @@ public class ExceptionView
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter, true);
         exception.printStackTrace(printWriter);
-        exception.printStackTrace();
+        log.error(exception.toString());
         errorShowLayout.add(new Paragraph(stringWriter.toString()));
         return HttpStatusCode.INTERNAL_SERVER_ERROR.getCode();
     }

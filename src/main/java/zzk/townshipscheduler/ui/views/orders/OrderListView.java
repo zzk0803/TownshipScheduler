@@ -16,32 +16,43 @@ import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
+import lombok.Getter;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.ui.components.OrderGridItemsCard;
-import zzk.townshipscheduler.ui.utility.UiEventBus;
 
+import java.io.Serial;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Route("/orders")
 @Menu(title = "Orders", order = 5.00d)
 @PermitAll
-public class OrderListView extends VerticalLayout {
+@Getter
+public class OrderListView
+        extends VerticalLayout {
 
-    private final OrderListViewPresenter presenter;
+    @Serial
+    private static final long serialVersionUID = -1639218728062772870L;
+
+    private final OrderListViewPresenter orderListViewPresenter;
 
     private final Grid<OrderEntity> grid;
 
+    private final ListSignal<OrderEntity> orderListSignal = new ListSignal<>();
+
     public OrderListView(
-            OrderListViewPresenter presenter,
+            OrderListViewPresenter orderListViewPresenter,
             TownshipAuthenticationContext townshipAuthenticationContext
     ) {
-        this.presenter = presenter;
-        presenter.setView(this);
-        presenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
+        this.orderListViewPresenter = orderListViewPresenter;
+        this.orderListViewPresenter.setView(this);
+        this.orderListViewPresenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
 
         style();
 
@@ -51,27 +62,26 @@ public class OrderListView extends VerticalLayout {
         grid.addComponentColumn(this::buildBillCard).setFlexGrow(1);
         addAndExpand(grid);
 
+        Signal.effect(
+                grid,
+                () -> {
+                    grid.setItems(orderListSignal.getValues().toList());
+                }
+        );
 
         Button addBillButton = new Button(VaadinIcon.PLUS.create());
         addBillButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
         addBillButton.setWidth("5rem");
         addBillButton.addClickListener(addBillClicked -> {
+            AtomicReference<Dialog> dialogReference = new AtomicReference<>();
             Dialog dialog = new Dialog(
                     new OrderFormView(
-                            this.presenter.getOrderEntityRepository(),
-                            this.presenter.getProductEntityRepository(),
-                            this.presenter.getFieldFactoryInfoEntityRepository(),
-                            townshipAuthenticationContext
+                            this,
+                            this.orderListViewPresenter,
+                            dialogReference
                     )
             );
-            UiEventBus.subscribe(
-                    dialog,
-                    OrderFormView.OrderFormViewHasSubmitEvent.class,
-                    componentEvent -> {
-                        dialog.close();
-                        presenter.fillGrid(grid);
-                    }
-            );
+            dialogReference.set(dialog);
             dialog.setSizeFull();
             dialog.open();
         });
@@ -85,44 +95,64 @@ public class OrderListView extends VerticalLayout {
         setMargin(false);
     }
 
-    public Component buildBillCard(OrderEntity orderView) {
+    public Component buildBillCard(OrderEntity orderEntity) {
         HorizontalLayout card = new HorizontalLayout();
         card.setDefaultVerticalComponentAlignment(Alignment.CENTER);
         card.addClassNames("card");
         card.getThemeList().add("space-s");
 
-        if (orderView.isBearDeadline()) {
-            LocalDateTime deadLine = orderView.getDeadLine();
+        if (orderEntity.isBearDeadline()) {
+            LocalDateTime deadLine = orderEntity.getDeadLine();
             DateTimePicker dateTimePicker = new DateTimePicker(deadLine);
             dateTimePicker.setLabel("Dead Line");
             dateTimePicker.setReadOnly(true);
 
             card.add(
                     createCardInnerDiv(
-                            strAsSpan(orderView.getOrderType().name()),
+                            strAsSpan(orderEntity.getOrderType().name()),
                             dateTimePicker
                     )
             );
         } else {
             card.add(
                     createCardInnerDiv(
-                            strAsSpan(orderView.getOrderType().name()),
+                            strAsSpan(orderEntity.getOrderType().name()),
                             strAsSpan("No Deadline")
                     )
             );
         }
 
-        Scroller scroller = new Scroller(new OrderGridItemsCard(orderView));
+        Scroller scroller = new Scroller(new OrderGridItemsCard(orderEntity));
         scroller.setWidthFull();
         scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
         card.addAndExpand(scroller);
 
         card.add(
-                new Button(
-                        VaadinIcon.CLOSE.create(),
-                        click -> {
-                            presenter.onBillDeleteClick(orderView);
-                        }
+                new HorizontalLayout(
+                        new Button(
+                                VaadinIcon.EDIT.create(),
+                                click -> {
+                                    AtomicReference<Dialog> dialogReference = new AtomicReference<>();
+                                    Dialog dialog = new Dialog(
+                                            new OrderFormView(
+                                                    this,
+                                                    this.orderListViewPresenter,
+                                                    dialogReference,
+                                                    orderEntity
+                                            )
+                                    );
+                                    dialogReference.set(dialog);
+                                    dialog.setSizeFull();
+                                    dialog.open();
+                                }
+                        ),
+                        new Button(
+                                VaadinIcon.CLOSE.create(),
+                                click -> {
+                                    this.orderListViewPresenter.removeOrder(orderEntity);
+                                    this.orderListViewPresenter.updateOrderListSignal();
+                                }
+                        )
                 )
         );
 
@@ -145,15 +175,11 @@ public class OrderListView extends VerticalLayout {
         return new Span(content);
     }
 
-
-    public void onBillDeleteDone() {
-        grid.getDataProvider().refreshAll();
-        grid.getListDataView().refreshAll();
-    }
-
     @Override
     protected void onAttach(AttachEvent attachEvent) {
-        presenter.fillGrid(grid);
+        if (this.getOrderListViewPresenter() != null) {
+            this.getOrderListViewPresenter().updateOrderListSignal();
+        }
     }
 
 }

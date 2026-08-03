@@ -1,43 +1,117 @@
 package zzk.townshipscheduler.ui.components;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.ClientCallable;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
-import zzk.townshipscheduler.backend.scheduling.model.*;
-import zzk.townshipscheduler.ui.pojo.LitSchedulingOrderVo;
-import zzk.townshipscheduler.ui.pojo.SchedulingFactoryInstanceVO;
-import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementUnitGroupVo;
-import zzk.townshipscheduler.ui.pojo.SchedulingProducingArrangementVO;
+import zzk.townshipscheduler.ui.pojo.scheduling.reactive.ReactiveTownshipSchedulingProblemViewModel;
+import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 import zzk.townshipscheduler.ui.views.scheduling.SchedulingViewPresenter;
 
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @Tag("scheduling-vis-timeline-panel")
-@NpmPackage(value = "vis-timeline", version = "8.5.1")
-@NpmPackage(value = "@js-joda/core", version = "6.0.1")
-@JsModule("./src/components/scheduling-vis-timeline-panel.ts")
-@JsModule("./src/components/by-factory-timeline-components.ts")
-@JsModule("./src/components/by-order-timeline-components.ts")
-@JsModule("./src/components/by-unit-timeline-components.ts")
-@JsModule("./src/components/lit-vis-timeline.ts")
-public class LitSchedulingVisTimelinePanel extends Component {
+@NpmPackage(value = "vis-timeline", version = "8.5.2")
+@NpmPackage(value = "@js-joda/core", version = "6.1.0")
+@JsModule("./components/scheduling-vis-timeline-panel.ts")
+@JsModule("./components/by-factory-timeline-components.ts")
+@JsModule("./components/by-order-timeline-components.ts")
+@JsModule("./components/by-unit-timeline-components.ts")
+@JsModule("./components/lit-vis-timeline.ts")
+public class LitSchedulingVisTimelinePanel
+        extends Component {
+
+    private final SchedulingView schedulingView;
 
     private final SchedulingViewPresenter schedulingViewPresenter;
 
-    public LitSchedulingVisTimelinePanel(SchedulingViewPresenter schedulingViewPresenter) {
+    public LitSchedulingVisTimelinePanel(
+            SchedulingView schedulingView,
+            SchedulingViewPresenter schedulingViewPresenter
+    ) {
+        this.schedulingView = schedulingView;
         this.schedulingViewPresenter = schedulingViewPresenter;
     }
 
     @Override
     protected void onAttach(AttachEvent attachEvent) {
-        pullScheduleResult();
+        getElement().bindProperty(
+                "schedulingProducingArrangements",
+                this.schedulingView.getLitSchedulingProducingArrangementVoListSignal(),
+                null
+        );
+
+        updateRemoteFull();
     }
 
-    @Override
-    protected void onDetach(DetachEvent detachEvent) {
-        super.onDetach(detachEvent);
+    public void updateRemoteFull() {
+        updateRemoteFull(this.schedulingViewPresenter.getTownshipSchedulingProblemViewModel());
+    }
+
+    private void updateRemoteFull(ReactiveTownshipSchedulingProblemViewModel problemViewModel) {
+        setPropertyObject(
+                "schedulingWorkCalendar",
+                problemViewModel.schedulingWorkCalendar()
+        );
+        setPropertyList(
+                "schedulingOrders",
+                problemViewModel.toLitOrderVoList()
+        );
+        setPropertyList(
+                "schedulingProducts",
+                Arrays.asList(problemViewModel.schedulingProductViewModels().toArray())
+        );
+        setPropertyList(
+                "schedulingFactoryInstances",
+                problemViewModel.toLitFactoryInstanceVoList()
+        );
+        //        setPropertyList(
+        //                "schedulingProducingArrangements",
+        //                problemViewModel.toLitSchedulingProducingArrangementVoList()
+        //        );
+        setPropertyList(
+                "schedulingProducingArrangementUnitGroups",
+                problemViewModel.toProducingArrangementUnitGroupVoList()
+        );
+        setPropertyNumber(
+                "dateTimeSlotSizeInMinute",
+                problemViewModel.dateTimeSlotDurationInMinute()
+        );
+
+    }
+
+    private void setPropertyObject(
+            String name,
+            Object object
+    ) {
+        getElement().setPropertyBean(
+                name,
+                object
+        );
+    }
+
+    private void setPropertyList(
+            String name,
+            List<?> listObject
+    ) {
+        getElement().setPropertyList(
+                name,
+                listObject
+        );
+    }
+
+    private void setPropertyNumber(
+            String name,
+            double value
+    ) {
+        getElement().setProperty(
+                name,
+                value
+        );
     }
 
     @ClientCallable
@@ -45,162 +119,14 @@ public class LitSchedulingVisTimelinePanel extends Component {
         updateRemoteFull();
     }
 
-    public void updateRemoteFull() {
-        updateRemoteFull(this.schedulingViewPresenter.getTownshipSchedulingProblem());
-    }
-
-    private void updateRemoteFull(TownshipSchedulingProblem townshipSchedulingProblem) {
-        setPropertyObject("schedulingWorkCalendar", townshipSchedulingProblem.getSchedulingWorkCalendar());
-        setPropertyList(
-                "schedulingOrders",
-                toOrderVo(townshipSchedulingProblem.getSchedulingOrderList())
-        );
-        setPropertyList(
-                "schedulingProducts",
-                townshipSchedulingProblem.getSchedulingProductList()
-        );
-        setPropertyList(
-                "schedulingFactoryInstances",
-                toFactoryInstanceVo(townshipSchedulingProblem.getSchedulingFactoryInstanceList())
-        );
-        setPropertyList(
-                "schedulingProducingArrangements",
-                toProducingArrangementVo(townshipSchedulingProblem.getSchedulingProducingArrangementList())
-        );
-        setPropertyList(
-                "schedulingProducingArrangementUnitGroups",
-                toProducingArrangementUnitGroupVo(townshipSchedulingProblem.getSchedulingProducingArrangementList())
-        );
-        setPropertyNumber(
-                "dateTimeSlotSizeInMinute",
-                townshipSchedulingProblem.getDateTimeSlotSize().getMinute()
-        );
-
-    }
-
-    private void setPropertyList(String name, List<?> listObject) {
-        getElement().setPropertyList(name, listObject);
-    }
-
-    private List<LitSchedulingOrderVo> toOrderVo(List<SchedulingOrder> schedulingOrderList) {
-        return schedulingOrderList.stream()
-                .map(schedulingOrder -> new LitSchedulingOrderVo(
-                        schedulingOrder.getId(),
-                        schedulingOrder.getOrderType().name(),
-                        Optional.ofNullable(schedulingOrder.getDeadline())
-                                .map(localDateTime -> localDateTime.format(
-                                        DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                                )
-                                .orElse("N/A")
-                ))
-                .toList();
-    }
-
-    private List<SchedulingFactoryInstanceVO> toFactoryInstanceVo(
-            List<SchedulingFactoryInstance> schedulingFactoryInstanceList
+    private void setPropertyMap(
+            String name,
+            Map<String, ?> map
     ) {
-        return schedulingFactoryInstanceList.stream()
-                .sorted(
-                        Comparator.comparing(
-                                schedulingFactoryInstance -> schedulingFactoryInstance.getSchedulingFactoryInfo()
-                                        .getLevel())
-                )
-                .map(schedulingFactoryInstance -> {
-                    Integer id = schedulingFactoryInstance.getId();
-                    String categoryName = schedulingFactoryInstance.getCategoryName();
-                    int seqNum = schedulingFactoryInstance.getSeqNum();
-                    int producingLength = schedulingFactoryInstance.getProducingLength();
-                    int reapWindowSize = schedulingFactoryInstance.getReapWindowSize();
-                    FactoryReadableIdentifier factoryReadableIdentifier
-                            = schedulingFactoryInstance.getFactoryReadableIdentifier();
-
-                    return new SchedulingFactoryInstanceVO(
-                            id,
-                            categoryName,
-                            seqNum,
-                            producingLength,
-                            reapWindowSize,
-                            factoryReadableIdentifier.toString()
-                    );
-                })
-                .toList();
-    }
-
-    private List<SchedulingProducingArrangementVO> toProducingArrangementVo(
-            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
-    ) {
-        return schedulingProducingArrangementList.stream()
-                .map(SchedulingProducingArrangementVO::new)
-                .toList();
-
-    }
-
-    private List<SchedulingProducingArrangementUnitGroupVo> toProducingArrangementUnitGroupVo(
-            Collection<SchedulingProducingArrangement> schedulingProducingArrangementList
-    ) {
-        Map<SchedulingOrder, List<SchedulingProducingArrangement>> orderArrangeMap
-                = schedulingProducingArrangementList.stream()
-                .filter(SchedulingProducingArrangement::isOrderDirect)
-                .collect(
-                        Collectors.groupingBy(SchedulingProducingArrangement::getSchedulingOrder)
-                );
-
-        return orderArrangeMap.entrySet().stream()
-                .map(
-                        orderAndArrangeList -> {
-                            SchedulingOrder schedulingOrder = orderAndArrangeList.getKey();
-                            List<SchedulingProducingArrangement> arrangeListValue = orderAndArrangeList.getValue();
-                            SchedulingProducingArrangementUnitGroupVo groupVo
-                                    = new SchedulingProducingArrangementUnitGroupVo(
-                                    schedulingOrder.getId(),
-                                    schedulingOrder.getOrderType().name()
-                            );
-
-                            Set<SchedulingProducingArrangementUnitGroupVo.NestedOrderProduct> nestedOrderProductSet = arrangeListValue.stream()
-                                    .map(schedulingProducingArrangement -> {
-                                        SchedulingProduct schedulingOrderProduct = schedulingProducingArrangement.getSchedulingOrderProduct();
-
-                                        return SchedulingProducingArrangementUnitGroupVo.NestedOrderProduct.of(
-                                                schedulingOrderProduct.getName(),
-                                                schedulingProducingArrangement.getId()
-                                        );
-                                    })
-                                    .collect(Collectors.toSet());
-
-                            groupVo.addAll(nestedOrderProductSet);
-                            return groupVo;
-                        }
-                )
-                .toList();
-    }
-
-    private void setPropertyNumber(String name, double value) {
-        getElement().setProperty(name, value);
-    }
-
-    private void setPropertyObject(String name, Object object) {
-        getElement().setPropertyBean(name, object);
-    }
-
-    public void updateRemoteArrangements() {
-        updateRemoteArrangements(
-                this.schedulingViewPresenter.getTownshipSchedulingProblem()
+        getElement().setPropertyMap(
+                name,
+                map
         );
-    }
-
-    private void updateRemoteArrangements(
-            TownshipSchedulingProblem townshipSchedulingProblem
-    ) {
-        setPropertyList(
-                "schedulingProducingArrangements",
-                toProducingArrangementVo(
-                        townshipSchedulingProblem.getSchedulingProducingArrangementList()
-                )
-        );
-    }
-
-    private void setPropertyMap(String name, Map<String, ?> map) {
-        getElement().setPropertyMap(name, map);
     }
 
 }

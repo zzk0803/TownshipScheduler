@@ -7,7 +7,8 @@ import lombok.ToString;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.IntStream;
 
 @Data
@@ -21,9 +22,9 @@ public class SchedulingProducingExecutionMode implements Serializable {
 
     @EqualsAndHashCode.Include
     @ToString.Include
-    private Integer id;
+    private int id;
 
-    private Long productManufactureInfoId;
+    private long productManufactureInfoId;
 
     private SchedulingProduct product;
 
@@ -39,7 +40,7 @@ public class SchedulingProducingExecutionMode implements Serializable {
     public SchedulingProducingExecutionMode() {
     }
 
-    public List<SchedulingProducingArrangement> materialsActions() {
+    public List<SchedulingProducingArrangement> generateMaterialsArrangements() {
         return boolAtomicProduct()
                 ? List.of()
                 : materials.entrySet().stream()
@@ -47,7 +48,7 @@ public class SchedulingProducingExecutionMode implements Serializable {
                             SchedulingProduct schedulingProduct = entry.getKey();
                             int amount = entry.getValue();
                             return IntStream.range(0, amount)
-                                    .mapToObj(_ -> schedulingProduct.calcFactoryActions(getProduct()))
+                                    .mapToObj(_ -> schedulingProduct.generateArrangements(getProduct()))
                                     .flatMap(Collection::stream);
                         })
                         .toList();

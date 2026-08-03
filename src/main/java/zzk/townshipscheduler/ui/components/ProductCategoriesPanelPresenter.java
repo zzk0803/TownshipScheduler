@@ -10,8 +10,8 @@
 //import org.springframework.data.domain.Sort;
 //import org.springframework.transaction.support.TransactionTemplate;
 //import zzk.townshipscheduler.backend.crawling.TownshipFandomCrawlingProcessFacade;
-//import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
-//import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
+//import zzk.townshipscheduler.backend.persistence.dao.ProductEntityRepository;
+//import zzk.townshipscheduler.backend.persistence.dao.WikiCrawledEntityRepository;
 //import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
 //import zzk.townshipscheduler.backend.persistence.ProductEntity;
 //import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;

@@ -8,9 +8,9 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 
 public class TriggerButton extends Composite<HorizontalLayout> {
 
-    private Button state1Btn;
+    private final Button state1Btn;
 
-    private Button state2Btn;
+    private final Button state2Btn;
 
     public TriggerButton(Button state1Btn, Button state2Btn) {
         this.state1Btn = state1Btn;

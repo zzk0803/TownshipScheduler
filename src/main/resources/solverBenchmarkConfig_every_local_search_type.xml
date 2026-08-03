@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plannerBenchmark xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns="https://timefold.ai/xsd/benchmark"
+                  xsi:schemaLocation="https://timefold.ai/xsd/benchmark https://timefold.ai/xsd/benchmark/benchmark.xsd">
+    <name>TownshipSchedulingProblemBenchmark</name>
+
+    <benchmarkDirectory>township-scheduler-benchmark</benchmarkDirectory>
+
+    <parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
+
+    <inheritedSolverBenchmark>
+        <solver>
+
+            <solutionClass>
+                zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem
+            </solutionClass>
+            <entityClass>
+                zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
+            </entityClass>
+            <entityClass>
+                zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
+            </entityClass>
+            <entityClass>
+                zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot
+            </entityClass>
+            <entityClass>
+                zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayer
+            </entityClass>
+
+            <scoreDirectorFactory>
+                <constraintProviderClass>
+                    zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider
+                </constraintProviderClass>
+                <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
+            </scoreDirectorFactory>
+
+            <termination>
+                <minutesSpentLimit>5</minutesSpentLimit>
+            </termination>
+
+        </solver>
+
+        <problemBenchmarks>
+
+            <problemStatisticType>SCORE_CALCULATION_SPEED</problemStatisticType>
+            <problemStatisticType>MOVE_EVALUATION_SPEED</problemStatisticType>
+            <problemStatisticType>MEMORY_USE</problemStatisticType>
+            <problemStatisticType>BEST_SCORE</problemStatisticType>
+            <problemStatisticType>BEST_SOLUTION_MUTATION</problemStatisticType>
+            <problemStatisticType>MOVE_COUNT_PER_STEP</problemStatisticType>
+            <problemStatisticType>MOVE_COUNT_PER_TYPE</problemStatisticType>
+            <problemStatisticType>STEP_SCORE</problemStatisticType>
+
+            <singleStatisticType>CONSTRAINT_MATCH_TOTAL_BEST_SCORE</singleStatisticType>
+            <singleStatisticType>CONSTRAINT_MATCH_TOTAL_STEP_SCORE</singleStatisticType>
+            <singleStatisticType>PICKED_MOVE_TYPE_BEST_SCORE_DIFF</singleStatisticType>
+            <singleStatisticType>PICKED_MOVE_TYPE_STEP_SCORE_DIFF</singleStatisticType>
+
+        </problemBenchmarks>
+
+        <subSingleCount>2</subSingleCount>
+    </inheritedSolverBenchmark>
+
+    <solverBenchmarkBluePrint>
+        <solverBenchmarkBluePrintType>EVERY_LOCAL_SEARCH_TYPE</solverBenchmarkBluePrintType>
+    </solverBenchmarkBluePrint>
+
+</plannerBenchmark>

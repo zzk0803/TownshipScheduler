@@ -2,11 +2,14 @@ package zzk.townshipscheduler.backend.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.proxy.HibernateProxy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -15,7 +18,13 @@ import java.util.Objects;
 @Setter
 @ToString
 @Entity
+@NamedEntityGraph(
+        name = "AccountEntity.g",
+        includeAllAttributes = true
+)
 public class AccountEntity implements UserDetails {
+
+    @Serial private static final long serialVersionUID = 239052633038659009L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

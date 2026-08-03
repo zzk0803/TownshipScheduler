@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.dao.WikiCrawledEntityRepository;
+import zzk.townshipscheduler.backend.persistence.WikiCrawledEntityRepository;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -55,14 +55,13 @@ class TownshipDataMappingProcessor {
                                     String number = nameGainMatcher.group(2);
                                     productEntity.setDefaultAmountWhenCreated(Integer.parseInt(number));
                                 } else {
-                                    String productName = mayMixNameAndGain;
-                                    productEntity.setName(productName);
-                                    productEntity.setNameForMaterial(English.plural(productName.toLowerCase(),1));
+                                    productEntity.setName(mayMixNameAndGain);
+                                    productEntity.setNameForMaterial(English.plural(mayMixNameAndGain.toLowerCase(),1));
                                 }
                             }
                         }
-                        case "goods[colspan:1]",
-                             "Goods[colspan:1]" -> {//include symbol '[' ']',so str.tolowercase() doesn't work??
+                        //include symbol '[' ']',so str.tolowercase() doesn't work??
+                        case "goods[colspan:1]", "Goods[colspan:1]" -> {
                             valueAsDataCell.getImageString().ifPresent(imgUrl -> {
                                 productEntity.setCrawledAsImage(wikiCrawledEntityRepository.queryEntityBearImageByHtml(imgUrl));
                             });
@@ -120,6 +119,10 @@ class TownshipDataMappingProcessor {
                         }
                     }
                 });
+                if (productEntity.getName().equalsIgnoreCase("Copper Ore")) {
+                    productEntity.setName("Bronze Ores");
+                    productEntity.setNameForMaterial("bronze ores");
+                }
                 productEntityArrayList.add(productEntity);
             });
 

@@ -1,9 +1,8 @@
 package zzk.townshipscheduler.ui.components;
 
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -13,21 +12,22 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.signals.Signal;
+import com.vaadin.flow.signals.local.ValueSignal;
 import lombok.Getter;
 import lombok.Setter;
-import zzk.townshipscheduler.backend.persistence.*;
+import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.ui.views.product.ProductViewPresenter;
 
 import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 
 @Getter
 @Setter
-public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
+public class ProductsCategoriesPanel
+        extends Composite<VerticalLayout> {
 
     private final RadioButtonGroup<FieldFactoryInfoEntity> categoryRadioGroup;
 
@@ -35,25 +35,19 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
 
     private final TextField searchField;
 
+    private final ProductViewPresenter productViewPresenter;
+
     private GridListDataView<ProductEntity> gridListDataView;
 
-    private Set<ProductEntity> productEntities;
+    private Set<FieldFactoryInfoEntity> fieldFactoryInfoEntities;
 
-    private List<FieldFactoryInfoEntity> factoryList;
+    private ValueSignal<String> filterCriterialValueSignal = new ValueSignal<>("");
 
-    private FieldFactoryInfoEntity currentSelectFactoryInfo;
+    private ValueSignal<FieldFactoryInfoEntity> currentSelectFactoryInfoValueSignal = new ValueSignal<>(null);
 
-    private ProductEntity currentSelectProduct;
-
-    public ProductsCategoriesPanel(Set<ProductEntity> productEntities) {
-        setProductEntities(productEntities);
-        setFactoryList(
-                getProductEntities().stream()
-                        .map(ProductEntity::getFieldFactoryInfo)
-                        .distinct()
-                        .sorted(Comparator.comparing(FieldFactoryInfoEntity::getLevel, Integer::compareTo))
-                        .toList()
-        );
+    public ProductsCategoriesPanel(ProductViewPresenter productViewPresenter) {
+        this.productViewPresenter = productViewPresenter;
+        this.setFieldFactoryInfoEntities(this.productViewPresenter.getFieldFactoryInfoCollection());
 
         searchField = createSearchField();
         categoryRadioGroup = createCategoryRadioGroup();
@@ -75,11 +69,12 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
                 new Button(
                         VaadinIcon.REFRESH.create(),
                         buttonClickEvent -> {
-                            setCurrentSelectProduct(null);
                             this.searchField.clear();
                             this.categoryRadioGroup.clear();
-                            this.gridListDataView.removeFilters().refreshAll();
-                            this.categoryRadioGroup.getDataProvider().refreshAll();
+                            this.gridListDataView.removeFilters()
+                                    .refreshAll();
+                            this.categoryRadioGroup.getDataProvider()
+                                    .refreshAll();
                         }
                 )
         );
@@ -99,7 +94,7 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
         textField.setWidthFull();
         textField.addValueChangeListener(valueChange -> {
             String criteria = valueChange.getValue();
-            this.filterGoods(criteria);
+            this.filterCriterialValueSignal.set(criteria);
         });
         return textField;
     }
@@ -110,110 +105,88 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
         categoryRadioGroup.setItemLabelGenerator(FieldFactoryInfoEntity::getCategory);
         categoryRadioGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         categoryRadioGroup.setMinWidth("10rem");
-        categoryRadioGroup.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
+        categoryRadioGroup.getStyle()
+                .set("background-color", "var(--lumo-contrast-5pct)");
         categoryRadioGroup.addValueChangeListener(valueChangeEvent -> {
-            this.filterCategoryProduct(valueChangeEvent.getValue());
+            FieldFactoryInfoEntity fieldFactoryInfoEntity = valueChangeEvent.getValue();
+            this.currentSelectFactoryInfoValueSignal.set(fieldFactoryInfoEntity);
         });
-        categoryRadioGroup.setItems(this.factoryList);
+        categoryRadioGroup.setItems(this.fieldFactoryInfoEntities);
         return categoryRadioGroup;
     }
 
     private Grid<ProductEntity> createGrid() {
-        final Grid<ProductEntity> grid;
-        grid = new Grid<>(ProductEntity.class, false);
-        grid.setId("goods-categories-grid");
-        grid.setSelectionMode(Grid.SelectionMode.SINGLE);
-        grid.addColumn(ProductEntity::getName)
-                .setHeader("Name").setAutoWidth(true);
-        grid.addColumn(new ComponentRenderer<>(this::goodsImageRender))
-                .setHeader("Image").setAutoWidth(true);
-        grid.addColumn(ProductEntity::getLevel)
-                .setHeader("Required Level").setAutoWidth(true);
-        grid.addColumn(ProductEntity::getCategory)
-                .setHeader("Category").setAutoWidth(true);
-        grid.addColumn(ProductEntity::getDurationString)
-                .setHeader("Producing Duration").setAutoWidth(true);
-        grid.addColumn(ProductEntity::getBomString).setHeader("Materials-String").setAutoWidth(true);
-        grid.addColumn(new ComponentRenderer<>(this::productMaterialsRender))
-                .setHeader("Materials").setAutoWidth(true);
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        final Grid<ProductEntity> grid = new ProductsGrid(this.productViewPresenter.getProductEntityImageFunction(), this.productViewPresenter.getMaterialsRenderFunction());
         grid.setHeightFull();
-        grid.asSingleSelect().addValueChangeListener(valueChangeEvent -> {
-            valueChangeEvent.getHasValue().getOptionalValue().ifPresentOrElse(
-                    this::setCurrentSelectProduct,
-                    () -> this.setCurrentSelectProduct(null)
-            );
-        });
+
+        Signal.effect(
+                grid,
+                () -> {
+                    String criterial = filterCriterialValueSignal.get();
+                    this.filterProducts(criterial);
+                }
+        );
+        Signal.effect(
+                grid,
+                () -> {
+                    FieldFactoryInfoEntity fieldFactoryInfoEntity = currentSelectFactoryInfoValueSignal.get();
+                    if (fieldFactoryInfoEntity != null) {
+                        this.gridListDataView = grid.setItems(fieldFactoryInfoEntity.getProductEntities()
+                                .stream()
+                                .sorted(Comparator.comparingInt(ProductEntity::getLevel)
+                                        .thenComparing(ProductEntity::getName))
+                                .toList());
+                    } else {
+                        this.gridListDataView = grid.setItems(
+                                getFieldFactoryInfoEntities().stream()
+                                        .flatMap(fieldFactoryInfo -> fieldFactoryInfo.getProductEntities()
+                                                .stream())
+                                        .sorted(Comparator.comparingInt(ProductEntity::getLevel)
+                                                .thenComparing(ProductEntity::getName))
+                                        .toList()
+                        );
+                    }
+                }
+        );
         return grid;
     }
 
-    public void filterGoods(String filterCriteria) {
+    public void filterProducts(String filterCriteria) {
+        if (filterCriteria == null) {
+            if (this.gridListDataView != null) {
+                this.gridListDataView.removeFilters();
+                this.gridListDataView.refreshAll();
+            }
+            return;
+        }
+
         if (filterCriteria.isBlank()) {
-            reset();
-            getGridListDataView().refreshAll();
+            if (this.gridListDataView != null) {
+                this.gridListDataView.removeFilters();
+                this.gridListDataView.refreshAll();
+            }
+            return;
         }
 
-        getGridListDataView().addFilter(
-                product -> {
-                    String productName = product.getName();
-                    String bomString = product.getBomString();
-                    return productName.contains(filterCriteria) || bomString.contains(filterCriteria);
-                }
-        );
-    }
-
-    public void filterCategoryProduct(FieldFactoryInfoEntity category) {
-        if (Objects.nonNull(category)) {
-            setCurrentSelectFactoryInfo(category);
-            getGridListDataView().addFilter(product -> getCurrentSelectFactoryInfo().equals(product.getFieldFactoryInfo()));
-        }
-    }
-
-    private Component goodsImageRender(ProductEntity productEntity) {
-        WikiCrawledEntity crawledAsImage = productEntity.getCrawledAsImage();
-        return ProductImages.productImage(
-                productEntity.getName(),
-                crawledAsImage
-        );
-    }
-
-    private Component productMaterialsRender(ProductEntity productEntity) {
-        Set<ProductManufactureInfoEntity> productManufactureInfoEntities = productEntity.getManufactureInfoEntities();
-        if (productManufactureInfoEntities != null && !productManufactureInfoEntities.isEmpty()) {
-            HorizontalLayout resultComponent = new HorizontalLayout();
-            resultComponent.setAlignItems(FlexComponent.Alignment.CENTER);
-            resultComponent.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-
-            productManufactureInfoEntities.stream()
-                    .map(this::mapToMaterialCard)
-                    .forEach(resultComponent::add);
-
-            return resultComponent;
-        } else {
-            return new Text(productEntity.getBomString());
+        if (this.gridListDataView != null) {
+            this.gridListDataView.addFilter(
+                    product -> {
+                        String productName = product.getName()
+                                .toLowerCase();
+                        String bomString = product.getBomString()
+                                .toLowerCase();
+                        return productName.contains(filterCriteria.toLowerCase()) || bomString.contains(filterCriteria.toLowerCase());
+                    }
+            );
         }
     }
 
     public void reset() {
-        this.gridListDataView.removeFilters();
-        this.currentSelectFactoryInfo = null;
-    }
-
-    private VerticalLayout mapToMaterialCard(ProductManufactureInfoEntity productManufactureInfoEntity) {
-        VerticalLayout materialAmountCard = new VerticalLayout();
-        Set<ProductMaterialsRelation> materialsRelationSet = productManufactureInfoEntity.getProductMaterialsRelations();
-        materialsRelationSet.forEach(productMaterialsRelation -> {
-            ProductEntity material = productMaterialsRelation.getMaterial();
-            Integer amount = productMaterialsRelation.getAmount();
-            HorizontalLayout materialAmountPair =
-                    new HorizontalLayout(
-                            goodsImageRender(material),
-                            new Text(" x" + amount)
-                    );
-            materialAmountPair.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-            materialAmountCard.add(materialAmountPair);
-        });
-        return materialAmountCard;
+        if (this.gridListDataView != null) {
+            this.gridListDataView.removeFilters();
+        }
+        this.currentSelectFactoryInfoValueSignal.set(null);
+        this.filterCriterialValueSignal.set(null);
     }
 
     @Override
@@ -225,27 +198,6 @@ public class ProductsCategoriesPanel extends Composite<VerticalLayout> {
         contentLayout.setPadding(false);
         contentLayout.setSpacing(false);
         return contentLayout;
-    }
-
-    public void consumeSelected(Consumer<ProductEntity> consumer) {
-        consumer.accept(getCurrentSelectProduct());
-    }
-
-    public void refreshImgBtnClickDone(ProductEntity productEntity) {
-        UI.getCurrent().access(() -> {
-            productsGrid.getGenericDataView().refreshItem(productEntity);
-        });
-    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        setGridListDataView(getProductsGrid().setItems(getProductEntities()));
-        this.forceReloadingData();
-    }
-
-    public void forceReloadingData() {
-        this.productsGrid.getDataProvider().refreshAll();
-        this.categoryRadioGroup.getDataProvider().refreshAll();
     }
 
 }

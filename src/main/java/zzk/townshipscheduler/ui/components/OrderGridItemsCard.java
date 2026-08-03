@@ -7,11 +7,9 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import zzk.townshipscheduler.backend.persistence.OrderEntity;
 import zzk.townshipscheduler.backend.persistence.ProductEntity;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
 
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class OrderGridItemsCard extends HorizontalLayout {
 
@@ -19,7 +17,7 @@ public class OrderGridItemsCard extends HorizontalLayout {
             = productEntity -> productEntity.getCrawledAsImage().getImageBytes();
 
     public OrderGridItemsCard(OrderEntity orderEntity) {
-        Map<ProductEntity, Integer> productAmountMap = orderEntity.getProductAmountMap();
+        Map<ProductEntity, Integer> productAmountMap = orderEntity.toProductAmountMap();
         productAmountMap.forEach((product, amount) -> {
             Image image = ProductImages.productImage(
                     product.getName(),

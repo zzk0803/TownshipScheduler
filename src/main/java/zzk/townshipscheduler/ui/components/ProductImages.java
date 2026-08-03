@@ -3,19 +3,38 @@ package zzk.townshipscheduler.ui.components;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.server.streams.DownloadResponse;
-import zzk.townshipscheduler.backend.persistence.WikiCrawledEntity;
+import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
+import lombok.experimental.UtilityClass;
+import org.jspecify.annotations.NonNull;
+import zzk.townshipscheduler.backend.persistence.ProductEntity;
 
 import java.io.ByteArrayInputStream;
-import java.util.concurrent.CompletableFuture;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
+@UtilityClass
 public class ProductImages {
 
-    public static Image productImage(String productName, WikiCrawledEntity crawledEntity) {
-        if (crawledEntity == null) {
-            return new Image("images/placeholder.png", "placeholder");
-        }
-        return productImage(productName, crawledEntity.getImageBytes());
+    public static DownloadHandler productImageDownloadHandler(ProductEntity productEntity) {
+        Objects.requireNonNull(productEntity.getName());
+        Objects.requireNonNull(productEntity.getCrawledAsImage());
+        return createDownloadHandlerOfProductImage(productEntity.getName(), productEntity.getCrawledAsImage().getImageBytes());
+    }
+
+    private static @NonNull InputStreamDownloadHandler createDownloadHandlerOfProductImage(String productName, byte[] bytes) {
+        return DownloadHandler.fromInputStream(
+                _ -> new DownloadResponse(
+                        new ByteArrayInputStream(bytes),
+                        productName,
+                        "application/octet-stream",
+                        bytes.length
+                )
+        );
+    }
+
+    public static Image productImage(String productName, Supplier<byte[]> bytesSupplier) {
+        return productImage(productName, bytesSupplier.get());
     }
 
     public static Image productImage(String productName, byte[] bytes) {
@@ -24,24 +43,13 @@ public class ProductImages {
         }
 
         return new Image(
-                DownloadHandler.fromInputStream(
-                        _ -> new DownloadResponse(
-                                new ByteArrayInputStream(bytes),
-                                productName,
-                                "application/octet-stream",
-                                bytes.length
-                        )
-                ),
+                createDownloadHandlerOfProductImage(productName, bytes),
                 productName
         );
     }
 
-    public static Image productImage(String productName, Supplier<byte[]> bytesSupplier) {
-        return productImage(productName, bytesSupplier.get());
-    }
-
-    public static CompletableFuture<Image> productImage(String productName, CompletableFuture<byte[]> bytesFuture) {
-        return bytesFuture.thenApply(bytes -> productImage(productName, bytes));
+    public static Image productImage(ProductEntity product, Function<ProductEntity, byte[]> productImageBytesFunction) {
+        return productImage(product.getName(), productImageBytesFunction.apply(product));
     }
 
 }

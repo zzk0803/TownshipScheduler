@@ -10,9 +10,9 @@ import zzk.townshipscheduler.backend.OrderEntityScheduleState;
 import zzk.townshipscheduler.backend.OrderType;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -20,29 +20,45 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 @NamedEntityGraph(
-        name = "order.project-amount-map",
+        name = "order.items",
+        includeAllAttributes = true,
         attributeNodes = {
                 @NamedAttributeNode(
-                        value = "productAmountMap",
-                        keySubgraph = "order.project-amount-map.key"
+                        value = "orderItemEntities",
+                        subgraph = "orderItemEntity.subgraph"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "order.project-amount-map.key",
+                        name = "orderItemEntity.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
-                                        value = "crawledAsImage",
-                                        subgraph = "order.project-amount-map.key.image"
+                                        value = "productEntity",
+                                        subgraph = "productEntity.subgraph"
                                 )
                         }
                 ),
                 @NamedSubgraph(
-                        name = "order.project-amount-map.key.image",
+                        name = "productEntity.subgraph",
                         attributeNodes = {
                                 @NamedAttributeNode(
-                                        value = "imageBytes"
+                                        value = "crawledAsImage",
+                                        subgraph = "wikiCrawledEntity.subgraph"
+                                ),
+                                @NamedAttributeNode(
+                                        value = "manufactureInfoEntities",
+                                        subgraph = "productManufactureInfoEntity.subgraph"
                                 )
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "wikiCrawledEntity.subgraph",
+                        attributeNodes = @NamedAttributeNode("imageBytes")
+                ),
+                @NamedSubgraph(
+                        name = "productManufactureInfoEntity.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode("productMaterialsRelations"),
                         }
                 )
         }
@@ -68,26 +84,35 @@ public class OrderEntity {
     private OrderEntityScheduleState billScheduleState = OrderEntityScheduleState.NONE;
 
     @ManyToOne
-    @JoinColumn(name = "player_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(
+            name = "player_id",
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
     private PlayerEntity playerEntity;
 
-    @ElementCollection
-    @CollectionTable
-    @MapKeyJoinColumn(
-            name = "product_id",
-            referencedColumnName = "id",
-            foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+    @OneToMany(
+            mappedBy = "orderEntity",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
-    @MapKeyClass(ProductEntity.class)
-    @Column(name = "amount")
-    private Map<ProductEntity, Integer> productAmountMap = new HashMap<>();
+    private Set<OrderItemEntity> orderItemEntities = new LinkedHashSet<>();
 
     private boolean boolFinished;
 
     private LocalDateTime finishedDateTime;
 
-    public void addItem(ProductEntity productEntity, Integer amount) {
-        this.productAmountMap.put(productEntity, amount);
+    public Map<ProductEntity, Integer> toProductAmountMap() {
+        return orderItemEntities.stream().collect(Collectors.toMap(OrderItemEntity::getProductEntity, OrderItemEntity::getAmount));
+    }
+
+    public void clearItems() {
+        orderItemEntities.forEach(orderItemEntity -> orderItemEntity.setOrderEntity(null));
+        orderItemEntities.clear();
+    }
+
+    public boolean itemsAddAll(Collection<? extends OrderItemEntity> c) {
+        c.forEach(orderItemEntity -> orderItemEntity.setOrderEntity(this));
+        return orderItemEntities.addAll(c);
     }
 
     @Override
@@ -99,25 +124,46 @@ public class OrderEntity {
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
         Class<?> oEffectiveClass = o instanceof HibernateProxy
                 ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
                 : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy
                 ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
                 : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (thisEffectiveClass != oEffectiveClass)
+            return false;
         OrderEntity orderEntity = (OrderEntity) o;
         return getId() != null && Objects.equals(getId(), orderEntity.getId());
     }
 
-    public Integer remove(Object key) {
-        return productAmountMap.remove(key);
+    public OrderItemEntity itemAdd(ProductEntity productEntity, int amount) {
+        AtomicReference<OrderItemEntity> orderItemEntityReference = new AtomicReference<>();
+        this.orderItemEntities.stream()
+                .filter(orderItemEntity -> orderItemEntity.getProductEntity().equals(productEntity))
+                .findFirst()
+                .ifPresentOrElse(
+                        orderItemEntity -> {
+                            orderItemEntityReference.set(orderItemEntity);
+                            orderItemEntity.setAmount(amount);
+                        },
+                        () -> {
+                            OrderItemEntity orderItemEntity = new OrderItemEntity();
+                            orderItemEntity.setProductEntity(productEntity);
+                            orderItemEntity.setAmount(amount);
+                            this.itemAdd(orderItemEntity);
+                            orderItemEntityReference.set(orderItemEntity);
+                        }
+                );
+        return orderItemEntityReference.get();
     }
 
-    public int size() {
-        return productAmountMap.size();
+    public boolean itemAdd(OrderItemEntity orderItemEntity) {
+        orderItemEntity.setOrderEntity(this);
+        return orderItemEntities.add(orderItemEntity);
     }
 
 }

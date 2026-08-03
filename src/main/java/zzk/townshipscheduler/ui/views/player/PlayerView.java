@@ -14,10 +14,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
-import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
-import zzk.townshipscheduler.backend.persistence.AccountEntity;
 import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.ui.components.ProductsCategoriesPanel;
 
 import java.util.List;
 import java.util.Map;
@@ -29,41 +26,27 @@ import java.util.Optional;
 @PermitAll
 public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
 
-    private final TownshipAuthenticationContext townshipAuthenticationContext;
-
-    private PlayerViewPresenter playerViewPresenter;
+    private final PlayerViewPresenter playerViewPresenter;
 
     public PlayerView(
-            TownshipAuthenticationContext townshipAuthenticationContext,
             PlayerViewPresenter playerViewPresenter
     ) {
-        this.townshipAuthenticationContext = townshipAuthenticationContext;
         this.playerViewPresenter = playerViewPresenter;
         this.playerViewPresenter.setPlayerView(this);
-        this.playerViewPresenter.setTownshipAuthenticationContext(townshipAuthenticationContext);
-        setWidthFull();
+        setSizeFull();
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-        if (Objects.isNull(townshipAuthenticationContext)) {
+        removeAll();
+
+        if (Objects.isNull(this.playerViewPresenter.getTownshipAuthenticationContext())) {
             new Dialog(new Text("townshipAuthenticationContext=null")).open();
         }
 
-        AccountEntity currentUser = townshipAuthenticationContext.getUserDetails();
-        if (currentUser != null) {
-            Optional<PlayerEntity> playerOptional =
-                    this.playerViewPresenter.getPlayerService().findPlayerEntitiesByAppUser(currentUser);
-            PlayerEntity playerEntity = playerOptional.orElseThrow(() -> {
-                String name = currentUser.getName();
-                String username = currentUser.getUsername();
-                return new RuntimeException(String.format(
-                        "name=%s,username=%s,no find any player information",
-                        name,
-                        username
-                ));
-            });
-
+        Optional<PlayerEntity> optionalPlayerEntity = this.playerViewPresenter.getTownshipAuthenticationContext()
+                .getPlayerEntity();
+        if (optionalPlayerEntity.isPresent()) {
             VerticalLayout tabContent = new VerticalLayout();
             tabContent.setMargin(false);
             tabContent.setPadding(false);
@@ -74,20 +57,19 @@ public class PlayerView extends VerticalLayout implements BeforeEnterObserver {
             Tab warehouseTab = new Tab("Warehouse Stock");
             Map<Tab, Composite<VerticalLayout>> tabArticleMap
                     = Map.of(
-                    basicTab, new PlayerBasicArticle(
-                            playerEntity,
-                            this.playerViewPresenter.getPlayerService()
+                    basicTab,
+                    new PlayerBasicArticle(
+                            this.playerViewPresenter
                     )
                     ,
-                    fieldFactoryTab, new PlayerFieldFactoryArticle(
-                            playerEntity,
-                            this.playerViewPresenter.getPlayerService()
+                    fieldFactoryTab,
+                    new PlayerFieldFactoryArticle(
+                            this.playerViewPresenter
                     )
                     ,
-                    warehouseTab, new PlayerWarehouseArticle(
-                            playerEntity,
-                            this.playerViewPresenter.getPlayerService(),
-                            new ProductsCategoriesPanel(this.playerViewPresenter.fetchProducts())
+                    warehouseTab,
+                    new PlayerWarehouseArticle(
+                            this.playerViewPresenter
                     )
             );
             Tabs articlesTabs = new Tabs();

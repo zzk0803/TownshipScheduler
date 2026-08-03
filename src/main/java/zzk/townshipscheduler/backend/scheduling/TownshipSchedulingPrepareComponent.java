@@ -4,21 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import zzk.townshipscheduler.backend.TownshipAuthenticationContext;
-import zzk.townshipscheduler.backend.dao.FieldFactoryInfoEntityRepository;
-import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
-import zzk.townshipscheduler.backend.dao.ProductEntityRepository;
-import zzk.townshipscheduler.backend.persistence.FieldFactoryInfoEntity;
-import zzk.townshipscheduler.backend.persistence.OrderEntity;
-import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.backend.persistence.ProductEntity;
+import zzk.townshipscheduler.backend.persistence.*;
 import zzk.townshipscheduler.backend.scheduling.model.DateTimeSlotSize;
+import zzk.townshipscheduler.backend.utility.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -36,7 +28,6 @@ public class TownshipSchedulingPrepareComponent {
             Collection<OrderEntity> orderEntityList,
             DateTimeSlotSize dateTimeSlotSize,
             LocalDateTime workCalendarStart,
-            LocalDateTime workCalendarEnd,
             LocalTime sleepStartPickerValue,
             LocalTime sleepEndPickerValue
     ) {
@@ -47,23 +38,30 @@ public class TownshipSchedulingPrepareComponent {
         final Set<FieldFactoryInfoEntity> factoryInfos
                 = fieldFactoryInfoEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
 
-        final Set<ProductEntity> products
-                = productEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
-        products.removeIf(productEntity -> productEntity.getLevel() > playerEntity.getLevel());
+        final List<ProductEntity> products = factoryInfos.stream()
+                .flatMap(fieldFactoryInfo -> fieldFactoryInfo.getProductEntities()
+                        .stream())
+                .toList();
+
+//        final Set<ProductEntity> products
+//                = productEntityRepository.queryForPrepareScheduling(playerEntity.getLevel());
+//        products.removeIf(productEntity -> productEntity.getLevel() > playerEntity.getLevel());
 
         return optionalPlayerForScheduling
-                .map(playerEntityProjection -> TownshipSchedulingRequest.builder()
-                        .productEntities(products)
-                        .fieldFactoryInfoEntities(factoryInfos)
-                        .playerEntityOrderEntities(orderEntityList)
-                        .playerEntityFieldFactoryEntities(playerEntityProjection.getFieldFactoryEntities())
-                        .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
-                        .dateTimeSlotSize(dateTimeSlotSize)
-                        .workCalendarStart(workCalendarStart)
-                        .workCalendarEnd(workCalendarEnd)
-                        .sleepStartPickerValue(sleepStartPickerValue)
-                        .sleepEndPickerValue(sleepEndPickerValue)
-                        .build()
+                .map(
+                        playerEntityProjection -> TownshipSchedulingRequest.builder()
+                                .requestId(UuidGenerator.timeOrderedV6())
+                                .productEntities(products)
+                                .fieldFactoryInfoEntities(factoryInfos)
+                                .playerEntityOrderEntities(orderEntityList)
+                                .playerEntityFieldFactoryEntities(playerEntityProjection.getFieldFactoryEntities())
+                                .playerEntityWarehouseEntity(playerEntityProjection.getWarehouseEntity())
+                                .dateTimeSlotSize(dateTimeSlotSize)
+                                .workCalendarStart(workCalendarStart)
+                                //.workCalendarEnd(workCalendarEnd)
+                                .sleepStartPickerValue(sleepStartPickerValue)
+                                .sleepEndPickerValue(sleepEndPickerValue)
+                                .build()
                 )
                 .orElseThrow();
 

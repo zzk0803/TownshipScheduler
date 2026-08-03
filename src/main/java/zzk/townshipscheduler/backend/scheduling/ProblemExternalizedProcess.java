@@ -1,5 +1,6 @@
 package zzk.townshipscheduler.backend.scheduling;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import lombok.extern.slf4j.Slf4j;
 import zzk.townshipscheduler.backend.persistence.TownshipProblemEntity;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
@@ -31,6 +32,7 @@ class ProblemExternalizedProcess {
                 ObjectInputStream ois = new ObjectInputStream(bais)
         ) {
             townshipSchedulingProblem = (TownshipSchedulingProblem) ois.readObject();
+            townshipSchedulingProblem.setScore(HardMediumSoftBigDecimalScore.parseScore(townshipSchedulingProblem.getScoreString()));
         }
         catch (IOException | ClassNotFoundException e) {
             log.error("can't externalized a problem,so it has been passed");

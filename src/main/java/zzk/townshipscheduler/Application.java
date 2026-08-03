@@ -8,29 +8,22 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.retry.support.RetryTemplate;
-import org.springframework.retry.support.RetryTemplateBuilder;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
-import zzk.townshipscheduler.backend.dao.AppUserEntityRepository;
-import zzk.townshipscheduler.backend.dao.PlayerEntityRepository;
-import zzk.townshipscheduler.backend.dao.WarehouseEntityRepository;
-import zzk.townshipscheduler.backend.persistence.AccountEntity;
-import zzk.townshipscheduler.backend.persistence.PlayerEntity;
-import zzk.townshipscheduler.backend.persistence.WarehouseEntity;
+import org.springframework.util.backoff.FixedBackOff;
+import zzk.townshipscheduler.backend.persistence.*;
 
 import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @SpringBootApplication
 @EnableAsync
-@EnableRetry
 @EnableScheduling
 @EnableCaching
 public class Application {
@@ -72,37 +65,42 @@ public class Application {
         };
     }
 
-    @Bean("townshipExecutorService")
-    public ExecutorService townshipExecutorService() {
-        return Executors.newVirtualThreadPerTaskExecutor();
-    }
-
-    @Bean
-    public RetryTemplate retryTemplate() {
-        RetryTemplateBuilder retryTemplateBuilder = new RetryTemplateBuilder();
-
-        return retryTemplateBuilder.fixedBackoff(Duration.ofSeconds(3))
-                .maxAttempts(3)
-                .retryOn(Exception.class)
-                .build();
-    }
-
-    @Bean("townshipTaskScheduler")
-    public TaskScheduler taskScheduler() {
-        SimpleAsyncTaskSchedulerBuilder taskSchedulerBuilder = new SimpleAsyncTaskSchedulerBuilder();
-        return taskSchedulerBuilder
-                .virtualThreads(true)
-                .build();
-    }
-
     @Bean("cacheManager")
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager();
     }
 
+    @Bean
+    public ExecutorService townshipExecutorService() {
+        return Executors.newWorkStealingPool(
+                Runtime.getRuntime().availableProcessors()
+        );
+    }
+
+    @Bean
+    public TaskScheduler townshipTaskScheduler() {
+        SimpleAsyncTaskSchedulerBuilder taskSchedulerBuilder = new SimpleAsyncTaskSchedulerBuilder();
+        return taskSchedulerBuilder.virtualThreads(true)
+                .build();
+    }
+
+    @Bean
+    public RetryTemplate retryTemplate() {
+        return new RetryTemplate(
+                RetryPolicy.builder()
+                        .backOff(new FixedBackOff(5000,3))
+                        .build()
+        );
+    }
+
     @Bean("httpClient")
-    public HttpClient object() {
+    public HttpClient httpClient() {
         return HttpClient.newHttpClient();
     }
+
+//    @Bean("solverConfig")
+//    public SolverConfig solverConfig() {
+//        return SolverConfig.createFromXmlResource("solverConfig.xml");
+//    }
 
 }

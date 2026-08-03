@@ -30,12 +30,18 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import zzk.townshipscheduler.backend.persistence.AccountEntity;
+import zzk.townshipscheduler.ui.utility.VaadinUiAccessUtil;
+import zzk.townshipscheduler.ui.utility.VaadinUiEventBus;
+import zzk.townshipscheduler.ui.views.scheduling.SchedulingView;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Layout
 @AnonymousAllowed
-public class MainLayout extends AppLayout implements ApplicationContextAware {
+public class MainLayout
+        extends AppLayout
+        implements ApplicationContextAware {
 
     private H1 viewTitle;
 
@@ -56,6 +62,27 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
         Scroller scroller = new Scroller(createNavigation());
 
         addToDrawer(header, scroller, createFooter());
+    }
+
+    private SideNav createNavigation() {
+        SideNav nav = new SideNav();
+
+        List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
+        menuEntries.stream().sorted(Comparator.comparing(MenuEntry::order)).forEach(entry -> {
+            if (entry.icon() != null) {
+                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
+            } else {
+                nav.addItem(new SideNavItem(entry.title(), entry.path()));
+            }
+        });
+
+        return nav;
+    }
+
+    private Footer createFooter() {
+        Footer footer = new Footer();
+
+        return footer;
     }
 
     private void addHeaderContent() {
@@ -82,13 +109,12 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
         rightWrapper.add(configButton);
         authenticationContext.getAuthenticatedUser(AccountEntity.class).ifPresentOrElse(
                 appUserEntity -> {
+                    MenuBar userMenu = new MenuBar();
+                    userMenu.setThemeName("tertiary-inline contrast");
+
                     Avatar avatar = new Avatar(appUserEntity.getName());
                     avatar.setThemeName("xsmall");
                     avatar.getElement().setAttribute("tabindex", "-1");
-
-                    MenuBar userMenu = new MenuBar();
-                    userMenu.setThemeName("tertiary-inline contrast");
-                    MenuItem userName = userMenu.addItem("");
 
                     Div div = new Div();
                     div.add(avatar);
@@ -96,15 +122,41 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
                     div.getElement().getStyle().set("display", "flex");
                     div.getElement().getStyle().set("align-items", "center");
                     div.getElement().getStyle().set("gap", "var(--lumo-space-s)");
-                    userName.add(div);
-                    SubMenu userNameSubMenu = userName.getSubMenu();
+
+                    MenuItem userNameMenuItem = userMenu.addItem("");
+                    userNameMenuItem.add(div);
+                    SubMenu userNameSubMenu = userNameMenuItem.getSubMenu();
                     userNameSubMenu.addItem(
                             "Sign out",
                             clickEvent -> {
                                 authenticationContext.logout();
                             }
                     );
+                    VaadinUiEventBus.subscribe(
+                            userMenu,
+                            SchedulingView.SchedulingProcessingStartComponentEvent.class,
+                            componentEvent -> {
+                                VaadinUiAccessUtil.updateUI(
+                                        UI.getCurrent(),
+                                        () -> {
+                                            Notification.show("SchedulingView.SchedulingProcessingStartComponentEvent");
+                                        }
+                                );
+                            }
+                    );
 
+                    VaadinUiEventBus.subscribe(
+                            userMenu,
+                            SchedulingView.SchedulingProcessingEndComponentEvent.class,
+                            componentEvent -> {
+                                VaadinUiAccessUtil.updateUI(
+                                        UI.getCurrent(),
+                                        () -> {
+                                            Notification.show("SchedulingView.SchedulingProcessingEndComponentEvent");
+                                        }
+                                );
+                            }
+                    );
                     rightWrapper.add(userMenu);
 
                 }, () -> {
@@ -124,41 +176,22 @@ public class MainLayout extends AppLayout implements ApplicationContextAware {
         addToNavbar(true, toggle, headerWrapper);
     }
 
-    private SideNav createNavigation() {
-        SideNav nav = new SideNav();
-
-        List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
-        menuEntries.forEach(entry -> {
-            if (entry.icon() != null) {
-                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
-            } else {
-                nav.addItem(new SideNavItem(entry.title(), entry.path()));
-            }
-        });
-
-        return nav;
-    }
-
-    private Footer createFooter() {
-        Footer footer = new Footer();
-
-        return footer;
-    }
-
-    @Override
     protected void afterNavigation() {
-        super.afterNavigation();
         viewTitle.setText(getCurrentPageTitle());
     }
 
     private String getCurrentPageTitle() {
         PageTitle title = getContent().getClass().getAnnotation(PageTitle.class);
-        return title == null ? "" : title.value();
+        return title == null
+               ? ""
+               : title.value();
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext)
+            throws BeansException {
         this.authenticationContext = applicationContext.getBean(AuthenticationContext.class);
     }
+
 
 }

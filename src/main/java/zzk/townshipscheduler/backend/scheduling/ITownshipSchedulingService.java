@@ -1,48 +1,52 @@
 package zzk.townshipscheduler.backend.scheduling;
 
-import ai.timefold.solver.core.api.score.ScoreExplanation;
-import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
+import ai.timefold.solver.core.api.solver.SolverJob;
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import org.jspecify.annotations.NonNull;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public interface ITownshipSchedulingService {
 
+    TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest);
+
     boolean existSolvingJob(String problemId);
 
     boolean existProblem(String problemId);
-
-    TownshipSchedulingProblem prepareScheduling(TownshipSchedulingRequest townshipSchedulingRequest);
-
-    void scheduling(
-            String problemId,
-            Consumer<TownshipSchedulingProblem> solverJobStartedEventConsumer,
-            Consumer<TownshipSchedulingProblem> bestSolutionEventConsumer,
-            Consumer<TownshipSchedulingProblem> finalBestSolutionEventConsumer,
-            BiConsumer<String, Throwable> exceptionHandler
-    );
-
-    void abort(String problemId);
-
-    TownshipSchedulingProblem getSchedule(String problemId);
 
     SolverStatus getProblemSolverStatus(String problemId);
 
     String getProblemSizeStatistics(String problemId);
 
-    @NonNull ScoreAnalysis<BendableScore> analyze(
-            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+    TownshipSchedulingProblem getProblem(String problemId);
+
+    TownshipSchedulingProblem gatherProblem(String problemId);
+
+    SolverJob<TownshipSchedulingProblem> scheduling(
+            String problemId,
+            Consumer<TownshipSchedulingProblem> solverJobStartedEventConsumer,
+            Consumer<TownshipSchedulingProblem> firstInitializedSolutionConsumer,
+            Consumer<TownshipSchedulingProblem> bestSolutionEventConsumer,
+            Consumer<TownshipSchedulingProblem> finalBestSolutionEventConsumer,
+            BiConsumer<Object, Throwable> exceptionHandler
     );
 
-    @NonNull ScoreExplanation<TownshipSchedulingProblem, BendableScore> explain(
-            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
-    );
+    void abort(String problemId);
+
+     CompletableFuture<File> benchmark(TownshipSchedulingBenchmarkRequest benchmarkRequest);
+
+//    @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> analyze(
+//            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+//    );
+//
+//    @NonNull ScoreAnalysis<HardMediumSoftBigDecimalScore> explain(
+//            @NonNull TownshipSchedulingProblem townshipSchedulingProblem
+//    );
 
     boolean checkWeatherReadyToSolve(String uuid);
 

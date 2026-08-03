@@ -1,61 +1,63 @@
 package zzk.townshipscheduler.backend.scheduling.algorithm;
 
-import ai.timefold.solver.core.api.domain.valuerange.CountableValueRange;
-import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import ai.timefold.solver.core.api.solver.phase.PhaseCommand;
+import ai.timefold.solver.core.api.solver.phase.PhaseCommandContext;
+import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningEntityMetaModel;
+import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningSolutionMetaModel;
+import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningVariableMetaModel;
+import ai.timefold.solver.core.preview.api.move.builtin.Moves;
 import lombok.extern.slf4j.Slf4j;
-import zzk.townshipscheduler.backend.scheduling.model.*;
-import zzk.townshipscheduler.backend.scheduling.model.utility.SchedulingProducingArrangementDifficultyComparator;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance;
+import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
+import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.function.BooleanSupplier;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 @Slf4j
-public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedulingProblem> {
+public class TownshipInitiateCustomPhase
+        implements PhaseCommand<TownshipSchedulingProblem> {
 
     @Override
-    public void changeWorkingSolution(
-            ScoreDirector<TownshipSchedulingProblem> scoreDirector,
-            BooleanSupplier isPhaseTerminated
-    ) {
-        if (isPhaseTerminated.getAsBoolean()) {
+    public void changeWorkingSolution(PhaseCommandContext<TownshipSchedulingProblem> phaseCommandContext) {
+
+        if (phaseCommandContext.isPhaseTerminated()) {
             return;
         }
 
         TownshipSchedulingProblem workingSolution
-                = scoreDirector.getWorkingSolution();
+                = phaseCommandContext.getWorkingSolution();
         NavigableSet<SchedulingDateTimeSlot> dateTimeSlotSetValueRange
                 = workingSolution.getSchedulingDateTimeSlots();
         NavigableSet<SchedulingProducingArrangement> producingArrangements
-                = workingSolution.getSchedulingProducingArrangementList();
+                = workingSolution.getSchedulingProducingArrangements();
         List<SchedulingFactoryInstance> queueFactoryInstanceValueRange
                 = workingSolution.getSchedulingFactoryInstanceList();
 
-
-        List<SchedulingDateTimeSlot> sortedDataTimeSlotValueRange = dateTimeSlotSetValueRange.stream()
-                .sorted()
-                .toList();
-        List<SchedulingProducingArrangement> difficultySortedProducingArrangements
-                = producingArrangements.stream()
-                .sorted(new SchedulingProducingArrangementDifficultyComparator())
-                .toList();
+        log.info(
+                "difficultySortedProducingArrangements:{} ",
+                producingArrangements
+        );
         ArrayDeque<SchedulingProducingArrangement> initiatingDeque
-                = new ArrayDeque<>(difficultySortedProducingArrangements);
+                = new ArrayDeque<>(producingArrangements);
 
         while (!initiatingDeque.isEmpty()) {
             SchedulingProducingArrangement arrangement = initiatingDeque.removeFirst();
             if (shouldInitiating(arrangement)) {
                 setupArrangement(
-                        scoreDirector,
+                        phaseCommandContext,
                         arrangement,
-                        sortedDataTimeSlotValueRange,
+                        dateTimeSlotSetValueRange,
                         queueFactoryInstanceValueRange
                 );
             }
         }
+
 
     }
 
@@ -76,9 +78,9 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
     }
 
     private void setupArrangement(
-            ScoreDirector<TownshipSchedulingProblem> scoreDirector,
+            PhaseCommandContext<TownshipSchedulingProblem> phaseCommandContext,
             SchedulingProducingArrangement schedulingProducingArrangement,
-            List<SchedulingDateTimeSlot> dateTimeSlotList,
+            NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots,
             List<SchedulingFactoryInstance> factoryInstanceList
     ) {
         SchedulingFactoryInstance schedulingFactoryInstance
@@ -86,51 +88,54 @@ public class TownshipInitiateCustomPhase implements PhaseCommand<TownshipSchedul
                 .filter(slotFactoryInstance -> schedulingProducingArrangement.getRequiredFactoryInfo()
                         .typeEqual(slotFactoryInstance.getSchedulingFactoryInfo()))
                 .findAny()
-                .get();
+                .get()
+                ;
         SchedulingDateTimeSlot computedDataTimeSlot
                 = calcApproximateArrangeDateTimeSlot(
                 schedulingProducingArrangement,
-                dateTimeSlotList
+                schedulingDateTimeSlots
         );
 
-        scoreDirector.beforeVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
-        );
-        schedulingProducingArrangement.setPlanningDateTimeSlot(computedDataTimeSlot);
-        scoreDirector.afterVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_DATA_TIME_SLOT
-        );
-        scoreDirector.triggerVariableListeners();
+        PlanningSolutionMetaModel<TownshipSchedulingProblem> solutionMetaModel = phaseCommandContext.getSolutionMetaModel();
+        PlanningEntityMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement> schedulingProducingArrangementPlanningEntityMetaModel
+                = solutionMetaModel.entity(SchedulingProducingArrangement.class);
 
-        scoreDirector.beforeVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
+        PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingDateTimeSlot>
+                dateTimeSlotPlanningVariableMetaModel
+                = (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingDateTimeSlot>)
+                schedulingProducingArrangementPlanningEntityMetaModel.<SchedulingDateTimeSlot>variable(SchedulingProducingArrangement.PLANNING_DATE_TIME_SLOT);
+
+        PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingFactoryInstance>
+                factoryInstancePlanningVariableMetaModel
+                = (PlanningVariableMetaModel<TownshipSchedulingProblem, SchedulingProducingArrangement, SchedulingFactoryInstance>)
+                schedulingProducingArrangementPlanningEntityMetaModel.<SchedulingFactoryInstance>variable(SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE);
+
+        phaseCommandContext.execute(
+                Moves.compose(
+                        Moves.change(
+                                factoryInstancePlanningVariableMetaModel,
+                                schedulingProducingArrangement,
+                                schedulingFactoryInstance
+                        ),
+                        Moves.change(
+                                dateTimeSlotPlanningVariableMetaModel,
+                                schedulingProducingArrangement,
+                                computedDataTimeSlot
+                        )
+                )
         );
-        schedulingProducingArrangement.setPlanningFactoryInstance(schedulingFactoryInstance);
-        scoreDirector.afterVariableChanged(
-                schedulingProducingArrangement,
-                SchedulingProducingArrangement.PLANNING_FACTORY_INSTANCE
-        );
-        scoreDirector.triggerVariableListeners();
+
     }
 
     private SchedulingDateTimeSlot calcApproximateArrangeDateTimeSlot(
             SchedulingProducingArrangement producingArrangement,
-            List<SchedulingDateTimeSlot> dateTimeSlotSet
+            NavigableSet<SchedulingDateTimeSlot> dateTimeSlotSet
     ) {
-        SchedulingDateTimeSlot result = dateTimeSlotSet.getFirst();
-
-        if (!producingArrangement.getDeepPrerequisiteProducingArrangements().isEmpty()) {
-            result =  SchedulingDateTimeSlot.fromRangeJumpCeil(
-                    dateTimeSlotSet,
-                    producingArrangement.calcStaticCompleteDateTime(result.getStart())
-            ).orElse(dateTimeSlotSet.getLast());
-
-        }
-
-        return result;
+        SchedulingDateTimeSlot dateTimeSlotSetFirst = dateTimeSlotSet.getFirst();
+        return SchedulingDateTimeSlot.ceilingDateTimeFromValueRange(
+                dateTimeSlotSet,
+                dateTimeSlotSetFirst.getStart()
+        );
     }
 
 

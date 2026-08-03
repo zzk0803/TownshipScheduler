@@ -16,17 +16,39 @@ import java.util.*;
 @DynamicUpdate
 @NamedEntityGraph(
         name = "player.full",
+        includeAllAttributes = true,
         attributeNodes = {
-                @NamedAttributeNode(value = "warehouseEntity", subgraph = "player.warehouse"),
-                @NamedAttributeNode(value = "fieldFactoryEntities"),
-                @NamedAttributeNode(value = "orderEntities"),
+                @NamedAttributeNode(
+                        value = "warehouseEntity",
+                        subgraph = "warehouseEntity.subgraph"
+                ),
+                @NamedAttributeNode(
+                        value = "fieldFactoryEntities",
+                        subgraph = "fieldFactoryEntity.subgraph"
+                ),
+                @NamedAttributeNode(
+                        value = "orderEntities",
+                        subgraph = "orderEntity.subgrah"
+                ),
                 @NamedAttributeNode(value = "account")
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "player.warehouse",
+                        name = "warehouseEntity.subgraph",
                         attributeNodes = {
-                                @NamedAttributeNode(value = "productAmountMap")
+                                @NamedAttributeNode(value = "warehouseItemEntities")
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "fieldFactoryEntity.subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "fieldFactoryInfoEntity")
+                        }
+                ),
+                @NamedSubgraph(
+                        name = "orderEntity.subgrah",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "orderItemEntities")
                         }
                 )
         }
@@ -40,7 +62,10 @@ public class PlayerEntity {
     private Integer level = 1;
 
     @OneToOne
-    @JoinColumn(name = "account_id")
+    @JoinColumn(
+            name = "account_id",
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
     @ToString.Exclude
     private AccountEntity account;
 
