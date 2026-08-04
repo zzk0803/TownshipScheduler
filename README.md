@@ -1,5 +1,7 @@
 # Township Scheduler
 
+> English version: [README_EN.md](README_EN.md)
+
 ## 项目简介
 
 Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,基于 [Timefold](https://timefold.ai) （原 OptaPlanner）构建的智能调度求解器项目。本项目旨在我自己学习如何使用 Timefold解决我自己的问题，并结合 Vaadin 构建直观的可视化界面。
@@ -22,36 +24,71 @@ Township Scheduler 是一个以经典模拟经营游戏 Township 为背景的,�
 如有任何版权疑虑，请联系作者，我们将立即处理。
 
 ## 建模背景
-游戏是模拟经营游戏，核心玩法是依据给订单做相应的生产：比如你看到火车上有一个订单，要有6个牛奶。而牛奶需要牛饲料，而牛饲料需要小麦和玉米。所以你需要先生产小麦和玉米，完成后生产牛饲料，最后才生产牛奶。所以可以说：
-* 订单具有不同的种类，不同的种类的订单具有不同的奖励和限制（比如时间窗口限制）。
-* 订单包含若干物品及其物品数量。
-* 物品具有原材料结构，一些物品既是产品也作为原材料使用。
-* 物品的生产依赖特定的工厂，物品的生产需要时间。
-* 工厂可以生产一系列物品.
-* 有的工厂能同时生产多个物品。大多数工厂具有生产队列，一次只能生产一个物品，生产完成后接着生产下一个。
-* 工厂的生产队列任务数量有限制。
-* 玩家们一般每隔一段时间上线（比如每隔10分钟、每隔半小时、每隔1小时），(他/她)上线一次需要尽可能安排多的任务，以保证完成游戏目标。
-* 其他游戏内的特性，如产品的收割、仓库大小限制，工厂收割窗口及其数量限制，订单的手动完成，加速工具，金币等暂不考虑。
+
+Township 是一款模拟经营游戏，核心玩法是依据订单完成相应的生产链。例如：你看到火车上有一个订单，需要 6 个牛奶。而牛奶需要牛饲料，牛饲料需要小麦和玉米。所以你需要先生产小麦和玉米，完成后生产牛饲料，最后才生产牛奶。
+
+关键领域特征：
+
+- **订单**具有不同种类，不同种类的订单具有不同的奖励和限制（如时间窗口限制）。
+- 订单包含若干**物品**及其数量。
+- 物品具有**原材料结构（BOM）**，一些物品既是产品也作为原材料使用。
+- 物品的生产依赖特定的**工厂**，生产需要固定时间。
+- 一个工厂可以生产一系列物品。有的工厂能同时生产多个物品；大多数工厂具有**生产队列**，一次只能生产一个物品，完成后接着生产下一个。
+- 工厂的生产队列任务数量有**容量限制**。
+- 玩家一般每隔一段时间上线（如每隔 10 分钟、30 分钟、1 小时），每次上线需要尽可能安排多的任务，以保证完成游戏目标。
+- 其他游戏内特性（如产品收割、仓库大小限制、工厂收割窗口、订单手动完成、加速工具、金币等）暂不考虑。
+
 
 ## 核心问题
 
-通常来说，要实现带前置依赖的链式时间模式需要使用`@PlanningListVariable`配合`@ShadowVariable`综合考虑前置任务的结束时间来当前任务计算开始时间和结束时间。
-但在这个场景中，一个过于具体的时间并没有意义，取而代之的是*时间点*，这些时间点如同建模背景所说的是具有相同的间隔的。 
+### 难点：离散时间点下的链式时间建模
 
-总之，玩家关心的是它每个*时间点*应该做哪些事情，才能实现满足订单任务。
-而求解器需要关心每个时间点的安排，它们各自的生产时间和结束时间是什么，别且不能违反相关约束的同时要尽早尽快。
+通常来说，要实现带前置依赖的链式时间模式，需要使用 `@PlanningListVariable` 配合 `@ShadowVariable`，综合考虑前置任务的结束时间来计算当前任务的开始时间和结束时间。
 
-将*时间点*视为`PlanningVariable`，同时还需要实现链式时间模式。经过一番折腾，我能找到的解决方法是通过[SchedulingPlayer.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingPlayer.java)持有所有的[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)，在`@ShadowVariable`计算的时候先以*时间点*排序再计算所有的生产时间和完成时间，以Map的形式保存。之后每个[SchedulingProducingArrangement.java](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)再通过`@ShadowVariable`查询自己的生产时间和完成时间，从而解决了这个问题。如果将来某一天`@PlanningListVariable`支持以另外一个`@PlanningVariable`为准安排顺序我就不用这么大费周章了。
+但在这个场景中，**一个过于具体的时间戳并没有意义**。取而代之的是**离散的时间点**——这些时间点具有相同的间隔（如建模背景所述）。玩家关心的是"每个时间点应该做哪些事情"，而不是"在 14:37:02 开始生产"。
+
+求解器需要关心：每个时间点安排了什么、各自的生产时间和完成时间是什么，在不违反相关约束的同时要尽早尽快。
+
+### 最初的尝试：`@PlanningListVariable` + `@ShadowVariable`
+
+我首先尝试了标准方案：使用 `@PlanningListVariable` 管理任务顺序，配合 `@ShadowVariable` 计算链式时间。
+
+**效果不好。**
+
+核心问题在于：在我的模型中，"在规划列表中的位置"和"被分配的时间点"是两个独立的规划变量。列表顺序说"A 在 B 之前生产"，但如果 B 被分配的时间点比 A 更早，影子变量的计算结果在**业务逻辑上就是错误的**。
+
+在 UI 上的具体表现为：
+- 生产安排 A 在规划列表中排在 B **前面**
+- 但 B 被分配的时间点比 A **更早**
+- 导致 B 计算出的开始/结束时间反而在 A 之前，尽管它在列表中排在 A "后面"
+- 影子变量的结果从业务角度来看是错误的
+
+在规模较小时（物品少、BOM 层级浅），求解器有时能找到列表顺序与时间点顺序恰好一致的解，问题不明显甚至不存在。但随着 BOM 层级加深、安排数量增多，**这种不一致变得普遍且越来越难以通过约束来纠正**。
+
+我花了相当长时间试图通过添加约束来强制列表顺序与时间点顺序一致，但感觉更像是在跟模型搏斗，而不是在建模问题本身。
+
+### 最终的解决方案
+
+将**时间点**视为 `@PlanningVariable`，链式时间计算单独实现：
+
+1. 通过 [SchedulingPlayer](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingPlayer.java) 持有所有的 [SchedulingProducingArrangement](src/main/java/zzk/townshipscheduler/backend/scheduling/model/SchedulingProducingArrangement.java)。
+2. 在 `@ShadowVariable` 计算时，**先以时间点排序**，再按依赖顺序计算所有的生产时间和完成时间，以 Map 的形式保存。
+3. 之后每个 `SchedulingProducingArrangement` 再通过自己的 `@ShadowVariable` 从 Map 中查询自己的生产时间和完成时间。
+
+关键洞察：**在这个领域中，时间点顺序才是事实依据，而不是列表顺序。**
+
+如果将来某一天 `@PlanningListVariable` 支持以另外一个 `@PlanningVariable` 为准安排顺序，这个 workaround 就不再需要了。
+
 
 ## 其他技术点
 * 通过`jakarta.mail`解析mhtml。
 * 通过`jsoup`完成网页结构的解析。
 * 通过`commons-text`和`evo-inflector`处理英文单词，以便于BOM关系保存到JPA实体
-* 通过`jgrapht`帮助保存BOM关系
+* 通过`jgrapht`帮助保存BOM关系为带权有向图
 * 实践了JPA的*EntityGraph*优化查询性能
 * 实践了Vaadin的Signal实现
-* vaadin自定义组件以及Lit自定义组件
-* 使用了`vis-timeline`实现了简单的甘特图
+* Vaadin自定义组件以及Lit自定义组件
+* 使用了`vis-timeline`实现了简易的甘特图
 
 ## Township Scheduler 约束 
 
