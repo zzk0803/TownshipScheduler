@@ -491,7 +491,7 @@ public class ProductsAmountPanel
                     new Button(VaadinIcon.MINUS.create()) {{
                         addClickListener(minusClicked -> {
                             Integer amount = amountField.getValue();
-                            if (amount < 0) {
+                            if (amount <= 0) {
                                 amountField.setValue(0);
                                 ProductsAmountPanel.this.markedProductsSignals.modify(map -> {
                                     if (map == null) {
@@ -500,6 +500,7 @@ public class ProductsAmountPanel
                                     }
                                     map.remove(productEntity);
                                 });
+                                return;
                             }
                             amountField.setValue(amount - 1);
                         });

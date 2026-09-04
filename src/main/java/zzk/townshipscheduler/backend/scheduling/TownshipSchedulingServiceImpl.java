@@ -309,8 +309,8 @@ public class TownshipSchedulingServiceImpl
             solverJob.terminateEarly();
             this.idSolverJobMap.remove(problemId, solverJob);
         }
-        TownshipSchedulingProblem townshipSchedulingProblem = this.idProblemMap.remove(problemId);
-        this.problemIdRequestMap.remove(townshipSchedulingProblem);
+        this.idProblemMap.remove(problemId);
+        this.problemIdRequestMap.remove(problemId);
     }
 
     @Override

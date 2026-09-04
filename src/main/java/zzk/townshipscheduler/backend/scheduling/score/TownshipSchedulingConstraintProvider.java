@@ -174,7 +174,7 @@ public class TownshipSchedulingConstraintProvider
         return constraintFactory.forEach(SchedulingProducingArrangement.class)
                 .filter(Predicate.not(SchedulingProducingArrangement::boolCompleted))
                 .penalize(
-                        HardMediumSoftBigDecimalScore.ofHard(BigDecimal.valueOf(1000)),
+                        HardMediumSoftBigDecimalScore.ONE_HARD,
                         schedulingProducingArrangement -> schedulingProducingArrangement.getEvaluateFactor() * schedulingProducingArrangement.getWorkCalendarSpan()
                                 .toMinutes()
                 )

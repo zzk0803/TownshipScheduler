@@ -12,14 +12,14 @@
 
     <properties>
         <java.version>26</java.version>
-        <vaadin.version>25.2.5</vaadin.version>
-        <timefold-solver.version>2.4.0</timefold-solver.version>
+        <vaadin.version>25.2.6</vaadin.version>
+        <timefold-solver.version>2.6.0</timefold-solver.version>
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
     </parent>
 
     <dependencyManagement>
@@ -121,7 +121,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.6.0-jre</version>
+            <version>33.7.1-jre</version>
         </dependency>
 
         <dependency>
@@ -143,7 +143,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.23.1</version>
+            <version>1.23.2</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.atteo/evo-inflector -->

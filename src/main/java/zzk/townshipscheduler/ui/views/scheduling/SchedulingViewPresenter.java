@@ -132,18 +132,25 @@ public class SchedulingViewPresenter {
                     });
                 },
                 solutionConsumer.andThen(_ -> {
-                    SchedulingViewPresenter.this.solutionResultPushScheduledFuture = SchedulingViewPresenter.this.taskScheduler.scheduleAtFixedRate(
-                            pushSolverResult(),
-                            Instant.now()
-                                    .plusSeconds(1),
-                            Duration.ofSeconds(UPDATE_FREQUENCY_IN_SECONDS)
-                    );
-                    getSchedulingView().getStatusValueSignal()
-                            .set(SchedulingView.Status.SOLVING);
+                    ui.access(() -> {
+                        SchedulingViewPresenter.this.solutionResultPushScheduledFuture
+                                = SchedulingViewPresenter.this.taskScheduler.scheduleAtFixedRate(
+                                pushSolverResult(),
+                                Instant.now()
+                                        .plusSeconds(1),
+                                Duration.ofSeconds(UPDATE_FREQUENCY_IN_SECONDS)
+                        );
+                        getSchedulingView().getStatusValueSignal()
+                                .set(SchedulingView.Status.SOLVING);
+                    });
                 }),
                 solutionConsumer,
                 solutionConsumer.andThen(this::reflushAndGetViewModel)
-                        .andThen(_ -> solutionResultPushScheduledFuture.cancel(true))
+                        .andThen(_ -> {
+                            if (solutionResultPushScheduledFuture != null) {
+                                solutionResultPushScheduledFuture.cancel(true);
+                            }
+                        })
                         .andThen(_ -> this.ui.access(() -> {
                             getSchedulingView().getTriggerButton()
                                     .setToState1();
@@ -157,17 +164,21 @@ public class SchedulingViewPresenter {
                             );
                         })),
                 (problemUuid, throwable) -> {
-                    this.ui.access(() -> {
-                        getSchedulingView().getTriggerButton()
-                                .setToState1();
-                        getSchedulingView().getSolverRunningSignal()
-                                .set(false);
-                        getSchedulingView().getStatusValueSignal()
-                                .set(SchedulingView.Status.FINISHED);
-                        Dialog dialog = new Dialog("ERROR", new Paragraph(throwable.toString()));
-                        dialog.open();
-                    });
-                    solutionResultPushScheduledFuture.cancel(true);
+                    this.ui.access(
+                            () -> {
+                                getSchedulingView().getTriggerButton()
+                                        .setToState1();
+                                getSchedulingView().getSolverRunningSignal()
+                                        .set(false);
+                                getSchedulingView().getStatusValueSignal()
+                                        .set(SchedulingView.Status.FINISHED);
+                                Dialog dialog = new Dialog("ERROR", new Paragraph(throwable.toString()));
+                                dialog.open();
+                            }
+                    );
+                    if (solutionResultPushScheduledFuture != null) {
+                        solutionResultPushScheduledFuture.cancel(true);
+                    }
                 }
         );
         this.townshipSchedulingProblemSolverJobAtomicReference.set(townshipSchedulingProblemSolverJob);

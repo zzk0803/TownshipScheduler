@@ -60,7 +60,8 @@ public record FactoryReadableIdentifier(
     @Override
     public int compareTo(FactoryReadableIdentifier that) {
         return Comparator.comparingLong(FactoryReadableIdentifier::categoryId)
-                .thenComparingInt(FactoryReadableIdentifier::seqNum).compare(this, that);
+                .thenComparingInt(FactoryReadableIdentifier::seqNum)
+                .compare(this, that);
     }
 
 }

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Tag("scheduling-vis-timeline-panel")
-@NpmPackage(value = "vis-timeline", version = "8.5.2")
+@NpmPackage(value = "vis-timeline", version = "8.5.4")
 @NpmPackage(value = "@js-joda/core", version = "6.1.0")
 @JsModule("./components/scheduling-vis-timeline-panel.ts")
 @JsModule("./components/by-factory-timeline-components.ts")

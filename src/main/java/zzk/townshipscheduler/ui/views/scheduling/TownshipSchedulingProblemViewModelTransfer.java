@@ -2,7 +2,6 @@ package zzk.townshipscheduler.ui.views.scheduling;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftBigDecimalScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
-import com.vaadin.copilot.shaded.helger.collection.commons.CommonsConcurrentHashMap;
 import com.vaadin.flow.signals.local.ListSignal;
 import com.vaadin.flow.signals.local.ValueSignal;
 import com.vaadin.flow.spring.annotation.RouteScope;
@@ -28,7 +27,7 @@ public class TownshipSchedulingProblemViewModelTransfer {
 
     private final Map<SchedulingProduct, SchedulingProductViewModel> schedulingProductToViewModelMap = new ConcurrentHashMap<>();
 
-    private final Map<SchedulingFactoryInfo, SchedulingFactoryInfoViewModel> schedulingFactoryInfoToViewModelMap = new CommonsConcurrentHashMap<>();
+    private final Map<SchedulingFactoryInfo, SchedulingFactoryInfoViewModel> schedulingFactoryInfoToViewModelMap = new ConcurrentHashMap<>();
 
     private final Map<SchedulingFactoryInstance, SchedulingFactoryInstanceViewModel> schedulingFactoryInstanceToViewModelMap = new ConcurrentHashMap<>();
 
