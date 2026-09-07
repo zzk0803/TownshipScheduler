@@ -14,9 +14,9 @@
     <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingFactoryInstance
     </entityClass>
-    <entityClass>
-        zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot
-    </entityClass>
+<!--    <entityClass>-->
+<!--        zzk.townshipscheduler.backend.scheduling.model.SchedulingDateTimeSlot-->
+<!--    </entityClass>-->
     <entityClass>
         zzk.townshipscheduler.backend.scheduling.model.SchedulingPlayer
     </entityClass>
@@ -26,7 +26,6 @@
         <constraintProviderClass>
             zzk.townshipscheduler.backend.scheduling.score.TownshipSchedulingConstraintProvider
         </constraintProviderClass>
-        <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
     </scoreDirectorFactory>
 
     <!--region constructionHeuristic-->
@@ -85,7 +84,7 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
+                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
                 </entitySelector>
                 <valueSelector variableName="planningFactoryInstance"
                                id="localSearch_changeMoveSelector_vs_Arrangement_planningFactory">
@@ -97,13 +96,13 @@
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
+                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
                 </entitySelector>
                 <secondaryEntitySelector id="localSearch_swapMoveSelector_es_Arrangement_planningFactoryInstance_q">
                     <entityClass>
                         zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement
                     </entityClass>
-                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.schedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
+                    <!--                    <filterClass>zzk.townshipscheduler.backend.scheduling.algorithm.SchedulingProducingArrangementFactoryValueRangesFilter</filterClass>-->
                 </secondaryEntitySelector>
                 <variableNameIncludes>
                     <variableNameInclude>planningFactoryInstance</variableNameInclude>

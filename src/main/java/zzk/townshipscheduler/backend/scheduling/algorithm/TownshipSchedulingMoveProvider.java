@@ -18,11 +18,15 @@
 //
 //    @Override
 //    public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
-//        moveStreamFactory.forEach(SchedulingProducingArrangement.class,true)
+//        moveStreamFactory.forEach(SchedulingProducingArrangement.class, true);
+//        moveStreamFactory.forEachUnfiltered(SchedulingProducingArrangement.class, false);
 //        moveStreamFactory.forEachAssignedValue(planningListVariableMetaModel)
-//                        .filter((solutionView, schedulingProducingArrangement) -> )
+//                .filter((solutionView, schedulingProducingArrangement) -> true);
+//        moveStreamFactory.forEachAssignedValueUnfiltered(planningListVariableMetaModel);
 //        moveStreamFactory.forEachDestination(planningListVariableMetaModel)
-//                .filter((solutionView, positionInList) -> )
+//                .filter((solutionView, positionInList) -> true);
+//        moveStreamFactory.forEachDestinationIncludingUnassigned(planningListVariableMetaModel);
+//        moveStreamFactory.forEachUnassignedValue(planningListVariableMetaModel);
 //        return null;
 //    }
 //

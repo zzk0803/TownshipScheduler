@@ -5,7 +5,7 @@ import ai.timefold.solver.core.impl.score.director.ScoreDirector;
 import zzk.townshipscheduler.backend.scheduling.model.SchedulingProducingArrangement;
 import zzk.townshipscheduler.backend.scheduling.model.TownshipSchedulingProblem;
 
-public class schedulingProducingArrangementFactoryValueRangesFilter
+public class SchedulingProducingArrangementFactoryValueRangesFilter
         implements SelectionFilter<TownshipSchedulingProblem, SchedulingProducingArrangement> {
 
     @Override

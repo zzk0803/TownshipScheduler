@@ -43,7 +43,8 @@ public class TownshipSchedulingProblem implements Serializable {
     @PlanningEntityCollectionProperty
     private List<SchedulingFactoryInstance> schedulingFactoryInstanceList;
 
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
+//    @PlanningEntityCollectionProperty
     @ValueRangeProvider
     private NavigableSet<SchedulingDateTimeSlot> schedulingDateTimeSlots;
 

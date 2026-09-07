@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@PlanningEntity
+//@PlanningEntity
 public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot>, Serializable {
 
     public static final Comparator<SchedulingDateTimeSlot> DATE_TIME_SLOT_COMPARATOR = Comparator.comparing(SchedulingDateTimeSlot::getId);
@@ -34,8 +34,8 @@ public class SchedulingDateTimeSlot implements Comparable<SchedulingDateTimeSlot
 
     private int durationInMinute;
 
-    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATE_TIME_SLOT)
-    private List<SchedulingProducingArrangement> planningArrangementsSequence = new ArrayList<>();
+//    @InverseRelationShadowVariable(sourceVariableName = SchedulingProducingArrangement.PLANNING_DATE_TIME_SLOT)
+//    private List<SchedulingProducingArrangement> planningArrangementsSequence = new ArrayList<>();
 
     public SchedulingDateTimeSlot(
             LocalDateTime start,
