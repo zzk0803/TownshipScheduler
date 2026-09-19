@@ -128,25 +128,27 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingFactoryInstance.class, false),
+                            moveStreamFactory.forEach(SchedulingFactoryInstance.class, false),
                             NeighborhoodsJoiners.filtering(this::legalDifferentFactory)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(factoryVar, arrangement, target));
         }
 
         private boolean legalDifferentFactory(
-                SolutionView<TownshipSchedulingProblem> view,
+                SolutionView<TownshipSchedulingProblem> solutionView,
                 SchedulingProducingArrangement arrangement,
                 SchedulingFactoryInstance target
         ) {
             if (target == null) {
                 return false;
             }
-            SchedulingFactoryInstance current = view.getValue(factoryVar, arrangement);
-            return current != target && view.isValueInRange(factoryVar, arrangement, target);
+            SchedulingFactoryInstance current = solutionView.getValue(factoryVar, arrangement);
+            return current != target && solutionView.isValueInRange(factoryVar, arrangement, target);
         }
 
     }
@@ -164,24 +166,26 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingFactoryInstance.class, false),
+                            moveStreamFactory.forEach(SchedulingFactoryInstance.class, false),
                             NeighborhoodsJoiners.filtering(this::sameTypeDifferentFactory)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(factoryVar, arrangement, target));
         }
 
         private boolean sameTypeDifferentFactory(
-                SolutionView<TownshipSchedulingProblem> view,
+                SolutionView<TownshipSchedulingProblem> solutionView,
                 SchedulingProducingArrangement arrangement,
                 SchedulingFactoryInstance target
         ) {
             if (target == null) {
                 return false;
             }
-            SchedulingFactoryInstance current = view.getValue(factoryVar, arrangement);
+            SchedulingFactoryInstance current = solutionView.getValue(factoryVar, arrangement);
             return current != null && current != target
                    && arrangement.getRequiredFactoryInfo().typeEqual(target.getSchedulingFactoryInfo());
         }
@@ -201,10 +205,12 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingDateTimeSlot.class, false),
+                            moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false),
                             NeighborhoodsJoiners.filtering(this::notEarlierThanIdeal)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(slotVar, arrangement, target));
@@ -238,10 +244,12 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingDateTimeSlot.class, false),
+                            moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false),
                             NeighborhoodsJoiners.filtering(this::durationFits)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(slotVar, arrangement, target));
@@ -274,10 +282,12 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingFactoryInstance.class, false),
+                            moveStreamFactory.forEach(SchedulingFactoryInstance.class, false),
                             NeighborhoodsJoiners.filtering(this::isLessLoaded)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(factoryVar, arrangement, target));
@@ -337,26 +347,31 @@ public class DemoTownshipNeighborhoodProvider
         static final int ADJACENCY_SLOTS = 8;
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
             UniEnumeratingStream<TownshipSchedulingProblem, SchedulingProducingArrangement> arrangements =
-                    f.forEach(SchedulingProducingArrangement.class, false);
-            return f.pick(arrangements)
-                    .pick(arrangements, NeighborhoodsJoiners.filtering(this::sameFactoryNearbyOrdered))
-                    .asMove((view, a, b) -> Moves.swap(slotVar, a, b));
+                    moveStreamFactory.forEach(SchedulingProducingArrangement.class, false);
+
+            return moveStreamFactory.pick(arrangements)
+                    .pick(
+                            arrangements,
+                            NeighborhoodsJoiners.filtering(this::sameFactoryNearbyOrdered)
+                    )
+                    .asMove((view, former, latter) -> Moves.swap(slotVar, former, latter));
         }
 
         private boolean sameFactoryNearbyOrdered(
-                SolutionView<TownshipSchedulingProblem> view,
-                SchedulingProducingArrangement a,
-                SchedulingProducingArrangement b
+                SolutionView<TownshipSchedulingProblem> solutionView,
+                SchedulingProducingArrangement former,
+                SchedulingProducingArrangement latter
         ) {
-            SchedulingFactoryInstance fa = view.getValue(factoryVar, a);
-            SchedulingFactoryInstance fb = view.getValue(factoryVar, b);
-            SchedulingDateTimeSlot sa = view.getValue(slotVar, a);
-            SchedulingDateTimeSlot sb = view.getValue(slotVar, b);
-            return fa != null && fa == fb && sa != null && sb != null
-                   && sa.getId() < sb.getId()
-                   && sb.getId() - sa.getId() <= ADJACENCY_SLOTS;
+            SchedulingFactoryInstance formerFactory = solutionView.getValue(factoryVar, former);
+            SchedulingDateTimeSlot formerDateTimeSlot = solutionView.getValue(slotVar, former);
+            SchedulingFactoryInstance latterFactory = solutionView.getValue(factoryVar, latter);
+            SchedulingDateTimeSlot latterDateTimeSlot = solutionView.getValue(slotVar, latter);
+            return formerFactory != null && formerFactory == latterFactory
+                   && formerDateTimeSlot != null && latterDateTimeSlot != null
+                   && formerDateTimeSlot.getId() < latterDateTimeSlot.getId()
+                   && latterDateTimeSlot.getId() - formerDateTimeSlot.getId() <= ADJACENCY_SLOTS;
         }
 
     }
@@ -376,11 +391,15 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
             UniEnumeratingStream<TownshipSchedulingProblem, SchedulingProducingArrangement> arrangements =
-                    f.forEach(SchedulingProducingArrangement.class, false);
-            return f.pick(arrangements)
-                    .pick(arrangements, NeighborhoodsJoiners.filtering(this::sameFactoryAndOverlapping))
+                    moveStreamFactory.forEach(SchedulingProducingArrangement.class, false);
+
+            return moveStreamFactory.pick(arrangements)
+                    .pick(
+                            arrangements,
+                            NeighborhoodsJoiners.filtering(this::sameFactoryAndOverlapping)
+                    )
                     .asMove((view, a, b) -> Moves.swap(slotVar, a, b));
         }
 
@@ -392,15 +411,18 @@ public class DemoTownshipNeighborhoodProvider
             if (a == b) {
                 return false;
             }
+
             SchedulingFactoryInstance fa = view.getValue(factoryVar, a);
             if (fa == null || fa != view.getValue(factoryVar, b)) {
                 return false;
             }
+
             SchedulingDateTimeSlot sa = view.getValue(slotVar, a);
             SchedulingDateTimeSlot sb = view.getValue(slotVar, b);
             if (sa == null || sb == null || sa == sb) {
                 return false;
             }
+
             Duration da = a.getProducingDuration() == null
                     ? Duration.ZERO
                     : a.getProducingDuration();
@@ -427,10 +449,12 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingDateTimeSlot.class, false),
+                            moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false),
                             NeighborhoodsJoiners.filtering(this::afterAllPrerequisites)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(slotVar, arrangement, target));
@@ -466,6 +490,7 @@ public class DemoTownshipNeighborhoodProvider
                     latestPrerequisiteCompletion = staticCompletion;
                 }
             }
+
             return latestPrerequisiteCompletion == null
                    || !target.getStart().isBefore(latestPrerequisiteCompletion);
         }
@@ -484,10 +509,12 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingDateTimeSlot.class, false),
+                            moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false),
                             NeighborhoodsJoiners.filtering(this::finishesInsideCalendar)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(slotVar, arrangement, target));
@@ -505,6 +532,7 @@ public class DemoTownshipNeighborhoodProvider
             if (current == null || target == null || current == target) {
                 return false;
             }
+
             Duration producing = arrangement.getProducingDuration();
             LocalDateTime calendarEnd = arrangement.getWorkCalendarEnd();
             if (producing == null || calendarEnd == null) {
@@ -535,10 +563,12 @@ public class DemoTownshipNeighborhoodProvider
         static final int MIN_EVALUATE_FACTOR = 100; // 只救火车/飞机这种高权重单
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingDateTimeSlot.class, false),
+                            moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false),
                             NeighborhoodsJoiners.filtering(this::rescueDeadline)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(slotVar, arrangement, target));
@@ -556,6 +586,7 @@ public class DemoTownshipNeighborhoodProvider
             if (arrangement.getEvaluateFactor() < MIN_EVALUATE_FACTOR) {
                 return false;
             }
+
             LocalDateTime deadline;
             try {
                 deadline = arrangement.boolHasDeadline()
@@ -567,6 +598,7 @@ public class DemoTownshipNeighborhoodProvider
             if (deadline == null) {
                 return false;
             }
+
             Duration producing = arrangement.getProducingDuration();
             LocalDateTime ideal = arrangement.calcStaticIdealArrangeDateTime();
             if (producing == null || ideal == null) {
@@ -597,14 +629,14 @@ public class DemoTownshipNeighborhoodProvider
         static final int RECOVERY_WINDOW_MINUTES = 240;
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
             // filter 作用于"实体流"：只留下当前槽在睡眠期内的工序
-            var inSleep = f.forEach(SchedulingProducingArrangement.class, false)
+            var inSleep = moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
                     .filter(this::currentlyInSleep);
 
-            return f.pick(inSleep)
+            return moveStreamFactory.pick(inSleep)
                     .pick(
-                            f.forEach(SchedulingDateTimeSlot.class, false),
+                            moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false),
                             NeighborhoodsJoiners.filtering(this::inRecoveryWindow)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(slotVar, arrangement, target));
@@ -670,10 +702,12 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingFactoryInstance.class, false),
+                            moveStreamFactory.forEach(SchedulingFactoryInstance.class, false),
                             NeighborhoodsJoiners.filtering(this::isLessLoaded)
                     )
                     .asMove((view, arrangement, targetFactory) -> {
@@ -726,10 +760,12 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return f.pick(f.forEach(SchedulingProducingArrangement.class, false))
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return moveStreamFactory.pick(
+                            moveStreamFactory.forEach(SchedulingProducingArrangement.class, false)
+                    )
                     .pick(
-                            f.forEach(SchedulingDateTimeSlot.class, false),
+                            moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false),
                             NeighborhoodsJoiners.filtering(this::queueFactoryEarlierSlot)
                     )
                     .asMove((view, arrangement, target) -> Moves.change(slotVar, arrangement, target));
@@ -748,7 +784,9 @@ public class DemoTownshipNeighborhoodProvider
                 return false;
             }
             SchedulingDateTimeSlot current = view.getValue(slotVar, arrangement);
-            return current != null && target != null && current != target
+            return current != null
+                   && target != null
+                   && current != target
                    && target.getId() < current.getId();
         }
 
@@ -781,9 +819,9 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
             // Pillar = 共享同一规划值的实体集合；这里即"同一槽位的所有工序"
-            return new PillarChangeMoveProvider<>(slotVar).build(f);
+            return new PillarChangeMoveProvider<>(slotVar).build(moveStreamFactory);
         }
 
     }
@@ -803,8 +841,11 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            return new MassChangeMoveProvider<>(factoryVar, new SameRequiredFactoryInfoSampler(2, 4)).build(f);
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            return new MassChangeMoveProvider<>(
+                    factoryVar,
+                    new SameRequiredFactoryInfoSampler(2, 4)
+            ).build(moveStreamFactory);
         }
 
         /**
@@ -847,6 +888,7 @@ public class DemoTownshipNeighborhoodProvider
                 if (candidate == null) {
                     return Sample.Decision.STOP;
                 }
+
                 if (anchorInfo == null) {
                     anchorInfo = candidate.getRequiredFactoryInfo();
                     if (anchorInfo == null) {
@@ -883,31 +925,38 @@ public class DemoTownshipNeighborhoodProvider
         static final int MAX_MOVES_PER_SESSION = 256;
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            var dataset = f.forEach(SchedulingProducingArrangement.class, false).asCachedDataset();
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            var dataset
+                    = moveStreamFactory.forEach(SchedulingProducingArrangement.class, false).asCachedDataset();
 
-            return f.buildMoveStream((session, random) -> {
-                var view = session.getSolutionView();
-                var rows = session.getInstance(dataset).exhaustiveIterator(random);
-                List<Move<TownshipSchedulingProblem>> moves = new ArrayList<>();
-                while (rows.hasNext() && moves.size() < MAX_MOVES_PER_SESSION) {
-                    SchedulingProducingArrangement head = rows.next();
-                    if (head == null || view.getValue(slotVar, head) == null) {
-                        continue;
+            return moveStreamFactory.buildMoveStream(
+                    (session, random) -> {
+                        var solutionView = session.getSolutionView();
+                        var arrangementIterator = session.getInstance(dataset).exhaustiveIterator(random);
+
+                        List<Move<TownshipSchedulingProblem>> moves = new ArrayList<>();
+
+                        while (arrangementIterator.hasNext() && moves.size() < MAX_MOVES_PER_SESSION) {
+                            SchedulingProducingArrangement head = arrangementIterator.next();
+                            if (head == null || solutionView.getValue(slotVar, head) == null) {
+                                continue;
+                            }
+
+                            var ancestors = head.getDeepPrerequisiteProducingArrangements();
+                            if (ancestors == null || ancestors.isEmpty()) {
+                                continue;
+                            }
+                            var picked = new ArrayList<>(ancestors);
+                            SchedulingProducingArrangement ancestor = picked.get(random.nextInt(picked.size()));
+                            if (solutionView.getValue(slotVar, ancestor) == null) {
+                                continue;
+                            }
+                            moves.add(Moves.swap(slotVar, head, ancestor));
+                        }
+
+                        return moves.iterator();
                     }
-                    var ancestors = head.getDeepPrerequisiteProducingArrangements();
-                    if (ancestors == null || ancestors.isEmpty()) {
-                        continue;
-                    }
-                    var picked = new ArrayList<>(ancestors);
-                    SchedulingProducingArrangement ancestor = picked.get(random.nextInt(picked.size()));
-                    if (view.getValue(slotVar, ancestor) == null) {
-                        continue;
-                    }
-                    moves.add(Moves.swap(slotVar, head, ancestor));
-                }
-                return moves.iterator();
-            });
+            );
         }
 
     }
@@ -929,79 +978,81 @@ public class DemoTownshipNeighborhoodProvider
             implements MoveProvider<TownshipSchedulingProblem> {
 
         @Override
-        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> f) {
-            var factories = f.forEach(SchedulingFactoryInstance.class, false).asCachedDataset();
-            var slots = f.forEach(SchedulingDateTimeSlot.class, false).asCachedDataset();
+        public MoveStream<TownshipSchedulingProblem> build(MoveStreamFactory<TownshipSchedulingProblem> moveStreamFactory) {
+            var factories = moveStreamFactory.forEach(SchedulingFactoryInstance.class, false).asCachedDataset();
+            var slots = moveStreamFactory.forEach(SchedulingDateTimeSlot.class, false).asCachedDataset();
 
-            return f.buildMoveStream((session, random) -> {
-                var view = session.getSolutionView();
-                var factoryInstance = session.getInstance(factories);
-                var slotInstance = session.getInstance(slots);
-                var arrangementDataset = f.forEach(SchedulingProducingArrangement.class, false).asCachedDataset();
-                var arrangementInstance = session.getInstance(arrangementDataset);
+            return moveStreamFactory.buildMoveStream(
+                    (session, random) -> {
+                        var view = session.getSolutionView();
+                        var factoryInstance = session.getInstance(factories);
+                        var slotInstance = session.getInstance(slots);
+                        var arrangementDataset = moveStreamFactory.forEach(SchedulingProducingArrangement.class, false).asCachedDataset();
+                        var arrangementInstance = session.getInstance(arrangementDataset);
 
-                return new Iterator<Move<TownshipSchedulingProblem>>() {
-                    private final Iterator<SchedulingProducingArrangement> rows =
-                            arrangementInstance.exhaustiveIterator(random);
+                        return new Iterator<Move<TownshipSchedulingProblem>>() {
+                            private final Iterator<SchedulingProducingArrangement> rows =
+                                    arrangementInstance.exhaustiveIterator(random);
 
-                    @Override
-                    public boolean hasNext() {
-                        return rows.hasNext();
-                    }
-
-                    @Override
-                    public Move<TownshipSchedulingProblem> next() {
-                        SchedulingProducingArrangement arrangement = rows.next();
-
-                        // 1) 同类型里负载最低的工厂
-                        SchedulingFactoryInstance bestFactory = null;
-                        int bestLoad = Integer.MAX_VALUE;
-                        var factoryIterator = factoryInstance.exhaustiveIterator(random);
-                        while (factoryIterator.hasNext()) {
-                            SchedulingFactoryInstance candidate = factoryIterator.next();
-                            if (candidate == null
-                                || !arrangement.getRequiredFactoryInfo().typeEqual(candidate.getSchedulingFactoryInfo())) {
-                                continue;
+                            @Override
+                            public boolean hasNext() {
+                                return rows.hasNext();
                             }
-                            int load = candidate.getPlanningArrangementsSequence() == null
-                                    ? 0
-                                    : candidate.getPlanningArrangementsSequence().size();
-                            if (load < bestLoad) {
-                                bestLoad = load;
-                                bestFactory = candidate;
-                            }
-                        }
 
-                        // 2) 静态完工最早的槽
-                        SchedulingDateTimeSlot bestSlot = null;
-                        LocalDateTime bestCompletion = null;
-                        Duration producing = arrangement.getProducingDuration();
-                        if (producing != null) {
-                            var slotIterator = slotInstance.exhaustiveIterator(random);
-                            while (slotIterator.hasNext()) {
-                                SchedulingDateTimeSlot candidate = slotIterator.next();
-                                if (candidate == null) {
-                                    continue;
+                            @Override
+                            public Move<TownshipSchedulingProblem> next() {
+                                SchedulingProducingArrangement arrangement = rows.next();
+
+                                // 1) 同类型里负载最低的工厂
+                                SchedulingFactoryInstance bestFactory = null;
+                                int bestLoad = Integer.MAX_VALUE;
+                                var factoryIterator = factoryInstance.exhaustiveIterator(random);
+                                while (factoryIterator.hasNext()) {
+                                    SchedulingFactoryInstance candidate = factoryIterator.next();
+                                    if (candidate == null
+                                        || !arrangement.getRequiredFactoryInfo().typeEqual(candidate.getSchedulingFactoryInfo())) {
+                                        continue;
+                                    }
+                                    int load = candidate.getPlanningArrangementsSequence() == null
+                                            ? 0
+                                            : candidate.getPlanningArrangementsSequence().size();
+                                    if (load < bestLoad) {
+                                        bestLoad = load;
+                                        bestFactory = candidate;
+                                    }
                                 }
-                                LocalDateTime completion = candidate.getStart().plus(producing);
-                                if (bestCompletion == null || completion.isBefore(bestCompletion)) {
-                                    bestCompletion = completion;
-                                    bestSlot = candidate;
-                                }
-                            }
-                        }
 
-                        // 无合法组合就吐 no-op，保持流良构
-                        if (bestFactory == null || bestSlot == null) {
-                            return Moves.change(slotVar, arrangement, view.getValue(slotVar, arrangement));
-                        }
-                        return Moves.compose(
-                                Moves.change(factoryVar, arrangement, bestFactory),
-                                Moves.change(slotVar, arrangement, bestSlot)
-                        );
+                                // 2) 静态完工最早的槽
+                                SchedulingDateTimeSlot bestSlot = null;
+                                LocalDateTime bestCompletion = null;
+                                Duration producing = arrangement.getProducingDuration();
+                                if (producing != null) {
+                                    var slotIterator = slotInstance.exhaustiveIterator(random);
+                                    while (slotIterator.hasNext()) {
+                                        SchedulingDateTimeSlot candidate = slotIterator.next();
+                                        if (candidate == null) {
+                                            continue;
+                                        }
+                                        LocalDateTime completion = candidate.getStart().plus(producing);
+                                        if (bestCompletion == null || completion.isBefore(bestCompletion)) {
+                                            bestCompletion = completion;
+                                            bestSlot = candidate;
+                                        }
+                                    }
+                                }
+
+                                // 无合法组合就吐 no-op，保持流良构
+                                if (bestFactory == null || bestSlot == null) {
+                                    return Moves.change(slotVar, arrangement, view.getValue(slotVar, arrangement));
+                                }
+                                return Moves.compose(
+                                        Moves.change(factoryVar, arrangement, bestFactory),
+                                        Moves.change(slotVar, arrangement, bestSlot)
+                                );
+                            }
+                        };
                     }
-                };
-            });
+            );
         }
 
     }
