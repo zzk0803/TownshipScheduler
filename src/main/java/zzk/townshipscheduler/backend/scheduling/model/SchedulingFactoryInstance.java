@@ -24,6 +24,8 @@ public class SchedulingFactoryInstance
     @Serial
     private static final long serialVersionUID = -7146926432206516227L;
 
+    public static final String PLANNING_ARRANGEMENTS_SEQUENCE = "planningArrangementsSequence";
+
     @PlanningId
     @EqualsAndHashCode.Include
     private int id;
