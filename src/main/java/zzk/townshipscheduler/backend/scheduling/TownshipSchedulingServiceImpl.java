@@ -199,6 +199,12 @@ public class TownshipSchedulingServiceImpl
                             .getClassLoader()
             );
 
+            case NEIGHBORHOODS -> PlannerBenchmarkFactory.createFromXmlResource(
+                    "solverBenchmarkConfig_neighborhoods.xml",
+                    this.getClass()
+                            .getClassLoader()
+            );
+
             case NIGHTLY_RESEARCH -> PlannerBenchmarkFactory.createFromXmlResource(
                     "solverBenchmarkConfig_nightly_research.xml",
                     this.getClass()

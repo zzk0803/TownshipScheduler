@@ -34,6 +34,7 @@ public class TownshipSchedulingBenchmarkRequest {
 
     public static enum BenchmarkStrategy {
         NIGHTLY_RESEARCH,
+        NEIGHBORHOODS,
         BUILTIN,
         CONSTRUCTION_HEURISTIC_WITH_AND_WITHOUT_LOCAL_SEARCH,
         EVERY_CONSTRUCTION_HEURISTIC_TYPE,

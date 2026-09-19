@@ -71,9 +71,9 @@
     <!--region local search-->
     <localSearch>
 
-                <neighborhoodProviderClass>
-                    zzk.townshipscheduler.backend.scheduling.algorithm.DemoTownshipNeighborhoodProvider
-                </neighborhoodProviderClass>
+        <neighborhoodProviderClass>
+            zzk.townshipscheduler.backend.scheduling.algorithm.TownshipSchedulingNeighborhoodProvider
+        </neighborhoodProviderClass>
 
         <!--        <termination>-->
         <!--            <diminishedReturns>-->
