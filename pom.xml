@@ -249,6 +249,10 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <pnpmEnable>true</pnpmEnable>
+                    <useGlobalPnpm>true</useGlobalPnpm>
+                </configuration>
             </plugin>
 
             <plugin>
