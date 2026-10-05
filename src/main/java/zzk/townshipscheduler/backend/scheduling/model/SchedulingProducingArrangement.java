@@ -118,11 +118,6 @@ public class SchedulingProducingArrangement
     @PlanningVariable(comparatorClass = SchedulingDateTimeStrengthComparator.class)
     private SchedulingDateTimeSlot planningDateTimeSlot;
 
-    @ShadowVariable(supplierName = "supplierForFactoryProcessSequence")
-    private FactoryProcessSequence factoryProcessSequence;
-
-//    private FactoryProcessSequence _factoryProcessSequence;
-
     @ShadowVariable(supplierName = "supplierForComputedDateTimePair")
     private ComputedDateTimePair computedDateTimePair;
 
@@ -182,29 +177,6 @@ public class SchedulingProducingArrangement
         return getPlanningFactoryInstance().getFactoryReadableIdentifier();
     }
 
-//    @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
-//    public LocalDateTime supplierForProducingDateTime() {
-//        return schedulingPlayer.queryProducingDateTime(this);
-//    }
-//
-//    @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
-//    public LocalDateTime supplierForCompletedDateTime() {
-//        return schedulingPlayer.queryCompletedDateTime(this);
-//    }
-
-    @ShadowSources({"planningFactoryInstance", "planningDateTimeSlot"})
-    public FactoryProcessSequence supplierForFactoryProcessSequence() {
-        if (planningFactoryInstance == null || planningDateTimeSlot == null) {
-            return null;
-        }
-//        this._factoryProcessSequence = this.factoryProcessSequence;
-        return toFactoryProcessSequence();
-    }
-
-    public FactoryProcessSequence toFactoryProcessSequence() {
-        return new FactoryProcessSequence(this);
-    }
-
 //    @ShadowSources(value = {"prerequisiteProducingArrangements[].computedDateTimePair"})
 //    public LocalDateTime supplierForShadowPrerequisiteProducingArrangementsFinishedDateTime(
 //            TownshipSchedulingProblem townshipSchedulingProblem
@@ -240,7 +212,13 @@ public class SchedulingProducingArrangement
         return getSchedulingWorkCalendar().getEndDateTime();
     }
 
-    @ShadowSources(value = {"schedulingPlayer.shadowComputedMap", "factoryProcessSequence"})
+    @ShadowSources(
+            value = {
+                    "schedulingPlayer.shadowComputedMap",
+                    "planningDateTimeSlot",
+                    "planningFactoryInstance"
+            }
+    )
     public ComputedDateTimePair supplierForComputedDateTimePair() {
         return schedulingPlayer.query(this);
     }
@@ -273,7 +251,7 @@ public class SchedulingProducingArrangement
     }
 
     public boolean boolPlanningShadowVariableComputed() {
-        return getFactoryProcessSequence() != null && getComputedDateTimePair() != null;
+        return getComputedDateTimePair() != null;
     }
 
     public void elementarySetup(
