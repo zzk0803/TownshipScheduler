@@ -32,7 +32,7 @@ Key domain characteristics:
 - A factory can produce a set of items. Some factories can produce multiple items simultaneously; most have a production queue (one at a time, FIFO).
 - Factory queue capacity is limited.
 - Players typically log in at discrete intervals (every 10 min / 30 min / 1 hr) and want to queue as many tasks as possible per session to meet game objectives.
-- Other in-game mechanics (harvesting, warehouse limits, harvest windows, manual order completion, speed-up tools, coins, etc.) are out of scope.
+- Other in-game mechanics (harvesting, warehouse product stock,warehouse limits, harvest windows, manual order completion, speed-up tools, coins, etc.) are out of scope.
 
 ## Core Problem
 
